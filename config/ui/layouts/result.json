@@ -17,8 +17,8 @@
       {
         "class": "rs",
         "children": [
-          { "id": "eyebrow", "kind": "label", "class": "rs-eyebrow", "text": "Skirmish · Match complete" },
-          { "id": "title", "kind": "label", "class": "rs-title", "text": "Victory" },
+          { "id": "eyebrow", "kind": "label", "class": "rs-eyebrow", "text": "@ui.result.skirmish-match-complete" },
+          { "id": "title", "kind": "label", "class": "rs-title", "text": "@ui.result.victory" },
           { "id": "line", "kind": "label", "class": "rs-line" },
           {
             "class": "rs-table",
@@ -27,10 +27,10 @@
                 "class": "rs-row rs-head",
                 "children": [
                   { "class": "rs-swatch" },
-                  { "kind": "label", "class": "rs-cell-name", "text": "Player" },
-                  { "kind": "label", "class": "rs-cell", "text": "Result" },
-                  { "kind": "label", "class": "rs-cell", "text": "Units" },
-                  { "kind": "label", "class": "rs-cell", "text": "Buildings" }
+                  { "kind": "label", "class": "rs-cell-name", "text": "@ui.result.player" },
+                  { "kind": "label", "class": "rs-cell", "text": "@ui.result.result" },
+                  { "kind": "label", "class": "rs-cell", "text": "@ui.result.units" },
+                  { "kind": "label", "class": "rs-cell", "text": "@ui.result.buildings" }
                 ]
               },
               { "id": "rows", "style": { "display": "flex", "flex-direction": "column", "gap": "5px" }, "repeat": "rs-row" }
@@ -41,10 +41,10 @@
           {
             "class": "rs-actions",
             "children": [
-              { "id": "save-replay", "kind": "button", "class": "rs-button rs-ghost", "text": "Save replay", "action": "result.save-replay" },
-              { "id": "watch", "kind": "button", "class": "rs-button rs-ghost", "text": "Keep watching", "action": "result.watch" },
-              { "id": "retry", "kind": "button", "class": "rs-button rs-ghost", "text": "Retry", "action": "result.retry", "visible": false },
-              { "id": "leave", "kind": "button", "class": "rs-button", "text": "Return to menu", "action": "result.leave" }
+              { "id": "save-replay", "kind": "button", "class": "rs-button rs-ghost", "text": "@ui.result.save-replay", "action": "result.save-replay" },
+              { "id": "watch", "kind": "button", "class": "rs-button rs-ghost", "text": "@ui.result.keep-watching", "action": "result.watch" },
+              { "id": "retry", "kind": "button", "class": "rs-button rs-ghost", "text": "@ui.result.retry", "action": "result.retry", "visible": false },
+              { "id": "leave", "kind": "button", "class": "rs-button", "text": "@ui.result.return-to-menu", "action": "result.leave" }
             ]
           }
         ]

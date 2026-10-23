@@ -16,7 +16,12 @@ use canopy_ui::{Action, ActionKind, Color, Tooltip, Ui};
 pub const SKIP_TICKS: u32 = 400;
 
 /// The statistics panel's tabs.
-pub const TABS: [&str; 4] = ["Resources", "Army", "Units lost", "Production"];
+pub const TABS: [&str; 4] = [
+    "replay.tab-resources",
+    "replay.tab-army",
+    "replay.tab-units-lost",
+    "replay.tab-production",
+];
 
 #[derive(Debug, Clone, PartialEq)]
 pub struct ReplayUi {
@@ -245,10 +250,10 @@ impl ReplayUi {
                         n,
                         Some(Tooltip {
                             title: name.clone(),
-                            body: format!(
-                                "{} stored · +{}/min delivered",
-                                thousands(*stored),
-                                thousands(income)
+                            body: tr!(
+                                "replay.goods-tip",
+                                stored = &thousands(*stored),
+                                income = &thousands(income)
                             ),
                             ..Tooltip::default()
                         }),
@@ -266,25 +271,21 @@ impl ReplayUi {
                 if let Some(n) = ui.find(&format!("{base}/hero/icon")) {
                     ui.set_image(n, icon);
                 }
-                let state = match status {
-                    crate::sim::HeroStatus::Alive => String::new(),
-                    other => format!(" {}", other.name()),
+                let level_text = match status {
+                    crate::sim::HeroStatus::Alive => tr!("replay.hero-level", level = level),
+                    other => tr!(
+                        "replay.hero-level-status",
+                        level = level,
+                        status = &other.label()
+                    ),
                 };
-                widgets::text(
-                    ui,
-                    &format!("{base}/hero/level"),
-                    &format!("Lv {level}{state}"),
-                );
+                widgets::text(ui, &format!("{base}/hero/level"), &level_text);
                 if let Some(n) = ui.find(&format!("{base}/hero")) {
                     ui.set_tooltip(
                         n,
                         Some(Tooltip {
-                            title: format!("{name} · Level {level}"),
-                            body: format!(
-                                "{} hero{} in all.",
-                                row.heroes.len(),
-                                if row.heroes.len() == 1 { "" } else { "es" }
-                            ),
+                            title: tr!("replay.hero-title", name = &name, level = level),
+                            body: tr!("replay.heroes-in-all", count = row.heroes.len()),
                             ..Tooltip::default()
                         }),
                     );
@@ -305,7 +306,7 @@ impl ReplayUi {
             ui.set_count(tabs, TABS.len());
             for (i, label) in TABS.iter().enumerate() {
                 if let Some(t) = ui.child(tabs, i) {
-                    ui.set_text(t, label);
+                    ui.set_text(t, &crate::text::tr(label));
                     ui.set_checked(t, i == self.tab);
                 }
             }
@@ -313,7 +314,11 @@ impl ReplayUi {
         widgets::text(
             ui,
             "replay/panel/clock",
-            &format!("{} of {}", clock(r.tick - r.start), clock(r.end - r.start)),
+            &tr!(
+                "replay.clock",
+                at = &clock(r.tick - r.start),
+                length = &clock(r.end - r.start)
+            ),
         );
         let goods: Vec<String> = colonies
             .first()
@@ -330,45 +335,40 @@ impl ReplayUi {
             })
             .unwrap_or_default();
         let wide = self.tab == 3;
-        let (head, footer): (Vec<String>, &str) = match self.tab {
+        let keys = |keys: &[&str]| keys.iter().map(|k| crate::text::tr(k)).collect::<Vec<_>>();
+        let (head, footer): (Vec<String>, String) = match self.tab {
             0 => {
                 let mut h: Vec<String> = goods.clone();
-                h.extend(["Gathered".into(), "Supply".into(), "Workers".into()]);
-                (
-                    h,
-                    "Stored, and in green the income: goods delivered to drop-offs over the last minute of match time. Gathered: every good delivered since the start.",
-                )
+                h.extend(keys(&[
+                    "replay.gathered",
+                    "replay.supply",
+                    "replay.workers",
+                ]));
+                (h, tr!("replay.resources-footer"))
             }
             1 => (
-                [
-                    "Army",
-                    "Army value",
-                    "Workers",
-                    "Buildings",
-                    "Heroes",
-                    "Supply",
-                ]
-                .map(String::from)
-                .to_vec(),
-                "Army value: what the living army units cost to make, every good added up.",
+                keys(&[
+                    "replay.army",
+                    "replay.army-value",
+                    "replay.workers",
+                    "replay.buildings",
+                    "replay.heroes",
+                    "replay.supply",
+                ]),
+                tr!("replay.army-footer"),
             ),
             2 => (
-                [
-                    "Units lost",
-                    "Buildings lost",
-                    "Value lost",
-                    "Units killed",
-                    "Buildings killed",
-                    "Value killed",
-                ]
-                .map(String::from)
-                .to_vec(),
-                "Value: what the units and buildings cost to make. A kill counts for the player whose blow was lethal.",
+                keys(&[
+                    "replay.units-lost",
+                    "replay.buildings-lost",
+                    "replay.value-lost",
+                    "replay.units-killed",
+                    "replay.buildings-killed",
+                    "replay.value-killed",
+                ]),
+                tr!("replay.losses-footer"),
             ),
-            _ => (
-                Vec::new(),
-                "What every player's buildings are making or researching now, the furthest along first.",
-            ),
+            _ => (Vec::new(), tr!("replay.production-footer")),
         };
         if let Some(cols) = ui.find("replay/panel/columns") {
             ui.set_count(cols, head.len());
@@ -381,7 +381,7 @@ impl ReplayUi {
         widgets::visible(ui, "replay/panel/wide-head", wide);
         widgets::visible(ui, "replay/panel/columns", !wide);
         widgets::text(ui, "replay/panel/wide-head", "In production");
-        widgets::text(ui, "replay/panel/footer", footer);
+        widgets::text(ui, "replay/panel/footer", &footer);
         if let Some(rows) = ui.find("replay/panel/rows") {
             ui.set_count(rows, colonies.len());
         }
@@ -430,7 +430,7 @@ impl ReplayUi {
                     } else {
                         row.heroes
                             .iter()
-                            .map(|h| format!("Lv {}", h.level))
+                            .map(|h| tr!("replay.hero-level", level = h.level))
                             .collect::<Vec<_>>()
                             .join(", ")
                     },
@@ -461,7 +461,10 @@ impl ReplayUi {
             widgets::visible(ui, &format!("{base}/wide"), wide);
             if wide {
                 let text = if row.production.is_empty() {
-                    "[color=#869591]Nothing in production[/color]".to_string()
+                    format!(
+                        "[color=#869591]{}[/color]",
+                        tr!("replay.nothing-in-production")
+                    )
                 } else {
                     row.production
                         .iter()
@@ -500,12 +503,12 @@ impl ReplayUi {
         widgets::text(
             ui,
             "replay/dock/transport/play",
-            if r.at_end {
-                "Replay"
+            &if r.at_end {
+                tr!("replay.replay")
             } else if self.held {
-                "Play"
+                tr!("replay.play")
             } else {
-                "Pause"
+                tr!("replay.pause")
             },
         );
         widgets::text(
@@ -552,7 +555,7 @@ impl ReplayUi {
                 }
             }
         }
-        let mut vision = vec!["Everyone".to_string()];
+        let mut vision = vec![tr!("replay.everyone")];
         vision.extend(playing.names.iter().map(|(_, n)| plain(n)));
         let selected = playing
             .game
@@ -565,17 +568,14 @@ impl ReplayUi {
             widgets::text(
                 ui,
                 "replay/dock/desync",
-                &format!(
-                    "This replay is out of sync from {}",
-                    clock(d.saturating_sub(r.start))
-                ),
+                &tr!("replay.desync", at = &clock(d.saturating_sub(r.start))),
             );
             if let Some(n) = ui.find("replay/dock/desync") {
                 ui.set_tooltip(
                     n,
                     Some(Tooltip {
-                        title: "Out of sync".into(),
-                        body: "From here the match no longer plays as it was recorded (another game version, or a bug). It keeps playing; the log has the details.".into(),
+                        title: tr!("replay.out-of-sync"),
+                        body: tr!("replay.out-of-sync-tip"),
                         ..Tooltip::default()
                     }),
                 );

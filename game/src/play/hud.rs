@@ -342,18 +342,16 @@ impl Hud {
             .map(|o| match (k.owner(), o.winner) {
                 (Some(me), w) if mission => {
                     if w == Some(me) {
-                        "Mission complete".to_owned()
+                        tr!("hud.mission-complete")
                     } else {
-                        "Mission failed".to_owned()
+                        tr!("hud.mission-failed")
                     }
                 }
-                (_, None) => "Draw — both main forts fell.".to_owned(),
-                (None, Some(Owner::Player(p))) => {
-                    format!("Player {} wins — the rival Mound fell.", p + 1)
-                }
-                (None, Some(_)) => "Match over".to_owned(),
-                (Some(me), Some(w)) if w == me => "Victory — the enemy main fort fell.".to_owned(),
-                _ => "Defeat — your main fort fell.".to_owned(),
+                (_, None) => tr!("hud.outcome-draw"),
+                (None, Some(Owner::Player(p))) => tr!("hud.outcome-player-wins", player = p + 1),
+                (None, Some(_)) => tr!("hud.outcome-over"),
+                (Some(me), Some(w)) if w == me => tr!("hud.outcome-victory"),
+                _ => tr!("hud.outcome-defeat"),
             });
         match outcome {
             Some(text) => {
@@ -388,13 +386,13 @@ impl Hud {
                 cell,
                 Some(Tooltip {
                     title: d.map_or(g.item.to_string(), |d| d.name.clone()),
-                    body: format!(
-                        "{}\n{} available · {} reserved\n{} stored · {} being carried",
-                        d.map_or("", |d| d.description.as_str()),
-                        g.available,
-                        g.reserved,
-                        g.stored,
-                        g.in_transit
+                    body: tr!(
+                        "hud.resource-tip",
+                        description = d.map_or("", |d| d.description.as_str()),
+                        available = g.available,
+                        reserved = g.reserved,
+                        stored = g.stored,
+                        carried = g.in_transit
                     ),
                     ..Tooltip::default()
                 }),
@@ -420,10 +418,13 @@ impl Hud {
             ui.set_tooltip(
                 cell,
                 Some(Tooltip {
-                    title: "Supply".into(),
-                    body: format!(
-                        "{} used by living units. {} reserved for queued units.\n{} available; maximum {}.\nCompleted halls and mounds provide supply. Started training finishes even if capacity is lost; waiting units need enough supply to start.",
-                        s.used, s.reserved, s.available, s.limit
+                    title: tr!("hud.supply"),
+                    body: tr!(
+                        "hud.supply-tip",
+                        used = s.used,
+                        reserved = s.reserved,
+                        available = s.available,
+                        limit = s.limit
                     ),
                     ..Tooltip::default()
                 }),
@@ -476,15 +477,15 @@ impl Hud {
                     title: d.name.clone(),
                     hotkey: (!label.is_empty()).then_some(label),
                     body: if available {
-                        "Click to select. Double-click to center the camera.".into()
+                        tr!("hud.hero-select-tip")
                     } else if let Some(Some(s)) = revival {
-                        format!("Reviving: back in {s} s.")
+                        tr!("hud.hero-reviving-in", seconds = s)
                     } else if revival.is_some() {
-                        "Waiting to be revived.".into()
+                        tr!("hud.hero-waiting-revival")
                     } else if fallen {
-                        "Fallen. Revive this hero at a Sanctuary.".into()
+                        tr!("hud.hero-fallen")
                     } else {
-                        "Hero is currently unavailable.".into()
+                        tr!("hud.hero-unavailable")
                     },
                     ..Tooltip::default()
                 }),
@@ -519,9 +520,10 @@ impl Hud {
                     cell,
                     Some(Tooltip {
                         title: d.name.clone(),
-                        body: format!(
-                            "{} / {max}\nClick to focus. Double-click to isolate. Shift-click to remove.",
-                            e.public.hp.unwrap_or(0)
+                        body: tr!(
+                            "hud.unit-card-tip",
+                            hp = e.public.hp.unwrap_or(0),
+                            max = max
                         ),
                         ..Tooltip::default()
                     }),
@@ -585,7 +587,7 @@ impl Hud {
             );
         }
         // Stats: damage (units) and armour.
-        let mut stats: Vec<(Option<String>, &str, String, String)> = Vec::new();
+        let mut stats: Vec<(Option<String>, String, String, String)> = Vec::new();
         if let Some(body) = &d.body {
             if !building {
                 let combat = d.behaviors.combat.as_ref();
@@ -594,24 +596,28 @@ impl Hud {
                     |c| c.stats.damage_milli as f64 / 1000.0,
                 );
                 let tip = match combat {
-                    Some(c) => format!(
-                        "{}. {:.3}s between attacks. Damage shown before target armor and resistance.",
-                        k.content
+                    Some(c) => tr!(
+                        "hud.damage-tip",
+                        kind = k
+                            .content
                             .rules
                             .damage_types
                             .get(c.damage_type.as_str())
                             .map_or(c.damage_type.as_str(), |t| t.name.as_str()),
-                        f64::from(
-                            e.combat
-                                .as_ref()
-                                .map_or(c.cooldown_ticks, |s| s.stats.cooldown_ticks)
-                        ) * 0.025
+                        seconds = &format!(
+                            "{:.3}",
+                            f64::from(
+                                e.combat
+                                    .as_ref()
+                                    .map_or(c.cooldown_ticks, |s| s.stats.cooldown_ticks)
+                            ) * 0.025
+                        )
                     ),
-                    None => "This unit has no attack.".into(),
+                    None => tr!("hud.no-attack"),
                 };
                 stats.push((
                     Some("asset.icons.command-attack".into()),
-                    "Damage",
+                    tr!("hud.damage"),
                     trim(damage),
                     tip,
                 ));
@@ -623,9 +629,10 @@ impl Hud {
             let armor_type = k.content.rules.armor_types.get(body.armor_type.as_str());
             let reduction =
                 (1.0 - 1.0 / (1.0 + k.content.rules.armor_coefficient * armor.max(0.0))) * 100.0;
-            let mut tip = format!(
-                "{}. Armor points reduce ordinary attack damage by {reduction:.1}%.",
-                armor_type.map_or(body.armor_type.as_str(), |t| t.name.as_str())
+            let mut tip = tr!(
+                "hud.armor-tip",
+                kind = armor_type.map_or(body.armor_type.as_str(), |t| t.name.as_str()),
+                reduction = &format!("{reduction:.1}")
             );
             for (id, ty) in &k.content.rules.damage_types {
                 let mult = k
@@ -636,20 +643,24 @@ impl Hud {
                     .and_then(|m| m.get(body.armor_type.as_str()))
                     .copied()
                     .unwrap_or(1000);
-                tip.push_str(&format!(
-                    "\n{}: {}% class damage{}",
-                    ty.name,
-                    f64::from(mult) / 10.0,
-                    if ty.applies_armor {
-                        " before armor"
-                    } else {
-                        "; bypasses armor points"
-                    }
-                ));
+                tip.push('\n');
+                tip.push_str(&if ty.applies_armor {
+                    tr!(
+                        "hud.armor-class-damage",
+                        kind = &ty.name,
+                        percent = f64::from(mult) / 10.0
+                    )
+                } else {
+                    tr!(
+                        "hud.armor-class-damage-bypass",
+                        kind = &ty.name,
+                        percent = f64::from(mult) / 10.0
+                    )
+                });
             }
             stats.push((
                 armor_type.map(|t| t.icon.to_string()),
-                "Armor",
+                tr!("hud.armor"),
                 trim(armor),
                 tip,
             ));
@@ -664,7 +675,7 @@ impl Hud {
                 ui.set_image(node, key);
             }
             if let Some(node) = ui.find_in(cell, "label") {
-                ui.set_text(node, label);
+                ui.set_text(node, &label);
             }
             if let Some(node) = ui.find_in(cell, "value") {
                 ui.set_text(node, &value);
@@ -672,7 +683,7 @@ impl Hud {
             ui.set_tooltip(
                 cell,
                 Some(Tooltip {
-                    title: label.into(),
+                    title: label,
                     body: tip,
                     ..Tooltip::default()
                 }),
@@ -768,16 +779,23 @@ impl Hud {
                         .filter(|l| !l.is_empty()),
                     body: format!(
                         "{}{}{}{}",
-                        d.item_tier.map_or(String::new(), |t| format!("Tier {t}. ")),
+                        d.item_tier
+                            .map_or(String::new(), |t| tr!("hud.item-tier", tier = t) + " "),
                         d.description,
-                        charges.map_or(String::new(), |c| format!(" {c} charges remaining.")),
-                        ready.map_or(String::new(), |s| format!(" Cooldown: {s}s.")),
+                        charges.map_or(String::new(), |c| format!(
+                            " {}",
+                            tr!("hud.item-charges", count = c)
+                        )),
+                        ready.map_or(String::new(), |s| format!(
+                            " {}",
+                            tr!("hud.item-cooldown", seconds = s)
+                        )),
                     ),
                     note: own.then(|| {
                         if usable {
-                            "Click to use. Right-click to drop.".into()
+                            tr!("hud.item-use-tip")
                         } else {
-                            "Equipped. Right-click to drop.".into()
+                            tr!("hud.item-equipped-tip")
                         }
                     }),
                     ..Tooltip::default()
@@ -854,7 +872,10 @@ impl Hud {
                         });
                         QueueEntry {
                             icon: hero.map_or(String::new(), |h| h.icon.to_string()),
-                            name: format!("Revive {}", hero.map_or("hero", |h| h.name.as_str())),
+                            name: match hero {
+                                Some(h) => tr!("hud.revive-named", name = &h.name),
+                                None => tr!("hud.revive-hero"),
+                            },
                             progress: first.then(|| r.progress as f32 / total.max(1) as f32),
                             cancel: own.then_some(Action::CancelRevival {
                                 actor: fid,
@@ -870,7 +891,10 @@ impl Hud {
                 let target = k.content.definition(rule.target.as_str());
                 self.active = Some(QueueEntry {
                     icon: target.map_or(String::new(), |t| t.icon.to_string()),
-                    name: format!("Upgrading to {}", target.map_or("", |t| t.name.as_str())),
+                    name: tr!(
+                        "hud.upgrading-to",
+                        name = target.map_or("", |t| t.name.as_str())
+                    ),
                     progress: Some(up.progress as f32 / rule.work_ticks.max(1) as f32),
                     cancel: own.then_some(Action::CancelUpgrade { actor: fid }),
                 });
@@ -888,7 +912,12 @@ impl Hud {
                 .definition(income.item.as_str())
                 .map_or(income.item.as_str(), |i| i.name.as_str());
             let seconds = f64::from(income.interval_ticks) / 40.0;
-            status = Some(format!("+{} {item} every {seconds} s", income.amount));
+            status = Some(tr!(
+                "hud.income-status",
+                amount = income.amount,
+                item = item,
+                seconds = seconds
+            ));
         }
         if let Some(site) = e
             .work
@@ -896,15 +925,19 @@ impl Hud {
             .and_then(|w| w.site)
             .filter(|s| s.recommended > 0)
         {
-            status = Some(format!(
-                "{} workers · {} recommended{}",
-                site.workers,
-                site.recommended,
-                e.public
-                    .resource
-                    .as_ref()
-                    .map_or(String::new(), |r| format!(" · {} remaining", r.amount))
-            ));
+            let workers = tr!(
+                "hud.site-workers",
+                workers = site.workers,
+                recommended = site.recommended
+            );
+            status = Some(match e.public.resource.as_ref() {
+                Some(r) => tr!(
+                    "hud.site-workers-remaining",
+                    workers = &workers,
+                    amount = r.amount
+                ),
+                None => workers,
+            });
         }
         // Out of the network its work waits (D66), whatever it is.
         let unpowered = e.work.as_ref().is_some_and(|w| w.unpowered);
@@ -918,7 +951,7 @@ impl Hud {
             });
             self.active = Some(QueueEntry {
                 icon: d.icon.to_string(),
-                name: "Under construction".into(),
+                name: tr!("hud.under-construction"),
                 progress: Some(c as f32 / total.max(1) as f32),
                 cancel: None,
             });
@@ -931,9 +964,13 @@ impl Hud {
                 let p = a.progress.unwrap_or(0.0).clamp(0.0, 1.0);
                 ui.set_value(n.task_meter, p);
                 let label = match a.progress {
-                    _ if unpowered => format!("{} · no power", a.name),
-                    Some(p) => format!("{} · {}%", a.name, (p.clamp(0.0, 1.0) * 100.0).floor()),
-                    None => format!("{} · waiting", a.name),
+                    _ if unpowered => tr!("hud.task-no-power", name = &a.name),
+                    Some(p) => tr!(
+                        "hud.task-progress",
+                        name = &a.name,
+                        percent = (p.clamp(0.0, 1.0) * 100.0).floor()
+                    ),
+                    None => tr!("hud.task-waiting", name = &a.name),
                 };
                 ui.set_text(n.task_label, &escape(&label));
                 ui.set_tooltip(
@@ -979,7 +1016,7 @@ impl Hud {
                 cell,
                 entry.map(|q| Tooltip {
                     title: q.name.clone(),
-                    body: "Click to cancel and refund the reserved resources.".into(),
+                    body: tr!("hud.queue-cancel-tip"),
                     ..Tooltip::default()
                 }),
             );
@@ -1014,10 +1051,7 @@ impl Hud {
                     } else {
                         format!("{verb}: {target}")
                     },
-                    body: format!(
-                        "Queued order {}. Runs after the current task. A normal order or Stop clears pending orders.",
-                        i + 1
-                    ),
+                    body: tr!("hud.queued-order-tip", number = i + 1),
                     ..Tooltip::default()
                 }),
             );
@@ -1052,34 +1086,30 @@ impl Hud {
             };
             let modifiers = match s.kind {
                 ItemStatusKind::Aura => aura.map(|a| modifier_text(&a.modifiers)),
-                ItemStatusKind::Rescue => Some("Invulnerable".to_owned()),
+                ItemStatusKind::Rescue => Some(tr!("hud.invulnerable")),
                 ItemStatusKind::Active => active
                     .and_then(|a| a.status.as_ref())
                     .map(|st| modifier_text(&st.modifiers)),
             };
             let mut parts: Vec<String> = modifiers.into_iter().filter(|m| !m.is_empty()).collect();
             if let Some(shield) = s.shield {
-                parts.push(format!("{shield} shield remaining"));
+                parts.push(tr!("hud.shield-remaining", amount = shield));
             }
             parts.push(match (s.kind, aura) {
-                (ItemStatusKind::Aura, Some(a)) => format!(
-                    "While within {} tiles of the bearer. Identical auras do not stack.",
-                    a.radius
-                ),
-                _ => format!(
-                    "{}s remaining",
-                    s.expires.saturating_sub(k.tick()).div_ceil(40)
+                (ItemStatusKind::Aura, Some(a)) => tr!("hud.aura-range", radius = a.radius),
+                _ => tr!(
+                    "hud.seconds-remaining",
+                    seconds = s.expires.saturating_sub(k.tick()).div_ceil(40)
                 ),
             });
-            let aura_suffix = if s.kind == ItemStatusKind::Aura {
-                " aura"
-            } else {
-                ""
-            };
             ui.set_tooltip(
                 cell,
                 Some(Tooltip {
-                    title: format!("{}{aura_suffix}", d.name),
+                    title: if s.kind == ItemStatusKind::Aura {
+                        tr!("hud.aura-title", name = &d.name)
+                    } else {
+                        d.name.clone()
+                    },
                     body: escape(&parts.join(" · ")),
                     ..Tooltip::default()
                 }),
@@ -1202,7 +1232,7 @@ impl Hud {
                 if cost.icon.as_str() == MANA {
                     Cost {
                         image: None,
-                        amount: format!("{} mana", cost.amount),
+                        amount: tr!("hud.mana-cost", amount = cost.amount),
                     }
                 } else {
                     Cost {
@@ -1218,12 +1248,12 @@ impl Hud {
         let costs = self.cost_rows(ui, k, &c.costs);
         let mut body = vec![escape(&c.description)];
         if c.passive {
-            body.push("[color=#d9c27a]Passive[/color]".into());
+            body.push(format!("[color=#d9c27a]{}[/color]", tr!("hud.passive")));
         } else if let Some(r) = &c.reason {
             body.push(format!("[color=#ff8a65]{}[/color]", escape(r)));
         }
         if c.actors.len() > 1 {
-            body.push(format!("{} eligible selected actors", c.actors.len()));
+            body.push(tr!("hud.eligible-actors", count = c.actors.len()));
         }
         Tooltip {
             title: escape(&c.name),
@@ -1234,10 +1264,7 @@ impl Hud {
                 .filter(|s| !s.is_empty())
                 .collect::<Vec<_>>()
                 .join("\n"),
-            note: c
-                .alternate
-                .is_some()
-                .then(|| "Right-click to toggle autocast.".into()),
+            note: c.alternate.is_some().then(|| tr!("hud.autocast-tip")),
         }
     }
 
@@ -1272,13 +1299,13 @@ impl Hud {
             ui.set_tooltip(
                 cell,
                 Some(Tooltip {
-                    title: format!("Control group {digit}"),
+                    title: tr!("hud.control-group", digit = digit),
                     hotkey: (!recall.is_empty()).then_some(recall),
-                    body: format!(
-                        "{} members. {}: assign. {}: add selection. Double press or double click to focus.",
-                        members.len(),
-                        play.keymap.label(Shortcut::Assign(slot)),
-                        play.keymap.label(Shortcut::Add(slot)),
+                    body: tr!(
+                        "hud.control-group-tip",
+                        count = members.len(),
+                        assign = &play.keymap.label(Shortcut::Assign(slot)),
+                        add = &play.keymap.label(Shortcut::Add(slot)),
                     ),
                     ..Tooltip::default()
                 }),
@@ -1382,26 +1409,27 @@ impl Hud {
                     .players
                     .iter()
                     .find(|(slot, ..)| *slot == player)
-                    .map_or((format!("Player {}", player + 1), true), |(_, n, ai)| {
-                        (n.clone(), *ai)
-                    });
+                    .map_or(
+                        (tr!("hud.player", number = player + 1), true),
+                        |(_, n, ai)| (n.clone(), *ai),
+                    );
                 let role = if defeated {
-                    "Defeated"
+                    tr!("hud.role-defeated")
                 } else if ai {
-                    "Computer"
+                    tr!("hud.role-computer")
                 } else {
-                    "Human"
+                    tr!("hud.role-human")
                 };
                 ui.set_text(
                     cell,
                     &format!(
-                        "[color=#{:02x}{:02x}{:02x}][b]{}[/b][/color]  {}\n[color=#8c9d9b]Player {} · {role}[/color]",
+                        "[color=#{:02x}{:02x}{:02x}][b]{}[/b][/color]  {}\n[color=#8c9d9b]{}[/color]",
                         color[0],
                         color[1],
                         color[2],
                         player + 1,
                         escape(&name),
-                        player + 1,
+                        tr!("hud.player-role", number = player + 1, role = &role),
                     ),
                 );
                 ui.set_tooltip(
@@ -1445,10 +1473,11 @@ impl Hud {
                         cell,
                         Some(Tooltip {
                             title: d.map_or_else(|| g.item.to_string(), |d| d.name.clone()),
-                            body: format!(
-                                "{} {} in the colony account. +{per_minute}/min delivered; spending is excluded from income.",
-                                d.map_or("", |d| d.description.as_str()),
-                                g.stored
+                            body: tr!(
+                                "hud.observer-goods-tip",
+                                description = d.map_or("", |d| d.description.as_str()),
+                                stored = g.stored,
+                                per_minute = per_minute
                             )
                             .trim_start()
                             .to_owned(),
@@ -1462,10 +1491,12 @@ impl Hud {
                 ui.set_tooltip(
                     cell,
                     Some(Tooltip {
-                        title: "Total units".into(),
-                        body: format!(
-                            "{} living units, including {} workers and {} army units. Workers inside buildings are included; fallen heroes are excluded.",
-                            stats.units, stats.workers, stats.army
+                        title: tr!("hud.total-units"),
+                        body: tr!(
+                            "hud.total-units-tip",
+                            units = stats.units,
+                            workers = stats.workers,
+                            army = stats.army
                         ),
                         ..Tooltip::default()
                     }),
@@ -1477,14 +1508,14 @@ impl Hud {
                 ui.set_tooltip(
                     cell,
                     Some(Tooltip {
-                        title: "Total workers".into(),
-                        body: format!(
-                            "{} available workers. {}/{} supply ({} used, {} reserved).",
-                            stats.colony.population.available,
-                            s.committed,
-                            s.capacity,
-                            s.used,
-                            s.reserved
+                        title: tr!("hud.total-workers"),
+                        body: tr!(
+                            "hud.total-workers-tip",
+                            available = stats.colony.population.available,
+                            committed = s.committed,
+                            capacity = s.capacity,
+                            used = s.used,
+                            reserved = s.reserved
                         ),
                         ..Tooltip::default()
                     }),
@@ -1506,26 +1537,26 @@ impl Hud {
                         ui.set_image(icon, key);
                     }
                     if let Some(level) = ui.find_in(cell, "level") {
-                        ui.set_text(level, &format!("Lv. {}", hero.level));
+                        ui.set_text(level, &tr!("hud.level-short", level = hero.level));
                     }
                     let status = match hero.status {
-                        crate::sim::HeroStatus::Alive => "",
-                        crate::sim::HeroStatus::Fallen => "Fallen",
-                        crate::sim::HeroStatus::Reviving => "Reviving",
+                        crate::sim::HeroStatus::Alive => String::new(),
+                        crate::sim::HeroStatus::Fallen => tr!("hud.hero-status-fallen"),
+                        crate::sim::HeroStatus::Reviving => tr!("hud.hero-status-reviving"),
                     };
                     if let Some(label) = ui.find_in(cell, "status") {
-                        ui.set_text(label, status);
+                        ui.set_text(label, &status);
                         ui.set_visible(label, !status.is_empty());
                     }
                     ui.set_enabled(cell, hero.status == crate::sim::HeroStatus::Alive);
                     ui.set_tooltip(
                         cell,
                         Some(Tooltip {
-                            title: format!(
-                                "{} · Level {} · {}",
-                                d.name,
-                                hero.level,
-                                hero.status.name()
+                            title: tr!(
+                                "hud.observer-hero",
+                                name = &d.name,
+                                level = hero.level,
+                                status = &hero.status.label()
                             ),
                             ..Tooltip::default()
                         }),
@@ -1536,16 +1567,16 @@ impl Hud {
         ui.set_text(
             n.observer_footer,
             &if sampled >= INCOME_TICKS {
-                "Income / min · last 60s of game time".to_owned()
+                tr!("hud.income-footer")
             } else {
-                format!("Income / min · {}s of game time sampled", seconds.floor())
+                tr!("hud.income-footer-sampled", seconds = seconds.floor())
             },
         );
         ui.set_tooltip(
             n.observer_footer,
             Some(Tooltip {
-                title: "Income".into(),
-                body: "Gross resources delivered to completed drop-offs, normalized to one game minute. Starting stock, spending and refunds do not count. The income window restarts when loading a save.".into(),
+                title: tr!("hud.income"),
+                body: tr!("hud.income-tip"),
                 ..Tooltip::default()
             }),
         );
@@ -1684,8 +1715,8 @@ fn experience(k: &Knowledge, e: &EntityView) -> Option<(f32, String, String)> {
     if reached >= levels.len() {
         return Some((
             1.0,
-            format!("Maximum level {reached}"),
-            format!("{xp} total experience."),
+            tr!("hud.maximum-level", level = reached),
+            tr!("hud.total-experience", xp = xp),
         ));
     }
     let base = levels[reached - 1].experience;
@@ -1693,11 +1724,12 @@ fn experience(k: &Knowledge, e: &EntityView) -> Option<(f32, String, String)> {
     let fraction = (xp - base) as f32 / (next - base).max(1) as f32;
     Some((
         fraction,
-        format!("Experience: {} / {}", xp - base, next - base),
-        format!(
-            "{xp} total experience. {} more to reach level {}.",
-            next - xp,
-            reached + 1
+        tr!("hud.experience", gained = xp - base, needed = next - base),
+        tr!(
+            "hud.experience-tip",
+            xp = xp,
+            more = next - xp,
+            level = reached + 1
         ),
     ))
 }
@@ -1755,7 +1787,7 @@ fn describe_order(
             (
                 name,
                 icon,
-                target(*t).map_or("unknown".into(), |d| d.name.clone()),
+                target(*t).map_or_else(|| tr!("hud.unknown"), |d| d.name.clone()),
             )
         }
         Order::Gather { target: t }
@@ -1763,14 +1795,14 @@ fn describe_order(
         | Order::Pickup { target: t } => {
             let d = target(*t);
             let verb = match order {
-                Order::Gather { .. } => "Gather",
-                Order::Construct { .. } => "Build",
-                _ => "Pick up",
+                Order::Gather { .. } => tr!("hud.order-gather"),
+                Order::Construct { .. } => tr!("hud.order-build"),
+                _ => tr!("hud.order-pick-up"),
             };
             (
-                verb.into(),
+                verb,
                 d.map_or(String::new(), |d| d.icon.to_string()),
-                d.map_or("unknown".into(), |d| d.name.clone()),
+                d.map_or_else(|| tr!("hud.unknown"), |d| d.name.clone()),
             )
         }
         // Old `orderQueue`: the spell's name and its presentation's icon, else Move's.
@@ -1785,7 +1817,7 @@ fn describe_order(
                 .and_then(|s| s.presentation.icon.as_ref())
                 .map_or_else(|| meta("move").1, |i| i.to_string());
             (
-                "Cast".into(),
+                tr!("hud.order-cast"),
                 icon,
                 spell.map_or_else(|| binding.clone(), |s| s.name.clone()),
             )
@@ -1801,36 +1833,65 @@ fn modifier_text(m: &canopy_content::items::ItemModifiers) -> String {
             let shown = if permille { v / 10.0 } else { v };
             let sign = if v >= 0.0 { "+" } else { "" };
             let pct = if permille { "%" } else { "" };
-            out.push(format!("{sign}{}{pct} {label}", trim(shown)));
+            out.push(crate::text::tr_with(
+                "hud.modifier",
+                &[
+                    (
+                        "value",
+                        format!("{sign}{}{pct}", trim(shown)).as_str().into(),
+                    ),
+                    ("label", crate::text::tr(label).as_str().into()),
+                ],
+            ));
         }
     };
-    number(m.max_hp.map(f64::from), "maximum health", false);
-    number(m.max_mana.map(f64::from), "maximum mana", false);
-    number(m.damage.map(f64::from), "damage", false);
-    number(m.armor.map(f64::from), "armor", false);
-    number(m.health_regen_per_second, "health/sec", false);
-    number(m.mana_regen_per_second, "mana/sec", false);
-    number(m.damage_permille.map(f64::from), "attack damage", true);
-    number(m.attack_speed_permille.map(f64::from), "attack speed", true);
-    number(m.move_speed_permille.map(f64::from), "movement speed", true);
+    number(m.max_hp.map(f64::from), "hud.modifier-max-health", false);
+    number(m.max_mana.map(f64::from), "hud.modifier-max-mana", false);
+    number(m.damage.map(f64::from), "hud.modifier-damage", false);
+    number(m.armor.map(f64::from), "hud.modifier-armor", false);
+    number(
+        m.health_regen_per_second,
+        "hud.modifier-health-regen",
+        false,
+    );
+    number(m.mana_regen_per_second, "hud.modifier-mana-regen", false);
+    number(
+        m.damage_permille.map(f64::from),
+        "hud.modifier-attack-damage",
+        true,
+    );
+    number(
+        m.attack_speed_permille.map(f64::from),
+        "hud.modifier-attack-speed",
+        true,
+    );
+    number(
+        m.move_speed_permille.map(f64::from),
+        "hud.modifier-move-speed",
+        true,
+    );
     number(
         m.cooldown_reduction_permille.map(f64::from),
-        "ability cooldown reduction",
+        "hud.modifier-cooldown-reduction",
         true,
     );
-    number(m.lifesteal_permille.map(f64::from), "lifesteal", true);
+    number(
+        m.lifesteal_permille.map(f64::from),
+        "hud.modifier-lifesteal",
+        true,
+    );
     number(
         m.melee_reflection_permille.map(f64::from),
-        "meleeReflectionPermille",
+        "hud.modifier-melee-reflection",
         true,
     );
-    for (on, text) in [
-        (m.rooted, "Rooted: cannot move"),
-        (m.control_immune, "Immune to roots and stuns"),
-        (m.invulnerable, "Invulnerable"),
+    for (on, key) in [
+        (m.rooted, "hud.rooted"),
+        (m.control_immune, "hud.control-immune"),
+        (m.invulnerable, "hud.invulnerable"),
     ] {
         if on == Some(true) {
-            out.push(text.to_owned());
+            out.push(crate::text::tr(key));
         }
     }
     out.join(" · ")

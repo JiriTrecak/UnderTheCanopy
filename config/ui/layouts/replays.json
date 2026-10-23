@@ -44,11 +44,11 @@
               {
                 "class": "sk-heading",
                 "children": [
-                  { "kind": "label", "class": "eyebrow", "text": "Skirmish" },
-                  { "kind": "label", "class": "sk-title", "text": "Replays" }
+                  { "kind": "label", "class": "eyebrow", "text": "@ui.replays.skirmish" },
+                  { "kind": "label", "class": "sk-title", "text": "@ui.replays.replays" }
                 ]
               },
-              { "kind": "button", "class": "sk-ghost", "text": "← Skirmish", "action": "replays.back" }
+              { "kind": "button", "class": "sk-ghost", "text": "@ui.replays.skirmish-2", "action": "replays.back" }
             ]
           },
           {
@@ -60,12 +60,12 @@
                   {
                     "class": "sk-section-row",
                     "children": [
-                      { "kind": "label", "class": "sk-section", "text": "Recorded matches" },
+                      { "kind": "label", "class": "sk-section", "text": "@ui.replays.recorded-matches" },
                       { "id": "count", "kind": "label", "class": "sk-map-meta" }
                     ]
                   },
                   { "id": "list", "class": "sk-maps", "repeat": "rl-entry" },
-                  { "id": "empty", "kind": "label", "class": "sk-hint", "text": "No replays yet. Every match you play is recorded; save one from its result, or find your latest match here as “Last match”.", "visible": false }
+                  { "id": "empty", "kind": "label", "class": "sk-hint", "text": "@ui.replays.no-replays-yet-every-match", "visible": false }
                 ]
               },
               {
@@ -75,7 +75,7 @@
                     "id": "preview", "class": "sk-preview rl-preview",
                     "children": [
                       { "id": "image", "kind": "image", "class": "sk-preview-image" },
-                      { "id": "empty", "kind": "label", "class": "sk-preview-empty", "text": "No preview", "visible": false }
+                      { "id": "empty", "kind": "label", "class": "sk-preview-empty", "text": "@ui.replays.no-preview", "visible": false }
                     ]
                   },
                   { "id": "title", "kind": "label", "class": "sk-map-title" },
@@ -83,12 +83,12 @@
                   {
                     "id": "rename", "class": "rl-rename", "visible": false,
                     "children": [
-                      { "id": "field", "kind": "text_field", "class": "mp-field rl-field", "max_length": 80, "placeholder": "Replay name", "action": "replays.rename-name" },
-                      { "kind": "button", "class": "sk-ghost", "text": "Rename", "action": "replays.rename-confirm" },
-                      { "kind": "button", "class": "sk-ghost", "text": "Cancel", "action": "replays.rename-cancel" }
+                      { "id": "field", "kind": "text_field", "class": "mp-field rl-field", "max_length": 80, "placeholder": "@ui.replays.replay-name", "action": "replays.rename-name" },
+                      { "kind": "button", "class": "sk-ghost", "text": "@ui.replays.rename", "action": "replays.rename-confirm" },
+                      { "kind": "button", "class": "sk-ghost", "text": "@ui.replays.cancel", "action": "replays.rename-cancel" }
                     ]
                   },
-                  { "kind": "label", "class": "sk-section rl-section", "text": "Players" },
+                  { "kind": "label", "class": "sk-section rl-section", "text": "@ui.replays.players" },
                   { "id": "players", "class": "sk-players rl-players-list", "repeat": "rl-player" },
                   { "id": "status", "kind": "label", "class": "sk-status rl-status", "visible": false }
                 ]
@@ -101,12 +101,12 @@
               {
                 "class": "rl-tools",
                 "children": [
-                  { "id": "rename-open", "kind": "button", "class": "sk-ghost", "text": "Rename", "action": "replays.rename" },
-                  { "id": "delete", "kind": "button", "class": "sk-ghost", "text": "Delete", "action": "replays.delete" },
-                  { "id": "reveal", "kind": "button", "class": "sk-ghost", "text": "Show in Finder", "action": "replays.reveal" }
+                  { "id": "rename-open", "kind": "button", "class": "sk-ghost", "text": "@ui.replays.rename", "action": "replays.rename" },
+                  { "id": "delete", "kind": "button", "class": "sk-ghost", "text": "@ui.replays.delete", "action": "replays.delete" },
+                  { "id": "reveal", "kind": "button", "class": "sk-ghost", "text": "@ui.replays.show-in-finder", "action": "replays.reveal" }
                 ]
               },
-              { "id": "watch", "kind": "button", "class": "sk-launch", "text": "Watch replay →", "action": "replays.watch" }
+              { "id": "watch", "kind": "button", "class": "sk-launch", "text": "@ui.replays.watch-replay", "action": "replays.watch" }
             ]
           }
         ]

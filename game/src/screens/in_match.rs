@@ -158,11 +158,11 @@ impl Playing {
                     s.player,
                     match s.kind {
                         // Lobbies name every computer seat "Computer": number them.
-                        canopy_sim::SlotKind::Ai => format!("Computer {}", s.player + 1),
+                        canopy_sim::SlotKind::Ai => tr!("menu.computer", number = s.player + 1),
                         canopy_sim::SlotKind::Human => s
                             .name
                             .clone()
-                            .unwrap_or_else(|| format!("Player {}", s.player + 1)),
+                            .unwrap_or_else(|| tr!("hud.player", number = s.player + 1)),
                     },
                 )
             })
@@ -282,10 +282,10 @@ impl Playing {
     }
 
     pub fn name_of(&self, player: u8) -> String {
-        self.names
-            .iter()
-            .find(|(p, _)| *p == player)
-            .map_or_else(|| format!("Player {}", player + 1), |(_, n)| n.clone())
+        self.names.iter().find(|(p, _)| *p == player).map_or_else(
+            || tr!("hud.player", number = player + 1),
+            |(_, n)| n.clone(),
+        )
     }
 
     /// A window event, after the UI saw it (`consumed`: the UI took it).
@@ -315,8 +315,8 @@ impl Playing {
         if self.game.stopped() && !self.problem {
             self.problem = true;
             self.events.push(MatchEvent::Problem {
-                title: "The match stopped".into(),
-                body: "The simulation stopped unexpectedly. The log has the details.".into(),
+                title: tr!("match.stopped"),
+                body: tr!("match.stopped-body"),
             });
         }
     }
@@ -374,17 +374,14 @@ impl Playing {
             Notice::Net(Event::Desync { tick, .. }) => {
                 self.problem = true;
                 self.events.push(MatchEvent::Problem {
-                    title: "Out of sync".into(),
-                    body: format!(
-                        "The players' games disagreed at beat {tick}, so the match cannot continue. \
-                         This is a bug; the log has the details."
-                    ),
+                    title: tr!("replay.out-of-sync"),
+                    body: tr!("match.desync", tick = tick),
                 });
             }
             Notice::Net(Event::Stopped { reason }) => {
                 self.problem = true;
                 self.events.push(MatchEvent::Problem {
-                    title: "The match stopped".into(),
+                    title: tr!("match.stopped"),
                     body: capitalise(&reason),
                 });
             }
@@ -392,11 +389,11 @@ impl Playing {
                 if self.outcome.is_none() && !self.problem {
                     self.problem = true;
                     self.events.push(MatchEvent::Problem {
-                        title: "Connection lost".into(),
+                        title: tr!("match.connection-lost"),
                         body: if reason.is_empty() {
-                            "The connection to the match server closed.".into()
+                            tr!("match.connection-closed")
                         } else {
-                            format!("The connection to the match server closed: {reason}.")
+                            tr!("match.connection-closed-reason", reason = &reason)
                         },
                     });
                 }
@@ -422,7 +419,7 @@ impl Playing {
     /// A chat line from the match server into the HUD's chat.
     pub fn hear(&mut self, message: &canopy_net::wire::ChatMessage) {
         let name = if message.name.is_empty() {
-            "Spectator".to_string()
+            tr!("match.spectator")
         } else {
             message.name.clone()
         };

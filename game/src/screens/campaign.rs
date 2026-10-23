@@ -54,12 +54,12 @@ fn race_name(data: &GameData, race: &str) -> String {
 }
 
 /// What a step is called on the campaign screen, and what its button says.
-fn kind_label(step: &Step) -> (&'static str, &'static str) {
+fn kind_label(step: &Step) -> (String, String) {
     match step {
-        Step::Chapter(_) => ("Chapter", "Begin"),
-        Step::Story(_) => ("Story", "Read"),
-        Step::Mission(_) => ("Mission", "Play"),
-        Step::Cinematic(_) => ("Cinematic", "Watch"),
+        Step::Chapter(_) => (tr!("campaign.chapter"), tr!("campaign.begin")),
+        Step::Story(_) => (tr!("campaign.story"), tr!("campaign.read")),
+        Step::Mission(_) => (tr!("campaign.mission"), tr!("campaign.play")),
+        Step::Cinematic(_) => (tr!("campaign.cinematic"), tr!("campaign.watch")),
     }
 }
 
@@ -106,24 +106,28 @@ pub fn show_cards(
         widgets::text(
             ui,
             &format!("{base}/chapter"),
-            &format!("The {}", race_name(data, &c.race)),
+            &tr!("campaign.the-race", race = &race_name(data, &c.race)),
         );
         widgets::text(ui, &format!("{base}/name"), &plain(campaign.name()));
         let saved = progress.get(campaign.id()).cloned().unwrap_or_default();
         let status = if saved.complete {
-            "Complete".to_string()
+            tr!("campaign.complete")
         } else if saved.started() {
-            c.steps
-                .get(saved.next(c))
-                .map_or_else(String::new, |s| format!("Next: {}", plain(s.title())))
+            c.steps.get(saved.next(c)).map_or_else(String::new, |s| {
+                tr!("campaign.next", title = &plain(s.title()))
+            })
         } else {
-            "Not yet begun".to_string()
+            tr!("campaign.not-begun")
         };
         widgets::text(ui, &format!("{base}/status"), &status);
         widgets::text(
             ui,
             &format!("{base}/play"),
-            if saved.started() { "Continue" } else { "Begin" },
+            &if saved.started() {
+                tr!("campaign.continue")
+            } else {
+                tr!("campaign.begin")
+            },
         );
     }
 }
@@ -189,7 +193,7 @@ fn next_line(step: &Step) -> String {
             .and_then(|p| paragraphs(&p.text).into_iter().next())
             .unwrap_or_default(),
         Step::Cinematic(s) => s.note.clone().unwrap_or_default(),
-        Step::Chapter(_) => "A new chapter begins.".into(),
+        Step::Chapter(_) => tr!("campaign.new-chapter"),
     }
 }
 
@@ -222,7 +226,7 @@ pub fn show_steps(
     widgets::text(
         ui,
         "campaign-steps/kicker",
-        &format!("The {} campaign", race_name(data, &c.race)),
+        &tr!("campaign.race-campaign", race = &race_name(data, &c.race)),
     );
     widgets::text(ui, "campaign-steps/title", &plain(campaign.name()));
     if let Some(list) = widgets::find(ui, "campaign-steps/steps") {
@@ -256,19 +260,19 @@ pub fn show_steps(
                 widgets::text(ui, &format!("{base}/heading/label"), &title);
             }
             Entry::Row { .. } => {
-                widgets::text(ui, &format!("{base}/row/kind"), kind);
+                widgets::text(ui, &format!("{base}/row/kind"), &kind);
                 widgets::text(ui, &format!("{base}/row/title"), &title);
-                widgets::text(ui, &format!("{base}/row/act"), act);
+                widgets::text(ui, &format!("{base}/row/act"), &act);
             }
             Entry::Next { .. } => {
                 widgets::text(
                     ui,
                     &format!("{base}/next/eyebrow"),
-                    &format!("Next · {kind}"),
+                    &tr!("campaign.next-kind", kind = &kind),
                 );
                 widgets::text(ui, &format!("{base}/next/title"), &title);
                 widgets::text(ui, &format!("{base}/next/line"), &plain(&next_line(step)));
-                widgets::text(ui, &format!("{base}/next/act"), act);
+                widgets::text(ui, &format!("{base}/next/act"), &act);
                 let art = arts.next().flatten();
                 if let Some(node) = widgets::find(ui, &format!("{base}/next/art")) {
                     ui.set_image(node, art);
@@ -282,10 +286,10 @@ pub fn show_steps(
     widgets::text(
         ui,
         "campaign-steps/continue",
-        if progress.started() {
-            "Continue"
+        &if progress.started() {
+            tr!("campaign.continue")
         } else {
-            "Begin"
+            tr!("campaign.begin")
         },
     );
     entries
@@ -409,11 +413,11 @@ pub fn show_card(host: &mut UiHost, gpu: &Gpu, data: &GameData, card: &Card) {
             widgets::text(ui, "card/title/note", "");
         }
         Step::Cinematic(s) => {
-            widgets::text(ui, "card/title/kicker", "Cinematic");
+            widgets::text(ui, "card/title/kicker", &tr!("campaign.cinematic"));
             widgets::text(ui, "card/title/name", &plain(&s.title));
             let note = match &s.note {
-                Some(note) => format!("Coming later — {}", plain(note)),
-                None => "Coming later".to_string(),
+                Some(note) => tr!("campaign.coming-later-note", note = &plain(note)),
+                None => tr!("campaign.coming-later"),
             };
             widgets::text(ui, "card/title/note", &note);
         }

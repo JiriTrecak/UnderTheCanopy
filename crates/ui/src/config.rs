@@ -318,6 +318,69 @@ impl UiConfig {
         })
     }
 
+    /// Replaces every layout string written as a text library key (`"@ui.menu.campaign"`,
+    /// D96) with `lookup`'s string; a key it does not know stays visible as written.
+    pub fn localize(&mut self, lookup: &dyn Fn(&str) -> Option<String>) {
+        fn one(text: &mut String, lookup: &dyn Fn(&str) -> Option<String>) {
+            if let Some(key) = text.strip_prefix('@')
+                && let Some(string) = lookup(key)
+            {
+                *text = string;
+            }
+        }
+        fn node(n: &mut RawNode, lookup: &dyn Fn(&str) -> Option<String>) {
+            for text in [&mut n.text, &mut n.placeholder].into_iter().flatten() {
+                one(text, lookup);
+            }
+            n.options.iter_mut().for_each(|o| one(o, lookup));
+            if let Some(tip) = &mut n.tooltip {
+                one(&mut tip.title, lookup);
+                one(&mut tip.body, lookup);
+                if let Some(note) = &mut tip.note {
+                    one(note, lookup);
+                }
+            }
+            n.children.iter_mut().for_each(|c| node(c, lookup));
+        }
+        for doc in self.documents.values_mut() {
+            doc.templates.values_mut().for_each(|t| node(t, lookup));
+            if let Some(root) = &mut doc.root {
+                node(root, lookup);
+            }
+        }
+    }
+
+    /// Every text library key the layouts name (`@…`), with the document naming it.
+    pub fn text_keys(&self) -> Vec<(String, String)> {
+        fn node(doc: &str, n: &RawNode, out: &mut Vec<(String, String)>) {
+            let mut push = |t: &String| {
+                if let Some(key) = t.strip_prefix('@') {
+                    out.push((doc.to_string(), key.to_string()));
+                }
+            };
+            for t in [&n.text, &n.placeholder].into_iter().flatten() {
+                push(t);
+            }
+            n.options.iter().for_each(&mut push);
+            if let Some(tip) = &n.tooltip {
+                push(&tip.title);
+                push(&tip.body);
+                if let Some(note) = &tip.note {
+                    push(note);
+                }
+            }
+            n.children.iter().for_each(|c| node(doc, c, out));
+        }
+        let mut out = Vec::new();
+        for (name, doc) in &self.documents {
+            doc.templates.values().for_each(|t| node(name, t, &mut out));
+            if let Some(root) = &doc.root {
+                node(name, root, &mut out);
+            }
+        }
+        out
+    }
+
     /// Whether a loaded file changed on disk since loading (for hot reload).
     pub fn changed_on_disk(&self) -> bool {
         self.watched.iter().any(|(p, t)| modified(p) != *t)

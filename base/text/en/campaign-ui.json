@@ -1,0 +1,20 @@
+{
+  "campaign.begin": "Begin",
+  "campaign.chapter": "Chapter",
+  "campaign.cinematic": "Cinematic",
+  "campaign.coming-later": "Coming later",
+  "campaign.coming-later-note": "Coming later — {note}",
+  "campaign.complete": "Complete",
+  "campaign.continue": "Continue",
+  "campaign.mission": "Mission",
+  "campaign.new-chapter": "A new chapter begins.",
+  "campaign.next": "Next: {title}",
+  "campaign.next-kind": "Next · {kind}",
+  "campaign.not-begun": "Not yet begun",
+  "campaign.play": "Play",
+  "campaign.race-campaign": "The {race} campaign",
+  "campaign.read": "Read",
+  "campaign.story": "Story",
+  "campaign.the-race": "The {race}",
+  "campaign.watch": "Watch"
+}

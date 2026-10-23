@@ -26,20 +26,26 @@ pub struct Replays {
 pub fn unplayable(header: &Header, data: &GameData) -> Option<String> {
     if header.identity.content_digest != data.content_digest {
         return Some(if header.game_version == env!("CARGO_PKG_VERSION") {
-            format!("Recorded with other game content ({})", header.game_version)
+            tr!(
+                "replays.other-content",
+                version = header.game_version.as_str()
+            )
         } else {
-            format!("Recorded in {}", header.game_version)
+            tr!(
+                "replays.recorded-in",
+                version = header.game_version.as_str()
+            )
         });
     }
     if header.map_included {
         return None;
     }
     match data.map(&header.identity.map_id) {
-        None => Some(format!("The map {} is not in this game", header.map_name)),
+        None => Some(tr!("replays.map-missing", map = header.map_name.as_str())),
         Some(map) => {
             let digest = map.identity().map(|d| crate::saves::digest(&d)).ok();
             (digest.as_deref() != Some(header.identity.map_digest.as_str()))
-                .then(|| format!("The map {} has changed since", header.map_name))
+                .then(|| tr!("replays.map-changed", map = header.map_name.as_str()))
         }
     }
 }
@@ -88,8 +94,7 @@ impl Replays {
             "replays/count",
             &match self.entries.len() {
                 0 => String::new(),
-                1 => "1 replay".into(),
-                n => format!("{n} replays"),
+                n => tr!("replays.count", count = n),
             },
         );
         widgets::visible(&mut host.ui, "replays/empty", self.entries.is_empty());
@@ -108,7 +113,7 @@ impl Replays {
                     data.map(&h.identity.map_id).and_then(|m| m.preview.clone()),
                     unplayable(h, data).is_none(),
                 ),
-                Err(_) => ("Unreadable".into(), String::new(), None, false),
+                Err(_) => (tr!("replays.unreadable"), String::new(), None, false),
             };
             let image = thumb.and_then(|p| host.pack_image(gpu, &data.pack, &p));
             if let Some(node) = host.ui.find(&format!("{base}/thumb")) {
@@ -144,19 +149,19 @@ impl Replays {
             &entry.map_or_else(String::new, |e| plain(&e.name)),
         );
         let meta = match (entry, header) {
-            (Some(e), Some(h)) => format!(
-                "{} · {} · {}\n{} · {} long · version {} · {} KB",
-                h.mode.name(),
-                plain(&h.map_name),
-                h.result,
-                crate::saves::format_time(h.recorded_at),
-                replay::clock(h.duration()),
-                h.game_version,
-                e.bytes.div_ceil(1024)
+            (Some(e), Some(h)) => tr!(
+                "replays.meta",
+                mode = &h.mode.name(),
+                map = &plain(&h.map_name),
+                result = h.result.as_str(),
+                time = &crate::saves::format_time(h.recorded_at),
+                length = &replay::clock(h.duration()),
+                version = h.game_version.as_str(),
+                kb = e.bytes.div_ceil(1024)
             ),
-            (Some(e), None) => format!(
-                "This file cannot be read: {}",
-                plain(e.header.as_ref().err().map_or("", String::as_str))
+            (Some(e), None) => tr!(
+                "replays.cannot-read-error",
+                error = &plain(e.header.as_ref().err().map_or("", String::as_str))
             ),
             _ => String::new(),
         };
@@ -175,7 +180,11 @@ impl Replays {
             widgets::text(
                 ui,
                 &format!("{base}/name"),
-                &format!("{}{}", plain(&p.name), if me { " (recorded)" } else { "" }),
+                &if me {
+                    tr!("replays.recorded-by", name = &plain(&p.name))
+                } else {
+                    plain(&p.name)
+                },
             );
             let race = p
                 .race
@@ -187,29 +196,35 @@ impl Replays {
                 .as_deref()
                 .and_then(|h| data.content.definition(h))
                 .map(|d| d.name.clone());
-            let mut sub = vec![if p.computer { "Computer" } else { "Human" }.to_string()];
+            let mut sub = vec![if p.computer {
+                tr!("hud.role-computer")
+            } else {
+                tr!("hud.role-human")
+            }];
             sub.extend(race);
             sub.extend(hero);
             sub.push(match p.team {
-                Some(t) => format!("Team {}", t + 1),
-                None => "No team".into(),
+                Some(t) => tr!("mp.team", number = t + 1),
+                None => tr!("replays.no-team"),
             });
             sub.push(palette.name(p.color as u8));
             widgets::text(ui, &format!("{base}/sub"), &plain(&sub.join(" · ")));
-            let result = header.and_then(|h| h.ending.as_ref()).map_or("", |e| {
-                if e.winner == Some(p.slot) {
-                    "Won"
-                } else if e.defeated.contains(&p.slot) {
-                    "Defeated"
-                } else {
-                    ""
-                }
-            });
-            widgets::text(ui, &format!("{base}/result"), result);
+            let result = header
+                .and_then(|h| h.ending.as_ref())
+                .map_or_else(String::new, |e| {
+                    if e.winner == Some(p.slot) {
+                        tr!("match.result-won")
+                    } else if e.defeated.contains(&p.slot) {
+                        tr!("match.result-defeated")
+                    } else {
+                        String::new()
+                    }
+                });
+            widgets::text(ui, &format!("{base}/result"), &result);
         }
         let reason = match (entry, header) {
             (_, Some(h)) => unplayable(h, data),
-            (Some(_), None) => Some("This file cannot be read".into()),
+            (Some(_), None) => Some(tr!("replays.cannot-read")),
             (None, None) => None,
         };
         let status = if self.status.is_empty() {

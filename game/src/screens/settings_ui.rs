@@ -93,12 +93,21 @@ impl SettingsUi {
         let presets: Vec<String> = GraphicsPreset::ALL
             .iter()
             .map(|p| match p {
-                GraphicsPreset::Auto => format!(
-                    "Auto ({})",
-                    g.detected.unwrap_or(canopy_render::Preset::High).label()
+                GraphicsPreset::Auto => tr!(
+                    "settings.preset-auto",
+                    preset = &crate::text::tr(&format!(
+                        "settings.preset-{}",
+                        g.detected
+                            .unwrap_or(canopy_render::Preset::High)
+                            .label()
+                            .to_lowercase()
+                    ))
                 ),
-                GraphicsPreset::Custom => "Custom".to_string(),
-                p => format!("{p:?}"),
+                GraphicsPreset::Custom => tr!("settings.preset-custom"),
+                p => crate::text::tr(&format!(
+                    "settings.preset-{}",
+                    format!("{p:?}").to_lowercase()
+                )),
             })
             .collect();
         let preset = GraphicsPreset::ALL
@@ -106,7 +115,7 @@ impl SettingsUi {
             .position(|p| *p == g.preset)
             .unwrap_or(0);
         widgets::options(ui, "settings/graphics/preset", &presets, preset);
-        let mut resolutions = vec!["Native".to_string()];
+        let mut resolutions = vec![tr!("settings.native")];
         resolutions.extend(RESOLUTIONS.iter().map(|[w, h]| format!("{w} × {h}")));
         let res = g
             .resolution
@@ -131,7 +140,7 @@ impl SettingsUi {
         widgets::options(
             ui,
             "settings/graphics/window",
-            &["Window".to_string(), "Fullscreen".to_string()],
+            &[tr!("settings.window"), tr!("settings.fullscreen")],
             usize::from(g.window == WindowMode::Fullscreen),
         );
         let a = &settings.audio;
@@ -163,10 +172,7 @@ impl SettingsUi {
         widgets::options(
             ui,
             "settings/interface/hud-layout",
-            &[
-                "Spread · screen edges".to_string(),
-                "Compact · centered".to_string(),
-            ],
+            &[tr!("settings.hud-spread"), tr!("settings.hud-compact")],
             usize::from(settings.hud.layout == crate::settings::HudLayout::Compact),
         );
         widgets::checked(
@@ -190,15 +196,14 @@ impl SettingsUi {
             );
             self.fresh = false;
         }
-        let server_note = match canopy_net::ServerAddress::resolve(
-            settings.multiplayer.server.as_deref(),
-        ) {
-            Ok(address) => format!(
-                "Lobbies and matches go to {}. CANOPY_MATCH_SERVER overrides this. Plain http:// is allowed only for a local test server.",
-                address.http("").trim_end_matches('/')
-            ),
-            Err(e) => format!("Not a server address: {e}"),
-        };
+        let server_note =
+            match canopy_net::ServerAddress::resolve(settings.multiplayer.server.as_deref()) {
+                Ok(address) => tr!(
+                    "settings.server-note",
+                    server = address.http("").trim_end_matches('/')
+                ),
+                Err(e) => tr!("settings.bad-server", error = &e.to_string()),
+            };
         widgets::text(ui, "settings/network/server-note", &server_note);
         // Shortcuts.
         let conflicts = settings.keys.conflicts(catalog);
@@ -212,25 +217,33 @@ impl SettingsUi {
                 group = entry.group;
                 widgets::visible(ui, &format!("{base}/group"), first);
                 if first {
-                    widgets::text(ui, &format!("{base}/group"), entry.group);
+                    widgets::text(
+                        ui,
+                        &format!("{base}/group"),
+                        &crate::settings::keys::group_label(entry.group),
+                    );
                 }
                 let clash = conflicts
                     .iter()
                     .any(|(a, b)| a.id == entry.id || b.id == entry.id);
                 let name = if clash {
-                    format!("{}  [color=#f5a07e](shared key)[/color]", entry.label)
+                    format!(
+                        "{}  [color=#f5a07e]{}[/color]",
+                        entry.label,
+                        tr!("settings.shared-key")
+                    )
                 } else {
                     entry.label.clone()
                 };
                 widgets::text(ui, &format!("{base}/name"), &name);
                 let capturing = self.capturing.as_deref() == Some(entry.id.as_str());
                 let key = if capturing {
-                    "Press a key…".to_string()
+                    tr!("settings.press-a-key")
                 } else {
                     settings
                         .keys
                         .chord(catalog, &entry.id)
-                        .map_or_else(|| "Unbound".to_string(), Chord::label)
+                        .map_or_else(|| tr!("settings.unbound"), Chord::label)
                 };
                 widgets::text(ui, &format!("{base}/key"), &key);
                 widgets::checked(ui, &format!("{base}/key"), capturing);
@@ -259,8 +272,8 @@ impl SettingsUi {
             return true;
         }
         match settings.keys.bind(catalog, &id, chord) {
-            Ok(()) => self.message = "Shortcut saved.".into(),
-            Err(e) => self.message = e.to_string(),
+            Ok(()) => self.message = tr!("settings.shortcut-saved"),
+            Err(e) => self.message = e.message(),
         }
         true
     }
@@ -450,7 +463,7 @@ impl SettingsUi {
             "settings.keys-defaults" => {
                 settings.keys.restore_defaults();
                 self.capturing = None;
-                self.message = "Default shortcuts restored.".into();
+                self.message = tr!("settings.defaults-restored");
             }
             "settings.server" => {
                 if let Some(t) = text(&action.kind) {

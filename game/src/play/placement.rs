@@ -161,7 +161,7 @@ fn check(
     door: Milli,
 ) -> Option<String> {
     if d.kind != Kind::Building || !matches!(d.creation, Some(Creation::Construct { .. })) {
-        return Some("Unknown building".into());
+        return Some(tr!("message.unknown-building"));
     }
     if let Some(e) = placement_geometry_error(d, x, y, f64::from(rotation)) {
         return Some(e.into());
@@ -177,10 +177,10 @@ fn check(
         })
     });
     if !eligible {
-        return Some("Select an eligible worker".into());
+        return Some(tr!("message.select-eligible-worker"));
     }
     if k.view.outcome.is_some() {
-        return Some("Match has ended".into());
+        return Some(tr!("message.match-ended"));
     }
     let done = super::card::fulfilled_buildings(k);
     if let Some(r) = super::card::prerequisite(k, d.requires.as_deref(), &done) {
@@ -193,7 +193,7 @@ fn check(
         .filter(|e| k.own(e) && k.is_building(e))
         .count();
     if own_buildings >= k.content.rules.max_buildings as usize {
-        return Some("Building limit reached".into());
+        return Some(tr!("message.building-limit"));
     }
     let size = i64::from(terrain.size());
     let extent = Extent::of(d.footprint.as_ref());
@@ -209,7 +209,7 @@ fn check(
             .is_none_or(|f| f.cells.get(c).copied().unwrap_or(0) > 0)
     };
     if cells.iter().any(|c| c.is_none_or(|c| !explored(c))) {
-        return Some("Explore this location first".into());
+        return Some(tr!("message.explore-first"));
     }
     let on_map: Vec<usize> = cells.into_iter().flatten().collect();
     if let Some(rule) = &d.placement_near {
@@ -224,10 +224,10 @@ fn check(
                 }
         });
         if !near {
-            return Some(format!(
-                "Build within {} cells of {}",
-                rule.radius,
-                k.name_of(rule.source.as_str())
+            return Some(tr!(
+                "message.build-within",
+                cells = rule.radius,
+                name = &k.name_of(rule.source.as_str())
             ));
         }
     }
@@ -254,13 +254,13 @@ fn check(
         });
         let name = k.name_of(on.source.as_str());
         let Some(resource) = resource else {
-            return Some(format!("Build on a {name}"));
+            return Some(tr!("message.build-on", name = &name));
         };
         if k.covered.contains(&resource.id()) {
-            return Some(format!("This {name} is already built on"));
+            return Some(tr!("message.already-built-on", name = &name));
         }
         if !index(dx, dy).is_some_and(|c| terrain.walkable(c)) {
-            return Some("Entrance blocked".into());
+            return Some(tr!("message.entrance-blocked"));
         }
         return affordable(k, d);
     }
@@ -313,7 +313,7 @@ fn check(
             })
     });
     if blocked_cell || blocked_body {
-        return Some("Placement blocked".into());
+        return Some(tr!("message.placement-blocked"));
     }
     let clearance_blocked = k.view.entities.iter().any(|e| {
         let rd = k.def(e);
@@ -336,20 +336,20 @@ fn check(
         })
     });
     if clearance_blocked {
-        return Some("Leave access around the resource deposit".into());
+        return Some(tr!("message.deposit-access"));
     }
     let wet = on_map
         .iter()
         .any(|&c| i32::from(terrain.height_cm(c)) <= i32::from(terrain.water_cm(c)) + 10);
     if wet {
-        return Some("Build on dry ground".into());
+        return Some(tr!("message.dry-ground"));
     }
     if !terrain.foundation_fits(bounds) {
-        return Some("Choose flatter ground".into());
+        return Some(tr!("message.flatter-ground"));
     }
     let door_open = index(dx, dy).is_some_and(|c| terrain.walkable(c) && !is_blocked(dx, dy));
     if !door_open {
-        return Some("Entrance blocked".into());
+        return Some(tr!("message.entrance-blocked"));
     }
     affordable(k, d)
 }
@@ -365,7 +365,7 @@ fn affordable(k: &Knowledge, d: &Definition) -> Option<String> {
             .is_some_and(|g| g.available >= c.amount)
     });
     if !affordable {
-        return Some("Insufficient unreserved materials".into());
+        return Some(tr!("message.insufficient-materials"));
     }
     None
 }

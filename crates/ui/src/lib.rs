@@ -166,6 +166,9 @@ pub struct Stats {
     pub shaped_blocks: u64,
 }
 
+/// Resolves a text library key to its string ([`UiConfig::localize`]).
+type Lookup = dyn Fn(&str) -> Option<String>;
+
 /// The UI: a tree of screens built from the config, its input state and its output.
 pub struct Ui {
     config: UiConfig,
@@ -184,6 +187,9 @@ pub struct Ui {
     stats: Stats,
     /// Tooltips show (a player setting).
     tooltips: bool,
+    /// Resolves layout strings written as text library keys on hot reload
+    /// ([`UiConfig::localize`]).
+    localizer: Option<Box<Lookup>>,
 }
 
 impl Ui {
@@ -210,6 +216,7 @@ impl Ui {
             hits: Vec::new(),
             stats: Stats::default(),
             tooltips: true,
+            localizer: None,
         };
         for name in ui.config.images.keys() {
             ui.images.intern(name);
@@ -242,10 +249,18 @@ impl Ui {
         let Some(dir) = self.config.dir().map(std::path::Path::to_path_buf) else {
             return Ok(false);
         };
-        let config = UiConfig::load(&dir)?;
+        let mut config = UiConfig::load(&dir)?;
+        if let Some(lookup) = &self.localizer {
+            config.localize(lookup.as_ref());
+        }
         self.reload(config)?;
         tracing::info!("ui reloaded");
         Ok(true)
+    }
+
+    /// Keeps resolving text library keys in layouts when they reload from disk.
+    pub fn set_localizer(&mut self, lookup: impl Fn(&str) -> Option<String> + 'static) {
+        self.localizer = Some(Box::new(lookup));
     }
 
     pub fn config(&self) -> &UiConfig {

@@ -29,12 +29,12 @@ pub enum View {
 }
 
 /// How a kind of change looks: its heading, glyph and colour.
-fn tone(kind: ChangeKind) -> (&'static str, &'static str, [u8; 3]) {
+fn tone(kind: ChangeKind) -> (String, &'static str, [u8; 3]) {
     match kind {
-        ChangeKind::Added => ("New", "+", [0x8f, 0xd1, 0x8a]),
-        ChangeKind::Improved => ("Improved", "↑", [0xe9, 0xb6, 0x5c]),
-        ChangeKind::Fixed => ("Fixed", "✓", [0x7c, 0xc4, 0xd2]),
-        ChangeKind::KnownIssues => ("Known issues", "!", [0xe9, 0x8b, 0x6d]),
+        ChangeKind::Added => (tr!("releases.new"), "+", [0x8f, 0xd1, 0x8a]),
+        ChangeKind::Improved => (tr!("releases.improved"), "↑", [0xe9, 0xb6, 0x5c]),
+        ChangeKind::Fixed => (tr!("releases.fixed"), "✓", [0x7c, 0xc4, 0xd2]),
+        ChangeKind::KnownIssues => (tr!("releases.known-issues"), "!", [0xe9, 0x8b, 0x6d]),
     }
 }
 
@@ -54,12 +54,14 @@ fn plain(text: &str) -> String {
 /// `2026-10-13T15:44:03.334Z` → `Oct 13, 2026` (the old `toLocaleDateString`).
 pub fn date(iso: &str) -> String {
     const MONTHS: [&str; 12] = [
-        "Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec",
+        "date.jan", "date.feb", "date.mar", "date.apr", "date.may", "date.jun", "date.jul",
+        "date.aug", "date.sep", "date.oct", "date.nov", "date.dec",
     ];
     let part = |r: std::ops::Range<usize>| iso.get(r).and_then(|s| s.parse::<usize>().ok());
     match (part(0..4), part(5..7), part(8..10)) {
         (Some(y), Some(m), Some(d)) if (1..=12).contains(&m) => {
-            format!("{} {d}, {y}", MONTHS[m - 1])
+            let month = crate::text::tr(MONTHS[m - 1]);
+            tr!("date.short", month = &month, day = d, year = y)
         }
         _ => iso.to_owned(),
     }
@@ -68,16 +70,18 @@ pub fn date(iso: &str) -> String {
 /// `"34 new"`, `"2 known issues"`.
 fn count(kind: ChangeKind, n: usize) -> String {
     match kind {
-        ChangeKind::Added => format!("{n} new"),
-        ChangeKind::Improved => format!("{n} improved"),
-        ChangeKind::Fixed => format!("{n} fixed"),
-        ChangeKind::KnownIssues if n == 1 => "1 known issue".into(),
-        ChangeKind::KnownIssues => format!("{n} known issues"),
+        ChangeKind::Added => tr!("releases.count-new", count = n),
+        ChangeKind::Improved => tr!("releases.count-improved", count = n),
+        ChangeKind::Fixed => tr!("releases.count-fixed", count = n),
+        ChangeKind::KnownIssues => tr!("releases.count-known-issues", count = n),
     }
 }
 
 fn megabytes(bytes: u64) -> String {
-    format!("{:.1} MB", bytes as f64 / 1_048_576.0)
+    tr!(
+        "releases.megabytes",
+        amount = &format!("{:.1}", bytes as f64 / 1_048_576.0)
+    )
 }
 
 /// What the plaque says about the check (old `draw`): text, colour, tooltip.
@@ -87,27 +91,28 @@ pub fn plaque_status(state: &State) -> (String, Tooltip) {
         body: body.into(),
         ..Tooltip::default()
     };
+    let updates = tr!("releases.desktop-updates");
     if state.available() {
         let version = state.version.map(|v| v.to_string()).unwrap_or_default();
         return (
-            "[color=#34d399]Update available ↓[/color]".into(),
+            format!(
+                "[color=#34d399]{}[/color]",
+                tr!("releases.update-available")
+            ),
             tip(
-                "Desktop updates",
-                &format!("Version {version} is available."),
+                &updates,
+                &tr!("releases.version-available", version = &version),
             ),
         );
     }
     match state.phase {
-        Phase::Current => ("Latest ✓".into(), tip("Desktop updates", "")),
-        Phase::Checking => ("Checking…".into(), tip("Desktop updates", "")),
+        Phase::Current => (tr!("releases.latest"), tip(&updates, "")),
+        Phase::Checking => (tr!("releases.checking"), tip(&updates, "")),
         Phase::Error => (
-            "Check unavailable".into(),
-            tip(
-                "Desktop updates",
-                "Could not check for updates. Click to retry.",
-            ),
+            tr!("releases.check-unavailable"),
+            tip(&updates, &tr!("releases.check-failed-tip")),
         ),
-        _ => ("Check for updates".into(), tip("Desktop updates", "")),
+        _ => (tr!("releases.check-for-updates"), tip(&updates, "")),
     }
 }
 
@@ -115,26 +120,26 @@ pub fn plaque_status(state: &State) -> (String, Tooltip) {
 fn headline(state: &State, installed: Version) -> String {
     let version = state.version.map(|v| v.to_string()).unwrap_or_default();
     match state.phase {
-        Phase::Idle => "Updates have not been checked yet.".into(),
-        Phase::Checking => "Checking for updates…".into(),
-        Phase::Current => format!("You’re up to date — v{installed}."),
-        Phase::Available => format!("Version {version} is available."),
-        Phase::Downloading => "Downloading and verifying the update…".into(),
-        Phase::Ready => "Ready to install. The game will restart.".into(),
-        Phase::Installing => "Installing…".into(),
-        Phase::Restart => "Restarting…".into(),
-        Phase::Error => "Check unavailable".into(),
+        Phase::Idle => tr!("releases.not-checked"),
+        Phase::Checking => tr!("releases.checking-updates"),
+        Phase::Current => tr!("releases.up-to-date", version = &installed.to_string()),
+        Phase::Available => tr!("releases.version-available", version = &version),
+        Phase::Downloading => tr!("releases.downloading"),
+        Phase::Ready => tr!("releases.ready"),
+        Phase::Installing => tr!("releases.installing"),
+        Phase::Restart => tr!("releases.restarting"),
+        Phase::Error => tr!("releases.check-unavailable"),
     }
 }
 
 /// The primary action of the update view for a phase (old `action`).
-pub fn primary_action(state: &State) -> Option<&'static str> {
+pub fn primary_action(state: &State) -> Option<String> {
     match state.phase {
-        Phase::Available if state.blocked.is_none() => Some("Download update"),
-        Phase::Ready => Some("Install and restart"),
-        Phase::Restart => Some("Restart now"),
-        Phase::Current => Some("Check again"),
-        Phase::Error => Some("Try again"),
+        Phase::Available if state.blocked.is_none() => Some(tr!("releases.download-update")),
+        Phase::Ready => Some(tr!("releases.install-restart")),
+        Phase::Restart => Some(tr!("releases.restart-now")),
+        Phase::Current => Some(tr!("releases.check-again")),
+        Phase::Error => Some(tr!("releases.try-again")),
         _ => None,
     }
 }
@@ -298,12 +303,16 @@ impl Releases {
             widgets::text(
                 ui,
                 "releases/title",
-                if notes { "What’s new" } else { "Updates" },
+                &if notes {
+                    tr!("releases.whats-new")
+                } else {
+                    tr!("releases.updates")
+                },
             );
             let subtitle = if notes {
-                format!("All releases up to yours, newest first · v{installed} installed")
+                tr!("releases.notes-subtitle", version = &installed.to_string())
             } else {
-                format!("Installed: v{installed}")
+                tr!("releases.installed", version = &installed.to_string())
             };
             widgets::text(ui, "releases/subtitle", &subtitle);
             widgets::visible(ui, "releases/side", notes);
@@ -317,16 +326,16 @@ impl Releases {
             widgets::text(
                 ui,
                 "releases/hint",
-                if notes {
-                    "These notes ship with the game and read offline."
+                &if notes {
+                    tr!("releases.notes-hint")
                 } else {
-                    "Updates are signed. Nothing installs until you choose Install and restart."
+                    tr!("releases.updates-hint")
                 },
             );
             let action = if notes { None } else { primary_action(&state) };
             widgets::visible(ui, "releases/primary", action.is_some());
             if let Some(action) = action {
-                widgets::text(ui, "releases/primary", action);
+                widgets::text(ui, "releases/primary", &action);
             }
             let closable = Self::closable(updater);
             widgets::enabled(ui, "releases/close", closable);
@@ -403,15 +412,15 @@ impl Releases {
             let ui = &mut host.ui;
             let (key, missing) = match slot {
                 Some(Slot::Ready { thumb, .. }) => (Some(*thumb), None),
-                Some(Slot::Missing) => (None, Some("Image unavailable")),
-                _ => (None, Some("Loading image…")),
+                Some(Slot::Missing) => (None, Some(tr!("releases.image-unavailable"))),
+                _ => (None, Some(tr!("releases.loading-image"))),
             };
             if let Some(id) = ui.find(&format!("{base}/frame/image")) {
                 ui.set_image(id, key);
             }
             widgets::visible(ui, &format!("{base}/frame/missing"), missing.is_some());
             if let Some(text) = missing {
-                widgets::text(ui, &format!("{base}/frame/missing"), text);
+                widgets::text(ui, &format!("{base}/frame/missing"), &text);
             }
         }
         let ui = &mut host.ui;
@@ -459,14 +468,19 @@ fn show_status(ui: &mut Ui, state: &State, installed: Version) {
         &headline(state, installed),
     );
     let detail = match state.phase {
-        Phase::Available => state.blocked.clone().unwrap_or_else(|| {
-            "Downloading does not install it: you choose when to install and restart.".into()
-        }),
+        Phase::Available => state
+            .blocked
+            .clone()
+            .unwrap_or_else(|| tr!("releases.download-note")),
         Phase::Downloading => match state.total {
-            Some(total) => format!("{} of {}", megabytes(state.received), megabytes(total)),
+            Some(total) => tr!(
+                "releases.progress",
+                received = &megabytes(state.received),
+                total = &megabytes(total)
+            ),
             None => megabytes(state.received),
         },
-        Phase::Ready => "The package is downloaded and its signature verified.".into(),
+        Phase::Ready => tr!("releases.verified"),
         Phase::Checking | Phase::Installing | Phase::Restart => String::new(),
         Phase::Idle | Phase::Current | Phase::Error => String::new(),
     };
@@ -585,7 +599,7 @@ fn fill_plain(ui: &mut Ui, state: &State, notes_view: bool) {
     widgets::text(
         ui,
         "releases/main/release/headline",
-        &format!("Version {version}"),
+        &tr!("releases.version", version = &version.to_string()),
     );
     for list in ["summary", "gallery", "wide", "groups"] {
         let path = format!("releases/main/release/{list}");
@@ -598,9 +612,9 @@ fn fill_plain(ui: &mut Ui, state: &State, notes_view: bool) {
         .notes
         .as_deref()
         .filter(|n| !n.trim().is_empty())
-        .unwrap_or("A new version is ready to download.");
+        .map_or_else(|| tr!("releases.new-version-ready"), str::to_string);
     widgets::visible(ui, "releases/main/release/plain", true);
-    widgets::text(ui, "releases/main/release/plain", &plain(text));
+    widgets::text(ui, "releases/main/release/plain", &plain(&text));
 }
 
 /// Widest thumbnail kept (the dialog shows them at up to about 700 logical pixels).
@@ -774,17 +788,20 @@ mod tests {
             ..State::default()
         };
         assert_eq!(plaque_status(&state).0, "Check unavailable");
-        assert_eq!(primary_action(&state), Some("Try again"));
+        assert_eq!(primary_action(&state).as_deref(), Some("Try again"));
         state.phase = Phase::Current;
         assert!(plaque_status(&state).0.starts_with("Latest"));
         state.phase = Phase::Available;
         state.version = Some("0.3.1".parse().unwrap());
         assert!(plaque_status(&state).0.contains("Update available"));
-        assert_eq!(primary_action(&state), Some("Download update"));
+        assert_eq!(primary_action(&state).as_deref(), Some("Download update"));
         state.blocked = Some("dev build".into());
         assert_eq!(primary_action(&state), None);
         state.phase = Phase::Ready;
-        assert_eq!(primary_action(&state), Some("Install and restart"));
+        assert_eq!(
+            primary_action(&state).as_deref(),
+            Some("Install and restart")
+        );
     }
 
     #[test]

@@ -480,11 +480,11 @@ pub enum Targeting {
 
 impl Targeting {
     /// The old hint's noun.
-    pub fn wants(&self) -> &'static str {
+    pub fn wants(&self) -> String {
         match self {
-            Self::Attack { .. } | Self::Follow { .. } => "target or ground location",
-            Self::Cast { unit: true, .. } => "target",
-            _ => "ground location",
+            Self::Attack { .. } | Self::Follow { .. } => tr!("play.wants-target-or-ground"),
+            Self::Cast { unit: true, .. } => tr!("play.wants-target"),
+            _ => tr!("play.wants-ground"),
         }
     }
 }

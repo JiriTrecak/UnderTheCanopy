@@ -1252,6 +1252,7 @@ fn right_clicking_the_minimap_moves_the_selection_there() {
 fn shipped_ui() -> canopy_ui::Ui {
     let dir = std::path::Path::new(env!("CARGO_MANIFEST_DIR")).join("../config/ui");
     let mut config = canopy_ui::UiConfig::load(&dir).expect("config/ui reads");
+    crate::text::localize(&mut config, &dir.join("../.."));
     let pointers = config
         .font_data
         .iter()

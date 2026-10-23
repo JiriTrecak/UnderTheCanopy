@@ -195,7 +195,7 @@ impl Backend for Remote {
 
     fn blocker(&self, offer: &Offer) -> Option<String> {
         if offer.package.is_none() {
-            return Some("There is no update package for this platform yet.".into());
+            return Some(tr!("update.no-package"));
         }
         install::blocker(self.exe.as_deref().unwrap_or(Path::new("")))
     }

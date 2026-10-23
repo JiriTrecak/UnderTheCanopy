@@ -27,21 +27,17 @@ pub fn bundle_of(exe: &Path) -> Option<PathBuf> {
 /// Why the copy running as `exe` cannot install updates, if it cannot.
 pub fn blocker(exe: &Path) -> Option<String> {
     if !cfg!(target_os = "macos") {
-        return Some("Updates cannot be installed from the game on this platform yet.".into());
+        return Some(tr!("update.platform-unsupported"));
     }
     let Some(bundle) = bundle_of(exe) else {
-        return Some(
-            "This copy does not run from an installed app (a development build), so it cannot \
-             install updates."
-                .into(),
-        );
+        return Some(tr!("update.development-build"));
     };
     // A quarantined app opened where it was downloaded runs from a read-only copy.
     if bundle
         .components()
         .any(|c| c.as_os_str() == "AppTranslocation")
     {
-        return Some("Move Under the Canopy to the Applications folder to install updates.".into());
+        return Some(tr!("update.move-to-applications"));
     }
     None
 }

@@ -285,7 +285,7 @@ pub fn prerequisite(k: &Knowledge, requires: Option<&[Id]>, done: &[String]) -> 
         .filter(|id| done.binary_search(&id.to_string()).is_err())
         .map(|id| k.name_of(id.as_str()))
         .collect();
-    (!missing.is_empty()).then(|| format!("Requires {}", missing.join(", ")))
+    (!missing.is_empty()).then(|| tr!("card.requires", names = &missing.join(", ")))
 }
 
 /// Whether research `id` of a building's `outputs` shows on its card: a level whose previous
@@ -393,7 +393,7 @@ fn hero_admission(k: &Knowledge, d: &Definition) -> Option<String> {
         .filter(|x| x.is_hero())
         .collect();
     if heroes.iter().any(|h| h.id == d.id) {
-        return Some("This hero already belongs to your roster. Revive fallen heroes.".into());
+        return Some(tr!("card.hero-in-roster"));
     }
     let capacity = mine
         .filter(|e| k.is_building(e) && e.public.construction.is_none())
@@ -401,9 +401,10 @@ fn hero_admission(k: &Knowledge, d: &Definition) -> Option<String> {
         .max()
         .unwrap_or(0);
     (heroes.len() >= capacity as usize).then(|| {
-        format!(
-            "Hero roster full ({}/{capacity}). Upgrade a Hall.",
-            heroes.len()
+        tr!(
+            "card.hero-roster-full",
+            count = heroes.len(),
+            capacity = capacity
         )
     })
 }
@@ -440,9 +441,9 @@ pub fn commands(k: &Knowledge, selection: &[u32]) -> Vec<Command> {
                     queue: false,
                 },
             ) {
-                c.description = format!(
-                    "Cancel construction and recover {}% of the paid resources, rounded down per resource.",
-                    k.content.rules.construction_refund_permille / 10
+                c.description = tr!(
+                    "card.cancel-construction",
+                    percent = k.content.rules.construction_refund_permille / 10
                 );
                 c.actors = vec![fid];
                 out.push(c);
@@ -481,9 +482,10 @@ pub fn commands(k: &Knowledge, selection: &[u32]) -> Vec<Command> {
                 ) {
                     let pct = (f64::from(task.progress) / f64::from(up.work_ticks.max(1)) * 100.0)
                         .floor();
-                    c.description = format!(
-                        "{}: {pct}% complete. Cancel to refund the full price.",
-                        target.map_or(up.target.as_str(), |t| t.name.as_str())
+                    c.description = tr!(
+                        "card.cancel-upgrade",
+                        name = target.map_or(up.target.as_str(), |t| t.name.as_str()),
+                        percent = pct
                     );
                     out.push(c);
                 }
@@ -497,18 +499,18 @@ pub fn commands(k: &Knowledge, selection: &[u32]) -> Vec<Command> {
                 },
             ) {
                 if let Some(t) = target {
-                    c.name = format!("Upgrade to {}", t.name);
+                    c.name = tr!("card.upgrade-to", name = &t.name);
                     c.icon = t.icon.clone();
-                    c.description = format!(
-                        "{}\n{}s. Unit training pauses during the upgrade.",
-                        t.description,
-                        seconds(up.work_ticks)
+                    c.description = tr!(
+                        "card.upgrade-description",
+                        description = &t.description,
+                        seconds = &seconds(up.work_ticks)
                     );
                     c.reason = prerequisite(k, t.requires.as_deref(), &done);
                 }
                 c.costs = item_costs(k, &up.items);
                 if c.reason.is_none() && !affordable(k, &up.items) {
-                    c.reason = Some("Insufficient resources".into());
+                    c.reason = Some(tr!("card.insufficient-resources"));
                 }
                 out.push(c);
             }
@@ -548,10 +550,10 @@ pub fn commands(k: &Knowledge, selection: &[u32]) -> Vec<Command> {
                 let mut c = Command::new(
                     format!("research:{id}"),
                     &rule.name,
-                    &format!(
-                        "{}\n{}s. Applies to existing and future units.",
-                        rule.description,
-                        seconds(rule.work_ticks)
+                    &tr!(
+                        "card.research-description",
+                        description = &rule.description,
+                        seconds = &seconds(rule.work_ticks)
                     ),
                     &rule.icon,
                     rule.priority,
@@ -568,15 +570,15 @@ pub fn commands(k: &Knowledge, selection: &[u32]) -> Vec<Command> {
                     .map_or(rule.priority, |head| head.priority);
                 c.costs = item_costs(k, &rule.items);
                 c.reason = if researched.contains(&id.as_str()) {
-                    Some("Already researched".into())
+                    Some(tr!("card.already-researched"))
                 } else if queued.contains(&id.as_str()) {
-                    Some("Research already queued".into())
+                    Some(tr!("card.research-queued"))
                 } else if here >= policy.queue_capacity as usize {
-                    Some("Research queue is full".into())
+                    Some(tr!("card.research-queue-full"))
                 } else if let Some(r) = prerequisite(k, rule.requires.as_deref(), &done) {
                     Some(r)
                 } else if !affordable(k, &rule.items) {
-                    Some("Insufficient resources".into())
+                    Some(tr!("card.insufficient-resources"))
                 } else {
                     None
                 };
@@ -618,10 +620,11 @@ pub fn commands(k: &Knowledge, selection: &[u32]) -> Vec<Command> {
                     policy.work_ticks + policy.work_ticks_per_level * level.saturating_sub(1);
                 let mut c = Command::new(
                     format!("revive:{}", hero.0),
-                    &format!("Revive {}", hd.name),
-                    &format!(
-                        "Return this level {level} hero with their items and learned abilities. {}s. Cancellation refunds the full price.",
-                        seconds(ticks)
+                    &tr!("card.revive", name = &hd.name),
+                    &tr!(
+                        "card.revive-description",
+                        level = level,
+                        seconds = &seconds(ticks)
                     ),
                     &hd.icon,
                     100,
@@ -643,15 +646,15 @@ pub fn commands(k: &Knowledge, selection: &[u32]) -> Vec<Command> {
                     });
                 }
                 c.reason = if returning.contains(&hero.0) {
-                    Some("Hero is returning through an ability".into())
+                    Some(tr!("card.hero-returning"))
                 } else if reviving.contains(&hero.0) {
-                    Some("Hero is already being revived".into())
+                    Some(tr!("card.hero-being-revived"))
                 } else if reviving.len() >= policy.queue_capacity as usize {
-                    Some("Revival queue is full".into())
+                    Some(tr!("card.revival-queue-full"))
                 } else if let Some(r) = supply_admission(k, supply) {
                     Some(r)
                 } else if !affordable(k, &items) {
-                    Some("Insufficient resources".into())
+                    Some(tr!("card.insufficient-resources"))
                 } else {
                     None
                 };
@@ -693,12 +696,12 @@ pub fn commands(k: &Knowledge, selection: &[u32]) -> Vec<Command> {
                         policy
                             .queue_capacity
                             .is_some_and(|cap| queued >= cap as usize)
-                            .then(|| "Queue full".to_owned())
+                            .then(|| tr!("card.queue-full"))
                     })
                     .or_else(|| supply_admission(k, od.supply_cost.unwrap_or(0)))
                     .or_else(|| {
                         let items = od.creation.as_ref().map_or(&[][..], |c| c.items());
-                        (!affordable(k, items)).then(|| "Insufficient resources".to_owned())
+                        (!affordable(k, items)).then(|| tr!("card.insufficient-resources"))
                     });
                 c.actors = vec![fid];
                 out.push(c);
@@ -729,7 +732,7 @@ pub fn commands(k: &Knowledge, selection: &[u32]) -> Vec<Command> {
                 )
             {
                 if p.paused {
-                    c.name = "Resume production".into();
+                    c.name = tr!("card.resume-production");
                 }
                 out.push(c);
             }
@@ -932,21 +935,28 @@ fn spells(
             );
             let required = levels.get(usize::from(rank)).copied();
             c.description = match required {
-                Some(l) if rank < max => format!(
-                    "{}\nRank {}/{max} · Requires level {l}",
-                    ability.description,
-                    rank + 1
+                Some(l) if rank < max => tr!(
+                    "card.learn-description",
+                    description = &ability.description,
+                    rank = rank + 1,
+                    max = max,
+                    level = l
                 ),
-                _ => format!("{}\nRank {rank}/{max} · Fully learned", ability.description),
+                _ => tr!(
+                    "card.learned-description",
+                    description = &ability.description,
+                    rank = rank,
+                    max = max
+                ),
             };
             c.reason = if rank >= max {
-                Some("Fully learned".into())
+                Some(tr!("card.fully-learned"))
             } else if casting {
-                Some("Casting".into())
+                Some(tr!("card.casting"))
             } else if required.is_some_and(|l| level < l) {
-                Some(format!("Requires level {}", required.unwrap_or(0)))
+                Some(tr!("card.requires-level", level = required.unwrap_or(0)))
             } else if spent >= level {
-                Some("No skill points available".into())
+                Some(tr!("card.no-skill-points"))
             } else {
                 None
             };
@@ -999,14 +1009,18 @@ fn spells(
         if kind == TargetingKind::Point
             && let Some(radius) = &ability.targeting.radius
         {
-            description.push_str(&format!(
-                " · radius {}",
-                library::value(ability, rank, radius)
+            description.push_str(" · ");
+            description.push_str(&tr!(
+                "card.radius",
+                radius = library::value(ability, rank, radius)
             ));
         }
-        description.push_str(&format!(
-            "\nRank {rank}/{max} · {}s cooldown",
-            seconds(total)
+        description.push('\n');
+        description.push_str(&tr!(
+            "card.rank-cooldown",
+            rank = rank,
+            max = max,
+            seconds = &seconds(total)
         ));
         c.description = description;
         if mana > 0 {
@@ -1019,16 +1033,16 @@ fn spells(
         c.cooldown = (remaining > 0).then_some((remaining, total.max(1)));
         c.passive = passive;
         c.reason = if passive {
-            Some("Passive ability".into())
+            Some(tr!("card.passive-ability"))
         } else if casting {
-            Some("Casting".into())
+            Some(tr!("card.casting"))
         } else if remaining > 0 {
-            Some(format!(
-                "Ready in {}s",
-                (f64::from(remaining) * SECONDS_PER_TICK).ceil()
+            Some(tr!(
+                "card.ready-in",
+                seconds = (f64::from(remaining) * SECONDS_PER_TICK).ceil()
             ))
         } else if cv.mana < mana {
-            Some("Not enough mana".into())
+            Some(tr!("card.not-enough-mana"))
         } else {
             None
         };
@@ -1063,8 +1077,12 @@ pub fn camera(
     }
     let mut c = Command::new(
         "camera",
-        &format!("Camera: {}", mode.name()),
-        &format!("{}\nNext: {}.", meta.description, mode.next().name()),
+        &tr!("card.camera", mode = &mode.name()),
+        &tr!(
+            "card.camera-description",
+            description = &meta.description,
+            next = &mode.next().name()
+        ),
         &meta.icon,
         meta.priority,
         Activate::Camera,
@@ -1124,10 +1142,12 @@ fn shop(
             let item = k.catalog.get(ware.item);
             let mut c = Command::new(
                 format!("buy:{}", item.id),
-                &format!("Buy {}", item.name),
-                &format!(
-                    "{}\nIn stock: {} of {}.",
-                    item.description, ware.stock, ware.most
+                &tr!("card.buy", name = &item.name),
+                &tr!(
+                    "card.buy-description",
+                    description = &item.description,
+                    stock = ware.stock,
+                    most = ware.most
                 ),
                 &item.icon,
                 -(index as i64),
@@ -1146,11 +1166,11 @@ fn shop(
             }
             c.actors = vec![focus.id().0];
             c.reason = if ware.stock == 0 {
-                Some("Sold out".into())
+                Some(tr!("card.sold-out"))
             } else if !near {
-                Some("A hero must stand near the shop".into())
+                Some(tr!("card.hero-near-shop"))
             } else if !affordable(k, &ware.price) {
-                Some("Insufficient resources".into())
+                Some(tr!("card.insufficient-resources"))
             } else {
                 None
             };
@@ -1163,7 +1183,7 @@ fn shop(
 fn finish(mut out: Vec<Command>, ended: bool) -> Vec<Command> {
     if ended {
         for c in &mut out {
-            c.reason.get_or_insert_with(|| "Match has ended".into());
+            c.reason.get_or_insert_with(|| tr!("card.match-ended"));
         }
     }
     out

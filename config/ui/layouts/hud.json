@@ -18,7 +18,7 @@
           { "id": "groups", "class": "control-groups", "repeat": "group-button", "count": 10 },
           {
             "id": "idle", "kind": "button", "class": "idle-workers", "action": "idle", "visible": false,
-            "tooltip": { "title": "Idle workers", "hotkey": "F8", "body": "Select the next worker with nothing to do, and look at it." },
+            "tooltip": { "title": "@ui.hud.idle-workers", "hotkey": "F8", "body": "@ui.hud.idle-workers.tip" },
             "children": [
               { "id": "icon", "kind": "image", "class": "idle-icon" },
               { "id": "count", "kind": "label", "class": "idle-count" }
@@ -101,7 +101,7 @@
         "class": "chat",
         "children": [
           { "id": "log", "class": "chat-log", "repeat": "chat-line" },
-          { "id": "input", "kind": "text_field", "class": "field chat-input", "max_length": 300, "placeholder": "Say something…", "visible": false }
+          { "id": "input", "kind": "text_field", "class": "field chat-input", "max_length": 300, "placeholder": "@ui.hud.say-something", "visible": false }
         ]
       },
       {
@@ -110,19 +110,19 @@
           {
             "class": "observer-header",
             "children": [
-              { "kind": "label", "class": "observer-title", "text": "Colony overview" },
-              { "kind": "label", "class": "observer-badge", "text": "Observer" }
+              { "kind": "label", "class": "observer-title", "text": "@ui.hud.colony-overview" },
+              { "kind": "label", "class": "observer-badge", "text": "@ui.hud.observer" }
             ]
           },
           {
             "id": "columns", "class": "observer-row observer-columns",
             "children": [
               { "class": "observer-color" },
-              { "kind": "label", "class": "observer-player", "text": "Player" },
+              { "kind": "label", "class": "observer-player", "text": "@ui.hud.player" },
               { "id": "goods", "class": "observer-goods", "repeat": "observer-head" },
-              { "kind": "label", "class": "observer-count observer-head", "text": "Units" },
-              { "kind": "label", "class": "observer-count observer-head", "text": "Workers" },
-              { "kind": "label", "class": "observer-heroes", "text": "Hero" }
+              { "kind": "label", "class": "observer-count observer-head", "text": "@ui.hud.units" },
+              { "kind": "label", "class": "observer-count observer-head", "text": "@ui.hud.workers" },
+              { "kind": "label", "class": "observer-heroes", "text": "@ui.hud.hero" }
             ]
           },
           { "id": "rows", "class": "observer-rows", "repeat": "observer-row" },
@@ -134,7 +134,7 @@
         "children": [
           {
             "id": "debug", "kind": "button", "class": "debug-button", "action": "debug",
-            "tooltip": { "title": "Debug", "hotkey": "F9", "body": "Frame rate, timings and match tools." },
+            "tooltip": { "title": "@ui.hud.debug", "hotkey": "F9", "body": "@ui.hud.debug.tip" },
             "children": [
               { "class": "debug-bar debug-bar-low" },
               { "class": "debug-bar debug-bar-high" },
@@ -143,8 +143,8 @@
           },
           {
             "id": "menu", "kind": "button", "class": "menu-button", "action": "menu",
-            "tooltip": { "title": "Menu", "hotkey": "F10", "body": "Open the game menu." },
-            "children": [{ "kind": "label", "text": "Menu" }]
+            "tooltip": { "title": "@ui.hud.menu", "hotkey": "F10", "body": "@ui.hud.menu.tip" },
+            "children": [{ "kind": "label", "text": "@ui.hud.menu" }]
           }
         ]
       }

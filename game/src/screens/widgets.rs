@@ -38,12 +38,13 @@ impl Palette {
         self.0.len()
     }
 
-    /// The lobby's name for colour `index`.
+    /// The lobby's name for colour `index` (`config/players.json` names it; the text
+    /// library says it: `colour.<name>`).
     pub fn name(&self, index: u8) -> String {
-        self.1
-            .get(usize::from(index))
-            .cloned()
-            .unwrap_or_else(|| format!("Colour {}", index + 1))
+        self.1.get(usize::from(index)).map_or_else(
+            || tr!("ui.colour", number = index + 1),
+            |name| crate::text::tr(&format!("colour.{}", name.to_lowercase())),
+        )
     }
 
     /// The marker colour: the player colour mixed 55 % with the panel (old badge).
@@ -130,9 +131,9 @@ pub fn cells(map: &MapEntry) -> u32 {
 pub fn map_meta(map: &MapEntry) -> String {
     let c = cells(map);
     if map.sandbox {
-        format!("Single-player testbed · {c} × {c} C")
+        tr!("ui.map-meta-testbed", cells = c)
     } else {
-        format!("{} players · {c} × {c} C", map.starts.len())
+        tr!("ui.map-meta", players = map.starts.len(), cells = c)
     }
 }
 
@@ -198,22 +199,22 @@ pub fn map_preview(
             &mut host.ui,
             format!("{base}/meta"),
             &if map.sandbox {
-                format!("{0} × {0} C · Single-player testbed", cells(map))
+                tr!("ui.map-preview-testbed", cells = cells(map))
             } else {
-                format!(
-                    "{0} × {0} C · {1} players · {2} neutral camps",
-                    cells(map),
-                    map.starts.len(),
-                    map.camps
+                tr!(
+                    "ui.map-preview-meta",
+                    cells = cells(map),
+                    players = map.starts.len(),
+                    camps = map.camps
                 )
             },
         );
         quiet(
             &mut host.ui,
             format!("{base}/description"),
-            map.description.as_deref().unwrap_or(
-                "A frontier beneath the canopy. Establish your colony, explore the wilds, and overcome your rivals.",
-            ),
+            &map.description
+                .clone()
+                .unwrap_or_else(|| tr!("ui.map-default-description")),
         );
     } else {
         for part in ["title", "meta", "description"] {

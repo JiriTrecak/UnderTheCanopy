@@ -29,14 +29,14 @@
           {
             "class": "menu-actions mm-actions",
             "children": [
-              { "id": "campaign", "kind": "button", "class": "menu-action mm-action", "text": "Campaign", "action": "menu.campaign" },
-              { "id": "skirmish", "kind": "button", "class": "menu-action mm-action", "text": "Skirmish", "action": "menu.skirmish" },
-              { "id": "multiplayer", "kind": "button", "class": "menu-action mm-action", "text": "Multiplayer", "action": "menu.multiplayer" },
-              { "id": "load", "kind": "button", "class": "menu-action mm-action", "text": "Load Game", "action": "menu.load" },
-              { "id": "editor", "kind": "button", "class": "menu-action mm-action", "text": "Editor", "action": "menu.editor" },
-              { "id": "settings", "kind": "button", "class": "menu-action mm-action", "text": "Settings", "action": "menu.settings" },
-              { "id": "feedback", "kind": "button", "class": "menu-action mm-action", "text": "Submit feedback", "action": "menu.feedback" },
-              { "id": "exit", "kind": "button", "class": "menu-action mm-action", "text": "Exit", "action": "menu.exit" }
+              { "id": "campaign", "kind": "button", "class": "menu-action mm-action", "text": "@ui.main-menu.campaign", "action": "menu.campaign" },
+              { "id": "skirmish", "kind": "button", "class": "menu-action mm-action", "text": "@ui.main-menu.skirmish", "action": "menu.skirmish" },
+              { "id": "multiplayer", "kind": "button", "class": "menu-action mm-action", "text": "@ui.main-menu.multiplayer", "action": "menu.multiplayer" },
+              { "id": "load", "kind": "button", "class": "menu-action mm-action", "text": "@ui.main-menu.load-game", "action": "menu.load" },
+              { "id": "editor", "kind": "button", "class": "menu-action mm-action", "text": "@ui.main-menu.editor", "action": "menu.editor" },
+              { "id": "settings", "kind": "button", "class": "menu-action mm-action", "text": "@ui.main-menu.settings", "action": "menu.settings" },
+              { "id": "feedback", "kind": "button", "class": "menu-action mm-action", "text": "@ui.main-menu.submit-feedback", "action": "menu.feedback" },
+              { "id": "exit", "kind": "button", "class": "menu-action mm-action", "text": "@ui.main-menu.exit", "action": "menu.exit" }
             ]
           }
         ]
@@ -51,7 +51,7 @@
               { "id": "status", "kind": "label", "class": "mm-release-status" }
             ]
           },
-          { "id": "notes", "kind": "button", "class": "mm-release-button", "text": "What’s new", "action": "releases.notes" }
+          { "id": "notes", "kind": "button", "class": "mm-release-button", "text": "@ui.main-menu.what-s-new", "action": "releases.notes" }
         ]
       }
     ]

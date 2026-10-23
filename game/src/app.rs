@@ -124,7 +124,7 @@ impl App {
             tracing::warn!(%error, moved = ?note.moved_aside, "settings could not be read; defaults used");
         }
         let mut attributes = Window::default_attributes()
-            .with_title("Under the Canopy")
+            .with_title(tr!("app.title"))
             .with_inner_size(LogicalSize::new(1600, 900))
             .with_min_inner_size(LogicalSize::new(1024, 600));
         if settings.graphics.window == WindowMode::Fullscreen {
@@ -178,7 +178,7 @@ impl App {
             setup,
         ));
         session.game.audio.set_background(true);
-        window.set_title("Under the Canopy · Editor");
+        window.set_title(&tr!("app.title-editor"));
     }
 
     /// A frame while the editor is open.
@@ -218,7 +218,7 @@ impl App {
                     session.suspended = session.editor.take();
                     session.game.audio.set_background(false);
                     session.game.forget_cursor();
-                    window.set_title("Under the Canopy · Test in game");
+                    window.set_title(&tr!("app.title-test"));
                 }
                 Err(error) => tracing::warn!(%error, "test in game"),
             }
@@ -228,7 +228,7 @@ impl App {
             session.editor = None;
             session.game.audio.set_background(false);
             session.game.forget_cursor();
-            window.set_title("Under the Canopy");
+            window.set_title(&tr!("app.title"));
             return;
         }
         let Some(frame) = session.display.acquire() else {
@@ -285,7 +285,7 @@ impl App {
         if session.suspended.is_some() && session.game.test_finished() {
             session.editor = session.suspended.take();
             session.game.audio.set_background(true);
-            window.set_title("Under the Canopy · Editor");
+            window.set_title(&tr!("app.title-editor"));
             return;
         }
         if let Some(vsync) = requests.vsync {

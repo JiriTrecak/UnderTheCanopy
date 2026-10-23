@@ -22,7 +22,7 @@
       {
         "id": "top-bar", "class": "mh-bar mh-bar-top", "style": { "top": "0" }, "visible": false,
         "children": [
-          { "id": "skip", "kind": "label", "class": "mh-skip", "text": "Esc  Skip", "visible": false }
+          { "id": "skip", "kind": "label", "class": "mh-skip", "text": "@ui.mission-hud.esc-skip", "visible": false }
         ]
       },
       {
@@ -49,7 +49,7 @@
       {
         "id": "objectives", "class": "mh-objectives",
         "children": [
-          { "id": "caption", "kind": "label", "class": "mh-caption", "text": "Objectives" },
+          { "id": "caption", "kind": "label", "class": "mh-caption", "text": "@ui.mission-hud.objectives" },
           { "id": "objective", "kind": "label", "class": "mh-objective" },
           { "id": "active", "class": "mh-actives", "repeat": "mh-active" },
           {
@@ -67,7 +67,7 @@
           {
             "class": "mh-auto-box",
             "children": [
-              { "id": "label", "kind": "label", "class": "mh-auto-label", "text": "Autoplay 4×" },
+              { "id": "label", "kind": "label", "class": "mh-auto-label", "text": "@ui.mission-hud.autoplay-4" },
               { "id": "step", "kind": "label", "class": "mh-auto-step" },
               {
                 "id": "speeds", "class": "mh-auto-speeds",
@@ -78,7 +78,7 @@
                   { "id": "s8", "kind": "button", "class": "mh-auto-speed", "text": "8×", "action": "autoplay.speed8" }
                 ]
               },
-              { "id": "take", "kind": "button", "class": "mh-auto-take", "text": "Take over", "action": "autoplay.take" }
+              { "id": "take", "kind": "button", "class": "mh-auto-take", "text": "@ui.mission-hud.take-over", "action": "autoplay.take" }
             ]
           }
         ]

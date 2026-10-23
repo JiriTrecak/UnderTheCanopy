@@ -674,7 +674,7 @@ impl Play {
     pub fn hint(&self) -> Option<String> {
         let cancel = self.keymap.label(Shortcut::Cancel);
         let cancel = if cancel.is_empty() {
-            "Esc".to_owned()
+            tr!("keys.esc")
         } else {
             cancel
         };
@@ -682,22 +682,25 @@ impl Play {
             Mode::Idle => None,
             Mode::Target {
                 targeting, name, ..
-            } => Some(format!(
-                "{name}: choose a {}. {cancel} cancels.",
-                targeting.wants()
+            } => Some(tr!(
+                "play.target-hint",
+                name = name.as_str(),
+                wants = &targeting.wants(),
+                cancel = &cancel
             )),
             Mode::Place {
                 placement, name, ..
             } => {
                 let problem = self.ghost().and_then(|g| g.problem);
-                Some(format!(
-                    "{name}: {} {} / {}: rotate ({}°). {cancel} cancels.",
-                    problem.map_or("Click to order construction.".to_owned(), |p| format!(
-                        "{p}."
-                    )),
-                    self.keymap.label(Shortcut::RotateClockwise),
-                    self.keymap.label(Shortcut::RotateCounterclockwise),
-                    placement.rotation
+                Some(tr!(
+                    "play.place-hint",
+                    name = name.as_str(),
+                    problem =
+                        &problem.map_or_else(|| tr!("play.click-to-build"), |p| format!("{p}.")),
+                    clockwise = &self.keymap.label(Shortcut::RotateClockwise),
+                    counterclockwise = &self.keymap.label(Shortcut::RotateCounterclockwise),
+                    degrees = placement.rotation,
+                    cancel = &cancel
                 ))
             }
         }
@@ -1750,9 +1753,10 @@ impl Play {
         }
         if self.echo_chat {
             let name = self.name.clone().unwrap_or_else(|| {
-                self.know
-                    .me
-                    .map_or("Observer".to_owned(), |p| format!("Player {}", p + 1))
+                self.know.me.map_or_else(
+                    || tr!("play.observer"),
+                    |p| tr!("hud.player", number = p + 1),
+                )
             });
             self.hear(name, [0xcc, 0xcc, 0xcc], &text);
         }

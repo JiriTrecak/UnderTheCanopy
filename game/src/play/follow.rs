@@ -28,11 +28,11 @@ impl CameraMode {
         }
     }
 
-    pub fn name(self) -> &'static str {
+    pub fn name(self) -> String {
         match self {
-            Self::Rts => "RTS",
-            Self::ThirdPerson => "Third person",
-            Self::FirstPerson => "First person",
+            Self::Rts => tr!("card.camera-rts"),
+            Self::ThirdPerson => tr!("card.camera-third-person"),
+            Self::FirstPerson => tr!("card.camera-first-person"),
         }
     }
 }

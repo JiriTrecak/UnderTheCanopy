@@ -8,7 +8,7 @@
         { "id": "name", "kind": "label", "class": "cp-name" },
         { "class": "cp-rule" },
         { "id": "status", "kind": "label", "class": "cp-status" },
-        { "id": "play", "kind": "button", "class": "menu-action cp-play", "text": "Play", "action": "campaign.play" }
+        { "id": "play", "kind": "button", "class": "menu-action cp-play", "text": "@ui.campaign.play", "action": "campaign.play" }
       ]
     }
   },
@@ -20,15 +20,15 @@
       {
         "class": "cp-content",
         "children": [
-          { "kind": "label", "class": "kicker cp-kicker", "text": "Under the Canopy" },
-          { "kind": "label", "class": "cp-title", "text": "Choose your campaign" },
+          { "kind": "label", "class": "kicker cp-kicker", "text": "@ui.campaign.under-the-canopy" },
+          { "kind": "label", "class": "cp-title", "text": "@ui.campaign.choose-your-campaign" },
           { "id": "cards", "class": "cp-cards", "repeat": "cp-card" },
-          { "id": "empty", "kind": "label", "class": "cp-hint", "text": "No campaigns are available yet.", "visible": false },
+          { "id": "empty", "kind": "label", "class": "cp-hint", "text": "@ui.campaign.no-campaigns-are-available-yet", "visible": false },
           {
             "class": "cp-footer",
             "children": [
-              { "kind": "button", "class": "menu-action cp-back", "text": "Back", "action": "campaign.back" },
-              { "kind": "label", "class": "cp-hint", "text": "Three peoples. One forest." }
+              { "kind": "button", "class": "menu-action cp-back", "text": "@ui.campaign.back", "action": "campaign.back" },
+              { "kind": "label", "class": "cp-hint", "text": "@ui.campaign.three-peoples-one-forest" }
             ]
           }
         ]

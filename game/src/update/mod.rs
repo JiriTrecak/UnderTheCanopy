@@ -129,12 +129,11 @@ pub trait Backend {
     fn poll(&mut self) -> Option<Event>;
 }
 
-pub const CHECK_FAILED: &str = "Could not check for updates. Check your connection and try again.";
-pub const DOWNLOAD_FAILED: &str =
-    "Download or signature verification failed. Nothing was installed. Try downloading again.";
-pub const INSTALL_FAILED: &str =
-    "Installation failed. Close other copies of the game and try again.";
-pub const RESTART_FAILED: &str = "The update is installed. Restart the app to finish.";
+/// Text library keys of the updater's failures.
+pub const CHECK_FAILED: &str = "update.check-failed";
+pub const DOWNLOAD_FAILED: &str = "update.download-failed";
+pub const INSTALL_FAILED: &str = "update.install-failed";
+pub const RESTART_FAILED: &str = "update.restart-failed";
 
 /// One update session (old `UpdateController`); never downloads or installs on its own.
 pub struct Updater {
@@ -256,7 +255,7 @@ impl Updater {
             Ok(()) => self.relaunched = true,
             Err(error) => {
                 tracing::warn!(%error, "cannot start the updated game");
-                self.state.error = Some(RESTART_FAILED.into());
+                self.state.error = Some(crate::text::tr(RESTART_FAILED));
             }
         }
     }
@@ -289,7 +288,7 @@ impl Updater {
                 Err(error) => {
                     tracing::warn!(%error, "update check failed");
                     self.state.phase = Phase::Error;
-                    self.state.error = Some(CHECK_FAILED.into());
+                    self.state.error = Some(crate::text::tr(CHECK_FAILED));
                 }
             },
             Event::Changelog(version, entry) => {
@@ -314,7 +313,7 @@ impl Updater {
                 Err(error) => {
                     tracing::warn!(%error, "update download failed");
                     self.state.phase = Phase::Available;
-                    self.state.error = Some(DOWNLOAD_FAILED.into());
+                    self.state.error = Some(crate::text::tr(DOWNLOAD_FAILED));
                 }
             },
             Event::Installed(result) if self.state.phase == Phase::Installing => match result {
@@ -326,7 +325,7 @@ impl Updater {
                 Err(error) => {
                     tracing::warn!(%error, "update install failed");
                     self.state.phase = Phase::Ready;
-                    self.state.error = Some(INSTALL_FAILED.into());
+                    self.state.error = Some(crate::text::tr(INSTALL_FAILED));
                 }
             },
             // Late answers to something no longer asked.
@@ -535,7 +534,10 @@ mod tests {
         send(&mut u, &s, Event::Checked(Err("offline".into())));
         // A failed check never claims the game is current.
         assert_eq!(u.state().phase, Phase::Error);
-        assert_eq!(u.state().error.as_deref(), Some(CHECK_FAILED));
+        assert_eq!(
+            u.state().error.as_deref(),
+            Some(crate::text::tr(CHECK_FAILED).as_str())
+        );
         u.menu_entered(); // retries
         assert_eq!(u.state().phase, Phase::Checking);
         assert_eq!(u.state().error, None);
@@ -549,7 +551,10 @@ mod tests {
             Event::Downloaded(Err("signature mismatch".into())),
         );
         assert_eq!(u.state().phase, Phase::Available);
-        assert_eq!(u.state().error.as_deref(), Some(DOWNLOAD_FAILED));
+        assert_eq!(
+            u.state().error.as_deref(),
+            Some(crate::text::tr(DOWNLOAD_FAILED).as_str())
+        );
         u.install();
         assert_eq!(u.state().phase, Phase::Available);
         assert!(!s.borrow().calls.iter().any(|c| c.starts_with("install")));
@@ -561,7 +566,10 @@ mod tests {
         u.install();
         send(&mut u, &s, Event::Installed(Err("busy".into())));
         assert_eq!(u.state().phase, Phase::Ready);
-        assert_eq!(u.state().error.as_deref(), Some(INSTALL_FAILED));
+        assert_eq!(
+            u.state().error.as_deref(),
+            Some(crate::text::tr(INSTALL_FAILED).as_str())
+        );
         u.install();
         send(&mut u, &s, Event::Installed(Ok(())));
 
@@ -569,7 +577,10 @@ mod tests {
         s.borrow_mut().relaunch = Some(Err("no".into()));
         u.restart();
         assert!(!u.relaunched());
-        assert_eq!(u.state().error.as_deref(), Some(RESTART_FAILED));
+        assert_eq!(
+            u.state().error.as_deref(),
+            Some(crate::text::tr(RESTART_FAILED).as_str())
+        );
         assert!(!u.restart_due());
         s.borrow_mut().relaunch = None;
         u.request_restart();

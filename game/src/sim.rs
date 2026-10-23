@@ -552,11 +552,12 @@ pub enum HeroStatus {
 }
 
 impl HeroStatus {
-    pub fn name(self) -> &'static str {
+    /// The status as players read it.
+    pub fn label(self) -> String {
         match self {
-            Self::Alive => "alive",
-            Self::Fallen => "fallen",
-            Self::Reviving => "reviving",
+            Self::Alive => tr!("hud.hero-status-alive"),
+            Self::Fallen => tr!("hud.hero-status-fallen"),
+            Self::Reviving => tr!("hud.hero-status-reviving"),
         }
     }
 }

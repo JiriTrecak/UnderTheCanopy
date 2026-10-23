@@ -34,8 +34,9 @@ pub struct UiHost {
 impl UiHost {
     /// Builds the UI from `config/ui` and binds the theme's images from the pack.
     pub fn new(data: &Path, gpu: &Gpu, pack: &Pack) -> Result<Self> {
-        let config = UiConfig::load(&data.join("config/ui")).context("config/ui")?;
-        let ui = Ui::new(
+        let mut config = UiConfig::load(&data.join("config/ui")).context("config/ui")?;
+        config.localize(&crate::text::lookup);
+        let mut ui = Ui::new(
             config,
             FontSources {
                 bundled: Vec::new(),
@@ -43,6 +44,7 @@ impl UiHost {
             },
         )
         .map_err(|e| anyhow::anyhow!("ui: {e}"))?;
+        ui.set_localizer(crate::text::lookup);
         let mut host = Self {
             ui,
             images: BTreeMap::new(),
@@ -204,6 +206,18 @@ mod tests {
     fn the_shipped_interface_compiles() {
         let dir = Path::new(env!("CARGO_MANIFEST_DIR")).join("../config/ui");
         let mut config = UiConfig::load(&dir).expect("config/ui reads");
+        crate::text::localize(&mut config, &dir.join("../.."));
+        // Every key a layout names is in the text library (D96).
+        let text = crate::text::get();
+        let missing: Vec<_> = config
+            .text_keys()
+            .into_iter()
+            .filter(|(_, key)| text.get(key).is_none())
+            .collect();
+        assert!(
+            missing.is_empty(),
+            "layout keys missing from the text library: {missing:?}"
+        );
         // CI checkouts have Git LFS pointers for the bundled fonts: lay out with the
         // system's fonts there.
         let pointers = config

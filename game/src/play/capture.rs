@@ -234,8 +234,10 @@ impl Rig {
         )));
 
         // The HUD.
+        let mut config = UiConfig::load(&paths.data.join("config/ui"))?;
+        crate::text::localize(&mut config, &paths.data);
         let mut ui = Ui::new(
-            UiConfig::load(&paths.data.join("config/ui"))?,
+            config,
             FontSources {
                 bundled: Vec::new(),
                 system: true,

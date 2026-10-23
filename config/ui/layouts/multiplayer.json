@@ -41,18 +41,18 @@
               {
                 "class": "sk-heading",
                 "children": [
-                  { "kind": "label", "class": "eyebrow", "text": "Under the Canopy" },
-                  { "kind": "label", "class": "sk-title", "text": "Multiplayer" }
+                  { "kind": "label", "class": "eyebrow", "text": "@ui.multiplayer.under-the-canopy" },
+                  { "kind": "label", "class": "sk-title", "text": "@ui.multiplayer.multiplayer" }
                 ]
               },
-              { "kind": "button", "class": "sk-ghost", "text": "← Main menu", "action": "mp.back" }
+              { "kind": "button", "class": "sk-ghost", "text": "@ui.multiplayer.main-menu", "action": "mp.back" }
             ]
           },
           {
             "class": "mp-tabs",
             "children": [
-              { "id": "find", "kind": "button", "class": "mp-tab", "text": "Find a lobby", "action": "mp.find", "checked": true },
-              { "id": "create", "kind": "button", "class": "mp-tab", "text": "Create a lobby", "action": "mp.create" }
+              { "id": "find", "kind": "button", "class": "mp-tab", "text": "@ui.multiplayer.find-a-lobby", "action": "mp.find", "checked": true },
+              { "id": "create", "kind": "button", "class": "mp-tab", "text": "@ui.multiplayer.create-a-lobby", "action": "mp.create" }
             ]
           },
           {
@@ -64,13 +64,13 @@
                   {
                     "class": "sk-section-row",
                     "children": [
-                      { "id": "list-title", "kind": "label", "class": "sk-section", "text": "Lobbies" },
-                      { "id": "refresh", "kind": "button", "class": "mp-link", "text": "Refresh", "action": "mp.refresh" }
+                      { "id": "list-title", "kind": "label", "class": "sk-section", "text": "@ui.multiplayer.lobbies" },
+                      { "id": "refresh", "kind": "button", "class": "mp-link", "text": "@ui.multiplayer.refresh", "action": "mp.refresh" }
                     ]
                   },
                   { "id": "rooms", "class": "sk-maps", "repeat": "mp-room" },
                   { "id": "maps", "class": "sk-maps", "repeat": "sk-map", "visible": false },
-                  { "id": "empty", "kind": "label", "class": "sk-hint", "text": "Looking for lobbies…" }
+                  { "id": "empty", "kind": "label", "class": "sk-hint", "text": "@ui.multiplayer.looking-for-lobbies" }
                 ]
               },
               {
@@ -80,11 +80,11 @@
                     "id": "preview", "class": "sk-preview",
                     "children": [
                       { "id": "image", "kind": "image", "class": "sk-preview-image" },
-                      { "id": "empty", "kind": "label", "class": "sk-preview-empty", "text": "Choose your battlefield" },
+                      { "id": "empty", "kind": "label", "class": "sk-preview-empty", "text": "@ui.multiplayer.choose-your-battlefield" },
                       { "id": "markers", "class": "fill", "style": { "pointer-events": "none" }, "repeat": "sk-marker" }
                     ]
                   },
-                  { "kind": "label", "class": "sk-legend", "text": "Numbered rings mark the starting positions" },
+                  { "kind": "label", "class": "sk-legend", "text": "@ui.multiplayer.numbered-rings-mark-the-starting" },
                   { "id": "title", "kind": "label", "class": "sk-map-title" },
                   { "id": "meta", "kind": "label", "class": "sk-meta" }
                 ]
@@ -92,11 +92,11 @@
               {
                 "class": "sk-col",
                 "children": [
-                  { "kind": "label", "class": "mp-caption", "text": "Your player name" },
-                  { "id": "name", "kind": "text_field", "class": "mp-field", "placeholder": "player", "max_length": 32, "action": "mp.name" },
-                  { "id": "slots-caption", "kind": "label", "class": "mp-caption", "text": "Player slots", "visible": false },
+                  { "kind": "label", "class": "mp-caption", "text": "@ui.multiplayer.your-player-name" },
+                  { "id": "name", "kind": "text_field", "class": "mp-field", "placeholder": "@ui.multiplayer.player", "max_length": 32, "action": "mp.name" },
+                  { "id": "slots-caption", "kind": "label", "class": "mp-caption", "text": "@ui.multiplayer.player-slots", "visible": false },
                   { "id": "slots", "kind": "dropdown", "class": "sk-select", "action": "mp.slots", "options": ["2"], "visible": false },
-                  { "id": "roster-caption", "kind": "label", "class": "mp-caption", "text": "Players" },
+                  { "id": "roster-caption", "kind": "label", "class": "mp-caption", "text": "@ui.multiplayer.players" },
                   { "id": "roster", "class": "mp-roster", "repeat": "mp-seat" },
                   { "id": "hint", "kind": "label", "class": "sk-hint" },
                   { "id": "status", "kind": "label", "class": "mp-status" },
@@ -109,7 +109,7 @@
             "class": "sk-footer",
             "children": [
               { "id": "footnote", "kind": "label", "class": "sk-footnote" },
-              { "id": "go", "kind": "button", "class": "sk-launch", "text": "Join lobby", "action": "mp.go" }
+              { "id": "go", "kind": "button", "class": "sk-launch", "text": "@ui.multiplayer.join-lobby", "action": "mp.go" }
             ]
           }
         ]

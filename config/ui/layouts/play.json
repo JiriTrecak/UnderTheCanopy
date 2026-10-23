@@ -87,7 +87,7 @@
         { "id": "workers", "kind": "label", "class": "observer-count", "tooltip": { "title": "" } },
         {
           "id": "heroes", "class": "observer-heroes", "repeat": "observer-hero",
-          "children": [{ "id": "none", "kind": "label", "class": "observer-none", "text": "—", "tooltip": { "title": "", "body": "No hero recruited." } }]
+          "children": [{ "id": "none", "kind": "label", "class": "observer-none", "text": "—", "tooltip": { "title": "", "body": "@ui.play.text.tip" } }]
         }
       ]
     }

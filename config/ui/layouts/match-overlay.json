@@ -15,7 +15,7 @@
             "children": [
               { "id": "title", "kind": "label", "class": "gm-title" },
               { "id": "body", "kind": "label", "class": "gm-sub" },
-              { "kind": "button", "class": "gm-button", "text": "Leave the match", "action": "overlay.leave" }
+              { "kind": "button", "class": "gm-button", "text": "@ui.match-overlay.leave-the-match", "action": "overlay.leave" }
             ]
           }
         ]

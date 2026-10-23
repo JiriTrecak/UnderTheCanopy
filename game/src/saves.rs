@@ -117,17 +117,33 @@ pub struct SaveLibrary {
     dir: PathBuf,
 }
 
-/// Why a save cannot be loaded here.
-#[derive(Debug, Clone, PartialEq, Eq, thiserror::Error)]
+/// Why a save cannot be loaded here (shown to players: [`Mismatch::message`]).
+#[derive(Debug, Clone, PartialEq, Eq)]
 pub enum Mismatch {
-    #[error("this save was made on another map ({0})")]
     Map(String),
-    #[error("this save was made on another version of the map")]
     MapRevision,
-    #[error("this save was made with other game content")]
     Content,
-    #[error("only {0} saves can be loaded here")]
     Mode(&'static str),
+}
+
+impl std::fmt::Display for Mismatch {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        f.write_str(&self.message())
+    }
+}
+
+impl std::error::Error for Mismatch {}
+
+impl Mismatch {
+    /// The reason as players read it.
+    pub fn message(&self) -> String {
+        match self {
+            Self::Map(map) => tr!("saves.other-map", map = map.as_str()),
+            Self::MapRevision => tr!("saves.other-map-version"),
+            Self::Content => tr!("saves.other-content"),
+            Self::Mode(mode) => tr!("saves.wrong-mode", mode = *mode),
+        }
+    }
 }
 
 impl Mode {

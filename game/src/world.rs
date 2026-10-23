@@ -332,12 +332,12 @@ pub enum Stage {
 }
 
 impl Stage {
-    pub fn label(self) -> &'static str {
+    pub fn label(self) -> String {
         match self {
-            Self::Map => "Reading the battlefield",
-            Self::World => "Waking the colonies",
-            Self::Scene => "Raising the canopy",
-            Self::Gpu => "Preparing terrain and forest",
+            Self::Map => tr!("loading.stage-map"),
+            Self::World => tr!("loading.stage-world"),
+            Self::Scene => tr!("loading.stage-scene"),
+            Self::Gpu => tr!("loading.stage-gpu"),
         }
     }
 }

@@ -7,13 +7,13 @@
 use std::path::PathBuf;
 
 /// What the save dialogs filter for.
-const FILTER: (&str, &[&str]) = ("Under the Canopy save", &[crate::saves::EXPORT_EXTENSION]);
+const FILTER: (&str, &[&str]) = ("files.save-filter", &[crate::saves::EXPORT_EXTENSION]);
 
 /// Asks where to export a save; `None` when cancelled.
 pub fn save_as(file_name: &str) -> Option<PathBuf> {
     rfd::FileDialog::new()
-        .set_title("Export save")
-        .add_filter(FILTER.0, FILTER.1)
+        .set_title(tr!("files.export-save"))
+        .add_filter(crate::text::tr(FILTER.0), FILTER.1)
         .set_file_name(file_name)
         .save_file()
 }
@@ -21,8 +21,8 @@ pub fn save_as(file_name: &str) -> Option<PathBuf> {
 /// Asks for a save file to import; `None` when cancelled.
 pub fn open() -> Option<PathBuf> {
     rfd::FileDialog::new()
-        .set_title("Import save")
-        .add_filter(FILTER.0, FILTER.1)
+        .set_title(tr!("files.import-save"))
+        .add_filter(crate::text::tr(FILTER.0), FILTER.1)
         .pick_file()
 }
 

@@ -18,7 +18,7 @@
               "class": "rl-stop-meta",
               "children": [
                 { "id": "version", "kind": "label", "class": "rl-stop-version" },
-                { "id": "installed", "kind": "label", "class": "rl-tag", "text": "Installed" }
+                { "id": "installed", "kind": "label", "class": "rl-tag", "text": "@ui.releases.installed" }
               ]
             },
             { "id": "title", "kind": "label", "class": "rl-stop-title" },
@@ -40,7 +40,7 @@
         {
           "id": "frame", "kind": "button", "class": "rl-frame", "action": "releases.image",
           "children": [
-            { "id": "missing", "kind": "label", "class": "rl-missing", "text": "Loading image…" },
+            { "id": "missing", "kind": "label", "class": "rl-missing", "text": "@ui.releases.loading-image" },
             { "id": "image", "kind": "image", "class": "rl-image" }
           ]
         },
@@ -83,12 +83,12 @@
               {
                 "class": "rl-heading",
                 "children": [
-                  { "kind": "label", "class": "rl-kicker", "text": "Under the Canopy" },
-                  { "id": "title", "kind": "label", "class": "rl-title", "text": "What’s new" },
+                  { "kind": "label", "class": "rl-kicker", "text": "@ui.releases.under-the-canopy" },
+                  { "id": "title", "kind": "label", "class": "rl-title", "text": "@ui.releases.what-s-new" },
                   { "id": "subtitle", "kind": "label", "class": "rl-subtitle" }
                 ]
               },
-              { "id": "close", "kind": "button", "class": "rl-close", "text": "✕", "action": "releases.close", "tooltip": { "title": "Close" } }
+              { "id": "close", "kind": "button", "class": "rl-close", "text": "✕", "action": "releases.close", "tooltip": { "title": "@ui.releases.close" } }
             ]
           },
           {
@@ -124,7 +124,7 @@
                             "children": [
                               { "id": "badge", "kind": "label", "class": "rl-badge" },
                               { "id": "date", "kind": "label", "class": "rl-date" },
-                              { "id": "installed", "kind": "label", "class": "rl-tag", "text": "Installed" }
+                              { "id": "installed", "kind": "label", "class": "rl-tag", "text": "@ui.releases.installed" }
                             ]
                           },
                           { "id": "headline", "kind": "label", "class": "rl-headline" },
@@ -145,8 +145,8 @@
             "class": "rl-foot",
             "children": [
               { "id": "hint", "kind": "label", "class": "rl-hint" },
-              { "id": "primary", "kind": "button", "class": "rl-button rl-primary", "text": "Download update", "action": "releases.primary" },
-              { "id": "done", "kind": "button", "class": "rl-button", "text": "Close", "action": "releases.close" }
+              { "id": "primary", "kind": "button", "class": "rl-button rl-primary", "text": "@ui.releases.download-update", "action": "releases.primary" },
+              { "id": "done", "kind": "button", "class": "rl-button", "text": "@ui.releases.close", "action": "releases.close" }
             ]
           },
           {
@@ -155,7 +155,7 @@
               {
                 "class": "rl-viewer-stage",
                 "children": [
-                  { "id": "missing", "kind": "label", "class": "rl-missing", "text": "Image unavailable. You can still read the release notes." },
+                  { "id": "missing", "kind": "label", "class": "rl-missing", "text": "@ui.releases.image-unavailable-you-can-still" },
                   { "id": "image", "kind": "image", "class": "rl-viewer-image" }
                 ]
               },
@@ -169,9 +169,9 @@
                       { "id": "counter", "kind": "label", "class": "rl-viewer-counter" }
                     ]
                   },
-                  { "id": "previous", "kind": "button", "class": "rl-button", "text": "Previous", "action": "releases.previous", "hotkey": "Left" },
-                  { "id": "next", "kind": "button", "class": "rl-button", "text": "Next", "action": "releases.next", "hotkey": "Right" },
-                  { "id": "back", "kind": "button", "class": "rl-button", "text": "Back to the notes", "action": "releases.viewer-close" }
+                  { "id": "previous", "kind": "button", "class": "rl-button", "text": "@ui.releases.previous", "action": "releases.previous", "hotkey": "Left" },
+                  { "id": "next", "kind": "button", "class": "rl-button", "text": "@ui.releases.next", "action": "releases.next", "hotkey": "Right" },
+                  { "id": "back", "kind": "button", "class": "rl-button", "text": "@ui.releases.back-to-the-notes", "action": "releases.viewer-close" }
                 ]
               }
             ]

@@ -255,6 +255,10 @@ impl Game {
     /// Builds the UI and starts loading the game's data in the background.
     pub fn new(paths: Paths, settings: Settings, gpu: &Gpu, dev: Option<DevStart>) -> Result<Self> {
         let pack = GameData::open_pack(&paths.data)?;
+        crate::text::install(crate::text::load(
+            &paths.data,
+            canopy_content::text::SOURCE_LANGUAGE,
+        ));
         let host = UiHost::new(&paths.data, gpu, &pack)?;
         let (tx, rx) = mpsc::channel();
         {
@@ -600,7 +604,7 @@ impl Game {
         if let Some(body) = playing.save() {
             let result = self.library.write(
                 &NewSave {
-                    name: "Autosave",
+                    name: &tr!("menu.autosave"),
                     mode,
                     map_name: &playing.map_name,
                     identity: &playing.identity,
@@ -1049,7 +1053,7 @@ impl Game {
         let (meta, body) = match attempt {
             Ok(x) => x,
             Err(error) => {
-                self.saves_status = format!("Cannot load: {error:#}");
+                self.saves_status = tr!("menu.cannot-load", error = &format!("{error:#}"));
                 return;
             }
         };
@@ -1245,11 +1249,13 @@ impl Game {
                         .map(|s| crate::replay::format::Player {
                             slot: s.player,
                             name: match s.kind {
-                                canopy_sim::SlotKind::Ai => format!("Computer {}", s.player + 1),
+                                canopy_sim::SlotKind::Ai => {
+                                    tr!("menu.computer", number = s.player + 1)
+                                }
                                 canopy_sim::SlotKind::Human => s
                                     .name
                                     .clone()
-                                    .unwrap_or_else(|| format!("Player {}", s.player + 1)),
+                                    .unwrap_or_else(|| tr!("hud.player", number = s.player + 1)),
                             },
                             computer: s.kind == canopy_sim::SlotKind::Ai,
                             race: s.race.clone(),
@@ -1560,10 +1566,7 @@ impl Game {
             Some(multiplayer::Outcome::EnterLobby) => self.apply(Intent::Open(Screen::Lobby)),
             Some(multiplayer::Outcome::Start { config, session }) => {
                 if data.map(&config.map_id).is_none() {
-                    self.mp.status = format!(
-                        "The match uses the battlefield {}, which is not in your game.",
-                        config.map_id
-                    );
+                    self.mp.status = tr!("menu.missing-battlefield", map = config.map_id.as_str());
                     drop(session);
                     self.apply(Intent::Back);
                     return;
@@ -1947,9 +1950,9 @@ impl Game {
                 if let Some(entry) = self.replays.selected() {
                     self.ask(Dialog {
                         ask: Ask::DeleteReplay(entry.name.clone()),
-                        title: "Delete this replay?".into(),
-                        body: format!("“{}” is removed for good.", plain(&entry.name)),
-                        confirm: "Delete".into(),
+                        title: tr!("menu.delete-replay-q"),
+                        body: tr!("menu.removed-for-good", name = &plain(&entry.name)),
+                        confirm: tr!("menu.delete"),
                         danger: true,
                         second: None,
                     });
@@ -1961,7 +1964,8 @@ impl Game {
                     .map_err(anyhow::Error::from)
                     .and_then(|()| crate::files::reveal(&dir))
                 {
-                    self.replays.status = format!("Cannot open the folder: {error:#}");
+                    self.replays.status =
+                        tr!("menu.cannot-open-folder", error = &format!("{error:#}"));
                 }
             }
             _ if name.starts_with("replay.") => {
@@ -2046,13 +2050,13 @@ impl Game {
             }
             "gm.settings" if clicked => self.open_settings(),
             "gm.save-exit" if clicked => {
-                self.save_game_named("Before leaving");
+                self.save_game_named(&tr!("menu.save-before-leaving"));
                 self.apply(Intent::LeaveMatch);
             }
             "gm.leave" if clicked => self.apply(Intent::LeaveMatch),
             "gm.save-restart" | "gm.restart-now" if clicked => {
                 if name == "gm.save-restart" {
-                    self.save_game_named("Before restarting");
+                    self.save_game_named(&tr!("menu.save-before-restarting"));
                 }
                 if let Some(rerun) = self.last_match.clone() {
                     self.start_rerun(rerun);
@@ -2072,9 +2076,9 @@ impl Game {
                 if let Some(meta) = action.index.and_then(|i| self.saves_list.get(i)).cloned() {
                     self.ask(Dialog {
                         ask: Ask::DeleteSave(meta.id.clone()),
-                        title: "Delete this save?".into(),
-                        body: format!("“{}” is removed for good.", plain(&meta.name)),
-                        confirm: "Delete".into(),
+                        title: tr!("menu.delete-save-q"),
+                        body: tr!("menu.removed-for-good", name = &plain(&meta.name)),
+                        confirm: tr!("menu.delete"),
                         danger: true,
                         second: None,
                     });
@@ -2319,14 +2323,14 @@ impl Game {
         match ask {
             Ask::DeleteReplay(name) => {
                 self.replays.status = match self.replay_library.delete(&name) {
-                    Ok(()) => format!("Deleted “{}”.", plain(&name)),
-                    Err(error) => format!("Cannot delete: {error:#}"),
+                    Ok(()) => tr!("menu.deleted", name = &plain(&name)),
+                    Err(error) => tr!("menu.cannot-delete", error = &format!("{error:#}")),
                 };
                 self.replays.refresh(&self.replay_library);
             }
             Ask::DeleteSave(id) => {
                 if let Err(error) = self.library.delete(&id) {
-                    self.saves_status = format!("Cannot delete: {error:#}");
+                    self.saves_status = tr!("menu.cannot-delete", error = &format!("{error:#}"));
                 }
                 self.list_saves();
             }
@@ -2390,13 +2394,15 @@ impl Game {
         let to = self.replays.rename_text.clone();
         match self.replay_library.rename(&from, &to) {
             Ok(name) => {
-                self.replays.status = format!("Renamed to “{}”.", plain(&name));
+                self.replays.status = tr!("menu.renamed", name = &plain(&name));
                 self.replays.refresh(&self.replay_library);
                 if let Some(i) = self.replays.entries.iter().position(|e| e.name == name) {
                     self.replays.selected = i;
                 }
             }
-            Err(error) => self.replays.status = format!("Cannot rename: {error:#}"),
+            Err(error) => {
+                self.replays.status = tr!("menu.cannot-rename", error = &format!("{error:#}"))
+            }
         }
     }
 
@@ -2447,7 +2453,7 @@ impl Game {
             Ok(x) => x,
             Err(error) => {
                 tracing::warn!(error = %format!("{error:#}"), "cannot watch the replay");
-                self.replays.status = format!("Cannot watch: {error:#}");
+                self.replays.status = tr!("menu.cannot-watch", error = &format!("{error:#}"));
                 return;
             }
         };
@@ -2494,8 +2500,8 @@ impl Game {
             return;
         };
         self.saves_status = match self.library.export(&meta.id, &path) {
-            Ok(meta) => format!("Exported “{}”.", plain(&meta.name)),
-            Err(error) => format!("Cannot export: {error:#}"),
+            Ok(meta) => tr!("menu.exported", name = &plain(&meta.name)),
+            Err(error) => tr!("menu.cannot-export", error = &format!("{error:#}")),
         };
     }
 
@@ -2523,9 +2529,11 @@ impl Game {
         match self.library.import(&path, mode, here) {
             Ok(meta) => {
                 self.list_saves();
-                self.saves_status = format!("Imported “{}”.", plain(&meta.name));
+                self.saves_status = tr!("menu.imported", name = &plain(&meta.name));
             }
-            Err(error) => self.saves_status = format!("Cannot import: {error:#}"),
+            Err(error) => {
+                self.saves_status = tr!("menu.cannot-import", error = &format!("{error:#}"))
+            }
         }
     }
 
@@ -2575,11 +2583,11 @@ impl Game {
             return;
         };
         let Some(mode) = playing.kind.save_mode() else {
-            self.menu_status = "Multiplayer matches cannot be saved.".into();
+            self.menu_status = tr!("menu.multiplayer-no-save");
             return;
         };
         let Some(body) = playing.save() else {
-            self.menu_status = "The match did not answer; nothing was saved.".into();
+            self.menu_status = tr!("menu.match-no-answer");
             return;
         };
         let result = self.library.write(
@@ -2594,8 +2602,8 @@ impl Game {
             None,
         );
         self.menu_status = match result {
-            Ok(meta) => format!("Saved “{}”.", plain(&meta.name)),
-            Err(error) => format!("Cannot save: {error:#}"),
+            Ok(meta) => tr!("menu.saved", name = &plain(&meta.name)),
+            Err(error) => tr!("menu.cannot-save", error = &format!("{error:#}")),
         };
     }
 
@@ -2813,17 +2821,18 @@ impl Game {
                 widgets::text(
                     ui,
                     "result/save-replay",
-                    if saved { "Replay saved" } else { "Save replay" },
+                    &if saved {
+                        tr!("menu.replay-saved")
+                    } else {
+                        tr!("menu.save-replay")
+                    },
                 );
                 let status = match &self.replay_saved {
-                    Some(Ok(name)) => format!(
-                        "Saved as “{}” in Replays · rename it from the replays list",
-                        plain(name)
-                    ),
+                    Some(Ok(name)) => tr!("menu.replay-saved-as", name = &plain(name)),
                     Some(Err(error)) => {
                         format!(
-                            "[color=#fca5a5]The replay could not be saved: {}[/color]",
-                            plain(error)
+                            "[color=#fca5a5]{}[/color]",
+                            tr!("menu.replay-not-saved", error = &plain(error))
                         )
                     }
                     None => String::new(),
@@ -2869,13 +2878,13 @@ impl Game {
                 widgets::text(
                     ui,
                     "loading/art-view/error",
-                    &format!("The game could not start: {}", plain(error)),
+                    &tr!("menu.game-could-not-start", error = &plain(error)),
                 );
                 widgets::text(ui, "loading/art-view/stage", "");
             }
             None => {
                 widgets::visible(ui, "loading/art-view/error", false);
-                widgets::text(ui, "loading/art-view/stage", self.boot_stage.0.label());
+                widgets::text(ui, "loading/art-view/stage", &self.boot_stage.0.label());
                 if let Some(bar) = ui.find("loading/art-view/progress") {
                     ui.set_value(bar, self.boot_stage.1);
                 }
@@ -2919,20 +2928,20 @@ impl Game {
         widgets::visible(ui, "loading/mission-view", false);
         widgets::visible(ui, "loading/art-view", false);
         widgets::visible(ui, "loading/panel-view", true);
-        let label = stage.map_or("Starting the match", |(s, _)| s.label());
+        let label = stage.map_or_else(|| tr!("loading.starting-match"), |(s, _)| s.label());
         widgets::text(
             ui,
             "loading/panel-view/title",
-            if error.is_some() {
-                "The battlefield could not be loaded"
+            &if error.is_some() {
+                tr!("loading.battlefield-failed")
             } else {
-                "Preparing the battlefield"
+                tr!("loading.preparing")
             },
         );
         widgets::text(
             ui,
             "loading/panel-view/stage",
-            if error.is_some() { "" } else { label },
+            if error.is_some() { "" } else { &label },
         );
         widgets::visible(ui, "loading/panel-view/progress", error.is_none());
         if let Some(bar) = ui.find("loading/panel-view/progress") {
@@ -2941,10 +2950,9 @@ impl Game {
         widgets::text(
             ui,
             "loading/panel-view/detail",
-            &error.as_deref().map_or_else(
-                || "The match starts when preparation is complete.".to_string(),
-                plain,
-            ),
+            &error
+                .as_deref()
+                .map_or_else(|| tr!("loading.starts-when-ready"), plain),
         );
         match error {
             Some(error) => {
@@ -2952,13 +2960,13 @@ impl Game {
                 widgets::text(
                     ui,
                     "loading/art-view/error",
-                    &format!("The battlefield could not be loaded: {}", plain(&error)),
+                    &tr!("loading.battlefield-failed-detail", error = &plain(&error)),
                 );
                 widgets::text(ui, "loading/art-view/stage", "");
             }
             None => {
                 widgets::visible(ui, "loading/art-view/error", false);
-                widgets::text(ui, "loading/art-view/stage", label);
+                widgets::text(ui, "loading/art-view/stage", &label);
                 if let Some(bar) = ui.find("loading/art-view/progress") {
                     ui.set_value(bar, progress);
                 }
@@ -2975,8 +2983,8 @@ impl Game {
             let base = format!("saves/list/{i}");
             widgets::text(ui, &format!("{base}/name"), &plain(&meta.name));
             let mode = match meta.mode {
-                saves::Mode::Skirmish => "Skirmish",
-                saves::Mode::Campaign => "Campaign",
+                saves::Mode::Skirmish => tr!("match.kind-skirmish"),
+                saves::Mode::Campaign => tr!("match.kind-campaign"),
             };
             widgets::text(
                 ui,

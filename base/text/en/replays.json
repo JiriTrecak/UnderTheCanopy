@@ -1,0 +1,13 @@
+{
+  "replays.cannot-read": "This file cannot be read",
+  "replays.cannot-read-error": "This file cannot be read: {error}",
+  "replays.count": "{count, plural, one {# replay} other {# replays}}",
+  "replays.map-changed": "The map {map} has changed since",
+  "replays.map-missing": "The map {map} is not in this game",
+  "replays.meta": "{mode} · {map} · {result}\n{time} · {length} long · version {version} · {kb} KB",
+  "replays.no-team": "No team",
+  "replays.other-content": "Recorded with other game content ({version})",
+  "replays.recorded-by": "{name} (recorded)",
+  "replays.recorded-in": "Recorded in {version}",
+  "replays.unreadable": "Unreadable"
+}

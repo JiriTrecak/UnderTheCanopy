@@ -5,7 +5,7 @@
       {
         "class": "gm fb",
         "children": [
-          { "kind": "label", "class": "gm-title", "text": "Submit feedback" },
+          { "kind": "label", "class": "gm-title", "text": "@ui.feedback.submit-feedback" },
           {
             "id": "form", "class": "gm-page",
             "children": [
@@ -16,30 +16,30 @@
                     "class": "fb-frame",
                     "children": [
                       { "id": "thumb", "kind": "image", "class": "fb-thumb" },
-                      { "id": "taking", "kind": "label", "class": "fb-taking", "text": "Taking the screenshot…" }
+                      { "id": "taking", "kind": "label", "class": "fb-taking", "text": "@ui.feedback.taking-the-screenshot" }
                     ]
                   },
                   {
                     "class": "fb-shot-text",
                     "children": [
-                      { "id": "shot-label", "kind": "label", "class": "mp-caption", "text": "Screenshot of the game" },
-                      { "id": "shot-note", "kind": "label", "class": "fb-note", "text": "This screenshot is submitted with your report." },
+                      { "id": "shot-label", "kind": "label", "class": "mp-caption", "text": "@ui.feedback.screenshot-of-the-game" },
+                      { "id": "shot-note", "kind": "label", "class": "fb-note", "text": "@ui.feedback.this-screenshot-is-submitted-with" },
                       { "id": "files-note", "kind": "label", "class": "fb-note fb-files", "visible": false }
                     ]
                   }
                 ]
               },
-              { "kind": "label", "class": "mp-caption fb-caption", "text": "Category" },
-              { "id": "category", "kind": "dropdown", "class": "sk-select fb-select", "action": "fb.category", "options": ["Bug", "Idea", "Balance", "Other"] },
-              { "kind": "label", "class": "mp-caption fb-caption", "text": "Description" },
-              { "id": "description", "kind": "text_field", "class": "mp-field", "max_length": 5000, "placeholder": "What happened, or what would you change?", "action": "fb.description" },
-              { "kind": "label", "class": "fb-note", "text": "Your game version, operating system, graphics card and the map or match are attached." },
+              { "kind": "label", "class": "mp-caption fb-caption", "text": "@ui.feedback.category" },
+              { "id": "category", "kind": "dropdown", "class": "sk-select fb-select", "action": "fb.category", "options": ["@ui.feedback.bug", "@ui.feedback.idea", "@ui.feedback.balance", "@ui.feedback.other"] },
+              { "kind": "label", "class": "mp-caption fb-caption", "text": "@ui.feedback.description" },
+              { "id": "description", "kind": "text_field", "class": "mp-field", "max_length": 5000, "placeholder": "@ui.feedback.what-happened-or-what-would", "action": "fb.description" },
+              { "kind": "label", "class": "fb-note", "text": "@ui.feedback.your-game-version-operating-system" },
               { "id": "status", "kind": "label", "class": "gm-status", "visible": false },
               {
                 "class": "gm-row fb-actions",
                 "children": [
-                  { "kind": "button", "class": "gm-button st-grow", "text": "Cancel", "action": "fb.cancel" },
-                  { "id": "submit", "kind": "button", "class": "gm-button fb-submit st-grow", "text": "Submit", "action": "fb.submit" }
+                  { "kind": "button", "class": "gm-button st-grow", "text": "@ui.feedback.cancel", "action": "fb.cancel" },
+                  { "id": "submit", "kind": "button", "class": "gm-button fb-submit st-grow", "text": "@ui.feedback.submit", "action": "fb.submit" }
                 ]
               }
             ]
@@ -49,7 +49,7 @@
             "children": [
               { "id": "done-title", "kind": "label", "class": "fb-done-title" },
               { "id": "done-body", "kind": "label", "class": "gm-sub" },
-              { "id": "close", "kind": "button", "class": "gm-button", "text": "Close", "action": "fb.close" }
+              { "id": "close", "kind": "button", "class": "gm-button", "text": "@ui.feedback.close", "action": "fb.close" }
             ]
           }
         ]

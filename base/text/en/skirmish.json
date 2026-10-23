@@ -1,0 +1,13 @@
+{
+  "skirmish.ai": "AI",
+  "skirmish.no-maps": "No maps available",
+  "skirmish.observer": "Observer · Watch all colonies",
+  "skirmish.open-testbed": "Open testbed →",
+  "skirmish.playing-as": "Playing as Player {number}",
+  "skirmish.rules": "Destroy all rival buildings. The last surviving side wins. Computer players build their economy, lead their hero and command their own army.",
+  "skirmish.sandbox-rules": "A sandbox map: no victory, try anything.",
+  "skirmish.start": "Start skirmish →",
+  "skirmish.testbed": "Testbed",
+  "skirmish.watch": "Watch match →",
+  "skirmish.you": "You"
+}

@@ -174,7 +174,7 @@ impl FeedbackForm {
             Delivery::Queued { report } if report == ours => self.phase = Phase::Queued,
             Delivery::Refused { report, message } if report == ours => {
                 self.phase = Phase::Editing;
-                self.status = format!("The report was not accepted: {message}");
+                self.status = tr!("feedback.refused", message = message.as_str());
             }
             _ => {}
         }
@@ -185,26 +185,23 @@ impl FeedbackForm {
         widgets::visible(ui, "feedback/form", editing);
         widgets::visible(ui, "feedback/done", !editing);
         let (shot_label, note) = match &self.screenshot {
-            Screenshot::Taking | Screenshot::Ready { .. } => (
-                self.place.shot_label(),
-                "This screenshot is submitted with your report.".to_string(),
-            ),
+            Screenshot::Taking | Screenshot::Ready { .. } => {
+                (self.place.shot_label(), tr!("feedback.shot-note"))
+            }
             Screenshot::Missing => (
-                "No screenshot",
-                "A screenshot could not be taken; the report is sent without one.".to_string(),
+                tr!("feedback.no-screenshot"),
+                tr!("feedback.no-screenshot-note"),
             ),
         };
-        widgets::text(ui, "feedback/form/shot-label", shot_label);
+        widgets::text(ui, "feedback/form/shot-label", &shot_label);
         widgets::text(ui, "feedback/form/shot-note", &note);
         let attached = match &self.files {
             Files::None => String::new(),
-            Files::Preparing(_) => "Attaching the replay of this match…".into(),
+            Files::Preparing(_) => tr!("feedback.attaching"),
             Files::Ready(files) => match (&files.replay, &files.save) {
-                (Some(_), Some(_)) => {
-                    "Replay of this match is attached, with a save of this moment.".into()
-                }
-                (Some(_), None) => "Replay of this match is attached.".into(),
-                (None, Some(_)) => "A save of this moment is attached.".into(),
+                (Some(_), Some(_)) => tr!("feedback.replay-and-save"),
+                (Some(_), None) => tr!("feedback.replay-attached"),
+                (None, Some(_)) => tr!("feedback.save-attached"),
                 (None, None) => String::new(),
             },
         };
@@ -228,18 +225,12 @@ impl FeedbackForm {
         widgets::visible(ui, "feedback/form/status", !self.status.is_empty());
         let (title, body) = match &self.phase {
             Phase::Editing => (String::new(), String::new()),
-            Phase::Sending { .. } => (
-                "Sending…".into(),
-                "Your report and its screenshot are on their way. You can close this; it is sent in the background.".into(),
-            ),
+            Phase::Sending { .. } => (tr!("feedback.sending"), tr!("feedback.sending-body")),
             Phase::Sent { id } => (
-                "Thank you!".into(),
-                format!("Your report was sent. Its reference is {id}."),
+                tr!("feedback.thank-you"),
+                tr!("feedback.sent", id = id.as_str()),
             ),
-            Phase::Queued => (
-                "Saved for later".into(),
-                "The report could not be sent right now. It is saved with its screenshot and sent automatically once the game reaches the server.".into(),
-            ),
+            Phase::Queued => (tr!("feedback.saved-for-later"), tr!("feedback.queued-body")),
         };
         widgets::text(ui, "feedback/done/done-title", &title);
         widgets::text(ui, "feedback/done/done-body", &body);

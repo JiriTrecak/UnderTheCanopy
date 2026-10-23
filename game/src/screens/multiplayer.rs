@@ -97,7 +97,7 @@ impl Multiplayer {
             Ok(a) => a,
             Err(e) => {
                 self.net = None;
-                self.status = format!("Bad server address: {e}");
+                self.status = tr!("mp.bad-address", error = &e.to_string());
                 return;
             }
         };
@@ -105,7 +105,7 @@ impl Multiplayer {
             self.net = match Net::new(address.clone()) {
                 Ok(net) => Some(net),
                 Err(e) => {
-                    self.status = format!("Can't start networking: {e}");
+                    self.status = tr!("mp.no-networking", error = &e.to_string());
                     None
                 }
             };
@@ -133,15 +133,15 @@ impl Multiplayer {
             match reply {
                 Ok(h) if h.ok => {
                     self.reachable = Some(true);
-                    self.health_text = format!("MatchHost {} · online", h.version);
+                    self.health_text = tr!("mp.host-online", version = h.version.as_str());
                 }
                 Ok(_) => {
                     self.reachable = Some(false);
-                    self.health_text = "MatchHost is unhealthy".into();
+                    self.health_text = tr!("mp.host-unhealthy");
                 }
                 Err(e) => {
                     self.reachable = Some(false);
-                    self.health_text = "Can't reach MatchHost".into();
+                    self.health_text = tr!("mp.host-unreachable");
                     tracing::warn!(error = %e, "match server health");
                 }
             }
@@ -163,7 +163,7 @@ impl Multiplayer {
                 }
                 Err(e) => {
                     self.rooms_loaded = true;
-                    self.status = format!("Can't reach MatchHost: {e}");
+                    self.status = tr!("mp.host-unreachable-error", error = &e.to_string());
                 }
             }
         }
@@ -202,9 +202,9 @@ impl Multiplayer {
                 }
                 Event::Closed { reason } => {
                     self.status = if reason.is_empty() {
-                        "The lobby closed.".into()
+                        tr!("mp.lobby-closed")
                     } else {
-                        format!("The lobby closed: {reason}")
+                        tr!("mp.lobby-closed-reason", reason = &reason)
                     };
                     left = true;
                 }
@@ -232,11 +232,11 @@ impl Multiplayer {
     /// Joins the selected room or creates one on `maps[selected_map]`, as the tab says.
     pub fn go(&mut self, maps: &[&MapEntry], name: &str) {
         let Some(net) = &self.net else {
-            self.status = "Not connected to a match server.".into();
+            self.status = tr!("mp.not-connected");
             return;
         };
         if name.trim().is_empty() {
-            self.status = "Enter your player name first.".into();
+            self.status = tr!("mp.enter-name");
             return;
         }
         match self.tab {
@@ -259,7 +259,7 @@ impl Multiplayer {
                 let bytes = map.identity().unwrap_or_default();
                 let seats = (2 + self.seats).min(map.starts.len()).max(2) as u32;
                 self.joining = Some(net.create_room(&CreateRoom {
-                    name: format!("{name}'s lobby"),
+                    name: tr!("mp.lobby-of", name = name),
                     map_id: map.id().into(),
                     map_revision: map_revision(&bytes),
                     slot_count: seats,
@@ -267,7 +267,7 @@ impl Multiplayer {
                 }));
             }
         }
-        self.status = "Contacting MatchHost…".into();
+        self.status = tr!("mp.contacting-host");
     }
 
     /// Leaves the room (old Back).
@@ -301,7 +301,11 @@ impl Multiplayer {
         widgets::text(
             ui,
             "multiplayer/list-title",
-            if creating { "Battlefields" } else { "Lobbies" },
+            &if creating {
+                tr!("mp.battlefields")
+            } else {
+                tr!("mp.lobbies")
+            },
         );
         widgets::visible(ui, "multiplayer/rooms", !creating);
         widgets::visible(ui, "multiplayer/maps", creating);
@@ -329,9 +333,9 @@ impl Multiplayer {
             (
                 map,
                 if ok {
-                    "Host a lobby on this battlefield; others join from Find a lobby.".into()
+                    tr!("mp.host-hint")
                 } else {
-                    "This battlefield needs at least two starting positions.".into()
+                    tr!("mp.needs-two-starts")
                 },
                 ok,
             )
@@ -345,7 +349,7 @@ impl Multiplayer {
                 let taken = r.slots.iter().filter(|s| s.name.is_some()).count();
                 let total = r.slots.len();
                 let name = if r.name.is_empty() {
-                    format!("{}'s lobby", r.host)
+                    tr!("mp.lobby-of", name = r.host.as_str())
                 } else {
                     r.name.clone()
                 };
@@ -353,9 +357,9 @@ impl Multiplayer {
                     .map(&r.map_id)
                     .map_or(r.map_id.as_str(), |m| m.name.as_str());
                 let state = match r.state {
-                    RoomState::Playing => format!("In game · {taken}/{total}"),
-                    _ if taken >= total => format!("Full · {taken}/{total}"),
-                    _ => format!("Open · {taken}/{total}"),
+                    RoomState::Playing => tr!("mp.room-in-game", taken = taken, total = total),
+                    _ if taken >= total => tr!("mp.room-full", taken = taken, total = total),
+                    _ => tr!("mp.room-open", taken = taken, total = total),
                 };
                 widgets::text(&mut host.ui, &format!("{base}/name"), &name);
                 widgets::text(&mut host.ui, &format!("{base}/map"), map_name);
@@ -363,13 +367,13 @@ impl Multiplayer {
                 widgets::checked(&mut host.ui, &base, self.selected_room == Some(i));
             }
             let empty = if !self.rooms_loaded {
-                "Looking for lobbies…"
+                tr!("mp.looking")
             } else if self.rooms.is_empty() {
-                "No lobbies yet. Create one and invite your friends to join."
+                tr!("mp.no-lobbies")
             } else {
-                ""
+                String::new()
             };
-            widgets::text(&mut host.ui, "multiplayer/empty", empty);
+            widgets::text(&mut host.ui, "multiplayer/empty", &empty);
             widgets::visible(&mut host.ui, "multiplayer/empty", !empty.is_empty());
             let map = room.and_then(|r| data.map(&r.map_id));
             if let Some(list) = host.ui.find("multiplayer/roster") {
@@ -385,15 +389,15 @@ impl Multiplayer {
                     widgets::text(
                         &mut host.ui,
                         &format!("{base}/name"),
-                        seat.name.as_deref().unwrap_or("Open slot"),
+                        &seat.name.clone().unwrap_or_else(|| tr!("mp.open-slot")),
                     );
                     widgets::text(
                         &mut host.ui,
                         &format!("{base}/sub"),
-                        if seat.name.is_some() {
-                            "Joined"
+                        &if seat.name.is_some() {
+                            tr!("mp.joined")
                         } else {
-                            "Waiting for a player"
+                            tr!("mp.waiting-for-player")
                         },
                     );
                 }
@@ -401,24 +405,10 @@ impl Multiplayer {
             let free = room.is_some_and(|r| r.slots.iter().any(|s| s.name.is_none()));
             let (hint, ok) = match room {
                 None => (String::new(), false),
-                Some(r) if r.state == RoomState::Playing => {
-                    ("This match is already underway.".to_string(), false)
-                }
-                Some(_) if map.is_none() => (
-                    "This battlefield is not available in your game.".to_string(),
-                    false,
-                ),
-                Some(_) if !free => (
-                    "This lobby is full. Try another or create your own.".to_string(),
-                    false,
-                ),
-                Some(r) => (
-                    format!(
-                        "Hosted by {}. Join an open player slot to enter the lobby.",
-                        r.host
-                    ),
-                    true,
-                ),
+                Some(r) if r.state == RoomState::Playing => (tr!("mp.underway"), false),
+                Some(_) if map.is_none() => (tr!("mp.map-unavailable"), false),
+                Some(_) if !free => (tr!("mp.lobby-full"), false),
+                Some(r) => (tr!("mp.hosted-by-join", host = r.host.as_str()), true),
             };
             (map, hint, ok)
         };
@@ -430,7 +420,7 @@ impl Multiplayer {
         let server = match self.reachable {
             Some(true) => format!("{} · {}", self.health_text, self.server),
             Some(false) => format!("{} · {}", self.health_text, self.server),
-            None => format!("Contacting {}…", self.server),
+            None => tr!("mp.contacting", server = &self.server.to_string()),
         };
         widgets::text(ui, "multiplayer/server", &server);
         let open = self
@@ -442,18 +432,18 @@ impl Multiplayer {
             ui,
             "multiplayer/footnote",
             &if creating {
-                "Online match · Shared battlefields".to_string()
+                tr!("mp.footnote-create")
             } else {
-                format!("{open} open lobbies · Refresh to find new matches")
+                tr!("mp.footnote-find", open = open)
             },
         );
         widgets::text(
             ui,
             "multiplayer/go",
-            if creating {
-                "Create lobby"
+            &if creating {
+                tr!("mp.create-lobby")
             } else {
-                "Join lobby"
+                tr!("mp.join-lobby")
             },
         );
         widgets::enabled(
@@ -514,41 +504,42 @@ impl Multiplayer {
                 count(SeatKind::Open),
             );
             widgets::text(ui, "lobby/name", &r.name);
-            widgets::text(ui, "lobby/host", &format!("Hosted by {}", r.host));
-            let plural = |n: usize, one: &str, many: &str| {
-                format!("{n} {}", if n == 1 { one } else { many })
-            };
-            let mut parts = vec![plural(humans, "player", "players")];
+            widgets::text(
+                ui,
+                "lobby/host",
+                &tr!("mp.hosted-by", host = r.host.as_str()),
+            );
+            let mut parts = vec![tr!("mp.players-count", count = humans)];
             if computers > 0 {
-                parts.push(plural(computers, "computer", "computers"));
+                parts.push(tr!("mp.computers-count", count = computers));
             }
-            parts.push(format!("{open} open"));
+            parts.push(tr!("mp.open-count", count = open));
             widgets::text(
                 ui,
                 "lobby/room-meta",
-                &format!(
-                    "{} · Input buffer {} ms",
-                    parts.join(" · "),
-                    r.input_delay_ms.unwrap_or(0)
+                &tr!(
+                    "mp.room-meta",
+                    parts = &parts.join(" · "),
+                    delay = r.input_delay_ms.unwrap_or(0)
                 ),
             );
         }
         widgets::text(
             ui,
             "lobby/badge",
-            if host_seat {
-                "You are the host"
+            &if host_seat {
+                tr!("mp.you-host")
             } else {
-                "You have joined"
+                tr!("mp.you-joined")
             },
         );
         widgets::text(
             ui,
             "lobby/copy",
-            if host_seat {
-                "Set each seat open, closed or to the computer, and the teams. Start whenever you are ready: open seats nobody took stay empty."
+            &if host_seat {
+                tr!("mp.host-copy")
             } else {
-                "Choose your race, hero, team and colour. The host starts the match."
+                tr!("mp.guest-copy")
             },
         );
         let races = widgets::races(data);
@@ -558,7 +549,7 @@ impl Multiplayer {
             ui.set_count(list, seats.len());
         }
         let waiting = room.is_some_and(|r| r.state == RoomState::Waiting);
-        let teams: Vec<String> = (1..=TEAMS).map(|t| format!("Team {t}")).collect();
+        let teams: Vec<String> = (1..=TEAMS).map(|t| tr!("mp.team", number = t)).collect();
         for (i, seat) in seats.iter().enumerate() {
             let base = format!("lobby/seats/{i}");
             let kind = seat_kind(seat);
@@ -575,16 +566,16 @@ impl Multiplayer {
                 SeatKind::Human => {
                     let n = seat.name.clone().unwrap_or_default();
                     (
-                        if mine { format!("{n} (you)") } else { n },
+                        if mine { tr!("match.you", name = &n) } else { n },
                         seat.round_trip_ms.map_or_else(
-                            || "Connected".to_string(),
-                            |ms| format!("Connected · {ms} ms RTT"),
+                            || tr!("mp.connected"),
+                            |ms| tr!("mp.connected-rtt", ms = ms),
                         ),
                     )
                 }
-                SeatKind::Ai => ("Computer".into(), "Played by the computer".into()),
-                SeatKind::Open => ("Open".into(), "Waiting for a player".into()),
-                SeatKind::Closed => ("Closed".into(), "Nobody plays here".into()),
+                SeatKind::Ai => (tr!("mp.seat-computer"), tr!("mp.played-by-computer")),
+                SeatKind::Open => (tr!("mp.seat-open"), tr!("mp.waiting-for-player")),
+                SeatKind::Closed => (tr!("mp.seat-closed"), tr!("mp.nobody-plays")),
             };
             widgets::text(ui, &format!("{base}/name"), &name);
             widgets::text(ui, &format!("{base}/sub"), &sub);
@@ -638,10 +629,10 @@ impl Multiplayer {
         widgets::text(
             ui,
             "lobby/footnote",
-            if waiting {
-                "Lobby open · Players can join until the match starts"
+            &if waiting {
+                tr!("mp.lobby-open")
             } else {
-                "Match starting…"
+                tr!("mp.match-starting")
             },
         );
     }
@@ -704,7 +695,11 @@ const COLORS: usize = 8;
 const SEAT_OPTIONS: [SeatKind; 3] = [SeatKind::Open, SeatKind::Closed, SeatKind::Ai];
 
 fn seat_options() -> Vec<String> {
-    vec!["Open".into(), "Closed".into(), "Computer".into()]
+    vec![
+        tr!("mp.seat-open"),
+        tr!("mp.seat-closed"),
+        tr!("mp.seat-computer"),
+    ]
 }
 
 fn seat_option(kind: SeatKind) -> usize {

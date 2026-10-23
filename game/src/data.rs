@@ -116,11 +116,11 @@ pub enum BootStage {
 }
 
 impl BootStage {
-    pub fn label(self) -> &'static str {
+    pub fn label(self) -> String {
         match self {
-            Self::Pack => "Opening the asset pack",
-            Self::Content => "Reading the game's content",
-            Self::Maps => "Surveying the battlefields",
+            Self::Pack => tr!("loading.stage-pack"),
+            Self::Content => tr!("loading.stage-content"),
+            Self::Maps => tr!("loading.stage-maps"),
         }
     }
 }

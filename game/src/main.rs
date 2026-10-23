@@ -1,5 +1,8 @@
 //! Under the Canopy: the game executable.
 
+// First, so `tr!` reaches every module below (D96).
+#[macro_use]
+mod text;
 mod app;
 mod bench;
 mod campaign;

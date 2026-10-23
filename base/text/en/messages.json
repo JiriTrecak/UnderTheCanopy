@@ -1,0 +1,16 @@
+{
+  "message.already-built-on": "This {name} is already built on",
+  "message.build-on": "Build on a {name}",
+  "message.build-within": "Build within {cells} cells of {name}",
+  "message.building-limit": "Building limit reached",
+  "message.deposit-access": "Leave access around the resource deposit",
+  "message.dry-ground": "Build on dry ground",
+  "message.entrance-blocked": "Entrance blocked",
+  "message.explore-first": "Explore this location first",
+  "message.flatter-ground": "Choose flatter ground",
+  "message.insufficient-materials": "Insufficient unreserved materials",
+  "message.match-ended": "Match has ended",
+  "message.placement-blocked": "Placement blocked",
+  "message.select-eligible-worker": "Select an eligible worker",
+  "message.unknown-building": "Unknown building"
+}

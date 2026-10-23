@@ -79,11 +79,11 @@ pub struct Place {
 
 impl Place {
     /// What the screenshot shows, in the form and on the issue.
-    pub fn shot_label(&self) -> &'static str {
+    pub fn shot_label(&self) -> String {
         if self.in_match {
-            "Screenshot of the game"
+            tr!("feedback.shot-game")
         } else {
-            "Screenshot of the menu"
+            tr!("feedback.shot-menu")
         }
     }
 }

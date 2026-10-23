@@ -1,0 +1,9 @@
+{
+  "play.click-to-build": "Click to order construction.",
+  "play.observer": "Observer",
+  "play.place-hint": "{name}: {problem} {clockwise} / {counterclockwise}: rotate ({degrees}°). {cancel} cancels.",
+  "play.target-hint": "{name}: choose a {wants}. {cancel} cancels.",
+  "play.wants-ground": "ground location",
+  "play.wants-target": "target",
+  "play.wants-target-or-ground": "target or ground location"
+}

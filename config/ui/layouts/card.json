@@ -22,8 +22,8 @@
                 "children": [
                   { "id": "page", "kind": "label", "class": "cd-page" },
                   { "class": "cd-spacer" },
-                  { "kind": "button", "class": "cd-skip", "text": "Skip", "action": "card.skip" },
-                  { "id": "continue", "kind": "button", "class": "cd-continue", "text": "Continue", "action": "card.next" }
+                  { "kind": "button", "class": "cd-skip", "text": "@ui.card.skip", "action": "card.skip" },
+                  { "id": "continue", "kind": "button", "class": "cd-continue", "text": "@ui.card.continue", "action": "card.next" }
                 ]
               }
             ]
@@ -39,7 +39,7 @@
           { "id": "note", "kind": "label", "class": "cd-title-note" }
         ]
       },
-      { "id": "hint", "kind": "label", "class": "cd-hint", "text": "Click or press any key to continue" }
+      { "id": "hint", "kind": "label", "class": "cd-hint", "text": "@ui.card.click-or-press-any-key" }
     ]
   }
 }

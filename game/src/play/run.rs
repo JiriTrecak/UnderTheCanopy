@@ -198,7 +198,7 @@ impl InMatch {
                     s.player,
                     s.name
                         .clone()
-                        .unwrap_or_else(|| format!("Player {}", s.player + 1)),
+                        .unwrap_or_else(|| tr!("hud.player", number = s.player + 1)),
                     s.kind == canopy_sim::SlotKind::Ai,
                 )
             })

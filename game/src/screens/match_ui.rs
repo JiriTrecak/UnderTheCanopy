@@ -48,7 +48,7 @@ pub struct MissionHud {
 #[derive(Debug, Clone, PartialEq, Eq, Default)]
 pub struct ObjectivesModel {
     /// "Objectives" or "Script error".
-    pub caption: &'static str,
+    pub caption: String,
     /// The script's objective line (or the error); `None` once a required objective is
     /// listed in its place.
     pub text: Option<String>,
@@ -69,9 +69,9 @@ impl ObjectivesModel {
         let line = m.error.clone().unwrap_or_else(|| m.objective.clone());
         let mut model = Self {
             caption: if m.error.is_some() {
-                "Script error"
+                tr!("match.script-error")
             } else {
-                "Objectives"
+                tr!("match.objectives")
             },
             visible: !line.is_empty(),
             text: Some(line),
@@ -102,7 +102,11 @@ impl ObjectivesModel {
         for &(_, title, description, optional, state) in &shown {
             match state {
                 ObjectiveState::Active => {
-                    let prefix = if optional { "Optional: " } else { "" };
+                    let prefix = if optional {
+                        tr!("match.optional-prefix")
+                    } else {
+                        String::new()
+                    };
                     model
                         .active
                         .push((format!("{prefix}{title}"), description.to_owned()));
@@ -213,9 +217,9 @@ impl MissionHud {
         };
         widgets::visible(ui, "mission-hud/autoplay", true);
         let label = if a.running < a.speed {
-            format!("Autoplay {}× · scene", speed_text(a.running))
+            tr!("match.autoplay-scene", speed = &speed_text(a.running))
         } else {
-            format!("Autoplay {}×", speed_text(a.speed))
+            tr!("match.autoplay", speed = &speed_text(a.speed))
         };
         widgets::text(ui, "mission-hud/autoplay/label", &label);
         widgets::text(ui, "mission-hud/autoplay/step", &a.label);
@@ -287,7 +291,7 @@ impl MissionHud {
         }
         let model = ObjectivesModel::build(&self.objectives, m);
         widgets::visible(ui, "mission-hud/objectives", model.visible && !cinematic);
-        widgets::text(ui, "mission-hud/objectives/caption", model.caption);
+        widgets::text(ui, "mission-hud/objectives/caption", &model.caption);
         widgets::visible(ui, "mission-hud/objectives/objective", model.text.is_some());
         widgets::text(
             ui,
@@ -301,7 +305,8 @@ impl MissionHud {
                     continue;
                 };
                 // Optional objectives are quieter: a muted mark and a muted "Optional".
-                let optional = title.strip_prefix("Optional: ");
+                let prefix = tr!("match.optional-prefix");
+                let optional = title.strip_prefix(prefix.as_str());
                 if let Some(b) = ui.find_in(n, "bullet") {
                     ui.set_color(
                         b,
@@ -310,9 +315,7 @@ impl MissionHud {
                 }
                 if let Some(t) = ui.find_in(n, "copy/title") {
                     match optional {
-                        Some(rest) => {
-                            ui.set_text(t, &format!("[color=#9fae9b]Optional ·[/color] {rest}"))
-                        }
+                        Some(rest) => ui.set_text(t, &tr!("match.optional-title", title = rest)),
                         None => ui.set_text(t, title),
                     }
                 }
@@ -331,9 +334,9 @@ impl MissionHud {
             ui,
             "mission-hud/objectives/history/summary",
             &format!(
-                "{} Objectives completed: {}",
+                "{} {}",
                 if self.history_open { "▾" } else { "▸" },
-                model.completed
+                tr!("match.objectives-completed", count = model.completed)
             ),
         );
         widgets::visible(
@@ -402,7 +405,7 @@ pub fn show_overlay(host: &mut UiHost, playing: &Playing, problem: Option<&(Stri
             .is_some_and(|s| s > super::in_match::STALL_NOTICE);
     let banner = if waiting {
         let seconds = status.status.stalled.map_or(0, |s| s.as_secs());
-        Some(format!("Waiting for players…  {seconds} s"))
+        Some(tr!("match.waiting-for-players", seconds = seconds))
     } else {
         None
     };
@@ -440,12 +443,12 @@ pub struct ResultModel {
     pub retry: bool,
 }
 
-fn kind_name(kind: MatchKind) -> &'static str {
+fn kind_name(kind: MatchKind) -> String {
     match kind {
-        MatchKind::Skirmish => "Skirmish",
-        MatchKind::Campaign => "Campaign",
-        MatchKind::Multiplayer => "Multiplayer",
-        MatchKind::Replay => "Replay",
+        MatchKind::Skirmish => tr!("match.kind-skirmish"),
+        MatchKind::Campaign => tr!("match.kind-campaign"),
+        MatchKind::Multiplayer => tr!("match.kind-multiplayer"),
+        MatchKind::Replay => tr!("match.kind-replay"),
     }
 }
 
@@ -488,54 +491,46 @@ impl ResultModel {
         let campaign = playing.kind == super::in_match::MatchKind::Campaign;
         let (title, line, won) = if surrendered {
             (
-                "[color=#fca5a5]Defeat[/color]".to_string(),
-                "You surrendered.".to_string(),
+                format!("[color=#fca5a5]{}[/color]", tr!("match.defeat")),
+                tr!("match.you-surrendered"),
                 false,
             )
         } else if campaign && outcome.is_some() {
             // The old mission result.
             if me.is_some_and(ally_of_winner) {
                 (
-                    "[color=#fcd34d]Mission complete[/color]".into(),
-                    "The mission is won.".into(),
+                    format!("[color=#fcd34d]{}[/color]", tr!("hud.mission-complete")),
+                    tr!("match.mission-won"),
                     true,
                 )
             } else {
                 (
-                    "[color=#fca5a5]Mission failed[/color]".into(),
-                    "The mission could not be completed. Rally and try again.".into(),
+                    format!("[color=#fca5a5]{}[/color]", tr!("hud.mission-failed")),
+                    tr!("match.mission-lost"),
                     false,
                 )
             }
         } else if outcome.is_some() && winner.is_none() {
             // Old `matchResult`: no winner is a draw for everyone.
-            (
-                "Draw".into(),
-                "The match ended without a winning side.".into(),
-                false,
-            )
+            (tr!("match.draw"), tr!("match.draw-line"), false)
         } else {
             match (me, winner) {
                 (Some(me), Some(_)) if ally_of_winner(me) => (
-                    "[color=#fcd34d]Victory[/color]".into(),
-                    "Your side has won the match.".into(),
+                    format!("[color=#fcd34d]{}[/color]", tr!("match.victory")),
+                    tr!("match.victory-line"),
                     true,
                 ),
                 (Some(me), _) if defeated(me) || winner.is_some() => (
-                    "[color=#fca5a5]Defeat[/color]".into(),
-                    "Your side has been defeated.".into(),
+                    format!("[color=#fca5a5]{}[/color]", tr!("match.defeat")),
+                    tr!("match.defeat-line"),
                     false,
                 ),
                 (_, Some(Owner::Player(w))) => (
-                    "Match complete".into(),
-                    format!("{}'s side wins the match.", playing.name_of(w)),
+                    tr!("match.complete"),
+                    tr!("match.side-wins", name = &playing.name_of(w)),
                     false,
                 ),
-                _ => (
-                    "Match complete".into(),
-                    "Nobody won the match.".into(),
-                    false,
-                ),
+                _ => (tr!("match.complete"), tr!("match.nobody-won"), false),
             }
         };
         let tick = save.map_or(0, |s| s.state.tick);
@@ -563,24 +558,24 @@ impl ResultModel {
                     }
                 }
                 let result = if surrendered && Some(owner) == me {
-                    "Surrendered"
+                    tr!("match.result-surrendered")
                 } else if outcome.is_none() {
-                    "Playing"
+                    tr!("match.result-playing")
                 } else if ally_of_winner(owner) {
-                    "Won"
+                    tr!("match.result-won")
                 } else if defeated(owner) || winner.is_some() {
-                    "Defeated"
+                    tr!("match.result-defeated")
                 } else {
-                    "—"
+                    "—".into()
                 };
                 ResultRow {
                     slot: *slot,
                     name: if Some(owner) == me {
-                        format!("{name} (you)")
+                        tr!("match.you", name = name)
                     } else {
                         name.clone()
                     },
-                    result: result.into(),
+                    result,
                     units,
                     buildings,
                 }
@@ -605,14 +600,17 @@ impl ResultModel {
                 };
                 let a = &s.state.accounting;
                 let mut parts = Vec::new();
-                for (label, stock) in [
-                    ("Gathered", &a.produced),
-                    ("Spent", &a.consumed),
-                    ("Lost", &a.lost),
+                for (key, stock) in [
+                    ("match.goods-gathered", &a.produced),
+                    ("match.goods-spent", &a.consumed),
+                    ("match.goods-lost", &a.lost),
                 ] {
                     let text = list(stock);
                     if !text.is_empty() {
-                        parts.push(format!("{label}: {text}."));
+                        parts.push(crate::text::tr_with(
+                            key,
+                            &[("goods", text.as_str().into())],
+                        ));
                     }
                 }
                 parts.join("  ")
@@ -626,7 +624,7 @@ impl ResultModel {
                 if tick > 0 {
                     clock(tick)
                 } else {
-                    "Match complete".into()
+                    tr!("match.complete")
                 }
             ),
             title,
@@ -662,11 +660,11 @@ impl ResultModel {
         widgets::text(
             ui,
             "result/leave",
-            match kind {
-                MatchKind::Campaign => "Return to campaign",
-                MatchKind::Multiplayer => "Return to multiplayer",
-                MatchKind::Skirmish => "Return to menu",
-                MatchKind::Replay => "Return to replays",
+            &match kind {
+                MatchKind::Campaign => tr!("match.return-campaign"),
+                MatchKind::Multiplayer => tr!("match.return-multiplayer"),
+                MatchKind::Skirmish => tr!("match.return-menu"),
+                MatchKind::Replay => tr!("match.return-replays"),
             },
         );
     }
@@ -688,33 +686,33 @@ pub fn show_game_menu(host: &mut UiHost, playing: &Playing, page: MenuPage, stat
     let ui = &mut host.ui;
     let local = !playing.networked;
     let decided = playing.outcome.is_some();
-    let menu = format!("{} menu", kind_name(playing.kind));
+    let menu = tr!("match.menu-title", kind = &kind_name(playing.kind));
     let watching = playing.watching.is_some();
     let replay_sub = playing.watching.as_ref().map(|w| {
-        format!(
-            "{} · recorded {} in version {}",
-            w.name.replace('[', "[["),
-            crate::saves::format_time(w.header.recorded_at),
-            w.header.game_version
+        tr!(
+            "match.replay-sub",
+            name = &w.name.replace('[', "[["),
+            time = &crate::saves::format_time(w.header.recorded_at),
+            version = &w.header.game_version
         )
     });
     let (title, sub) = match page {
-        MenuPage::Main if let Some(sub) = &replay_sub => (menu.as_str(), sub.as_str()),
-        MenuPage::Main | MenuPage::Save => (menu.as_str(), playing.map_name.as_str()),
-        MenuPage::Exit if watching => ("Leave the replay?", "Back to the replays."),
+        MenuPage::Main if let Some(sub) = &replay_sub => (menu.clone(), sub.clone()),
+        MenuPage::Main | MenuPage::Save => (menu.clone(), playing.map_name.clone()),
+        MenuPage::Exit if watching => (tr!("match.leave-replay-q"), tr!("match.back-to-replays")),
         MenuPage::Exit if local && !decided => {
-            ("Leave this scenario?", "Unsaved progress will be lost.")
+            (tr!("match.leave-scenario-q"), tr!("match.unsaved-lost"))
         }
-        MenuPage::Exit => ("Leave this match?", "The others play on without you."),
-        MenuPage::Restart => ("Save before restarting?", "Unsaved progress will be lost."),
-        MenuPage::Surrender if local => ("Surrender?", "The match ends as a defeat."),
-        MenuPage::Surrender => (
-            "Surrender?",
-            "You leave the match as defeated; the others play on.",
+        MenuPage::Exit => (tr!("match.leave-match-q"), tr!("match.others-play-on")),
+        MenuPage::Restart => (
+            tr!("match.save-before-restart-q"),
+            tr!("match.unsaved-lost"),
         ),
+        MenuPage::Surrender if local => (tr!("match.surrender-q"), tr!("match.surrender-defeat")),
+        MenuPage::Surrender => (tr!("match.surrender-q"), tr!("match.surrender-leave")),
     };
-    widgets::text(ui, "game-menu/title", title);
-    widgets::text(ui, "game-menu/sub", sub);
+    widgets::text(ui, "game-menu/title", &title);
+    widgets::text(ui, "game-menu/sub", &sub);
     for (id, shown) in [
         ("main", MenuPage::Main),
         ("save-page", MenuPage::Save),
@@ -732,12 +730,12 @@ pub fn show_game_menu(host: &mut UiHost, playing: &Playing, page: MenuPage, stat
     widgets::text(
         ui,
         "game-menu/exit-page/leave",
-        if watching {
-            "Leave the replay"
+        &if watching {
+            tr!("match.leave-replay")
         } else if local && !decided {
-            "Exit without saving"
+            tr!("match.exit-without-saving")
         } else {
-            "Leave the match"
+            tr!("match.leave-match")
         },
     );
     for id in ["save", "load", "restart"] {

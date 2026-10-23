@@ -44,11 +44,11 @@ pub enum Mode {
 }
 
 impl Mode {
-    pub fn name(self) -> &'static str {
+    pub fn name(self) -> String {
         match self {
-            Self::Skirmish => "Skirmish",
-            Self::Campaign => "Campaign",
-            Self::Multiplayer => "Multiplayer",
+            Self::Skirmish => tr!("match.kind-skirmish"),
+            Self::Campaign => tr!("match.kind-campaign"),
+            Self::Multiplayer => tr!("match.kind-multiplayer"),
         }
     }
 }

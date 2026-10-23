@@ -194,8 +194,8 @@ impl Skirmish {
         widgets::map_preview(host, gpu, data, palette, "skirmish", map, me);
         let races = widgets::races(data);
         let race_names: Vec<String> = races.iter().map(|r| r.1.clone()).collect();
-        let mut teams = vec!["No team".to_string()];
-        teams.extend((1..=TEAMS).map(|t| format!("Team {t}")));
+        let mut teams = vec![tr!("replays.no-team")];
+        teams.extend((1..=TEAMS).map(|t| tr!("mp.team", number = t)));
         let sandbox = map.is_some_and(|m| m.sandbox);
         if let Some(list) = host.ui.find("skirmish/players") {
             host.ui.set_count(list, self.slots.len());
@@ -210,18 +210,22 @@ impl Skirmish {
             widgets::text(
                 ui,
                 &format!("{base}/name"),
-                &format!("Player {}", slot.player),
+                &tr!("hud.player", number = slot.player),
             );
             let sub = if slot.human {
-                if name.is_empty() { "You" } else { name }
+                if name.is_empty() {
+                    tr!("skirmish.you")
+                } else {
+                    name.to_string()
+                }
             } else {
-                "Computer"
+                tr!("hud.role-computer")
             };
-            widgets::text(ui, &format!("{base}/sub"), sub);
+            widgets::text(ui, &format!("{base}/sub"), &sub);
             widgets::options(
                 ui,
                 &format!("{base}/controller"),
-                &["Human".to_string(), "AI".to_string()],
+                &[tr!("hud.role-human"), tr!("skirmish.ai")],
                 usize::from(!slot.human),
             );
             widgets::options(
@@ -258,34 +262,38 @@ impl Skirmish {
             ui,
             "skirmish/status",
             &match me {
-                Some(p) => format!("Playing as Player {}", p + 1),
-                None => "Observer · Watch all colonies".into(),
+                Some(p) => tr!("skirmish.playing-as", number = p + 1),
+                None => tr!("skirmish.observer"),
             },
         );
         widgets::text(
             ui,
             "skirmish/rules-caption",
-            if sandbox { "Testbed" } else { "Victory" },
+            &if sandbox {
+                tr!("skirmish.testbed")
+            } else {
+                tr!("match.victory")
+            },
         );
         widgets::text(
             ui,
             "skirmish/rules",
-            if sandbox {
-                "A sandbox map: no victory, try anything."
+            &if sandbox {
+                tr!("skirmish.sandbox-rules")
             } else {
-                "Destroy all rival buildings. The last surviving side wins. Computer players build their economy, lead their hero and command their own army."
+                tr!("skirmish.rules")
             },
         );
         let label = if map.is_none() {
-            "No maps available"
+            tr!("skirmish.no-maps")
         } else if sandbox {
-            "Open testbed →"
+            tr!("skirmish.open-testbed")
         } else if me.is_none() {
-            "Watch match →"
+            tr!("skirmish.watch")
         } else {
-            "Start skirmish →"
+            tr!("skirmish.start")
         };
-        widgets::text(ui, "skirmish/start", label);
+        widgets::text(ui, "skirmish/start", &label);
         widgets::enabled(ui, "skirmish/start", map.is_some());
     }
 

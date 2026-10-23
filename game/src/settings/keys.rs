@@ -81,20 +81,21 @@ impl Chord {
     pub fn label(&self) -> String {
         let mut out = String::new();
         for (on, name) in [
-            (self.ctrl, "Ctrl+"),
-            (self.alt, "Alt+"),
-            (self.shift, "Shift+"),
+            (self.ctrl, "keys.ctrl"),
+            (self.alt, "keys.alt"),
+            (self.shift, "keys.shift"),
             (
                 self.meta,
                 if cfg!(target_os = "macos") {
-                    "Cmd+"
+                    "keys.cmd"
                 } else {
-                    "Win+"
+                    "keys.win"
                 },
             ),
         ] {
             if on {
-                out.push_str(name);
+                out.push_str(&crate::text::tr(name));
+                out.push('+');
             }
         }
         let code = self.code.as_str();
@@ -103,20 +104,20 @@ impl Chord {
         } else if let Some(digit) = code.strip_prefix("Digit") {
             digit.to_string()
         } else if let Some(n) = code.strip_prefix("Numpad") {
-            format!("Num {n}")
+            tr!("keys.numpad", number = n)
         } else if let Some(arrow) = code.strip_prefix("Arrow") {
             arrow.to_string()
         } else {
             match code {
-                "PageUp" => "PgUp".into(),
-                "PageDown" => "PgDn".into(),
-                "Escape" => "Esc".into(),
+                "PageUp" => crate::text::tr("keys.page-up"),
+                "PageDown" => crate::text::tr("keys.page-down"),
+                "Escape" => crate::text::tr("keys.esc"),
                 "Backquote" => "`".into(),
                 "BracketLeft" => "[".into(),
                 "BracketRight" => "]".into(),
                 "Equal" => "=".into(),
                 "Minus" => "-".into(),
-                "Backspace" => "Backspace".into(),
+                "Backspace" => crate::text::tr("keys.backspace"),
                 other => other.into(),
             }
         };
@@ -270,68 +271,68 @@ pub fn catalog() -> Vec<Entry> {
             default: Chord::parse(default),
         });
     };
-    for (id, label, key) in [
-        ("camera.zoomIn", "Zoom in", "PageUp"),
-        ("camera.zoomOut", "Zoom out", "PageDown"),
-        ("camera.panLeft", "Pan left", "ArrowLeft"),
-        ("camera.panRight", "Pan right", "ArrowRight"),
-        ("camera.panUp", "Pan up", "ArrowUp"),
-        ("camera.panDown", "Pan down", "ArrowDown"),
-        ("camera.centerSelection", "Center selection", "Home"),
-        ("camera.alerts", "Cycle recent alerts", "Space"),
-        ("camera.nextHall", "Next main building", "Backspace"),
+    for (id, key) in [
+        ("camera.zoomIn", "PageUp"),
+        ("camera.zoomOut", "PageDown"),
+        ("camera.panLeft", "ArrowLeft"),
+        ("camera.panRight", "ArrowRight"),
+        ("camera.panUp", "ArrowUp"),
+        ("camera.panDown", "ArrowDown"),
+        ("camera.centerSelection", "Home"),
+        ("camera.alerts", "Space"),
+        ("camera.nextHall", "Backspace"),
     ] {
-        add(id.into(), "Camera", label.into(), key);
+        add(
+            id.into(),
+            "Camera",
+            crate::text::tr(&format!("keys.{id}")),
+            key,
+        );
     }
     for n in 1..=3 {
         add(
             format!("heroes.select{n}"),
             "Heroes",
-            format!("Select hero {n} (double press to center)"),
+            tr!("keys.heroes.select", number = n),
             &format!("F{n}"),
         );
     }
-    for (id, label, key) in [
-        ("selection.idleWorker", "Next idle worker", "F8"),
-        (
-            "selection.idleWorkerAlt",
-            "Next idle worker (alternate)",
-            "Backquote",
-        ),
-        ("selection.nextSubgroup", "Next subgroup", "Tab"),
-        (
-            "selection.previousSubgroup",
-            "Previous subgroup",
-            "Shift+Tab",
-        ),
+    for (id, key) in [
+        ("selection.idleWorker", "F8"),
+        ("selection.idleWorkerAlt", "Backquote"),
+        ("selection.nextSubgroup", "Tab"),
+        ("selection.previousSubgroup", "Shift+Tab"),
     ] {
-        add(id.into(), "Selection", label.into(), key);
+        add(
+            id.into(),
+            "Selection",
+            crate::text::tr(&format!("keys.{id}")),
+            key,
+        );
     }
-    for (id, label, key) in [
-        ("interface.gameMenu", "Game menu", "F10"),
-        (
-            "interface.toggleHud",
-            "Show or hide the HUD",
-            "Ctrl+Shift+KeyH",
-        ),
-        ("interface.debug", "Debug overlay", "Ctrl+F3"),
-        ("interface.cancel", "Cancel targeting", "Escape"),
+    for (id, key) in [
+        ("interface.gameMenu", "F10"),
+        ("interface.toggleHud", "Ctrl+Shift+KeyH"),
+        ("interface.debug", "Ctrl+F3"),
+        ("interface.cancel", "Escape"),
     ] {
-        add(id.into(), "Interface", label.into(), key);
+        add(
+            id.into(),
+            "Interface",
+            crate::text::tr(&format!("keys.{id}")),
+            key,
+        );
     }
-    for (id, label, key) in [
-        (
-            "placement.rotateClockwise",
-            "Rotate building clockwise",
-            "KeyR",
-        ),
-        (
-            "placement.rotateCounterclockwise",
-            "Rotate building counterclockwise",
-            "Shift+KeyR",
-        ),
+    for (id, key) in [
+        ("placement.rotateClockwise", "KeyR"),
+        ("placement.rotateCounterclockwise", "Shift+KeyR"),
     ] {
-        add(id.into(), "Placement", label.into(), key);
+        add(
+            id.into(),
+            "Placement",
+            crate::text::tr(&format!("keys.{id}")),
+            key,
+        );
     }
     for (n, key) in ["Numpad7", "Numpad8", "Numpad4", "Numpad5"]
         .into_iter()
@@ -340,53 +341,63 @@ pub fn catalog() -> Vec<Entry> {
         add(
             format!("inventory.slot{}", n + 1),
             "Inventory",
-            format!("Use inventory slot {}", n + 1),
+            tr!("keys.inventory.slot", number = n + 1),
             key,
         );
     }
-    for (id, label, key) in [
-        ("autoplay.takeOver", "Take over from autoplay", "F7"),
-        ("autoplay.faster", "Autoplay faster", "Equal"),
-        ("autoplay.slower", "Autoplay slower", "Minus"),
+    for (id, key) in [
+        ("autoplay.takeOver", "F7"),
+        ("autoplay.faster", "Equal"),
+        ("autoplay.slower", "Minus"),
     ] {
-        add(id.into(), "Autoplay", label.into(), key);
+        add(
+            id.into(),
+            "Autoplay",
+            crate::text::tr(&format!("keys.{id}")),
+            key,
+        );
     }
-    for (id, label, key) in [
-        ("health.all", "Show all health bars (hold)", "Alt"),
-        (
-            "health.friendly",
-            "Show friendly health bars (hold)",
-            "BracketLeft",
-        ),
-        (
-            "health.enemy",
-            "Show enemy health bars (hold)",
-            "BracketRight",
-        ),
+    for (id, key) in [
+        ("health.all", "Alt"),
+        ("health.friendly", "BracketLeft"),
+        ("health.enemy", "BracketRight"),
     ] {
-        add(id.into(), "Health bars", label.into(), key);
+        add(
+            id.into(),
+            "Health bars",
+            crate::text::tr(&format!("keys.{id}")),
+            key,
+        );
     }
     for n in [1, 2, 3, 4, 5, 6, 7, 8, 9, 0] {
         add(
             format!("groups.recall{n}"),
             "Control groups",
-            format!("Recall group {n}"),
+            tr!("keys.groups.recall", number = n),
             &format!("Digit{n}"),
         );
         add(
             format!("groups.assign{n}"),
             "Control groups",
-            format!("Assign group {n}"),
+            tr!("keys.groups.assign", number = n),
             &format!("Ctrl+Digit{n}"),
         );
         add(
             format!("groups.add{n}"),
             "Control groups",
-            format!("Add to group {n}"),
+            tr!("keys.groups.add", number = n),
             &format!("Shift+Digit{n}"),
         );
     }
     out
+}
+
+/// A catalogue group as players read it (`keys.group.<group>` in the text library).
+pub fn group_label(group: &str) -> String {
+    crate::text::tr(&format!(
+        "keys.group.{}",
+        group.to_lowercase().replace(' ', "-")
+    ))
 }
 
 /// Group of the content-derived command entries.
@@ -524,6 +535,18 @@ pub enum BindError {
     Unsupported,
     #[error("No shortcut {0}.")]
     Unknown(String),
+}
+
+impl BindError {
+    /// The refusal as players read it.
+    pub fn message(&self) -> String {
+        match self {
+            Self::Conflict(name) => tr!("settings.key-conflict", name = name.as_str()),
+            Self::Reserved => tr!("settings.key-reserved"),
+            Self::Unsupported => tr!("settings.key-unsupported"),
+            Self::Unknown(id) => tr!("settings.key-unknown", id = id.as_str()),
+        }
+    }
 }
 
 /// The player's bindings: the catalog's defaults with their overrides.

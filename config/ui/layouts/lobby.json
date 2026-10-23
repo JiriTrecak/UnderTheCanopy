@@ -19,7 +19,7 @@
         {
           "id": "choices", "class": "sk-selects",
           "children": [
-            { "id": "seat", "kind": "dropdown", "class": "sk-select", "action": "lobby.seat", "options": ["Open", "Closed", "Computer"] },
+            { "id": "seat", "kind": "dropdown", "class": "sk-select", "action": "lobby.seat", "options": ["@ui.lobby.open", "@ui.lobby.closed", "@ui.lobby.computer"] },
             { "id": "team", "kind": "dropdown", "class": "sk-select", "action": "lobby.team", "options": [] },
             { "id": "race", "kind": "dropdown", "class": "sk-select", "action": "lobby.race", "options": [] },
             { "id": "hero", "kind": "dropdown", "class": "sk-select", "action": "lobby.hero", "options": [] },
@@ -43,11 +43,11 @@
               {
                 "class": "sk-heading",
                 "children": [
-                  { "kind": "label", "class": "eyebrow", "text": "Under the Canopy" },
-                  { "kind": "label", "class": "sk-title", "text": "Match lobby" }
+                  { "kind": "label", "class": "eyebrow", "text": "@ui.lobby.under-the-canopy" },
+                  { "kind": "label", "class": "sk-title", "text": "@ui.lobby.match-lobby" }
                 ]
               },
-              { "kind": "button", "class": "sk-ghost", "text": "← Leave lobby", "action": "lobby.leave" }
+              { "kind": "button", "class": "sk-ghost", "text": "@ui.lobby.leave-lobby", "action": "lobby.leave" }
             ]
           },
           {
@@ -57,7 +57,7 @@
               {
                 "class": "sk-col",
                 "children": [
-                  { "kind": "label", "class": "sk-section", "text": "The gathering" },
+                  { "kind": "label", "class": "sk-section", "text": "@ui.lobby.the-gathering" },
                   { "id": "name", "kind": "label", "class": "lb-name" },
                   { "id": "host", "kind": "label", "class": "sk-hint" },
                   { "id": "room-meta", "kind": "label", "class": "sk-meta" },
@@ -72,7 +72,7 @@
                     "id": "preview", "class": "sk-preview",
                     "children": [
                       { "id": "image", "kind": "image", "class": "sk-preview-image" },
-                      { "id": "empty", "kind": "label", "class": "sk-preview-empty", "text": "Preview not published", "visible": false },
+                      { "id": "empty", "kind": "label", "class": "sk-preview-empty", "text": "@ui.lobby.preview-not-published", "visible": false },
                       { "id": "markers", "class": "fill", "style": { "pointer-events": "none" }, "repeat": "sk-marker" }
                     ]
                   },
@@ -82,7 +82,7 @@
               {
                 "class": "sk-col",
                 "children": [
-                  { "kind": "label", "class": "sk-section", "text": "Players" },
+                  { "kind": "label", "class": "sk-section", "text": "@ui.lobby.players" },
                   { "id": "seats", "class": "mp-roster", "repeat": "lb-seat" },
                   { "id": "status", "kind": "label", "class": "mp-status" }
                 ]
@@ -92,9 +92,9 @@
           {
             "class": "sk-footer",
             "children": [
-              { "id": "footnote", "kind": "label", "class": "sk-footnote", "text": "Lobby open · Players can join until the match starts" },
-              { "id": "waiting", "kind": "label", "class": "lb-waiting", "text": "Waiting for the host…" },
-              { "id": "start", "kind": "button", "class": "sk-launch", "text": "Start match", "action": "lobby.start" }
+              { "id": "footnote", "kind": "label", "class": "sk-footnote", "text": "@ui.lobby.lobby-open-players-can-join" },
+              { "id": "waiting", "kind": "label", "class": "lb-waiting", "text": "@ui.lobby.waiting-for-the-host" },
+              { "id": "start", "kind": "button", "class": "sk-launch", "text": "@ui.lobby.start-match", "action": "lobby.start" }
             ]
           }
         ]

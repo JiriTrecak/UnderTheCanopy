@@ -10,9 +10,9 @@
             { "id": "meta", "kind": "label", "class": "sv-meta" }
           ]
         },
-        { "id": "load", "kind": "button", "class": "gm-button gm-small", "text": "Load", "action": "saves.load" },
-        { "id": "export", "kind": "button", "class": "gm-button gm-small", "text": "Export", "action": "saves.export", "tooltip": { "title": "Export", "body": "Save this game to a file you can keep or share." } },
-        { "id": "delete", "kind": "button", "class": "gm-button gm-small", "text": "Delete", "action": "saves.delete" }
+        { "id": "load", "kind": "button", "class": "gm-button gm-small", "text": "@ui.saves.load", "action": "saves.load" },
+        { "id": "export", "kind": "button", "class": "gm-button gm-small", "text": "@ui.saves.export", "action": "saves.export", "tooltip": { "title": "@ui.saves.export", "body": "@ui.saves.export.tip" } },
+        { "id": "delete", "kind": "button", "class": "gm-button gm-small", "text": "@ui.saves.delete", "action": "saves.delete" }
       ]
     }
   },
@@ -22,12 +22,12 @@
       {
         "class": "gm",
         "children": [
-          { "kind": "label", "class": "gm-title", "text": "Load game" },
+          { "kind": "label", "class": "gm-title", "text": "@ui.saves.load-game" },
           { "id": "list", "class": "sv-list", "repeat": "sv-row" },
-          { "id": "empty", "kind": "label", "class": "gm-sub", "text": "No saves yet." },
+          { "id": "empty", "kind": "label", "class": "gm-sub", "text": "@ui.saves.no-saves-yet" },
           { "id": "status", "kind": "label", "class": "gm-status" },
-          { "kind": "button", "class": "gm-button", "text": "Import save…", "action": "saves.import", "tooltip": { "title": "Import save", "body": "Add a save exported from this game (.utcsave)." } },
-          { "kind": "button", "class": "gm-button", "text": "Back", "action": "saves.back" }
+          { "kind": "button", "class": "gm-button", "text": "@ui.saves.import-save", "action": "saves.import", "tooltip": { "title": "@ui.saves.import-save-2", "body": "@ui.saves.import-save.tip" } },
+          { "kind": "button", "class": "gm-button", "text": "@ui.saves.back", "action": "saves.back" }
         ]
       }
     ]
