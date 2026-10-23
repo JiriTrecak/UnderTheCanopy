@@ -1,5 +1,6 @@
 //! Sounds in memory, ready to play: the pack's 16-bit PCM converted once to the mixer's
-//! stereo frames.
+//! stereo frames, and music and voice kept compressed (MP3, Ogg Vorbis) and decoded as they
+//! stream (D97).
 
 use canopy_assets::{EntryKind, Pack};
 use canopy_content::assets::Manifest;
@@ -22,7 +23,41 @@ pub struct Clip {
     pub name: String,
     /// Length in seconds at the original pitch.
     pub duration: f64,
-    pub(crate) data: StaticSoundData,
+    pub(crate) data: ClipData,
+}
+
+pub(crate) enum ClipData {
+    /// Decoded frames, for short sounds.
+    Frames(Box<StaticSoundData>),
+    /// A compressed file, decoded while it plays.
+    Stream(Encoded),
+}
+
+/// A compressed sound file shared by every voice streaming it.
+#[derive(Clone)]
+pub(crate) struct Encoded(pub Arc<[u8]>);
+
+impl AsRef<[u8]> for Encoded {
+    fn as_ref(&self) -> &[u8] {
+        &self.0
+    }
+}
+
+impl Encoded {
+    /// A fresh decoder over the file.
+    pub fn open(
+        &self,
+    ) -> Result<
+        kira::sound::streaming::StreamingSoundData<kira::sound::FromFileError>,
+        kira::sound::FromFileError,
+    > {
+        kira::sound::streaming::StreamingSoundData::from_cursor(std::io::Cursor::new(self.clone()))
+    }
+}
+
+/// Whether a pack entry is a compressed sound that streams.
+pub fn is_streamed(name: &str) -> bool {
+    name.ends_with(".mp3") || name.ends_with(".ogg")
 }
 
 /// Every sound the game can play, by pack entry name.
@@ -49,15 +84,27 @@ impl SoundLibrary {
     pub fn load_pack(&mut self, pack: &Pack) -> Result<usize, canopy_assets::Error> {
         let _span = tracing::info_span!("load_sounds").entered();
         let mut count = 0;
-        for entry in pack.entries().iter().filter(|e| e.kind == EntryKind::Sound) {
-            let sound = pack.blob(entry)?.into_sound()?;
-            let meta = &sound.meta;
-            self.insert_pcm(
-                &entry.name,
-                meta.sample_rate,
-                meta.channels,
-                sound.samples(),
-            );
+        for entry in pack.entries() {
+            match entry.kind {
+                EntryKind::Sound => {
+                    let sound = pack.blob(entry)?.into_sound()?;
+                    let meta = &sound.meta;
+                    self.insert_pcm(
+                        &entry.name,
+                        meta.sample_rate,
+                        meta.channels,
+                        sound.samples(),
+                    );
+                }
+                EntryKind::Data if is_streamed(&entry.name) => {
+                    let blob = pack.blob(entry)?;
+                    if let Err(e) = self.insert_encoded(&entry.name, blob.bytes()?) {
+                        tracing::warn!(sound = %entry.name, "audio: cannot stream: {e}");
+                        continue;
+                    }
+                }
+                _ => continue,
+            }
             count += 1;
         }
         Ok(count)
@@ -88,17 +135,33 @@ impl SoundLibrary {
             })
             .collect();
         let sample_rate = sample_rate.max(1);
-        let clip = Clip {
+        self.insert(Clip {
             name: name.to_owned(),
             duration: frames.len() as f64 / f64::from(sample_rate),
-            data: StaticSoundData {
+            data: ClipData::Frames(Box::new(StaticSoundData {
                 sample_rate,
                 frames,
                 settings: StaticSoundSettings::default(),
                 slice: None,
-            },
-        };
-        match self.by_name.get(name) {
+            })),
+        })
+    }
+
+    /// Adds a compressed sound file (MP3, Ogg Vorbis) under `name`, streamed when it plays.
+    /// Fails when it does not decode or does not say how long it is.
+    pub fn insert_encoded(&mut self, name: &str, bytes: &[u8]) -> Result<SoundId, String> {
+        let encoded = Encoded(Arc::from(bytes));
+        let probe = encoded.open().map_err(|e| e.to_string())?;
+        Ok(self.insert(Clip {
+            name: name.to_owned(),
+            duration: probe.duration().as_secs_f64(),
+            data: ClipData::Stream(encoded),
+        }))
+    }
+
+    fn insert(&mut self, clip: Clip) -> SoundId {
+        let name = clip.name.clone();
+        match self.by_name.get(&name) {
             Some(&id) => {
                 self.clips[id.index()] = clip;
                 id
@@ -106,7 +169,7 @@ impl SoundLibrary {
             None => {
                 let id = SoundId(self.clips.len() as u32);
                 self.clips.push(clip);
-                self.by_name.insert(name.to_owned(), id);
+                self.by_name.insert(name, id);
                 id
             }
         }
@@ -115,6 +178,13 @@ impl SoundLibrary {
     /// The sound of a pack entry name.
     pub fn find(&self, name: &str) -> Option<SoundId> {
         self.by_name.get(name).copied()
+    }
+
+    /// The first audio file of asset `asset` (`<asset>/audio.<ext>`), whatever its format.
+    pub fn find_asset(&self, asset: &str) -> Option<SoundId> {
+        ["wav", "mp3", "ogg"]
+            .iter()
+            .find_map(|ext| self.find(&format!("{asset}/audio.{ext}")))
     }
 
     /// The published audio output `index` (one-based) of the asset record `asset`: the file
@@ -168,14 +238,16 @@ mod tests {
         let mut library = SoundLibrary::new();
         let mono = library.insert_pcm("a", 10, 1, &[16384, -32768, 0, 0, 0]);
         let stereo = library.insert_pcm("b", 4, 2, &[16384, -16384, 0, 32767]);
-        let clip = library.clip(mono);
-        assert_eq!(clip.duration, 0.5);
+        let frames = |id| match &library.clip(id).data {
+            ClipData::Frames(data) => data.frames.clone(),
+            ClipData::Stream(_) => panic!("not frames"),
+        };
+        assert_eq!(library.clip(mono).duration, 0.5);
         let half = 0.5 * std::f32::consts::FRAC_1_SQRT_2;
-        assert!((clip.data.frames[0].left - half).abs() < 1e-6);
-        assert_eq!(clip.data.frames[0].left, clip.data.frames[0].right);
-        let clip = library.clip(stereo);
-        assert_eq!(clip.data.frames.len(), 2);
-        assert_eq!(clip.data.frames[0], kira::Frame::new(0.5, -0.5));
+        assert!((frames(mono)[0].left - half).abs() < 1e-6);
+        assert_eq!(frames(mono)[0].left, frames(mono)[0].right);
+        assert_eq!(frames(stereo).len(), 2);
+        assert_eq!(frames(stereo)[0], kira::Frame::new(0.5, -0.5));
         // Replacing by name keeps the id.
         assert_eq!(library.insert_pcm("a", 10, 1, &[0; 20]), mono);
         assert_eq!(library.clip(mono).duration, 2.0);

@@ -244,6 +244,7 @@ pub fn validate(content: &Content, errors: &mut Vec<Error>) {
     races(&mut check);
     crate::abilities::validate(content, errors);
     crate::assets::validate(content, errors);
+    crate::sounds::validate(content, errors);
 }
 
 fn research(check: &mut Checker) {

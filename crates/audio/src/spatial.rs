@@ -1,8 +1,9 @@
 //! Positional sound: the listener and the old game's distance and panning model.
 //!
 //! Ground coordinates are cells (the simulation's x and y). The listener is the camera's
-//! focus point on the ground, not the camera itself, so zooming does not change what is
-//! heard; panning follows the camera's right vector.
+//! focus point on the ground, not the camera itself, so zooming does not change where
+//! sounds come from; panning follows the camera's right vector. Zooming out only lowers
+//! the world a little ([`Listener::zoom`], D97).
 
 /// Where the player hears from.
 #[derive(Debug, Clone, Copy, PartialEq)]
@@ -13,6 +14,9 @@ pub struct Listener {
     /// The camera's right vector on the ground plane (unit length).
     pub right_x: f32,
     pub right_y: f32,
+    /// Gain of every sound on the ground: 1 at the camera's nearest, gently less as it
+    /// zooms out.
+    pub zoom: f32,
 }
 
 impl Listener {
@@ -29,9 +33,27 @@ impl Listener {
             y,
             right_x,
             right_y,
+            zoom: 1.0,
+        }
+    }
+
+    /// The listener with sounds on the ground at `gain` (from the camera's zoom).
+    pub fn with_zoom(self, gain: f32) -> Self {
+        Self {
+            zoom: gain.clamp(0.0, 1.0),
+            ..self
         }
     }
 }
+
+/// The ground gain at a camera zoom of `t` (0 nearest, 1 furthest): the world steps back
+/// by a third as the camera rises, so a battle seen from afar is quieter, never silent.
+pub fn zoom_gain(t: f32) -> f32 {
+    1.0 - ZOOM_DROP * t.clamp(0.0, 1.0)
+}
+
+/// How much quieter the ground is at the camera's furthest zoom.
+pub const ZOOM_DROP: f32 = 0.35;
 
 impl Default for Listener {
     fn default() -> Self {
@@ -119,7 +141,7 @@ pub fn hear(listener: &Listener, at: At, distances: Distances) -> Option<Heard> 
     }
     let lateral = dx * listener.right_x + dy * listener.right_y;
     Some(Heard {
-        gain: attenuation(distance, distances),
+        gain: attenuation(distance, distances) * listener.zoom,
         pan: (lateral / distances.reference.max(distance)).clamp(-1.0, 1.0),
     })
 }

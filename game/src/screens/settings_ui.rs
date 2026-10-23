@@ -72,6 +72,7 @@ fn volume_id(bus: Option<Bus>) -> &'static str {
         Some(Bus::Effects) => "effects",
         Some(Bus::Interface) => "interface",
         Some(Bus::Music) => "music",
+        Some(Bus::Voice) => "voice",
     }
 }
 
@@ -149,6 +150,7 @@ impl SettingsUi {
             (Some(Bus::Effects), a.effects),
             (Some(Bus::Interface), a.interface),
             (Some(Bus::Music), a.music),
+            (Some(Bus::Voice), a.voice),
         ] {
             let id = volume_id(bus);
             if let Some(n) = ui.find(&format!("settings/audio/{id}")) {
@@ -384,6 +386,8 @@ impl SettingsUi {
                         a.set_bus(Bus::Interface, v);
                     } else if path.ends_with("music") {
                         a.set_bus(Bus::Music, v);
+                    } else if path.ends_with("voice") {
+                        a.set_bus(Bus::Voice, v);
                     }
                     c.audio = true;
                 }

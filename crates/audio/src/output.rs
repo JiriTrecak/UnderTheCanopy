@@ -8,14 +8,17 @@
 
 use crate::{
     SoundLibrary,
-    library::SoundId,
+    library::{ClipData, SoundId},
     limits::{Limits, Request},
     settings::Bus,
 };
 use kira::{
     AudioManager, AudioManagerSettings, Decibels, DefaultBackend, Panning, PlaybackRate, Tween,
     backend::mock::{MockBackend, MockBackendSettings},
-    sound::{PlaybackState, static_sound::StaticSoundHandle},
+    sound::{
+        FromFileError, PlaybackState, static_sound::StaticSoundHandle,
+        streaming::StreamingSoundHandle,
+    },
     track::{TrackBuilder, TrackHandle},
 };
 use std::time::Duration;
@@ -61,10 +64,67 @@ impl Manager {
     }
 }
 
+/// A playing sound: decoded frames, or a stream.
+enum Playing {
+    Frames(StaticSoundHandle),
+    Stream(StreamingSoundHandle<FromFileError>),
+}
+
+impl Playing {
+    fn state(&self) -> PlaybackState {
+        match self {
+            Self::Frames(h) => h.state(),
+            Self::Stream(h) => h.state(),
+        }
+    }
+
+    fn position(&self) -> f64 {
+        match self {
+            Self::Frames(h) => h.position(),
+            Self::Stream(h) => h.position(),
+        }
+    }
+
+    fn set_volume(&mut self, volume: Decibels, tween: Tween) {
+        match self {
+            Self::Frames(h) => h.set_volume(volume, tween),
+            Self::Stream(h) => h.set_volume(volume, tween),
+        }
+    }
+
+    fn set_panning(&mut self, panning: Panning, tween: Tween) {
+        match self {
+            Self::Frames(h) => h.set_panning(panning, tween),
+            Self::Stream(h) => h.set_panning(panning, tween),
+        }
+    }
+
+    fn set_playback_rate(&mut self, rate: PlaybackRate, tween: Tween) {
+        match self {
+            Self::Frames(h) => h.set_playback_rate(rate, tween),
+            Self::Stream(h) => h.set_playback_rate(rate, tween),
+        }
+    }
+
+    fn seek_to(&mut self, position: f64) {
+        match self {
+            Self::Frames(h) => h.seek_to(position),
+            Self::Stream(h) => h.seek_to(position),
+        }
+    }
+
+    fn stop(&mut self, tween: Tween) {
+        match self {
+            Self::Frames(h) => h.stop(tween),
+            Self::Stream(h) => h.stop(tween),
+        }
+    }
+}
+
 struct Voice {
     key: u64,
     sound: SoundId,
-    handle: StaticSoundHandle,
+    handle: Playing,
     gain: f32,
     pan: f32,
     rate: f64,
@@ -77,7 +137,7 @@ pub(crate) struct Output {
     manager: Manager,
     buses: Vec<TrackHandle>,
     voices: Vec<Voice>,
-    mix: Option<(f32, [f32; 3])>,
+    mix: Option<(f32, [f32; 4])>,
 }
 
 impl Output {
@@ -143,7 +203,7 @@ impl Output {
     }
 
     /// Master and bus volumes (linear).
-    pub fn set_mix(&mut self, master: f32, buses: [f32; 3]) {
+    pub fn set_mix(&mut self, master: f32, buses: [f32; 4]) {
         if self.mix == Some((master, buses)) {
             return;
         }
@@ -191,22 +251,49 @@ impl Output {
             if !request.looping && clip.duration - request.offset < MIN_REMAINING {
                 continue;
             }
-            let data = clip
-                .data
-                .start_position(request.offset)
-                .volume(decibels(request.gain))
-                .panning(panning(request.pan))
-                .playback_rate(PlaybackRate(request.rate))
-                .fade_in_tween(Tween {
-                    duration: FADE_IN,
-                    ..Tween::default()
-                });
-            let data = if request.looping {
-                data.loop_region(..)
-            } else {
-                data
+            let fade_in = Tween {
+                duration: FADE_IN,
+                ..Tween::default()
             };
-            match self.buses[request.category.bus().index()].play(data) {
+            let bus = &mut self.buses[request.category.bus().index()];
+            let started = match &clip.data {
+                ClipData::Frames(data) => {
+                    let data = data
+                        .start_position(request.offset)
+                        .volume(decibels(request.gain))
+                        .panning(panning(request.pan))
+                        .playback_rate(PlaybackRate(request.rate))
+                        .fade_in_tween(fade_in);
+                    let data = if request.looping {
+                        data.loop_region(..)
+                    } else {
+                        data
+                    };
+                    bus.play(data)
+                        .map(Playing::Frames)
+                        .map_err(|e| e.to_string())
+                }
+                ClipData::Stream(encoded) => match encoded.open() {
+                    Ok(data) => {
+                        let data = data
+                            .start_position(request.offset)
+                            .volume(decibels(request.gain))
+                            .panning(panning(request.pan))
+                            .playback_rate(PlaybackRate(request.rate))
+                            .fade_in_tween(fade_in);
+                        let data = if request.looping {
+                            data.loop_region(..)
+                        } else {
+                            data
+                        };
+                        bus.play(data)
+                            .map(Playing::Stream)
+                            .map_err(|e| e.to_string())
+                    }
+                    Err(e) => Err(e.to_string()),
+                },
+            };
+            match started {
                 Ok(handle) => self.voices.push(Voice {
                     key: request.key,
                     sound: request.sound,

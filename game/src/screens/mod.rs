@@ -201,6 +201,8 @@ pub struct Game {
     fading_out: bool,
     /// The one audio output: interface, music and the match's effect sounds.
     pub audio: canopy_audio::Audio,
+    /// The game's sound events (the base's and every campaign's) are bound (D97).
+    sounds_bound: bool,
     /// What the match follows of the settings (shortcuts, health bars).
     play_options: PlayOptions,
     /// The cursor last set on the window.
@@ -335,6 +337,7 @@ impl Game {
             fade: 1.0,
             fading_out: false,
             audio,
+            sounds_bound: false,
             modifiers: ModifiersState::empty(),
             started: now,
             last_frame: now,
@@ -685,7 +688,10 @@ impl Game {
         };
         match screen {
             // Desktop apps check for updates on entering the main menu (old behaviour).
-            Screen::MainMenu => self.updater.menu_entered(),
+            Screen::MainMenu => {
+                self.updater.menu_entered();
+                self.play_menu_music(&data);
+            }
             Screen::Skirmish => {
                 if self.skirmish.map_index(&data).is_none() {
                     self.skirmish.choose_map(&data, 0);
@@ -932,45 +938,74 @@ impl Game {
         }
     }
 
-    /// A step's music, when it names one (an audio asset in the pack).
+    /// The pack's sounds and the game's sound events, once: the base's, then every
+    /// campaign's own (D97). A match binds its own content over them.
+    fn bind_sounds(&mut self, data: &GameData) {
+        if self.audio.library().is_empty()
+            && let Err(error) = self.audio.load(&data.pack)
+        {
+            tracing::warn!(%error, "sounds not loaded");
+        }
+        if !self.sounds_bound {
+            self.sounds_bound = true;
+            self.audio.bind_sounds(&data.content.sounds);
+            for c in &data.campaigns {
+                self.audio.bind_sounds(&c.sounds());
+            }
+        }
+    }
+
+    /// The main menu's music (`rules/sounds.json` → `menu`), unless it already plays.
+    fn play_menu_music(&mut self, data: &GameData) {
+        self.bind_sounds(data);
+        let menu = &data.content.rules.sounds.menu;
+        let playing = self.audio.current_music();
+        let ours = menu
+            .iter()
+            .filter_map(|id| self.audio.event(id.as_str()))
+            .any(|e| playing.is_some_and(|p| self.audio.bank().clips(e).contains(&p)));
+        if ours {
+            return;
+        }
+        if let Some(playlist) = self.audio.playlist(menu.iter().map(|id| id.as_str())) {
+            self.audio.play_music(playlist);
+        }
+    }
+
+    /// A step's music, when it names one (a music sound event).
     fn play_step_music(&mut self, data: &GameData, step: &canopy_content::campaign::Step) {
         let Some(music) = step.music() else {
             return;
         };
-        if self.audio.library().is_empty()
-            && let Err(error) = self.audio.load(&data.pack)
-        {
-            tracing::warn!(%error, "sounds not loaded");
-        }
-        let prefix = format!("{music}/audio");
-        let found = data
-            .pack
-            .entries()
-            .iter()
-            .find(|e| e.name.starts_with(&prefix))
-            .and_then(|e| self.audio.sound(&e.name));
-        if let Some(sound) = found {
-            self.audio
-                .play_music(canopy_audio::Playlist::new(vec![sound]));
+        self.bind_sounds(data);
+        if let Some(playlist) = self.audio.playlist([music.as_str()]) {
+            self.audio.play_music(playlist);
         }
     }
 
-    /// Story narration for the page on screen, once per page.
-    fn play_narration(&mut self, data: &GameData, asset: &str) {
-        if self.audio.library().is_empty()
-            && let Err(error) = self.audio.load(&data.pack)
-        {
-            tracing::warn!(%error, "sounds not loaded");
+    /// Story narration for the page on screen, once per page (a dialogue sound event).
+    fn play_narration(&mut self, data: &GameData, event: &str) {
+        self.bind_sounds(data);
+        if let Some(event) = self.audio.event(event) {
+            self.audio.play_event(event, canopy_audio::At::Listener);
         }
-        let prefix = format!("{asset}/audio");
-        let found = data
-            .pack
-            .entries()
-            .iter()
-            .find(|e| e.name.starts_with(&prefix))
-            .and_then(|e| self.audio.sound(&e.name));
-        if let Some(sound) = found {
-            self.audio.play_interface(sound);
+    }
+
+    /// An interface sound by what it marks (`rules/sounds.json` → `interface`).
+    fn interface_sound(&mut self, name: &str) {
+        let Some(data) = self.data.clone() else {
+            return;
+        };
+        self.bind_sounds(&data);
+        if let Some(event) = data
+            .content
+            .rules
+            .sounds
+            .interface
+            .get(name)
+            .and_then(|id| self.audio.event(id.as_str()))
+        {
+            self.audio.play_event(event, canopy_audio::At::Listener);
         }
     }
 
@@ -1389,6 +1424,13 @@ impl Game {
             }
             _ => true,
         });
+        // A click sounds, wherever it lands (D97).
+        if taken
+            .iter()
+            .any(|a| matches!(a.kind, ActionKind::Click { .. }))
+        {
+            self.interface_sound("click");
+        }
         // The HUD's actions go to the match, the rest to the screens.
         let (hud, actions): (Vec<Action>, Vec<Action>) = taken
             .into_iter()

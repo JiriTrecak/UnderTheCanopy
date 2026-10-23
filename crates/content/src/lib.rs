@@ -16,6 +16,7 @@ pub mod map;
 pub mod package;
 pub mod placement;
 pub mod schema;
+pub mod sounds;
 #[cfg(feature = "testing")]
 pub mod testing;
 pub mod text;

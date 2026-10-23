@@ -1,6 +1,14 @@
 # Audio
 
-`canopy-audio` (`crates/audio`) plays every sound of the game: the sound layers of ability effects, sounds the game triggers, interface sounds and music. Decisions: [D29](decisions.md).
+`canopy-audio` (`crates/audio`) plays every sound of the game: the sound layers of ability effects, the sound events content names (D97: units, buildings, voices, alerts, ambience, music, dialogue), interface sounds and music. Decisions: [D29](decisions.md), [D97](decisions.md). Content and authoring: skill `canopy-sounds`.
+
+## Sound events (D97)
+
+Content names **sound events** (`sounds/<folders>/<name>.json`, `canopy_content::sounds`), never clips. `Audio::bind` compiles them into a `SoundBank` (`events.rs`): each event's clips found in the library (`<asset>/audio.wav|mp3|ogg`), its volume and pitch ranges, distances, cooldown, limit and fade. `play_event(event, at)` picks a clip (never the previous one again when the event has more), a volume and a pitch in its ranges (a generator of its own: presentation only), honours the cooldown and plays it in the event's category. Events bound later replace those of the same id, so a match's layered content binds over the game's (the base's and every campaign's, bound when the menus first need a sound).
+
+- **Held loops** (`hold(group, [(key, event, at)])`): a group (`Bodies`, `Ambience`) is named whole every tick; new keys start, named ones move, the rest fade out with their event's fade.
+- **One at a time**: a `voice` (a unit answering) or `dialogue` sound ends the one before it with a short fade.
+- **What plays them** (game side): the scene reports units' and buildings' `presentation.sounds` per tick (`canopy_scene::sounds`: state loops, clip events, and the moments spawn, complete, death, impact); `game/src/play/sounds.rs` plays them, the answers and alerts `Play` raises (selection, orders, annoyance after four quick selections; every fact by its text key, and "under attack" when an own unit or building is hurt off screen, at most every 20 s), the map's or race's music, the biome's ambience by the hour, a mission line's voice (`sound.<line key>`) and the victory or defeat sting. The menus play `rules/sounds.json` (menu music, `click` on every click), campaign step music and page narration.
 
 ## What the old game does
 
@@ -98,8 +106,13 @@ Requests compete within their **category**; the most audible win (gain × priori
 | World (sounds the game plays) | effects | game | 16 | 4 | 40 ms | until 0.15 s in |
 | Interface | interface | wall | 8 | 2 | 30 ms | until 0.1 s in |
 | Music | music | wall | 2 (crossfades) | 2 | none | any time |
+| Voice (units answering) | voice | wall | 2 (one, and the one fading) | 2 | none | until 0.25 s in |
+| Ambience | effects | wall (it breathes on while paused) | 8 | 3 | none | any time |
+| Dialogue (lines, narration) | voice | wall | 2 | 1 | none | any time |
 
-- **Per-sound cap**: 400 units striking at once play the 4 nearest copies of the hit sound, not 400.
+- **Per-sound cap**: 400 units striking at once play the 4 nearest copies of the hit sound, not 400. An event's `limit` caps its copies across all its clips.
+- **Crowd**: when the granted world voices (effects, world, ambience) sum above a gain of 3, they are turned down together by the square root of the excess, so a great battle is full rather than deafening.
+- **Zoom**: the listener stays the camera's ground focus, but sounds on the ground lose up to 35% as the camera zooms out (`zoom_gain`), so a battle seen from afar steps back without falling silent.
 - **Retrigger merge**: a world or interface one-shot of the same sound started within the window of another is dropped; simultaneous copies only add loudness and phasing.
 - **Late start**: a world one-shot that never got a voice in its first 0.15 s is dropped instead of starting mid-transient.
 
@@ -113,13 +126,16 @@ Budgets are `Limits` and can be tuned with measurements; bus capacities in kira 
 | `effects` | 0.65 | the old "Spell effect volume" and its default; effect and world sounds |
 | `interface` | 0.7 | new |
 | `music` | 0.5 | new |
+| `voice` | 0.8 | units answering, dialogue and narration (D97) |
 | `muteInBackground` | true | the old game suspended audio in a hidden tab |
 
-Volumes are linear amplitudes multiplied together (master × bus × sound), as the old effect volume was.
+Volumes are linear amplitudes multiplied together (master × bus × sound), as the old effect volume was. While a cinematic plays the effects bus ducks to 0.3; while a line is spoken it ducks to 0.6 and the music to 0.5.
 
 ## Music
 
-`Playlist { tracks, shuffle, repeat, crossfade, volume }` plays tracks in order or shuffled (each round a new order, never the same track twice in a row) with equal-power crossfades between tracks and when a new playlist takes over; `stop_music(fade)` fades everything out. No music ships yet. Tracks are library clips (PCM in the pack); see deferred items.
+`Playlist { tracks, shuffle, repeat, crossfade, volume }` plays tracks in order or shuffled (each round a new order, never the same track twice in a row) with equal-power crossfades between tracks and when a new playlist takes over; `stop_music(fade)` fades everything out. `Audio::playlist(events)` makes a shuffled playlist of music events' clips. No music ships yet.
+
+**Streaming** (D97): music and voice stay compressed in the pack (the cooker passes `.mp3` and `.ogg` outputs through as data) and stream through kira's symphonia decoder (features `mp3`, `ogg`, `vorbis`); short effects stay PCM. A streamed clip must say how long it is (an MP3's Xing header; the authoring tool's pick remuxes for it), or the library leaves it out with a warning.
 
 ## Tests
 
@@ -129,8 +145,8 @@ Manual: `cargo run -p canopy-audio --example play_pack` plays every sound of the
 
 ## Deferred
 
-- **Music streaming**: real music needs compressed audio (Ogg Vorbis or Opus) in the pack and kira's streaming sounds; a three-minute stereo track as PCM is 30 MB on disk and 60 MB as mixer frames. Decide the format with the cooker when music arrives ([D26](decisions.md) already says to revisit then).
-- **Interface, unit, combat and building sounds**: categories, buses and APIs exist, but there is no content or binding format for them (which button, order or hit plays which sound). Needs data, which is a phase 2 format question, or a small data file agreed with Jiri.
+- **Water emitters**: streams and falls placed in the world as ambience loops (D97) wait for the first water sounds; the biome's day and night beds play now.
+- **The editor's Sounds library** with playback (D97); agents already have the MCP tools.
 - **Settings screen and persistence** in `game/` (M4 settings), and calling `set_background` from window events.
 - **A device that appears after launch**: without a device at start the game runs silent until restarted. After start, kira restarts the stream when the device is lost; on macOS it does not follow a change of the default device while the old one remains (kira avoids querying CoreAudio during playback).
 - **Budgets measured** on the reference machine in a full battle; `audio_update` and `audio_observe` have tracing spans.

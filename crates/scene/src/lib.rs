@@ -13,6 +13,7 @@ pub mod interpolate;
 pub mod live;
 pub mod models;
 pub mod obstruction;
+pub mod sounds;
 pub mod state_effects;
 pub mod statics;
 pub mod terrain;

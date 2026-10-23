@@ -295,6 +295,9 @@ pub struct UtcMap {
     pub biome: Option<String>,
     /// Trimmed; `None` when blank.
     pub description: Option<String>,
+    /// Music events, shuffled, played in a match on the map over the player's race's
+    /// (D97).
+    pub music: Option<Vec<crate::Id>>,
     pub mission: Option<Mission>,
     /// Local, fully revealed testbed: authored entities only, no opponents or victory rules.
     #[serde(default, skip_serializing_if = "is_false")]

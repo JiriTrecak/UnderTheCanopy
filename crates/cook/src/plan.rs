@@ -7,7 +7,8 @@
 //!   glb embeds, so only those a render binding shows (`image`, the icons) are cooked.
 //! - Channel images of terrain materials whose catalogue entry declares packed runtime
 //!   tiles are editor previews; the tiles (`.bin`, gzip RGBA) are cooked instead.
-//! - Other `.bin` outputs are data; `.wav` outputs are sounds; JSON outputs shaped as
+//! - Other `.bin` outputs are data; `.wav` outputs are sounds; `.mp3` and `.ogg` stay as
+//!   they are (data the game streams, D97); JSON outputs shaped as
 //!   daytime colour grades become volume textures.
 //! - Map packages' preview images, and one `@scenery` table of every placeable prototype.
 
@@ -235,6 +236,8 @@ pub fn plan(inputs: &Inputs) -> Plan {
                 }
                 "bin" => jobs.push(Job::Data { path }),
                 "wav" => jobs.push(Job::Sound { path }),
+                // Music and voice stay compressed and stream (D97).
+                "mp3" | "ogg" => jobs.push(Job::Data { path }),
                 "json" => {
                     let mut errors = Vec::new();
                     let file = inputs.locator.path(&path);

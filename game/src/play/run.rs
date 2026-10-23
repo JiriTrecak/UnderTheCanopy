@@ -161,6 +161,8 @@ pub struct InMatch {
     /// (the camera then stays theirs for [`FOLLOW_PAUSE`]).
     followed: Option<[f32; 2]>,
     camera_moved: Option<Instant>,
+    /// Answers, alerts, music, ambience, lines and the end's sting (D97).
+    sounds: super::sounds::MatchSounds,
 }
 
 /// How long autoplay's camera leaves the view to a viewer who moved it.
@@ -255,6 +257,13 @@ impl InMatch {
         renderer.set_portrait(gpu, None, PORTRAIT_PIXELS);
         let mut hud = Hud::new();
         hud.configure(&content, game.world.setup(), start.me);
+        let sounds = super::sounds::MatchSounds::new(
+            &content,
+            game.world.setup(),
+            start.me,
+            loaded.music.clone(),
+            loaded.ambience.clone(),
+        );
         let sim = SimThread::start_with(
             game.world,
             game.session,
@@ -294,6 +303,7 @@ impl InMatch {
         }
         audio.clear_game();
         audio.bind(&content);
+        sounds.begin(audio, &content);
         let now = Instant::now();
         let mut this = Self {
             loaded,
@@ -346,6 +356,7 @@ impl InMatch {
             autoplay: None,
             followed: None,
             camera_moved: None,
+            sounds,
         };
         this.stats.networked = start.chat_server;
         this.stats.players = this
@@ -503,6 +514,13 @@ impl InMatch {
 
     pub fn camera(&self) -> &RtsCamera {
         &self.camera
+    }
+
+    /// Where the camera's zoom stands in its range: 0 nearest, 1 furthest (the world's
+    /// sounds step back as it rises, D97).
+    fn zoom_share(&self) -> f32 {
+        let (near, far) = self.camera.zoom_range;
+        ((self.camera.zoom() - near) / (far - near).max(1e-3)).clamp(0.0, 1.0)
     }
 
     /// Whether the simulation thread has stopped (it only stops when asked, or by
@@ -947,7 +965,12 @@ impl InMatch {
             for snap in self.live.snapshots() {
                 if self.last_tick.is_none_or(|t| snap.tick() > t) {
                     host.audio.observe(&snap.view);
+                    super::sounds::bodies(host.audio, &snap.presentation.sounds, false);
                 }
+            }
+            if self.last_tick != Some(s.tick()) {
+                // Loops of the newest tick: what is in a sounding state now.
+                super::sounds::bodies(host.audio, &s.presentation.sounds, true);
             }
             if self.last_tick != Some(s.tick())
                 && let Some(day) = &self.loaded.day
@@ -1101,12 +1124,34 @@ impl InMatch {
         self.stats.ui_ms = ui_started.elapsed().as_secs_f32() * 1000.0;
 
         // Sounds.
+        let cues = self.play.take_cues();
+        let know = self.play.knowledge();
+        self.sounds.cues(host.audio, &self.content, know, cues);
+        let line = know
+            .view
+            .mission
+            .as_ref()
+            .and_then(|m| m.dialogue.as_ref())
+            .map(|d| (d.id, d.text.as_str()));
+        self.sounds.dialogue(host.audio, line);
+        if let (Some(outcome), Some(me)) = (&know.view.outcome, self.me) {
+            let won = outcome.winner == Some(canopy_content::placement::Owner::Player(me));
+            self.sounds.end(host.audio, &self.content, won);
+        }
+        let seconds = self.live.shown as f32 * TICK_SECONDS;
+        let hour = self
+            .loaded
+            .day
+            .as_ref()
+            .map_or(self.loaded.scene.hour, |d| d.hour(seconds));
+        self.sounds.ambience(host.audio, hour);
         let right = (camera_view.view.inverse().x_axis.truncate()).normalize_or_zero();
         host.audio.update(&canopy_audio::Frame {
             real_dt: dt_ms / 1000.0,
             render_tick: self.live.shown,
             speed: 1.0,
-            listener: canopy_audio::Listener::new(focus[0], focus[1], right.x, right.z),
+            listener: canopy_audio::Listener::new(focus[0], focus[1], right.x, right.z)
+                .with_zoom(canopy_audio::zoom_gain(self.zoom_share())),
         });
 
         // Debug statistics.

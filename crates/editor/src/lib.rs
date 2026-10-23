@@ -21,6 +21,7 @@ mod mcp;
 mod overview;
 mod references;
 mod shell;
+mod sound;
 mod stage;
 pub mod starcraft;
 mod tabs;

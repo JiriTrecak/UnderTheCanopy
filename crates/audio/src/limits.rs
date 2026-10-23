@@ -20,15 +20,43 @@ pub enum Category {
     /// Menus, buttons and notifications: not positional, not paused with the game.
     Interface,
     Music,
+    /// A unit answering its player: one at a time, not positional.
+    Voice,
+    /// Loops of the place: a biome's air, streams and falls (positional, wall clock, so
+    /// the world keeps breathing while the game is paused).
+    Ambience,
+    /// Spoken story: a dialogue line's voice, a page's narration.
+    Dialogue,
 }
 
 impl Category {
-    pub const ALL: [Category; 4] = [
+    pub const ALL: [Category; 7] = [
         Category::Effect,
         Category::World,
         Category::Interface,
         Category::Music,
+        Category::Voice,
+        Category::Ambience,
+        Category::Dialogue,
     ];
+
+    /// The category a content sound event plays in.
+    pub fn of(category: canopy_content::sounds::SoundCategory) -> Self {
+        use canopy_content::sounds::SoundCategory as S;
+        match category {
+            S::World => Category::World,
+            S::Voice => Category::Voice,
+            S::Interface => Category::Interface,
+            S::Ambience => Category::Ambience,
+            S::Music => Category::Music,
+            S::Dialogue => Category::Dialogue,
+        }
+    }
+
+    /// Whether a new sound of the category ends the one playing (a unit's answer, a line).
+    pub fn exclusive(self) -> bool {
+        matches!(self, Category::Voice | Category::Dialogue)
+    }
 
     pub(crate) fn index(self) -> usize {
         self as usize
@@ -36,9 +64,10 @@ impl Category {
 
     pub fn bus(self) -> Bus {
         match self {
-            Category::Effect | Category::World => Bus::Effects,
+            Category::Effect | Category::World | Category::Ambience => Bus::Effects,
             Category::Interface => Bus::Interface,
             Category::Music => Bus::Music,
+            Category::Voice | Category::Dialogue => Bus::Voice,
         }
     }
 
@@ -69,7 +98,7 @@ pub struct Budget {
 /// Voice budgets per category.
 #[derive(Debug, Clone, Copy, PartialEq)]
 pub struct Limits {
-    pub budgets: [Budget; 4],
+    pub budgets: [Budget; 7],
 }
 
 impl Default for Limits {
@@ -99,6 +128,25 @@ impl Default for Limits {
                 Budget {
                     voices: 2,
                     per_sound: 2,
+                    retrigger: 0.0,
+                    late_start: f32::INFINITY,
+                },
+                // One answer at a time (two while one fades for the next).
+                Budget {
+                    voices: 2,
+                    per_sound: 2,
+                    retrigger: 0.0,
+                    late_start: 0.25,
+                },
+                Budget {
+                    voices: 8,
+                    per_sound: 3,
+                    retrigger: 0.0,
+                    late_start: f32::INFINITY,
+                },
+                Budget {
+                    voices: 2,
+                    per_sound: 1,
                     retrigger: 0.0,
                     late_start: f32::INFINITY,
                 },
@@ -149,6 +197,8 @@ pub struct Request {
     pub looping: bool,
     /// Multiplies audibility when ranking.
     pub priority: f32,
+    /// A sound event's group and its most copies at once, across its clips.
+    pub group: Option<(u32, u16)>,
 }
 
 /// Picks the requests that get voices. `playing` says whether a request's key holds a
@@ -158,6 +208,7 @@ pub struct Request {
 pub struct Selector {
     order: Vec<(f32, u64, usize)>,
     per_sound: HashMap<(Category, SoundId), u16>,
+    per_group: HashMap<u32, u16>,
 }
 
 /// How much louder a newcomer must be to take a playing voice's place.
@@ -171,10 +222,11 @@ impl Selector {
         audible: impl Fn(Category) -> bool,
         playing: impl Fn(u64) -> bool,
         granted: &mut Vec<usize>,
-    ) -> [u16; 4] {
+    ) -> [u16; 7] {
         granted.clear();
         self.order.clear();
         self.per_sound.clear();
+        self.per_group.clear();
         for (i, r) in requests.iter().enumerate() {
             if !audible(r.category) || r.gain.is_nan() || r.gain < AUDIBLE {
                 continue;
@@ -189,7 +241,7 @@ impl Selector {
         // Highest score first; ties go to the older source (smaller key).
         self.order
             .sort_unstable_by(|a, b| b.0.total_cmp(&a.0).then(a.1.cmp(&b.1)));
-        let mut used = [0u16; 4];
+        let mut used = [0u16; 7];
         for &(_, _, i) in &self.order {
             let r = &requests[i];
             let budget = limits.budget(r.category);
@@ -197,11 +249,19 @@ impl Selector {
             if *category >= budget.voices {
                 continue;
             }
+            if let Some((group, most)) = r.group
+                && self.per_group.get(&group).copied().unwrap_or(0) >= most
+            {
+                continue;
+            }
             let same = self.per_sound.entry((r.category, r.sound)).or_insert(0);
             if *same >= budget.per_sound {
                 continue;
             }
             *same += 1;
+            if let Some((group, _)) = r.group {
+                *self.per_group.entry(group).or_insert(0) += 1;
+            }
             *category += 1;
             granted.push(i);
         }
@@ -233,6 +293,7 @@ mod tests {
             pan: 0.0,
             looping: false,
             priority: 1.0,
+            group: None,
         }
     }
 

@@ -19,6 +19,7 @@
 
 mod audio;
 pub mod effects;
+pub mod events;
 mod library;
 pub mod limits;
 mod music;
@@ -28,12 +29,13 @@ mod settings;
 mod sources;
 pub mod spatial;
 
-pub use audio::{Audio, Frame, Stats};
+pub use audio::{Audio, Frame, LoopGroup, Stats};
 pub use effects::{DeliverySighting, EffectSounds, ReturnSighting, StatusSighting, Trigger};
+pub use events::{EventId, SoundBank};
 pub use library::{Clip, SoundId, SoundLibrary};
 pub use limits::{Budget, Category, Limits};
 pub use music::Playlist;
 pub use observe::{effect_event, trigger};
 pub use settings::{AudioSettings, Bus};
 pub use sources::{Handle, PlayOptions};
-pub use spatial::{At, Distances, Listener};
+pub use spatial::{At, Distances, Listener, zoom_gain};

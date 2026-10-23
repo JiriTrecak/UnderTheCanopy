@@ -77,6 +77,13 @@ pub fn validate(map: &UtcMap, content: &Content) -> Vec<Error> {
     camps(&mut v, &declared);
     main_forts(&mut v, &declared);
     playable(&mut v);
+    for (i, id) in map.music.iter().flatten().enumerate() {
+        match content.sounds.get(id.as_str()) {
+            Some(e) if e.category == crate::sounds::SoundCategory::Music => {}
+            Some(_) => v.fail(format!("music[{i}]"), format!("{id} is no music")),
+            None => v.fail(format!("music[{i}]"), format!("unknown sound {id}")),
+        }
+    }
     v.errors
 }
 

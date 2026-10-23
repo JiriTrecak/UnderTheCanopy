@@ -127,6 +127,9 @@ fn check(kind: &str, value: Value) -> Result<(), String> {
         "effect" => serde_json::from_value::<VisualEffect>(value)
             .map(drop)
             .map_err(e),
+        "sound" => serde_json::from_value::<canopy_content::sounds::SoundEvent>(value)
+            .map(drop)
+            .map_err(e),
         other => Err(format!("unknown example kind {other}")),
     }
 }

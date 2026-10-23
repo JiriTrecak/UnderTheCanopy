@@ -53,6 +53,7 @@ Authority: `crates/content/src/assets/package.rs` (formats and the registries bu
 - `source`, `recipe`, `build`, `generation` and `reference` are working files. They are kept in git but never cooked or shipped.
 
 **Kinds:** `unit`, `creature`, `building`, `tree`, `foliage`, `prop`, `bridge`, `terrain-material`, `icon`, `interface`, `texture`, `audio`.
+- An audio asset holds one clip as `audio.wav` (short sounds, cooked to PCM) or `audio.mp3`/`audio.ogg` (music and voice, streamed as they are). Content never names a clip: it names a sound event (skill **canopy-sounds**).
 - An icon (or a portrait) is its own asset of kind `icon` with one `image` file; `tools/icons/icons.py` also keeps the painted foreground (`source.png`) and its request (`generation.json`) beside it, so a background change is a recompose. Making or changing an icon follows the **canopy-icons** skill. Model assets don't carry portraits.
 
 **Model fields:**

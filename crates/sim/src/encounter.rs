@@ -334,6 +334,7 @@ pub fn sandbox(entities: Vec<Placement>, camps: Vec<Camp>) -> UtcMap {
         name: "Ability encounter".into(),
         biome: None,
         description: None,
+        music: None,
         mission: None,
         sandbox: true,
         initial_exploration: None,

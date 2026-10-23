@@ -87,7 +87,7 @@ pub struct Story {
 pub struct Page {
     pub art: Option<Id>,
     pub text: String,
-    /// A voice reading the page.
+    /// A voice reading the page: a dialogue sound event (D97).
     pub narration: Option<Id>,
 }
 
@@ -285,6 +285,24 @@ impl CampaignPackage {
         .collect()
     }
 
+    /// The campaign's own sound events (its `sounds/`), which its steps may name beside the
+    /// base's (D97).
+    pub fn sounds(&self) -> crate::sounds::Sounds {
+        let mut errors = Vec::new();
+        let elements = crate::load::elements(
+            &crate::collections::SOUNDS,
+            std::slice::from_ref(&self.package),
+            &mut Default::default(),
+            &mut errors,
+        );
+        crate::sounds::Sounds::new(
+            elements
+                .into_iter()
+                .filter_map(|e| e.parse(&mut errors))
+                .collect(),
+        )
+    }
+
     /// Whether the package changes game data (units, abilities, rules…), so its missions
     /// play on content layered over the base.
     pub fn has_content(&self) -> bool {
@@ -297,7 +315,7 @@ pub fn has_content(package: &Package) -> bool {
     use crate::collections::*;
     [
         UNITS, BUILDINGS, ITEMS, RESOURCES, BEHAVIORS, RACES, RESEARCH, LOOT_POOLS, ABILITIES,
-        EFFECTS, RULES,
+        EFFECTS, SOUNDS, RULES,
     ]
     .iter()
     .any(|c| package.is_dir(c.dir))
@@ -413,6 +431,23 @@ pub fn validate(campaign: &CampaignPackage, content: &Content) -> Vec<Error> {
     // Fields hold library keys (D96): the base text with the campaign's own over it.
     let mut library = content.text.clone();
     library.layer(std::slice::from_ref(&campaign.package), &mut Vec::new());
+    let own_sounds = campaign.sounds();
+    let check_sound = |fail: &mut dyn FnMut(String, String),
+                       at: String,
+                       id: Option<&Id>,
+                       category: crate::sounds::SoundCategory| {
+        let Some(id) = id else { return };
+        match own_sounds
+            .get(id.as_str())
+            .or_else(|| content.sounds.get(id.as_str()))
+        {
+            None => fail(at, format!("unknown sound {id}")),
+            Some(e) if e.category != category => {
+                fail(at, format!("{id} is no {category:?} sound").to_lowercase())
+            }
+            Some(_) => {}
+        }
+    };
     let text = |fail: &mut dyn FnMut(String, String), at: String, value: &str, most: usize| {
         let value = match library.get(value) {
             Some(said) => said,
@@ -445,7 +480,12 @@ pub fn validate(campaign: &CampaignPackage, content: &Content) -> Vec<Error> {
             );
         }
         text(&mut fail, format!("{at}.title"), step.title(), 120);
-        check_asset(&mut fail, format!("{at}.music"), &step.music().cloned());
+        check_sound(
+            &mut fail,
+            format!("{at}.music"),
+            step.music(),
+            crate::sounds::SoundCategory::Music,
+        );
         match step {
             Step::Chapter(s) => check_asset(&mut fail, format!("{at}.art"), &s.art),
             Step::Story(s) => {
@@ -456,7 +496,12 @@ pub fn validate(campaign: &CampaignPackage, content: &Content) -> Vec<Error> {
                     let at = format!("{at}.pages[{p}]");
                     text(&mut fail, format!("{at}.text"), &page.text, 4000);
                     check_asset(&mut fail, format!("{at}.art"), &page.art);
-                    check_asset(&mut fail, format!("{at}.narration"), &page.narration);
+                    check_sound(
+                        &mut fail,
+                        format!("{at}.narration"),
+                        page.narration.as_ref(),
+                        crate::sounds::SoundCategory::Dialogue,
+                    );
                 }
             }
             Step::Cinematic(s) => {

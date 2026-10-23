@@ -3,6 +3,7 @@
 use crate::{
     Category, EffectSounds, SoundId, SoundLibrary,
     effects::TICK_SECONDS,
+    events::{EventId, SoundBank},
     limits::{Limits, Request, Selector},
     music::{Music, Playlist},
     output::Output,
@@ -11,8 +12,9 @@ use crate::{
     spatial::{At, Listener},
 };
 use canopy_assets::Pack;
-use canopy_content::Content;
+use canopy_content::{Content, sounds::Sounds};
 use canopy_sim::{abilities::AbilityEvent, view::View};
+use std::collections::BTreeMap;
 
 /// What the frame looks like to the ears.
 #[derive(Debug, Clone, Copy, PartialEq)]
@@ -30,7 +32,7 @@ pub struct Frame {
 #[derive(Debug, Clone, Copy, Default, PartialEq, Eq)]
 pub struct Stats {
     /// Requests that got a voice, per [`Category`].
-    pub voices: [u16; 4],
+    pub voices: [u16; 7],
     /// Requests that wanted a voice and got none.
     pub virtual_voices: u16,
     /// Voices kira is playing.
@@ -70,11 +72,34 @@ pub struct Audio {
     ducked: bool,
     /// The effects bus's gain from ducking, eased towards its target.
     duck: f32,
+    /// The music bus's gain under a spoken line, eased.
+    music_duck: f32,
+    bank: SoundBank,
+    /// Loops held by what plays them, by group and key: the event and its source.
+    loops: BTreeMap<(LoopGroup, u64), (EventId, Handle)>,
+    /// The sound playing in each exclusive category (a unit's answer, a line).
+    exclusive: BTreeMap<Category, Handle>,
+}
+
+/// Who holds a set of loops ([`Audio::hold`]): each group is replaced whole every call.
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, PartialOrd, Ord)]
+pub enum LoopGroup {
+    /// Units and buildings in a state that sounds (a forge at work, wings in flight).
+    Bodies,
+    /// The place: the biome's air, streams and falls.
+    Ambience,
 }
 
 /// The effects bus's gain while a cinematic plays, and how fast it eases there (s).
 pub const DUCK_GAIN: f32 = 0.3;
 const DUCK_SECONDS: f32 = 0.4;
+/// The world's and the music's gains while a line is spoken.
+pub const LINE_DUCK: (f32, f32) = (0.6, 0.5);
+/// Above this summed gain the world's voices (effects and world sounds) are turned down
+/// together, by the square root of the excess, so a great battle is full, not deafening.
+pub const CROWD: f32 = 3.0;
+/// A unit's answer or a line cut short by the next fades this fast (s).
+const CUT: f32 = 0.08;
 
 impl Audio {
     /// Audio on the default output device. Without one (or if it cannot be opened)
@@ -125,6 +150,10 @@ impl Audio {
             stats: Stats::default(),
             ducked: false,
             duck: 1.0,
+            music_duck: 1.0,
+            bank: SoundBank::default(),
+            loops: BTreeMap::new(),
+            exclusive: BTreeMap::new(),
         }
     }
 
@@ -159,10 +188,104 @@ impl Audio {
         self.library.find(name)
     }
 
-    /// Binds the effect sound layers of `content` to ability events. Call after
-    /// [`Audio::load`]; ends any effect cues.
+    /// Binds the effect sound layers of `content` to ability events and its sound events
+    /// to the library's clips (over those bound before: a match's content layers the
+    /// game's). Call after [`Audio::load`]; ends any effect cues.
     pub fn bind(&mut self, content: &Content) {
         self.effects.bind(content, &self.library);
+        self.bank.bind(&content.sounds, &self.library);
+    }
+
+    /// Binds more sound events (a campaign's or a map's own) over those bound.
+    pub fn bind_sounds(&mut self, sounds: &Sounds) {
+        self.bank.bind(sounds, &self.library);
+    }
+
+    pub fn bank(&self) -> &SoundBank {
+        &self.bank
+    }
+
+    /// A bound sound event by id.
+    pub fn event(&self, id: &str) -> Option<EventId> {
+        self.bank.find(id)
+    }
+
+    /// Starts a sound event: one of its clips, at a volume and pitch in its ranges, in its
+    /// category. `None` while its cooldown runs or when the sound is dropped. A unit's
+    /// answer or a spoken line ends the one before it.
+    pub fn play_event(&mut self, event: EventId, at: At) -> Option<Handle> {
+        let category = self.bank.category(event);
+        let start = self.bank.start(event, self.clocks.now(category))?;
+        if category.exclusive()
+            && let Some(before) = self.exclusive.remove(&category)
+        {
+            self.stop(before, Some(CUT));
+        }
+        let handle = self.play_with(start.sound, at, start.options)?;
+        if category.exclusive() {
+            self.exclusive.insert(category, handle);
+        }
+        Some(handle)
+    }
+
+    /// Whether a sound of an exclusive category plays (a unit answering, a line spoken).
+    pub fn speaking(&self, category: Category) -> bool {
+        self.exclusive
+            .get(&category)
+            .is_some_and(|&h| self.sources.is_live(h))
+    }
+
+    /// Holds the loops of `group`: each `(key, event, at)` plays (started the first time
+    /// its key is seen, moved after that), and every loop of the group not named any more
+    /// fades out. Call once per tick or frame with the whole group.
+    pub fn hold(&mut self, group: LoopGroup, wanted: impl IntoIterator<Item = (u64, EventId, At)>) {
+        let mut seen = std::collections::BTreeSet::new();
+        for (key, event, at) in wanted {
+            seen.insert(key);
+            match self.loops.get(&(group, key)) {
+                Some(&(playing, handle)) if playing == event && self.sources.is_live(handle) => {
+                    self.sources.set_at(handle, at);
+                }
+                held => {
+                    if let Some(&(_, handle)) = held {
+                        self.stop(handle, None);
+                    }
+                    match self.play_event(event, at) {
+                        Some(handle) => {
+                            self.loops.insert((group, key), (event, handle));
+                        }
+                        None => {
+                            self.loops.remove(&(group, key));
+                        }
+                    }
+                }
+            }
+        }
+        let gone: Vec<(LoopGroup, u64)> = self
+            .loops
+            .keys()
+            .filter(|(g, k)| *g == group && !seen.contains(k))
+            .copied()
+            .collect();
+        for key in gone {
+            if let Some((_, handle)) = self.loops.remove(&key) {
+                self.stop(handle, None);
+            }
+        }
+    }
+
+    /// A playlist of the clips of music events, shuffled; `None` when none is bound.
+    pub fn playlist<'a>(&self, events: impl IntoIterator<Item = &'a str>) -> Option<Playlist> {
+        let tracks: Vec<SoundId> = events
+            .into_iter()
+            .filter_map(|id| self.bank.find(id))
+            .flat_map(|e| self.bank.clips(e).iter().copied())
+            .collect();
+        (!tracks.is_empty()).then(|| {
+            let mut playlist = Playlist::new(tracks);
+            playlist.shuffle = true;
+            playlist
+        })
     }
 
     pub fn effects(&self) -> &EffectSounds {
@@ -189,6 +312,7 @@ impl Audio {
     pub fn clear_game(&mut self) {
         self.effects.clear();
         self.sources.clear_game();
+        self.loops.clear();
     }
 
     /// Plays a sound at a place with the defaults of a world sound (see [`PlayOptions`]).
@@ -312,11 +436,19 @@ impl Audio {
         } else {
             self.settings.master()
         };
-        let target = if self.ducked { DUCK_GAIN } else { 1.0 };
+        let line = self.speaking(Category::Dialogue);
+        let mut target = if self.ducked { DUCK_GAIN } else { 1.0 };
+        let mut music = 1.0;
+        if line {
+            target = target.min(LINE_DUCK.0);
+            music = LINE_DUCK.1;
+        }
         let ease = 1.0 - (-frame.real_dt.max(0.0) / DUCK_SECONDS).exp();
         self.duck += (target - self.duck) * ease;
+        self.music_duck += (music - self.music_duck) * ease;
         let mut buses = Bus::ALL.map(|bus| self.settings.bus(bus));
         buses[Bus::Effects.index()] *= self.duck;
+        buses[Bus::Music.index()] *= self.music_duck;
         let audible = |category: Category| master * buses[category.bus().index()] > 0.0;
         let output = &self.output;
         let voices = self.selector.select(
@@ -326,6 +458,23 @@ impl Audio {
             |key| output.as_ref().is_some_and(|o| o.is_playing(key)),
             &mut self.granted,
         );
+        // A crowd of world voices is turned down together.
+        let crowd: f32 = self
+            .granted
+            .iter()
+            .map(|&i| &self.requests[i])
+            .filter(|r| r.category.bus() == Bus::Effects)
+            .map(|r| r.gain)
+            .sum();
+        if crowd > CROWD {
+            let scale = (CROWD / crowd).sqrt();
+            for &i in &self.granted {
+                let r = &mut self.requests[i];
+                if r.category.bus() == Bus::Effects {
+                    r.gain *= scale;
+                }
+            }
+        }
         if let Some(output) = &mut self.output {
             output.set_mix(master, buses);
             output.reconcile(

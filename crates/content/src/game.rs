@@ -687,6 +687,10 @@ pub struct DefinitionPresentation {
     /// An item's colour (`#rrggbb`) where amounts of it show in the world: the floating
     /// text of a delivery.
     pub color: Option<String>,
+    /// Sounds it makes (D97): loops in a state, one-shots on clip events and moments.
+    pub sounds: Option<Vec<crate::sounds::SoundBinding>>,
+    /// How a unit answers its commanding player.
+    pub voice: Option<crate::sounds::Voice>,
 }
 
 /// An effect a building or unit plays from one of its model's sockets: looping for as
@@ -990,6 +994,8 @@ pub struct Race {
     pub construction: Option<ConstructionPresentation>,
     pub starting_setup: Option<StartingSetup>,
     pub roster: Vec<Id>,
+    /// Its spoken alerts and skirmish music (D97).
+    pub sounds: Option<crate::sounds::RaceSounds>,
 }
 
 /// Optional interface art; absent pieces keep the UI theme's default.
@@ -1031,6 +1037,9 @@ pub struct Rules {
     /// declares none (D90): what marks dropped loot. States: `always`.
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub item_effects: Vec<StateEffect>,
+    /// `rules/sounds.json` (D97): menu music, end stings and interface sounds.
+    #[serde(default)]
+    pub sounds: crate::sounds::SoundRules,
 }
 
 /// A race with the global starting setup filled in where it has none.
@@ -1079,6 +1088,8 @@ pub struct RenderAsset {
     pub effects: Option<Vec<StateEffect>>,
     /// The model's close dialogue portrait, when it frames it itself.
     pub portrait: Option<PortraitFrame>,
+    /// The definition's sounds (D97): loops in states, clip events and moments.
+    pub sounds: Option<Vec<crate::sounds::SoundBinding>>,
 }
 
 fn default_anchor_distance() -> f64 {
@@ -1128,6 +1139,7 @@ impl RenderAsset {
             scenery_asset: None,
             effects: None,
             portrait: None,
+            sounds: None,
         }
     }
 }

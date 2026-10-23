@@ -43,7 +43,7 @@ hound = "3"
 intel_tex_2 = "0.5"
 image = { version = "0.25", default-features = false, features = ["png", "jpeg", "webp"] }
 # Audio playback (cpal backend only: sounds arrive as PCM from the pack, nothing is decoded).
-kira = { version = "0.12", default-features = false, features = ["cpal"] }
+kira = { version = "0.12", default-features = false, features = ["cpal", "mp3", "ogg", "vorbis"] }
 libm = "0.2"
 # Level-of-detail index lists in the cooker (meshoptimizer's simplifier).
 meshopt = "0.6"

@@ -620,6 +620,7 @@ impl EffectSounds {
                 pan: heard.pan,
                 looping: r.looping,
                 priority: 1.0,
+                group: None,
             });
             true
         });

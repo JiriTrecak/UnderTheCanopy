@@ -29,6 +29,7 @@ pub mod preview;
 pub mod run;
 pub mod selection;
 pub mod shots;
+pub mod sounds;
 
 use crate::settings::Chord;
 use canopy_content::game::Kind;
@@ -93,6 +94,37 @@ pub enum Event {
     /// The player sent a chat line.
     Chat(String),
 }
+
+/// A sound the match asks for (D97); the match plays it from content.
+#[derive(Debug, Clone, PartialEq)]
+pub enum Cue {
+    /// A unit answers its player.
+    Answer { unit: u32, answer: Answer },
+    /// A message reached the player, by its text key: the player's race may voice it.
+    Alert(String),
+}
+
+/// What a unit answers to (its `presentation.voice`).
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum Answer {
+    Select,
+    Order,
+    Attack,
+    /// Selected again and again.
+    Annoyed,
+    /// Trained or revived.
+    Ready,
+}
+
+/// Clicks on one unit within this of each other count towards annoying it.
+const ANNOY_GAP: Duration = Duration::from_millis(1500);
+/// The selection that annoys a unit (Warcraft III: the fourth or so in a row).
+const ANNOY_CLICKS: u32 = 4;
+/// The least time between two spoken "under attack" alerts of one kind.
+const ATTACK_ALERT_GAP: Duration = Duration::from_secs(20);
+/// The alert keys the match raises itself.
+pub const ALERT_UNDER_ATTACK: &str = "alert.under-attack";
+pub const ALERT_BASE_UNDER_ATTACK: &str = "alert.base-under-attack";
 
 /// The armed command mode.
 #[derive(Debug, Clone, PartialEq)]
@@ -230,6 +262,12 @@ pub struct Play {
     alert_cursor: usize,
     known_hp: BTreeMap<u32, (u32, bool)>,
     events: Vec<Event>,
+    /// Sounds asked for since the match last took them.
+    cues: Vec<Cue>,
+    /// The unit selected last, how many times running and when (to annoy it).
+    answered: Option<(u32, u32, Duration)>,
+    /// When "under attack" was last said, for units and for buildings.
+    attacked: [Option<Duration>; 2],
     now: Duration,
     /// Every command, the current menu and its layout, from the newest view.
     pub commands: Vec<Command>,
@@ -288,6 +326,9 @@ impl Play {
             alert_cursor: 0,
             known_hp: BTreeMap::new(),
             events: Vec::new(),
+            cues: Vec::new(),
+            answered: None,
+            attacked: [None; 2],
             now: Duration::ZERO,
             commands: Vec::new(),
             entries: Vec::new(),
@@ -381,6 +422,11 @@ impl Play {
         std::mem::take(&mut self.events)
     }
 
+    /// The sounds asked for since the last call.
+    pub fn take_cues(&mut self) -> Vec<Cue> {
+        std::mem::take(&mut self.cues)
+    }
+
     /// The newest frame: the view, what is drawn and where, and the time.
     pub fn update(
         &mut self,
@@ -460,6 +506,16 @@ impl Play {
     fn read_facts(&mut self) {
         let facts = &self.know.view.facts;
         let newest = facts.last().map(|f| f.id);
+        if !self.observer() {
+            for f in facts
+                .iter()
+                .filter(|f| self.seen_fact.is_none_or(|s| f.id > s))
+            {
+                if self.know.view.tick.saturating_sub(f.tick) < ERROR_FACT_TICKS {
+                    self.cues.push(Cue::Alert(crate::text::key_of(&f.message)));
+                }
+            }
+        }
         let unseen = facts.iter().rfind(|f| {
             self.seen_fact.is_none_or(|s| f.id > s) && f.kind == canopy_sim::state::FactKind::Error
         });
@@ -489,8 +545,19 @@ impl Play {
                     if hp < old || (was_building && !building) {
                         fresh.push(k.position(e));
                     }
+                    if hp < old {
+                        self.attacked_at(k.position(e), !k.is_unit(e));
+                    }
                 }
-                None if !first && k.is_unit(e) => fresh.push(k.position(e)),
+                None if !first && k.is_unit(e) => {
+                    fresh.push(k.position(e));
+                    if k.controlled(e) {
+                        self.cues.push(Cue::Answer {
+                            unit: id,
+                            answer: Answer::Ready,
+                        });
+                    }
+                }
                 None => {}
             }
             now.insert(id, (hp, building));
@@ -509,6 +576,41 @@ impl Play {
                 self.alert_cursor = 0;
             }
         }
+    }
+
+    /// Says "under attack" (for a building: "our base") when an own entity is hurt out of
+    /// sight of the camera, at most once a while for each.
+    fn attacked_at(&mut self, position: [f32; 2], building: bool) {
+        if self.observer() {
+            return;
+        }
+        let shown = self.screen.is_some_and(|screen| {
+            screen
+                .project(Vec3::new(position[0], 0.0, position[1]))
+                .is_some_and(|(px, _)| {
+                    px.x >= 0.0 && px.y >= 0.0 && px.x <= screen.size[0] && px.y <= screen.size[1]
+                })
+        });
+        let last = &mut self.attacked[usize::from(building)];
+        if shown || last.is_some_and(|t| self.now.saturating_sub(t) < ATTACK_ALERT_GAP) {
+            return;
+        }
+        *last = Some(self.now);
+        let key = if building {
+            ALERT_BASE_UNDER_ATTACK
+        } else {
+            ALERT_UNDER_ATTACK
+        };
+        self.cues.push(Cue::Alert(key.into()));
+    }
+
+    /// The first of `ids` the player commands that answers (a unit).
+    fn answering(&self, ids: &[u32]) -> Option<u32> {
+        let k = &self.know;
+        ids.iter().copied().find(|&id| {
+            k.entity(id)
+                .is_some_and(|e| k.controlled(e) && k.is_unit(e))
+        })
     }
 
     /// Re-picks what is under the cursor.
@@ -637,11 +739,31 @@ impl Play {
 
     /// Sends commands, showing each marker once its command is queued.
     fn send(&mut self, commands: Vec<(Action, Option<Marker>)>) {
+        let mut answered = false;
         for (action, marker) in commands {
             if action.problem().is_some() {
                 continue;
             }
+            let answer = match &action {
+                Action::Attack { actors, .. } => Some((actors.clone(), Answer::Attack)),
+                Action::Move { actors, .. }
+                | Action::Patrol { actors, .. }
+                | Action::Follow { actors, .. }
+                | Action::Gather { actors, .. }
+                | Action::Construct { actors, .. }
+                | Action::Build { actors, .. }
+                | Action::Garrison { actors, .. } => Some((actors.clone(), Answer::Order)),
+                Action::CastAbility { actor, .. } => Some((vec![*actor], Answer::Order)),
+                _ => None,
+            };
             if self.sink.send(action.clone()) {
+                if let Some((actors, answer)) = answer
+                    && !answered
+                    && let Some(unit) = self.answering(&actors)
+                {
+                    answered = true;
+                    self.cues.push(Cue::Answer { unit, answer });
+                }
                 self.sent.push((self.now, action));
                 if self.sent.len() > 64 {
                     self.sent.remove(0);
@@ -890,6 +1012,25 @@ impl Play {
     /// Replaces the selection (clears any mode, as the old `setSelection`).
     pub fn select(&mut self, ids: Vec<u32>, focus: Option<u32>) {
         let k = self.know.clone();
+        if let Some(unit) = self.answering(&ids) {
+            let clicks = match self.answered {
+                Some((last, n, at)) if last == unit && self.now.saturating_sub(at) < ANNOY_GAP => {
+                    n + 1
+                }
+                _ => 1,
+            };
+            let answer = if clicks >= ANNOY_CLICKS {
+                Answer::Annoyed
+            } else {
+                Answer::Select
+            };
+            self.answered = Some((
+                unit,
+                if clicks >= ANNOY_CLICKS { 0 } else { clicks },
+                self.now,
+            ));
+            self.cues.push(Cue::Answer { unit, answer });
+        }
         self.selection.set(ids, focus, |id| k.rank_of(id));
         self.mode = Mode::Idle;
         self.menu = None;

@@ -87,6 +87,10 @@ pub enum Tool {
     ImportStarcraft(ImportStarcraftArgs),
     /// The campaign tools (`crate::campaign::tools`).
     Campaign(crate::campaign::tools::Call),
+    /// Every sound event of the checked content.
+    SoundEvents,
+    /// Sound authoring with ElevenLabs (`crate::sound`), answered when it finishes.
+    Sound(crate::sound::Call),
 }
 
 /// An ability's encounter, headless (the ability stage's take run to its end).
@@ -308,12 +312,12 @@ struct Handler {
 
 impl Handler {
     async fn ask(&self, tool: Tool) -> Result<CallToolResult, ErrorData> {
-        let cook = matches!(tool, Tool::Cook);
+        let cook = matches!(tool, Tool::Cook | Tool::Sound(_));
         let (reply, answer) = tokio::sync::oneshot::channel();
         if self.calls.send(Call { tool, reply }).is_err() {
             return Ok(failed("The editor is closed."));
         }
-        // A cook may compile the cooker first.
+        // A cook may compile the cooker first; a take of music can take minutes.
         let wait = if cook { 900 } else { 60 };
         match tokio::time::timeout(Duration::from_secs(wait), answer).await {
             Ok(Ok(Ok(Value::Object(image)))) if image.contains_key("png") => {
@@ -591,6 +595,44 @@ impl Handler {
         self.ask(Tool::Campaign(Call::Add(args))).await
     }
 
+    #[tool(
+        description = "Every sound event of the package (D97): id, category, clips, loop and its note. What units, buildings, races, rules, biomes, maps and campaigns name."
+    )]
+    async fn sound_events(&self) -> Result<CallToolResult, ErrorData> {
+        self.ask(Tool::SoundEvents).await
+    }
+
+    #[tool(
+        description = "Generates takes of a sound with ElevenLabs (D97; skill canopy-sounds): an effect or loop, music, a designed voice's previews, or a text library line spoken in a kept voice. Takes land in target/sound-takes/<name>/; audition them, then pick_sound (keep_voice for a voice). Costs ElevenLabs credits: generate only what Jiri asked for."
+    )]
+    async fn generate_sound(
+        &self,
+        Parameters(args): Parameters<crate::sound::GenerateSound>,
+    ) -> Result<CallToolResult, ErrorData> {
+        self.ask(Tool::Sound(crate::sound::Call::Generate(Box::new(args))))
+            .await
+    }
+
+    #[tool(
+        description = "Picks a take of a generated sound into its asset folder (audio, asset.json, generation.json) and creates or extends its sound event. Effects are stored as 16-bit WAV, music and lines as MP3 that streams."
+    )]
+    async fn pick_sound(
+        &self,
+        Parameters(args): Parameters<crate::sound::PickSound>,
+    ) -> Result<CallToolResult, ErrorData> {
+        self.ask(Tool::Sound(crate::sound::Call::Pick(args))).await
+    }
+
+    #[tool(
+        description = "Keeps one preview of a designed voice as its speaker's voice (tools/sound/voices.json), for lines to be spoken in."
+    )]
+    async fn keep_voice(
+        &self,
+        Parameters(args): Parameters<crate::sound::KeepVoice>,
+    ) -> Result<CallToolResult, ErrorData> {
+        self.ask(Tool::Sound(crate::sound::Call::Keep(args))).await
+    }
+
     #[tool(description = "Moves a campaign's step to another place in its list.")]
     async fn move_campaign_step(
         &self,
@@ -666,7 +708,7 @@ impl Handler {
 
 #[tool_handler(
     name = "Under the Canopy editor",
-    instructions = "Edits the game's base package (units, buildings, items, abilities, effects, races, rules, assets, maps) through the open editor. Find documents with list_elements, read them with read_document and their shape with document_schema, change them with edit (one undo step per call), check with problems, then save. Maps have their own tools: create_map, map_blocks (the block editor, D80), map_place, map_remove, map_info and map_picture. Campaigns too: create_campaign, campaign_steps, add_campaign_step, move_campaign_step, remove_campaign_step, set_campaign_step, set_mission_tech, mission_tech_tree and set_mission_players (docs/campaign.md). The canopy-* skills in the repository describe the formats."
+    instructions = "Edits the game's base package (units, buildings, items, abilities, effects, races, rules, assets, maps) through the open editor. Find documents with list_elements, read them with read_document and their shape with document_schema, change them with edit (one undo step per call), check with problems, then save. Maps have their own tools: create_map, map_blocks (the block editor, D80), map_place, map_remove, map_info and map_picture. Campaigns too: create_campaign, campaign_steps, add_campaign_step, move_campaign_step, remove_campaign_step, set_campaign_step, set_mission_tech, mission_tech_tree and set_mission_players (docs/campaign.md). Sounds: sound_events, generate_sound, pick_sound and keep_voice (D97, skill canopy-sounds). The canopy-* skills in the repository describe the formats."
 )]
 impl ServerHandler for Handler {}
 

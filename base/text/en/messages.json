@@ -1,4 +1,6 @@
 {
+  "alert.base-under-attack": "Our base is under attack!",
+  "alert.under-attack": "We are under attack!",
   "message.ability-is-cooling-down": "Ability is cooling down",
   "message.ability-is-fully-learned": "Ability is fully learned",
   "message.ability-requires-a-different-weapon-kind": "Ability requires a different weapon kind",

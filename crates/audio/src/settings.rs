@@ -10,10 +10,12 @@ pub enum Bus {
     /// Menus, buttons and notifications.
     Interface,
     Music,
+    /// Units answering and spoken story.
+    Voice,
 }
 
 impl Bus {
-    pub const ALL: [Bus; 3] = [Bus::Effects, Bus::Interface, Bus::Music];
+    pub const ALL: [Bus; 4] = [Bus::Effects, Bus::Interface, Bus::Music, Bus::Voice];
 
     pub(crate) fn index(self) -> usize {
         self as usize
@@ -30,6 +32,8 @@ pub struct AudioSettings {
     pub effects: f32,
     pub interface: f32,
     pub music: f32,
+    /// Units answering and dialogue.
+    pub voice: f32,
     /// Silence everything while the window is hidden or minimised, as the old game did.
     pub mute_in_background: bool,
 }
@@ -41,6 +45,7 @@ impl Default for AudioSettings {
             effects: 0.65,
             interface: 0.7,
             music: 0.5,
+            voice: 0.8,
             mute_in_background: true,
         }
     }
@@ -53,6 +58,7 @@ impl AudioSettings {
             Bus::Effects => self.effects,
             Bus::Interface => self.interface,
             Bus::Music => self.music,
+            Bus::Voice => self.voice,
         })
     }
 
@@ -62,6 +68,7 @@ impl AudioSettings {
             Bus::Effects => self.effects = volume,
             Bus::Interface => self.interface = volume,
             Bus::Music => self.music = volume,
+            Bus::Voice => self.voice = volume,
         }
     }
 

@@ -224,6 +224,8 @@ pub struct Presentation {
     pub bodies: Vec<Body>,
     /// Goods that arrived in the viewer's stock in the last [`POP_TICKS`], oldest first.
     pub pops: Vec<Pop>,
+    /// What units and buildings sound like this tick (D97).
+    pub sounds: Vec<crate::sounds::SoundCue>,
 }
 
 /// Ticks a delivery's floating text lives: it rises and fades over them.
@@ -570,6 +572,13 @@ pub struct Presenter {
     fired: BTreeMap<(Part, u32), u32>,
     /// Missiles whose impact effect played (with their launch tick).
     struck: BTreeMap<u32, u32>,
+    /// Sounds asked for this tick (D97), and what their moments are told from: the
+    /// newest unit seen (later ones are new), the buildings standing as sites, the tick
+    /// deaths were last heard up to.
+    sound_cues: Vec<crate::sounds::SoundCue>,
+    newest_unit: Option<u32>,
+    sites: BTreeSet<EntityId>,
+    heard_deaths: Option<u32>,
     projectiles: BTreeMap<String, Vec<Layer>>,
     tree_slots: BTreeMap<EntityId, usize>,
     hidden: HiddenStatics,
@@ -759,6 +768,10 @@ impl Presenter {
             origins: BTreeMap::new(),
             fired: BTreeMap::new(),
             struck: BTreeMap::new(),
+            sound_cues: Vec::new(),
+            newest_unit: None,
+            sites: BTreeSet::new(),
+            heard_deaths: None,
             projectiles: BTreeMap::new(),
             tree_slots: setup.tree_slots,
             hidden: HiddenStatics {
@@ -881,6 +894,9 @@ impl Presenter {
     /// moment (a replay seek). The next presentation shows that moment afresh.
     pub fn reset(&mut self) {
         self.units.clear();
+        self.newest_unit = None;
+        self.sites.clear();
+        self.heard_deaths = None;
         self.buildings.clear();
         self.items.clear();
         self.corpses.clear();
@@ -1073,6 +1089,20 @@ impl Presenter {
                         .look(d.id.as_str())
                         .and_then(|l| l.impact_effect.as_ref())
                         .and_then(|e| self.effects.find(e.as_str()));
+                    if let Some(sounds) = self
+                        .content
+                        .look(d.id.as_str())
+                        .and_then(|l| l.sounds.as_deref())
+                        && let Some(t) = by_id.get(&target)
+                    {
+                        let (x, z) = cells(t.public.position);
+                        crate::sounds::of_moment(
+                            &mut self.sound_cues,
+                            sounds,
+                            canopy_content::sounds::Moment::Impact,
+                            [x as f32, z as f32],
+                        );
+                    }
                     blows.entry(target).or_default().push(Blow {
                         direction: Vec3::new(facing.sin(), 0.0, facing.cos()),
                         power: scale * if d.is_hero() { 1.2 } else { 1.0 },
@@ -1433,6 +1463,28 @@ impl Presenter {
                         || work_state.is_some();
                     tracked.activity = ease_activity(tracked.activity, working);
                     actor.activity = tracked.activity;
+                    if let Some(sounds) = asset.sounds.as_deref() {
+                        let state = tracked
+                            .animation
+                            .as_ref()
+                            .map_or(crate::animation::states::IDLE, |a| a.animator.state());
+                        let casting = cast.is_some();
+                        let in_state = |s: &str| match s {
+                            "always" => true,
+                            "move" => moving || charging,
+                            "cast" => casting || s == state,
+                            _ => s == state,
+                        };
+                        crate::sounds::of_state(
+                            &mut self.sound_cues,
+                            sounds,
+                            id.0,
+                            true,
+                            &in_state,
+                            &events,
+                            position,
+                        );
+                    }
                     if let Some(effects) = asset.effects.as_deref() {
                         let state = tracked
                             .animation
@@ -1899,6 +1951,7 @@ impl Presenter {
         }
         self.previous = actors.iter().map(|a| (a.key, a.position)).collect();
         self.deliveries(view, &bodies, tick);
+        self.life_sounds(view, catalog);
         Presentation {
             tick,
             models: self.catalog.names().clone(),
@@ -1910,7 +1963,71 @@ impl Presenter {
             fog: view.fog.clone(),
             bodies,
             pops: self.pops.clone(),
+            sounds: std::mem::take(&mut self.sound_cues),
         }
+    }
+
+    /// The sounds of moments in units' and buildings' lives this tick (D97): what appeared
+    /// (an id newer than any seen: trained, summoned, a site placed), sites finished, and
+    /// deaths in sight. The first view of a match only learns what stands.
+    fn life_sounds(&mut self, view: &View, catalog: &canopy_sim::catalog::Catalog) {
+        use canopy_content::sounds::Moment;
+        let first = self.newest_unit.is_none();
+        let mut newest = self.newest_unit.unwrap_or(0);
+        let mut sites = BTreeSet::new();
+        for e in view.entities.iter().filter(|e| !e.remembered) {
+            let id = e.id();
+            let d = catalog.get(e.definition());
+            if !matches!(d.kind, Kind::Unit | Kind::Building) {
+                continue;
+            }
+            let fresh = !first && id.0 > self.newest_unit.unwrap_or(0);
+            newest = newest.max(id.0);
+            let site = e.public.construction.is_some();
+            let finished = !site && self.sites.contains(&id);
+            if site {
+                sites.insert(id);
+            }
+            let Some(sounds) = self
+                .content
+                .look(d.id.as_str())
+                .and_then(|l| l.sounds.as_deref())
+            else {
+                continue;
+            };
+            let (x, z) = cells(e.public.position);
+            let at = [x as f32, z as f32];
+            if fresh {
+                crate::sounds::of_moment(&mut self.sound_cues, sounds, Moment::Spawn, at);
+            }
+            if finished {
+                crate::sounds::of_moment(&mut self.sound_cues, sounds, Moment::Complete, at);
+            }
+        }
+        self.newest_unit = Some(newest);
+        self.sites = sites;
+        let heard = self.heard_deaths.unwrap_or(view.tick);
+        for death in view
+            .deaths
+            .iter()
+            .filter(|c| c.tick > heard && c.tick <= view.tick)
+        {
+            let d = catalog.get(death.sighting.definition);
+            if let Some(sounds) = self
+                .content
+                .look(d.id.as_str())
+                .and_then(|l| l.sounds.as_deref())
+            {
+                let (x, z) = cells(death.sighting.position);
+                crate::sounds::of_moment(
+                    &mut self.sound_cues,
+                    sounds,
+                    Moment::Death,
+                    [x as f32, z as f32],
+                );
+            }
+        }
+        self.heard_deaths = Some(view.tick);
     }
 
     /// The ground under a point, world units.
@@ -2223,10 +2340,21 @@ impl Presenter {
                 },
             );
         }
+        let in_state = |s: &str| s == "always" || s == state;
+        if let Some(sounds) = asset.sounds.as_deref() {
+            crate::sounds::of_state(
+                &mut self.sound_cues,
+                sounds,
+                id.0,
+                shown,
+                &in_state,
+                &events,
+                actor.position,
+            );
+        }
         let Some(effects) = asset.effects.as_deref() else {
             return;
         };
-        let in_state = |s: &str| s == "always" || s == state;
         let mount = Mount {
             info,
             sockets: asset.sockets.as_deref(),
@@ -2741,6 +2869,18 @@ impl Presenter {
             {
                 self.struck.insert(id, launched);
                 events.push((effect, end, end, 0.0, None, id, impact, false));
+            }
+            if part == Part::Missile
+                && tick >= impact
+                && tick <= impact + 2
+                && let Some(sounds) = look.sounds.as_deref()
+            {
+                crate::sounds::of_moment(
+                    &mut self.sound_cues,
+                    sounds,
+                    canopy_content::sounds::Moment::Impact,
+                    [end.x, end.z],
+                );
             }
         }
         for (effect, from, at, flight, target, id, at_tick, launch) in events {

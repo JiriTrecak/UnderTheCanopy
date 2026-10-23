@@ -60,6 +60,9 @@ pub struct Loaded {
     pub sandbox: bool,
     /// Scenery and live models that stop a close camera's boom.
     pub obstacles: canopy_scene::obstruction::Obstacles,
+    /// The map's music and its biome's ambience (sound event ids, D97).
+    pub music: Vec<String>,
+    pub ambience: Option<canopy_render::environment::Ambience>,
 }
 
 /// The hour `seconds` of match time after `start` when a day lasts `day_seconds` (old
@@ -312,6 +315,13 @@ fn assemble(
             data: std::path::PathBuf::new(),
             day,
             sandbox: map.sandbox,
+            music: map
+                .music
+                .iter()
+                .flatten()
+                .map(ToString::to_string)
+                .collect(),
+            ambience: look.biome.ambience.clone(),
         },
         Match {
             world,

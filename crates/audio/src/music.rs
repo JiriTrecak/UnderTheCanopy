@@ -228,6 +228,7 @@ impl Music {
                     pan: 0.0,
                     looping: false,
                     priority: 1.0,
+                    group: None,
                 });
             }
         }

@@ -91,12 +91,13 @@ fn definition() -> Value {
 
 /// The rule keys assembled from other files, absent from `rules/game.json` and
 /// `rules/combat.json`.
-const ASSEMBLED_RULES: [&str; 5] = [
+const ASSEMBLED_RULES: [&str; 6] = [
     "research",
     "lootPools",
     "races",
     "startingSetup",
     "experience",
+    "sounds",
 ];
 
 /// The schema of the document at `path` (`/`-separated from its package's root), when the
@@ -109,6 +110,7 @@ pub fn of_document(path: &str) -> Option<Value> {
     Some(match folder {
         "abilities" => root::<Ability>(),
         "effects" => root::<VisualEffect>(),
+        "sounds" => root::<crate::sounds::SoundEvent>(),
         "units" | "buildings" | "items" | "resources" => definition(),
         "races" => with_id::<Race>(),
         "research" => with_id::<Research>(),
@@ -118,6 +120,7 @@ pub fn of_document(path: &str) -> Option<Value> {
         "landscape" if rest.starts_with("water/") => root::<WaterFile>(),
         "rules" => match rest {
             "experience.json" => root::<Experience>(),
+            "sounds.json" => root::<crate::sounds::SoundRules>(),
             "commands.json" => {
                 let mut schema = root::<Actions>();
                 drop_properties(&mut schema, &["overrides"]);

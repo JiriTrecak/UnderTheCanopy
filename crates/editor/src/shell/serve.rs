@@ -118,6 +118,19 @@ impl Shell {
                 self.encounter_waiting.push((args, reply));
                 continue;
             }
+            if let Tool::Sound(call) = tool {
+                match self.data.clone() {
+                    Some(data) => {
+                        std::thread::spawn(move || {
+                            let _ = reply.send(crate::sound::run(&data, call));
+                        });
+                    }
+                    None => {
+                        let _ = reply.send(Err("The editor has no data folder.".into()));
+                    }
+                }
+                continue;
+            }
             if matches!(tool, Tool::Cook) {
                 self.start_cook();
                 self.cook_waiting.push(reply);
@@ -310,6 +323,11 @@ impl Shell {
             }
             Tool::Problems => Ok(self.problems_value()),
             Tool::UnusedAssets => Ok(json!({ "unused": self.unused_assets() })),
+            Tool::SoundEvents => match self.checked_content() {
+                Some(content) => Ok(crate::sound::events(&content)),
+                None => Err("No version of the package has passed the check yet.".into()),
+            },
+            Tool::Sound(_) => unreachable!("sound calls answer when they finish"),
             Tool::Cook => unreachable!("cooks answer when they finish"),
             Tool::ImportStarcraft(args) => match (&args.source, &args.id) {
                 (Some(source), Some(id)) => {

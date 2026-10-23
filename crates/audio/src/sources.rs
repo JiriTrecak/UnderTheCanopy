@@ -29,6 +29,8 @@ pub struct PlayOptions {
     pub fade_out: f32,
     /// Multiplies audibility when voices are scarce.
     pub priority: f32,
+    /// A sound event's group and its most copies at once ([`crate::events`]).
+    pub group: Option<(u32, u16)>,
 }
 
 impl Default for PlayOptions {
@@ -42,6 +44,7 @@ impl Default for PlayOptions {
             fade_in: 0.0,
             fade_out: 0.0,
             priority: 1.0,
+            group: None,
         }
     }
 }
@@ -66,6 +69,7 @@ impl PlayOptions {
             fade_in: crate::effects::authored_seconds(layer.fade_in_ticks) as f32,
             fade_out: crate::effects::authored_seconds(layer.fade_out_ticks) as f32,
             priority: 1.0,
+            group: None,
         }
     }
 }
@@ -99,7 +103,7 @@ pub(crate) struct Clocks {
 }
 
 impl Clocks {
-    fn now(&self, category: Category) -> f64 {
+    pub(crate) fn now(&self, category: Category) -> f64 {
         if category.game_time() {
             self.game
         } else {
@@ -238,6 +242,7 @@ impl Sources {
                 pan: heard.pan,
                 looping: s.options.looping,
                 priority: s.options.priority,
+                group: s.options.group,
             });
             true
         });

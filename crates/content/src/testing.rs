@@ -13,6 +13,8 @@ pub struct DataFolder {
     pub abilities: Value,
     /// Visual effects (one file each).
     pub effects: Value,
+    /// Sound events (one file each).
+    pub sounds: Value,
     /// Asset records in the old registry shape (`outputs`, `render`, `scenery`), written as
     /// asset folders with one-byte files, scenery definitions and definition presentation.
     pub records: Vec<Value>,
@@ -26,6 +28,7 @@ impl DataFolder {
             game,
             abilities: json!({"schemaVersion": 1, "abilities": [], "presentations": []}),
             effects: json!([]),
+            sounds: json!([]),
             records,
             landscape: json!([]),
         }
@@ -176,6 +179,12 @@ impl DataFolder {
             base(
                 &format!("effects/{}.json", e["id"].as_str().unwrap()),
                 &Value::Object(e),
+            );
+        }
+        for sound in self.sounds.as_array().into_iter().flatten() {
+            base(
+                &format!("sounds/{}.json", sound["id"].as_str().unwrap()),
+                sound,
             );
         }
         extract_text(&root.join(crate::BASE_DIR));

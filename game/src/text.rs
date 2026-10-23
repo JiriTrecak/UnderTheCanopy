@@ -73,6 +73,12 @@ pub fn message(text: &str) -> String {
     get().say(text)
 }
 
+/// The library key of a message (the key itself, or an encoded message's): what a race's
+/// spoken alerts are keyed by (D97).
+pub fn key_of(text: &str) -> String {
+    canopy_content::text::Message::decode(text).map_or_else(|| text.to_string(), |m| m.key)
+}
+
 /// A layout lookup for the UI ([`canopy_ui::UiConfig::localize`]).
 pub fn lookup(key: &str) -> Option<String> {
     get().get(key).map(str::to_string)

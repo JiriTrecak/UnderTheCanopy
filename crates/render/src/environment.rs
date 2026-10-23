@@ -207,6 +207,21 @@ pub struct BiomeConfig {
     /// blocks, or biomes without this, look as authored.
     #[serde(default)]
     pub blocks: Option<BlockLook>,
+    /// What the place sounds like (D97): sound event ids the game plays; the renderer
+    /// only carries them.
+    #[serde(default)]
+    pub ambience: Option<Ambience>,
+}
+
+/// A biome's ambience loops by the hour: `day` from dawn to dusk, `night` after; one
+/// alone plays all day.
+#[derive(Debug, Clone, Default, PartialEq, Deserialize)]
+#[serde(deny_unknown_fields)]
+pub struct Ambience {
+    #[serde(default)]
+    pub day: Option<String>,
+    #[serde(default)]
+    pub night: Option<String>,
 }
 
 /// What the generator makes of a map's blocks in this biome: ground paint, the generated
@@ -1667,6 +1682,7 @@ mod tests {
             },
             motes: None,
             blocks: None,
+            ambience: None,
         }
     }
 

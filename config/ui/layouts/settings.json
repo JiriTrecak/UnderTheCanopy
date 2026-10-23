@@ -125,6 +125,15 @@
                     { "id": "music-value", "kind": "label", "class": "st-value" } ] }
                 ]
               },
+              {
+                "class": "settings-row",
+                "children": [
+                  { "kind": "label", "class": "settings-label", "text": "@ui.settings.voice-volume" },
+                  { "class": "st-inline", "children": [
+                    { "id": "voice", "kind": "slider", "class": "slider st-grow", "min": 0, "max": 100, "step": 1, "action": "settings.volume" },
+                    { "id": "voice-value", "kind": "label", "class": "st-value" } ] }
+                ]
+              },
               { "id": "mute", "kind": "checkbox", "class": "check", "text": "@ui.settings.mute-while-the-game-is", "action": "settings.mute" }
             ]
           },

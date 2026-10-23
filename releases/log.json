@@ -1,7 +1,9 @@
 {
   "schemaVersion": 1,
   "unreleased": {
-    "added": [],
+    "added": [
+      "A Voice volume setting, for unit voices and spoken dialogue"
+    ],
     "improved": [],
     "fixed": [],
     "knownIssues": []

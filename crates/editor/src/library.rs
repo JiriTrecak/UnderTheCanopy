@@ -131,6 +131,7 @@ impl Kind {
             ],
             Kind::Assets => &[
                 ("Assets", ASSETS),
+                ("Sounds", SOUNDS),
                 ("Scenery", SCENERY),
                 ("Biomes", BIOMES),
                 ("Water", WATER),

@@ -35,10 +35,11 @@ pub mod collections {
     pub const LOOT_POOLS: Collection = Collection::files("loot-pools");
     pub const ABILITIES: Collection = Collection::files("abilities");
     pub const EFFECTS: Collection = Collection::files("effects");
+    pub const SOUNDS: Collection = Collection::files("sounds");
     /// One-off rule documents, by name.
     pub const RULES: Collection = Collection {
         dir: "rules",
-        form: Form::Singletons(&["game", "combat", "experience", "commands"]),
+        form: Form::Singletons(&["game", "combat", "experience", "commands", "sounds"]),
     };
     /// Campaign packages nested in the base (`crate::campaign`); not layered as game data.
     pub const CAMPAIGNS: Collection = Collection {
@@ -89,6 +90,8 @@ pub struct Content {
     pub abilities: AbilityLibrary,
     /// Sorted by id.
     pub effects: Vec<VisualEffect>,
+    /// Sound events (D97).
+    pub sounds: crate::sounds::Sounds,
     /// Every player-facing string in the source language (D96); definitions' names and
     /// descriptions are filled from it.
     pub text: Text,
@@ -210,6 +213,7 @@ struct Source {
     actions: Value,
     abilities: Vec<Element>,
     effects: Vec<Element>,
+    sounds: Vec<Element>,
 }
 
 fn read_source(
@@ -277,8 +281,10 @@ fn read_source(
             rules.extend(fields);
         }
     }
-    if let Some(experience) = rule_files.remove("experience") {
-        rules.insert("experience".into(), experience);
+    for name in ["experience", "sounds"] {
+        if let Some(value) = rule_files.remove(name) {
+            rules.insert(name.into(), value);
+        }
     }
     rules.insert(
         "research".into(),
@@ -356,6 +362,7 @@ fn read_source(
         actions: Value::Object(actions),
         abilities,
         effects: elements(&EFFECTS, packages, files, errors),
+        sounds: elements(&SOUNDS, packages, files, errors),
     }
 }
 
@@ -379,6 +386,7 @@ fn look(model: Option<&RenderAsset>, d: &Definition, rules: Option<&Rules>) -> R
         look.cast_contact = p.cast_contact;
         look.camera_anchor = p.camera_anchor.clone();
         look.effects = p.effects.clone();
+        look.sounds = p.sounds.clone();
     }
     if d.kind == Kind::Item
         && d.currency != Some(true)
@@ -449,6 +457,11 @@ impl Content {
             registry::resolve_definitions(&source.behavior_sets, source.definitions, errors);
         let abilities = abilities::read(source.abilities, &files, errors);
         let effects = effects::read(source.effects, errors);
+        let sounds: Vec<crate::sounds::SoundEvent> = source
+            .sounds
+            .into_iter()
+            .filter_map(|e| e.parse(errors))
+            .collect();
         let index = assets::package::index(packages, asset_files, errors);
         let manifest = index.manifest;
         let mut render_assets: Vec<RenderAsset> = assets::render_assets(&manifest);
@@ -494,6 +507,7 @@ impl Content {
             scenery: index.scenery,
             abilities: abilities?,
             effects: effects?,
+            sounds: crate::sounds::Sounds::new(sounds),
             text,
             files,
             definition_index,
