@@ -44,6 +44,16 @@ ready lossy WebP encoder. Until it is, add an image by hand: encode a WebP of at
 `{"file", "alt", "caption"?, "width", "height"}` to Unreleased's `images`, and run
 `just release-check`. Never change a published gallery.
 
+### How notes read
+
+Jiri's format (2026-10-23): keep notes short and spoiler-free. Say what players can now
+play in a line or two (for example "the first three missions of the ant campaign, as a
+gameplay and technology demo"; the races and heroes in skirmish), then list the technical
+improvements and capabilities, one line each, and the fixes in brief. No mission plots,
+character names, twists or secrets, in the notes or in gallery captions; the details live
+in docs/story.md. `unreleased` collects detailed notes as work lands; condense them into
+this form when completing the notes for a release.
+
 ## Version policy
 
 - Routine work (features, polish, fixes) ships as **patch** releases: 0.3.1, 0.3.2, …
@@ -77,7 +87,9 @@ just release-publish --artifact build/releases/0.3.1/darwin-aarch64/artifact.jso
 1. **Prepare** moves Unreleased into the version (published at now, UTC), clears
    Unreleased, and sets the app version in `Cargo.toml` and `Cargo.lock`, the base package's `package.json` and the match server's `server/package.json` (the server's health check reports it, so a deployed server shows which game it belongs to). It refuses an
    empty Unreleased. Commit the result. Frozen notes never change; corrections go into a
-   newer release.
+   newer release. (One exception, on Jiri's call: 0.4.2's notes and gallery captions were
+   rewritten after publishing, on 2026-10-23, to the shorter, spoiler-free form described
+   in "How notes read"; its package, signature and images were untouched.)
    Then deploy the match server (`just server-deploy`, docs/server.md) on **every** release,
    before publishing: prepare set its version, and its health check
    (`https://18.134.138.1/api/health`) must report the released game's version even when no

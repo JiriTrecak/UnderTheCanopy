@@ -41,6 +41,9 @@ Free text after the command:
      and read `unreleased` in `releases/log.json`.
    - For every player-visible change without a note, add one with
      `just release-note --kind added|improved|fixed|knownIssues --text "…"`.
+   - Then condense them as docs/releases.md "How notes read" says: what players can now
+     play in a line or two, the technical improvements and capabilities one line each, the
+     fixes in brief, and no spoilers (plots, names, secrets) in notes or gallery captions.
    - Write player-facing language, one change per note, merging near-duplicates.
    - Never invent changes or results, and don't note internal-only work.
    - Commit the notes ("Release notes for <version>").
