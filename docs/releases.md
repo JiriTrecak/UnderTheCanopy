@@ -121,6 +121,10 @@ just release-publish --artifact build/releases/0.3.1/darwin-aarch64/artifact.jso
    updates the changelog index, and writes `stable.json` **last**. The lock is removed in
    every case.
 
+After publishing, the release commit gets an annotated tag `v<version>` and `main` holds
+everything released; the work branch is fast-forwarded to it. Every release from 0.3.0
+on is tagged.
+
 A failed publish leaves the feed as it was. Retry with the **same** staged artifact. A
 rebuilt package has another signature: once a package is published, use a new version.
 Never overwrite release files or remove release folders to retry. If a publish crashed and

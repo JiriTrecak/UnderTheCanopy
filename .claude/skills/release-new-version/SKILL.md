@@ -106,7 +106,14 @@ Free text after the command:
     a minute) and check it names the new version, and that
     `https://d3dte7yaa1v3g8.cloudfront.net/releases/<version>/darwin-aarch64.json` names its
     `installer` (the download page links that DMG).
-12. **Push** `main` only if Jiri said "push". Otherwise, report how far `origin/main` is behind.
+12. **Merge and tag.** Every release lands on `main` and is tagged.
+    - Tag the release commit (`Release <version>: <title>`) with an annotated tag:
+      `git tag -a v<version> <commit> -m "Under the Canopy <version>: <title>"`.
+    - Bring `main` up to everything released (anything committed after the release
+      commit, such as the DMG or download-page work, merged too), and fast-forward the work
+      branch to `main` so the two match.
+13. **Push** `main` and the tag only if Jiri said "push" (`git push origin main
+    v<version>`). Otherwise, report how far `origin/main` is behind.
 
 ## Report
 
@@ -117,6 +124,6 @@ In a few lines:
 - the server deployed, with the version its health check reports;
 - the feed showing the version;
 - the update test, done or not;
-- whether `main` was pushed.
+- the tag made, and whether `main` and the tag were pushed.
 
 Then switch back to the branch the work came from, so ongoing work continues where it was.
