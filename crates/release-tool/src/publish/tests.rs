@@ -239,6 +239,7 @@ impl Fixture {
             sha256: crate::package::hex(&Sha256::digest(&bytes)),
             bytes: bytes.len() as u64,
             signature,
+            installer: None,
             changelog: Self::entry(version),
         };
         let path = out.join("artifact.json");
@@ -249,6 +250,25 @@ impl Fixture {
             releases: vec![Self::entry(version)],
         };
         (verify_staged(&path, &log, &self.public_key).unwrap(), log)
+    }
+
+    /// Adds a disk image of `size` bytes to a staged artifact, as `release-build` and the
+    /// backfill do.
+    fn add_installer(&self, staged: &Staged, log: &ReleaseLog, size: usize) -> Staged {
+        let a = &staged.artifact;
+        let filename = crate::installer::filename(a.version, &a.platform);
+        let bytes: Vec<u8> = (0..size).map(|i| (i * 13 + 5) as u8).collect();
+        let dir = staged.artifact_path.parent().unwrap();
+        fs::write(dir.join(&filename), &bytes).unwrap();
+        let mut artifact = a.clone();
+        artifact.installer = Some(canopy_release::Installer {
+            url: crate::installer::url("https://cdn.test", a.version, &filename),
+            filename,
+            sha256: crate::package::hex(&Sha256::digest(&bytes)),
+            bytes: bytes.len() as u64,
+        });
+        fs::write(&staged.artifact_path, json(&artifact)).unwrap();
+        verify_staged(&staged.artifact_path, log, &self.public_key).unwrap()
     }
 }
 
@@ -264,6 +284,7 @@ fn deployment() -> Deployment {
         region: "eu-west-2".into(),
         bucket: "bucket".into(),
         base_url: "https://cdn.test".into(),
+        distribution_id: Some("DIST".into()),
     }
 }
 
@@ -454,4 +475,117 @@ fn ranged_digests_retry_and_report_progress() {
     assert_eq!(hash, crate::package::hex(&Sha256::digest(&data)));
     assert_eq!(seen, [10, 20, 30, 40, 50, 60, 70, 80, 90, 100]);
     assert!(ranged_digest(1000, 64, |_, _| Ok(vec![0; 3]), |_| {}).is_err());
+}
+
+#[test]
+fn installers_go_up_beside_the_package_and_the_feed_keeps_its_shape() {
+    let fixture = Fixture::new("installer");
+    let (plain, log) = fixture.stage("0.3.0", "darwin-aarch64", 400);
+    let staged = fixture.add_installer(&plain, &log, 1500);
+    let aws = FakeAws::new();
+    let cdn = FakeCdn(&aws);
+    publisher(&aws, &cdn).publish(&staged).unwrap();
+
+    let prefix = "updates/releases/0.3.0";
+    let installer = staged.artifact.installer.as_ref().unwrap();
+    let key = format!("{prefix}/{}", installer.filename);
+    assert_eq!(
+        aws.object(&key).unwrap(),
+        fs::read(staged.installer.as_ref().unwrap()).unwrap()
+    );
+    // Over the multipart threshold: in parts, like a large package.
+    assert_eq!(aws.calls_of(&format!("upload-part {key}")), 5);
+    let metadata = aws.json(&format!("{prefix}/darwin-aarch64.json"));
+    assert_eq!(
+        metadata["installer"],
+        serde_json::json!({
+            "filename": "under-the-canopy-0.3.0-darwin-aarch64.dmg",
+            "url": "https://cdn.test/releases/0.3.0/under-the-canopy-0.3.0-darwin-aarch64.dmg",
+            "sha256": installer.sha256,
+            "bytes": 1500
+        })
+    );
+    // The image is stored before the metadata that names it.
+    let calls = aws.calls.borrow();
+    let position = |c: &str| calls.iter().position(|x| x == c).unwrap();
+    assert!(
+        position(&format!("complete-multipart-upload {key}"))
+            < position(&format!("head-object {prefix}/darwin-aarch64.json"))
+    );
+    drop(calls);
+    // stable.json is exactly the old shape: updaters never see the installer.
+    let feed = aws.json("updates/stable.json");
+    let keys: Vec<_> = feed.as_object().unwrap().keys().cloned().collect();
+    assert_eq!(keys, ["version", "notes", "pub_date", "platforms"]);
+    assert_eq!(
+        feed["platforms"]["darwin-aarch64"]
+            .as_object()
+            .unwrap()
+            .keys()
+            .collect::<Vec<_>>(),
+        ["url", "signature"]
+    );
+
+    // A changed disk image no longer verifies.
+    let mut bytes = fs::read(staged.installer.as_ref().unwrap()).unwrap();
+    bytes[0] ^= 1;
+    fs::write(staged.installer.as_ref().unwrap(), bytes).unwrap();
+    assert!(verify_staged(&staged.artifact_path, &log, &fixture.public_key).is_err());
+}
+
+#[test]
+fn the_backfill_adds_only_the_installer_to_a_published_release() {
+    let fixture = Fixture::new("backfill");
+    let (plain, log) = fixture.stage("0.3.0", "darwin-aarch64", 400);
+    let aws = FakeAws::new();
+    let cdn = FakeCdn(&aws);
+    publisher(&aws, &cdn).publish(&plain).unwrap();
+    let before = aws.objects.borrow().clone();
+
+    let staged = fixture.add_installer(&plain, &log, 300);
+    // Publishing it as a release again would overwrite the metadata: refused.
+    let e = publisher(&aws, &cdn).publish(&staged).unwrap_err();
+    assert!(format!("{e:#}").contains("immutable"), "{e:#}");
+
+    publisher(&aws, &cdn).add_installer(&staged).unwrap();
+    let after = aws.objects.borrow().clone();
+    let metadata = "updates/releases/0.3.0/darwin-aarch64.json";
+    let dmg = "updates/releases/0.3.0/under-the-canopy-0.3.0-darwin-aarch64.dmg";
+    assert_eq!(after[metadata], fs::read(&staged.artifact_path).unwrap());
+    assert_eq!(
+        after[dmg],
+        fs::read(staged.installer.as_ref().unwrap()).unwrap()
+    );
+    // Nothing else changed: the package, its signature, the changelogs and the feed.
+    for (key, bytes) in &before {
+        if key != metadata {
+            assert_eq!(&after[key], bytes, "{key}");
+        }
+    }
+    assert_eq!(after.len(), before.len() + 1);
+    assert!(aws.object(LOCK_KEY).is_none());
+
+    // A retry verifies and leaves the metadata alone.
+    let puts = aws.calls_of(&format!("put-object {metadata}"));
+    publisher(&aws, &cdn).add_installer(&staged).unwrap();
+    assert_eq!(aws.calls_of(&format!("put-object {metadata}")), puts);
+
+    // Another disk image for the same release is refused.
+    let other = fixture.add_installer(&plain, &log, 299);
+    assert!(publisher(&aws, &cdn).add_installer(&other).is_err());
+    // So is a build that differs from the published one beyond the installer.
+    let rebuilt_fixture = Fixture::new("backfill-rebuilt");
+    let (rebuilt, rebuilt_log) = rebuilt_fixture.stage("0.3.0", "darwin-aarch64", 400);
+    let rebuilt = rebuilt_fixture.add_installer(&rebuilt, &rebuilt_log, 300);
+    let e = publisher(&aws, &cdn).add_installer(&rebuilt).unwrap_err();
+    assert!(format!("{e:#}").contains("beyond the installer"), "{e:#}");
+    // And a release that was never published.
+    let (unpublished, log) = fixture.stage("0.3.1", "darwin-aarch64", 400);
+    let unpublished = fixture.add_installer(&unpublished, &log, 300);
+    let e = publisher(&aws, &cdn)
+        .add_installer(&unpublished)
+        .unwrap_err();
+    assert!(format!("{e:#}").contains("not published"), "{e:#}");
+    assert_eq!(aws.object(metadata).unwrap(), after[metadata]);
+    assert!(aws.object(LOCK_KEY).is_none());
 }

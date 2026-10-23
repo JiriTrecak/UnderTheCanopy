@@ -8,7 +8,7 @@ pub mod log;
 pub mod signature;
 pub mod version;
 
-pub use feed::{Artifact, ChangelogIndex, ChangelogLink, PlatformPackage, StableFeed};
+pub use feed::{Artifact, ChangelogIndex, ChangelogLink, Installer, PlatformPackage, StableFeed};
 pub use log::{ChangeKind, ChangeSet, ReleaseEntry, ReleaseImage, ReleaseLog};
 pub use signature::{SignatureError, verify_package};
 pub use version::Version;

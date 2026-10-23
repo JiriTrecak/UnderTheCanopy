@@ -32,7 +32,7 @@ pointers and checks everything else.
 
 On Windows `just` cannot pass quoted arguments through; run
 `cargo run -q -p canopy-release-tool -- note --kind fixed --text "…"` (and likewise
-`check`, `prepare`, `build`, `publish`).
+`check`, `prepare`, `build`, `publish`, `installer`).
 
 ### Gallery images
 
@@ -93,17 +93,19 @@ just release-publish --artifact build/releases/0.3.1/darwin-aarch64/artifact.jso
    `timestamp:<unix seconds>\tfile:Under the Canopy.app.tar.gz\tversion:<version>`. The
    signature must verify against the game's public key and bind the version. The result is
    staged under `build/releases/<version>/<platform>/`: the package
-   `under-the-canopy-<version>-<platform>.app.tar.gz`, its `.sig`, `artifact.json`,
-   `changelog.json` and the gallery in `media/`. `build/` is ignored by Git.
+   `under-the-canopy-<version>-<platform>.app.tar.gz`, its `.sig`, the first-install disk
+   image (macOS, below), `artifact.json`, `changelog.json` and the gallery in `media/`.
+   `build/` is ignored by Git.
 3. **Publish without `--apply`** verifies the staged package's hash, size and signature
-   (bound to the version), that the notes still equal the log's, the gallery, and that the
-   AWS identity is the release account. Nothing is uploaded.
+   (bound to the version), the disk image's hash and size, that the notes still equal the
+   log's, the gallery, and that the AWS identity is the release account. Nothing is
+   uploaded.
 4. **Publish with `--apply`** takes the publisher lock (`publishing.lock`, written only if
    absent), refuses to downgrade the feed or to strand other platforms, uploads every
-   versioned file immutably (an existing key must hold the same bytes; packages over 64 MiB
-   go up in 32 MiB parts and complete only if the key is still absent; failed multipart
-   uploads are aborted), verifies the stored objects and the public CDN download byte for
-   byte with ranged reads, writes the version's `changelog.json` and `<platform>.json`,
+   versioned file immutably, the disk image included (an existing key must hold the same
+   bytes; files over 64 MiB go up in 32 MiB parts and complete only if the key is still absent; failed multipart
+   uploads are aborted), verifies the stored objects and the public CDN downloads of the
+   package and the disk image byte for byte with ranged reads, writes the version's `changelog.json` and `<platform>.json`,
    updates the changelog index, and writes `stable.json` **last**. The lock is removed in
    every case.
 
@@ -121,6 +123,46 @@ Releases are macOS Apple Silicon (`darwin-aarch64`) for now. The tool also build
 Windows NSIS installer as the Windows package, untested. Before the feed serves more than
 one platform, publishing must stage and promote all platforms together; the
 single-platform publisher refuses a new version that would drop a platform from the feed.
+
+### The first-install disk image
+
+Friends install the game the first time from a DMG; the `.app.tar.gz` stays the update
+package, which the in-game updater (Tauri's format) installs, and the feed never names the
+DMG. On macOS, `release-build` makes `under-the-canopy-<version>-<platform>.dmg` from the
+staged package itself: it unpacks the archive (modes, times and symlinks kept), checks the
+`Info.plist` and the bundle's code signature (so the image holds exactly the app updaters
+get), adds an `Applications` symlink, and runs `hdiutil create` (volume "Under the
+Canopy", HFS+, LZFSE-compressed `ULFO`: for 0.4.2 4% smaller than zlib `UDZO` and twice as
+fast to make). The image is signed ad hoc, as the app is (no Developer ID yet), then
+attached read-only and hidden from Finder to check the volume shows the app and the link,
+the executable and the app's signature, and detached. There is no custom window layout:
+that needs a Finder session or a hand-written `.DS_Store`, and the default window shows the
+two icons to drag.
+
+`artifact.json`, published as the version's `<platform>.json`, records it as `installer`:
+`{filename, url, sha256, bytes}`, the URL beside the package. Artifacts without it (every
+release before the DMG, and Windows, whose package is its installer) still read.
+`stable.json` keeps its shape exactly: old updaters parse it.
+
+**Backfill** for a release published without a DMG (0.4.2):
+
+```sh
+just release-installer --version 0.4.2           # makes and checks the DMG; no AWS
+just release-installer --version 0.4.2 --apply   # uploads it and adds `installer`
+```
+
+It needs the staged release in `build/releases/<version>/<platform>/`. It verifies the
+staged package's hash and signature as publishing does, makes and mount-checks the DMG from
+that package, and adds `installer` to the staged `artifact.json` (a later run reuses the
+staged DMG after checking its hash). With `--apply` it takes the publisher lock, reads the
+published `<platform>.json` and refuses unless it equals the staged artifact in everything
+but `installer`, uploads only the DMG (immutably, verified stored and from the CDN), then
+rewrites that `<platform>.json` with the staged artifact and reads it back. **This rewrite
+is the one exception to immutability**, and only to add `installer`: the package, its
+signature, the changelogs and the feed never change, and a retry finds the installer there
+and rewrites nothing. If CloudFront had cached the old `<platform>.json`, the tool
+invalidates that one path (`DistributionId` in `releases/deployment.json`) or prints the
+command when it may not.
 
 ### Before publishing
 
@@ -158,8 +200,10 @@ publishes to it.
 - Update feed: https://d3dte7yaa1v3g8.cloudfront.net/stable.json
 - Changelog index: https://d3dte7yaa1v3g8.cloudfront.net/changelog.json
 - Download page: https://d3dte7yaa1v3g8.cloudfront.net/download, the one link to share. It
-  reads `stable.json` when opened and offers the newest package with its title, gallery
-  and install steps, so it never needs updating for a release. Its source is
+  reads `stable.json` when opened and the release's `releases/<version>/darwin-aarch64.json`,
+  and offers its disk image (`installer`, "Download for Mac" with its size in GB and the
+  DMG's install steps), falling back to the `.app.tar.gz` and its steps when the release
+  has none; with the title and gallery, so it never needs updating for a release. Its source is
   `releases/site/download.html`; `just release-site` uploads it (refusing any account but
   the release one).
 
@@ -173,10 +217,12 @@ updates/releases/<version>/changelog.json   → /releases/<version>/changelog.js
 updates/releases/<version>/<platform>.json
 updates/releases/<version>/<package>
 updates/releases/<version>/<package>.sig
+updates/releases/<version>/<installer>      (the first-install .dmg)
 updates/releases/<version>/media/<sha256>.webp
 publishing.lock                             (private; never served)
 ```
 
 Versioned files are cached for a year as immutable; the feed and the index for 60 seconds,
-so a release can take a minute to appear. No CDN invalidation is needed. Never put sources,
+so a release can take a minute to appear. No CDN invalidation is needed (except possibly
+for a backfilled `<platform>.json`, above). Never put sources,
 keys, logs or credentials under `updates/`.

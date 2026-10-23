@@ -53,7 +53,23 @@ pub struct Artifact {
     pub sha256: String,
     pub bytes: u64,
     pub signature: String,
+    /// The first-install download (the macOS disk image), when the release has one. The
+    /// feed never names it: updaters only read `stable.json` and the package.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub installer: Option<Installer>,
     pub changelog: ReleaseEntry,
+}
+
+/// A release's first-install file (`under-the-canopy-<version>-<platform>.dmg`): the same
+/// app as the update package, for people installing the game for the first time.
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(deny_unknown_fields)]
+pub struct Installer {
+    pub filename: String,
+    /// Its public URL, beside the package.
+    pub url: String,
+    pub sha256: String,
+    pub bytes: u64,
 }
 
 /// Platforms the feed may name.
@@ -74,33 +90,61 @@ impl Artifact {
         if !PLATFORMS.contains(&self.platform.as_str()) {
             return Err(format!("unknown platform {}", self.platform));
         }
-        if self.filename.is_empty()
-            || !self
-                .filename
-                .bytes()
-                .all(|b| b.is_ascii_alphanumeric() || matches!(b, b'.' | b'_' | b'-'))
-        {
-            return Err(format!("bad package file name {:?}", self.filename));
-        }
-        if self.sha256.len() != 64
-            || !self
-                .sha256
-                .bytes()
-                .all(|b| matches!(b, b'0'..=b'9' | b'a'..=b'f'))
-        {
-            return Err("sha256 must be 64 lowercase hex digits".into());
-        }
-        if self.bytes == 0 || self.bytes > 2 * 1024 * 1024 * 1024 {
-            return Err("package size out of range".into());
-        }
+        check_file("package", &self.filename, &self.sha256, self.bytes)?;
         if self.signature.len() < 80 || self.signature.len() > 4096 {
             return Err("signature length out of range".into());
         }
         if self.version != self.changelog.version {
             return Err("artifact and changelog versions differ".into());
         }
+        if let Some(installer) = &self.installer {
+            check_file(
+                "installer",
+                &installer.filename,
+                &installer.sha256,
+                installer.bytes,
+            )?;
+            if installer.filename == self.filename {
+                return Err("the installer and the package share a file name".into());
+            }
+            let folder = installer
+                .url
+                .strip_suffix(&installer.filename)
+                .and_then(|u| u.strip_suffix('/'));
+            if !installer.url.starts_with("https://") || folder.is_none() {
+                return Err(format!(
+                    "the installer URL {:?} must be https and end with its file name",
+                    installer.url
+                ));
+            }
+        }
         Ok(())
     }
+}
+
+/// A released file's name (plain ASCII, no paths), hash and size.
+fn check_file(what: &str, filename: &str, sha256: &str, bytes: u64) -> Result<(), String> {
+    if filename.is_empty()
+        || filename.starts_with('.')
+        || !filename
+            .bytes()
+            .all(|b| b.is_ascii_alphanumeric() || matches!(b, b'.' | b'_' | b'-'))
+    {
+        return Err(format!("bad {what} file name {filename:?}"));
+    }
+    if sha256.len() != 64
+        || !sha256
+            .bytes()
+            .all(|b| matches!(b, b'0'..=b'9' | b'a'..=b'f'))
+    {
+        return Err(format!(
+            "the {what}'s sha256 must be 64 lowercase hex digits"
+        ));
+    }
+    if bytes == 0 || bytes > 2 * 1024 * 1024 * 1024 {
+        return Err(format!("{what} size out of range"));
+    }
+    Ok(())
 }
 
 #[cfg(test)]
@@ -116,5 +160,68 @@ mod tests {
         .unwrap();
         assert_eq!(feed.version, "0.2.3".parse().unwrap());
         assert!(feed.platforms.contains_key("darwin-aarch64"));
+        // Installed updaters parse exactly this shape: no installer, no new keys.
+        assert_eq!(
+            serde_json::to_value(&feed).unwrap(),
+            serde_json::json!({
+                "version": "0.2.3",
+                "notes": "Title\n\nImproved\n- x",
+                "pub_date": "2026-10-13T15:44:03.334Z",
+                "platforms": {"darwin-aarch64": {"url": "https://example.org/p.app.tar.gz", "signature": "c2ln"}}
+            })
+        );
+    }
+
+    fn artifact_json(installer: Option<serde_json::Value>) -> serde_json::Value {
+        let mut value = serde_json::json!({
+            "schemaVersion": 1,
+            "version": "0.4.2",
+            "platform": "darwin-aarch64",
+            "filename": "under-the-canopy-0.4.2-darwin-aarch64.app.tar.gz",
+            "sha256": "a".repeat(64),
+            "bytes": 1000,
+            "signature": "s".repeat(100),
+            "changelog": {"added": ["A thing."], "improved": [], "fixed": [], "knownIssues": [], "version": "0.4.2", "publishedAt": "2026-10-22T10:00:00.000Z", "title": "T"}
+        });
+        if let Some(installer) = installer {
+            value["installer"] = installer;
+        }
+        value
+    }
+
+    #[test]
+    fn installers_round_trip_and_artifacts_without_one_still_read() {
+        // Artifacts published before installers existed read and write back unchanged.
+        let old = artifact_json(None);
+        let artifact: Artifact = serde_json::from_value(old.clone()).unwrap();
+        assert_eq!(artifact.installer, None);
+        artifact.validate().unwrap();
+        assert_eq!(serde_json::to_value(&artifact).unwrap(), old);
+
+        let url = "https://cdn.test/releases/0.4.2/under-the-canopy-0.4.2-darwin-aarch64.dmg";
+        let with = artifact_json(Some(serde_json::json!({
+            "filename": "under-the-canopy-0.4.2-darwin-aarch64.dmg",
+            "url": url,
+            "sha256": "b".repeat(64),
+            "bytes": 2000
+        })));
+        let artifact: Artifact = serde_json::from_value(with.clone()).unwrap();
+        artifact.validate().unwrap();
+        let installer = artifact.installer.as_ref().unwrap();
+        assert_eq!((installer.url.as_str(), installer.bytes), (url, 2000));
+        assert_eq!(serde_json::to_value(&artifact).unwrap(), with);
+
+        // Broken installers are refused.
+        let bad = |change: &dyn Fn(&mut Installer)| {
+            let mut a = artifact.clone();
+            change(a.installer.as_mut().unwrap());
+            a.validate().is_err()
+        };
+        assert!(bad(&|i| i.url = "http://cdn.test/x.dmg".into()));
+        assert!(bad(&|i| i.url = "https://cdn.test/other.dmg".into()));
+        assert!(bad(&|i| i.sha256 = "B".repeat(64)));
+        assert!(bad(&|i| i.bytes = 0));
+        assert!(bad(&|i| i.filename = "../x.dmg".into()));
+        assert!(bad(&|i| i.filename = artifact.filename.clone()));
     }
 }

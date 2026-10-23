@@ -2,13 +2,15 @@
 //! updater key, verifies it as installed copies will, and stages it with its notes under
 //! `build/releases/<version>/<platform>/` for publishing.
 
+#[cfg(target_os = "macos")]
+use crate::installer;
 use crate::{
     media,
     package::{self, check_tar_gz, create_tar_gz, digest_file, sign_package},
     repo::{self, Repo},
 };
 use anyhow::{Context, Result, anyhow, bail};
-use canopy_release::{Artifact, PUBLIC_KEY, Version, feed::PLATFORMS, verify_package};
+use canopy_release::{Artifact, Installer, PUBLIC_KEY, Version, feed::PLATFORMS, verify_package};
 use std::{
     fs,
     path::{Path, PathBuf},
@@ -17,7 +19,7 @@ use std::{
 
 /// The packaged app's name (`product-name` in game/Cargo.toml).
 #[cfg_attr(not(target_os = "macos"), allow(dead_code))]
-const PRODUCT: &str = "Under the Canopy";
+pub const PRODUCT: &str = "Under the Canopy";
 /// The old desktop app's bundle identifier: an update replaces the app in place and keeps
 /// its identity only if it is unchanged (D43).
 #[cfg_attr(not(target_os = "macos"), allow(dead_code))]
@@ -79,7 +81,7 @@ pub fn cmd_build(repo: &Repo) -> Result<()> {
     )?;
 
     let filename = format!("under-the-canopy-{version}-{platform}{}", built.extension);
-    let artifact = Artifact {
+    let mut artifact = Artifact {
         schema_version: 1,
         version,
         platform: platform.clone(),
@@ -87,6 +89,7 @@ pub fn cmd_build(repo: &Repo) -> Result<()> {
         sha256,
         bytes,
         signature: signature.clone(),
+        installer: None,
         changelog: entry.clone(),
     };
     artifact.validate().map_err(|e| anyhow!("artifact: {e}"))?;
@@ -118,18 +121,49 @@ pub fn cmd_build(repo: &Repo) -> Result<()> {
         out.join(format!("{filename}.sig")),
         format!("{signature}\n"),
     )?;
-    fs::write(out.join("artifact.json"), json(&artifact))?;
-    fs::write(out.join("changelog.json"), json(&entry))?;
     // Catch a mismatched or stale output before anything is published from it.
     if fs::metadata(&staged)?.len() != artifact.bytes {
         bail!("staged package size mismatch");
     }
+    artifact.installer = make_installer(&staged, &out, version, &platform)?;
+    artifact.validate().map_err(|e| anyhow!("artifact: {e}"))?;
+    fs::write(out.join("artifact.json"), json(&artifact))?;
+    fs::write(out.join("changelog.json"), json(&entry))?;
     println!(
         "Verified release staged at {} ({} MiB).",
         out.join("artifact.json").display(),
         bytes / 1024 / 1024
     );
     Ok(())
+}
+
+/// The first-install disk image, made from the staged package (docs/releases.md).
+#[cfg(target_os = "macos")]
+fn make_installer(
+    package: &Path,
+    out: &Path,
+    version: Version,
+    platform: &str,
+) -> Result<Option<Installer>> {
+    let name = installer::filename(version, platform);
+    let (sha256, bytes) = installer::make(package, &out.join(&name), version)?;
+    Ok(Some(Installer {
+        url: installer::url(canopy_release::BASE_URL, version, &name),
+        filename: name,
+        sha256,
+        bytes,
+    }))
+}
+
+/// Windows' update package is already its installer.
+#[cfg(not(target_os = "macos"))]
+fn make_installer(
+    _package: &Path,
+    _out: &Path,
+    _version: Version,
+    _platform: &str,
+) -> Result<Option<Installer>> {
+    Ok(None)
 }
 
 /// Two-space JSON with a final newline (the old tool's layout).
@@ -163,6 +197,46 @@ fn build_package(repo: &Repo, release: &Path, version: Version) -> Result<Built>
     if !app.is_dir() {
         bail!("cargo packager made no {}", app.display());
     }
+    let executable = check_bundle(&app, version)?;
+    // Seal the bundle as the old packages were: an ad-hoc signature over the whole bundle
+    // (binding Info.plist and the resources), unless the packager signed it with an identity.
+    let codesign = |args: &[&str]| -> Result<std::process::Output> {
+        Ok(Command::new("codesign").args(args).arg(&app).output()?)
+    };
+    let shown = codesign(&["-dv"])?;
+    if !shown.status.success() || String::from_utf8_lossy(&shown.stderr).contains("Signature=adhoc")
+    {
+        println!("Signing the bundle ad hoc…");
+        let signed = codesign(&["--force", "--sign", "-"])?;
+        if !signed.status.success() {
+            bail!(
+                "ad-hoc signing the bundle failed: {}",
+                String::from_utf8_lossy(&signed.stderr).trim()
+            );
+        }
+    }
+    codesign_verify(&app)?;
+    let signed_name = format!("{PRODUCT}.app.tar.gz");
+    let path = release.join(&signed_name);
+    println!("Archiving {}…", app.display());
+    create_tar_gz(&app, &path)?;
+    let entries = check_tar_gz(
+        &path,
+        &format!("{PRODUCT}.app"),
+        &format!("Contents/MacOS/{executable}"),
+    )?;
+    println!("Packaged {entries} entries.");
+    Ok(Built {
+        path,
+        signed_name,
+        extension: ".app.tar.gz",
+    })
+}
+
+/// Checks a bundle's `Info.plist`: the release's version and the old app's identifier.
+/// Returns the executable's name.
+#[cfg(target_os = "macos")]
+pub fn check_bundle(app: &Path, version: Version) -> Result<String> {
     let plist = app.join("Contents/Info.plist");
     let read = |key: &str| -> Result<String> {
         let out = Command::new("/usr/libexec/PlistBuddy")
@@ -184,46 +258,24 @@ fn build_package(repo: &Repo, release: &Path, version: Version) -> Result<Built>
             "the built app's bundle identifier is {identifier}; updates must keep the old app's {BUNDLE_ID} (D43)"
         );
     }
-    let executable = read("CFBundleExecutable")?;
-    // Seal the bundle as the old packages were: an ad-hoc signature over the whole bundle
-    // (binding Info.plist and the resources), unless the packager signed it with an identity.
-    let codesign = |args: &[&str]| -> Result<std::process::Output> {
-        Ok(Command::new("codesign").args(args).arg(&app).output()?)
-    };
-    let shown = codesign(&["-dv"])?;
-    if !shown.status.success() || String::from_utf8_lossy(&shown.stderr).contains("Signature=adhoc")
-    {
-        println!("Signing the bundle ad hoc…");
-        let signed = codesign(&["--force", "--sign", "-"])?;
-        if !signed.status.success() {
-            bail!(
-                "ad-hoc signing the bundle failed: {}",
-                String::from_utf8_lossy(&signed.stderr).trim()
-            );
-        }
-    }
-    let verified = codesign(&["--verify", "--strict"])?;
+    read("CFBundleExecutable")
+}
+
+/// `codesign --verify --strict`: the bundle (or disk image) is exactly what was sealed.
+#[cfg(target_os = "macos")]
+pub fn codesign_verify(path: &Path) -> Result<()> {
+    let verified = Command::new("codesign")
+        .args(["--verify", "--strict"])
+        .arg(path)
+        .output()?;
     if !verified.status.success() {
         bail!(
-            "the bundle's code signature does not verify: {}",
+            "the code signature of {} does not verify: {}",
+            path.display(),
             String::from_utf8_lossy(&verified.stderr).trim()
         );
     }
-    let signed_name = format!("{PRODUCT}.app.tar.gz");
-    let path = release.join(&signed_name);
-    println!("Archiving {}…", app.display());
-    create_tar_gz(&app, &path)?;
-    let entries = check_tar_gz(
-        &path,
-        &format!("{PRODUCT}.app"),
-        &format!("Contents/MacOS/{executable}"),
-    )?;
-    println!("Packaged {entries} entries.");
-    Ok(Built {
-        path,
-        signed_name,
-        extension: ".app.tar.gz",
-    })
+    Ok(())
 }
 
 /// The NSIS installer is the Windows update package (as before). Untested so far: the

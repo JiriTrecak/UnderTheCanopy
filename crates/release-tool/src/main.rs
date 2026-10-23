@@ -2,6 +2,7 @@
 //! normally through `just release-note`, `release-check`, `release-prepare`,
 //! `release-build` and `release-publish`.
 
+mod installer;
 mod media;
 mod notes;
 mod package;
@@ -9,7 +10,7 @@ mod publish;
 mod repo;
 mod stage;
 
-use anyhow::{Context, Result, anyhow, bail};
+use anyhow::{Result, anyhow, bail};
 use std::{collections::BTreeMap, path::PathBuf, process::ExitCode};
 
 const USAGE: &str = "\
@@ -18,10 +19,11 @@ usage: canopy-release <command>
   check [--allow-lfs-pointers]
   prepare VERSION --title \"Short release title\" [--milestone]
   build
-  publish --artifact build/releases/VERSION/PLATFORM/artifact.json [--apply] [--profile NAME]";
+  publish --artifact build/releases/VERSION/PLATFORM/artifact.json [--apply] [--profile NAME]
+  installer --version VERSION [--apply] [--profile NAME]";
 
 /// Options that take a value, and flags.
-const VALUES: [&str; 5] = ["kind", "text", "title", "artifact", "profile"];
+const VALUES: [&str; 6] = ["kind", "text", "title", "artifact", "profile", "version"];
 const FLAGS: [&str; 3] = ["milestone", "apply", "allow-lfs-pointers"];
 
 struct Args {
@@ -110,6 +112,13 @@ fn run() -> Result<()> {
         }
         "build" => stage::cmd_build(&repo),
         "publish" => cmd_publish(&repo, &args),
+        "installer" => installer::cmd_installer(
+            &repo,
+            args.value("version")
+                .ok_or_else(|| anyhow!("use installer --version VERSION [--apply]"))?,
+            args.flag("apply"),
+            args.value("profile"),
+        ),
         other => bail!("unknown command {other:?}\n{USAGE}"),
     }
 }
@@ -118,14 +127,7 @@ fn cmd_publish(repo: &repo::Repo, args: &Args) -> Result<()> {
     let artifact = args.value("artifact").ok_or_else(|| {
         anyhow!("use publish --artifact build/releases/VERSION/PLATFORM/artifact.json [--apply]")
     })?;
-    let deployment: publish::Deployment = serde_json::from_str(
-        &std::fs::read_to_string(repo.root.join("releases/deployment.json"))
-            .context("reading releases/deployment.json")?,
-    )
-    .context("releases/deployment.json")?;
-    if deployment.base_url != canopy_release::BASE_URL {
-        bail!("releases/deployment.json and the game disagree on the release host");
-    }
+    let deployment = publish::Deployment::load(repo)?;
     let log = repo.read_log()?;
     let staged = publish::verify_staged(
         &repo.root.join(PathBuf::from(artifact)),
@@ -144,6 +146,13 @@ fn cmd_publish(repo: &repo::Repo, args: &Args) -> Result<()> {
         a.platform,
         a.bytes / 1024 / 1024
     );
+    if let Some(installer) = &a.installer {
+        println!(
+            "Verified the disk image {} ({} MiB).",
+            installer.filename,
+            installer.bytes / 1024 / 1024
+        );
+    }
     if !args.flag("apply") {
         println!("No uploads performed. Add --apply to publish.");
         return Ok(());
