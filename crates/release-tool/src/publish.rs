@@ -11,8 +11,8 @@
 use crate::{media, package::digest_file, stage::json};
 use anyhow::{Context, Result, anyhow, bail};
 use canopy_release::{
-    Artifact, ChangelogIndex, ChangelogLink, PlatformPackage, ReleaseLog, StableFeed,
-    verify_package,
+    Artifact, ChangelogIndex, ChangelogLink, Installer, PlatformPackage, ReleaseLog, StableFeed,
+    Version, verify_package,
 };
 use serde::Deserialize;
 use sha2::{Digest, Sha256};
@@ -38,6 +38,24 @@ pub struct Deployment {
     pub bucket: String,
     #[serde(rename = "BaseUrl")]
     pub base_url: String,
+    /// CloudFront, for the one invalidation a backfilled `<platform>.json` may need.
+    #[serde(rename = "DistributionId", default)]
+    pub distribution_id: Option<String>,
+}
+
+impl Deployment {
+    /// `releases/deployment.json`, which must name the host the game updates from.
+    pub fn load(repo: &crate::repo::Repo) -> Result<Self> {
+        let deployment: Deployment = serde_json::from_str(
+            &fs::read_to_string(repo.root.join("releases/deployment.json"))
+                .context("reading releases/deployment.json")?,
+        )
+        .context("releases/deployment.json")?;
+        if deployment.base_url != canopy_release::BASE_URL {
+            bail!("releases/deployment.json and the game disagree on the release host");
+        }
+        Ok(deployment)
+    }
 }
 
 /// A failed `aws` invocation, with what it printed on stderr.
@@ -168,11 +186,14 @@ pub struct Staged {
     /// `artifact.json` itself (published as `<platform>.json`).
     pub artifact_path: PathBuf,
     pub package: PathBuf,
+    /// The first-install disk image, when the artifact names one.
+    pub installer: Option<PathBuf>,
     pub media: PathBuf,
 }
 
 /// Verifies a staged artifact: its package's hash, size and signature (bound to the
-/// version) against `public_key`, its notes against the log, and its gallery.
+/// version) against `public_key`, its installer's hash and size, its notes against the
+/// log, and its gallery.
 pub fn verify_staged(artifact_path: &Path, log: &ReleaseLog, public_key: &str) -> Result<Staged> {
     let text = fs::read_to_string(artifact_path)
         .with_context(|| format!("reading {}", artifact_path.display()))?;
@@ -194,6 +215,17 @@ pub fn verify_staged(artifact_path: &Path, log: &ReleaseLog, public_key: &str) -
         |_| {},
     )
     .context("the package signature")?;
+    let installer = match &artifact.installer {
+        Some(installer) => {
+            let path = dir.join(&installer.filename);
+            let (sha256, bytes) = digest_file(&path)?;
+            if sha256 != installer.sha256 || bytes != installer.bytes {
+                bail!("the disk image differs from the one staged with this build");
+            }
+            Some(path)
+        }
+        None => None,
+    };
     if log.release(artifact.version) != Some(&artifact.changelog) {
         bail!("the release notes changed after this build; rebuild before publishing");
     }
@@ -205,6 +237,7 @@ pub fn verify_staged(artifact_path: &Path, log: &ReleaseLog, public_key: &str) -
         artifact,
         artifact_path: artifact_path.to_owned(),
         package,
+        installer,
         media,
     })
 }
@@ -239,6 +272,7 @@ pub struct Publisher<'a> {
     pub cdn: &'a dyn Cdn,
     pub bucket: String,
     pub base_url: String,
+    pub distribution_id: Option<String>,
     /// Packages above this upload in parts.
     pub multipart_above: u64,
     pub part_size: u64,
@@ -253,6 +287,7 @@ impl<'a> Publisher<'a> {
             cdn,
             bucket: deployment.bucket.clone(),
             base_url: deployment.base_url.clone(),
+            distribution_id: deployment.distribution_id.clone(),
             multipart_above: 64 * MIB,
             part_size: 32 * MIB,
             verify_chunk: 32 * MIB,
@@ -264,11 +299,43 @@ impl<'a> Publisher<'a> {
     }
 
     pub fn publish(&self, staged: &Staged) -> Result<()> {
+        self.with_lock(staged, |temp| self.publish_locked(staged, temp))
+    }
+
+    /// Adds the staged disk image to its already published release (the backfill for
+    /// releases published without one): uploads only the image and rewrites the version's
+    /// `<platform>.json` to add `installer`, refusing if anything else in it would change.
+    /// The package, its signature, the changelogs and the feed are left alone.
+    pub fn add_installer(&self, staged: &Staged) -> Result<()> {
+        self.with_lock(staged, |temp| self.add_installer_locked(staged, temp))
+    }
+
+    /// Runs `work` holding the publisher lock (`publishing.lock`, written only if absent),
+    /// with a temporary folder; the lock and the folder are removed in every case.
+    fn with_lock(&self, staged: &Staged, work: impl FnOnce(&Path) -> Result<()>) -> Result<()> {
         let id = lock_id();
         let temp = std::env::temp_dir().join(format!("canopy-publish-{id}"));
         fs::create_dir_all(&temp)?;
         let mut locked = false;
-        let result = self.publish_locked(staged, &temp, &id, &mut locked);
+        let result = (|| {
+            let lock = self.json_file(
+                &temp,
+                "lock.json",
+                &serde_json::json!({"id": id, "version": staged.artifact.version.to_string(), "startedAt": crate::repo::iso_now()}),
+            )?;
+            self.put(LOCK_KEY, &lock, "application/json", false, true)
+                .map_err(|e| {
+                    if is_precondition_failed(&e) {
+                        anyhow!(
+                            "another publish holds {LOCK_KEY}; if it has certainly stopped, inspect and remove only that lock"
+                        )
+                    } else {
+                        e
+                    }
+                })?;
+            locked = true;
+            work(&temp)
+        })();
         let mut cleanup = Ok(());
         if locked
             && let Err(e) = self.aws(&[
@@ -350,30 +417,162 @@ impl<'a> Publisher<'a> {
         Ok(path)
     }
 
-    fn publish_locked(
+    /// The staged installer and its file, checked against where this host serves it.
+    fn installer<'s>(&self, staged: &'s Staged) -> Result<Option<(&'s Installer, &'s Path)>> {
+        let (Some(installer), Some(file)) = (&staged.artifact.installer, &staged.installer) else {
+            return Ok(None);
+        };
+        let artifact = &staged.artifact;
+        let expected = format!(
+            "{}/releases/{}/{}",
+            self.base_url, artifact.version, installer.filename
+        );
+        if installer.url != expected {
+            bail!(
+                "the installer URL {} is not where this host serves it ({expected})",
+                installer.url
+            );
+        }
+        Ok(Some((installer, file)))
+    }
+
+    /// Uploads the disk image immutably and verifies the public download.
+    fn upload_installer(
         &self,
-        staged: &Staged,
+        version: Version,
+        installer: &Installer,
+        file: &Path,
         temp: &Path,
-        id: &str,
-        locked: &mut bool,
     ) -> Result<()> {
+        println!("Uploading and verifying the stored disk image…");
+        self.immutable(
+            &format!("updates/releases/{version}/{}", installer.filename),
+            file,
+            crate::installer::CONTENT_TYPE,
+            temp,
+        )?;
+        println!("Verifying the public disk image download…");
+        self.verify_public(&installer.url, installer.bytes, &installer.sha256)
+            .context("the public disk image")
+    }
+
+    /// The exact file must come from the public CDN: ranged reads, byte for byte.
+    fn verify_public(&self, url: &str, size: u64, sha256: &str) -> Result<()> {
+        let public_hash = ranged_digest(
+            size,
+            self.verify_chunk,
+            |start, end| {
+                let r = self.cdn.get_range(url, start, end)?;
+                if r.status != 206
+                    || r.content_range.as_deref() != Some(&format!("bytes {start}-{end}/{size}"))
+                {
+                    bail!("invalid public range: HTTP {}", r.status);
+                }
+                Ok(r.body)
+            },
+            |p| println!("Public download verified {p}%…"),
+        )?;
+        if public_hash != sha256 {
+            bail!("public download hash mismatch");
+        }
+        Ok(())
+    }
+
+    fn add_installer_locked(&self, staged: &Staged, temp: &Path) -> Result<()> {
+        let artifact = &staged.artifact;
+        let Some((installer, file)) = self.installer(staged)? else {
+            bail!("the staged artifact has no installer to add");
+        };
+        let version = artifact.version;
+        let key = format!("updates/releases/{version}/{}.json", artifact.platform);
+        let Some(published) = self.read::<Artifact>(&key, temp)? else {
+            bail!(
+                "{version} is not published for {}; publish it with release-publish",
+                artifact.platform
+            );
+        };
+        // Only `installer` may be added: everything else must already be exactly this build.
+        let without = |a: &Artifact| Artifact {
+            installer: None,
+            ..a.clone()
+        };
+        if without(&published) != without(artifact) {
+            bail!(
+                "the published {key} differs from the staged build beyond the installer; refusing to rewrite it"
+            );
+        }
+        match &published.installer {
+            Some(existing) if existing != installer => {
+                bail!(
+                    "{version} is already published with another installer ({})",
+                    existing.filename
+                )
+            }
+            _ => {}
+        }
+
+        self.upload_installer(version, installer, file, temp)?;
+        let local = fs::read(&staged.artifact_path)?;
+        if published.installer.is_none() {
+            // The one rewrite of a versioned file (docs/releases.md): the same metadata
+            // plus `installer`.
+            println!("Adding the installer to {key}…");
+            self.put(&key, &staged.artifact_path, "application/json", true, false)?;
+        }
+        let stored = temp.join("stored-metadata.json");
+        self.aws(&[
+            "s3api",
+            "get-object",
+            "--bucket",
+            &self.bucket,
+            "--key",
+            &key,
+            &stored.to_string_lossy(),
+        ])?;
+        if fs::read(&stored)? != local {
+            bail!("the stored {key} differs from the staged artifact");
+        }
+
+        let public = format!(
+            "{}/releases/{version}/{}.json",
+            self.base_url, artifact.platform
+        );
+        if self.cdn.get(&public).ok().as_deref() != Some(local.as_slice()) {
+            // CloudFront cached the old copy (versioned files are cached as immutable).
+            let path = format!("/releases/{version}/{}.json", artifact.platform);
+            let invalidated = self.distribution_id.as_deref().map(|id| {
+                self.aws(&[
+                    "cloudfront",
+                    "create-invalidation",
+                    "--distribution-id",
+                    id,
+                    "--paths",
+                    &path,
+                ])
+            });
+            match invalidated {
+                Some(Ok(_)) => println!(
+                    "CloudFront still served the old {path}; invalidated it, which takes a few minutes."
+                ),
+                _ => println!(
+                    "CloudFront still serves the old {path}. Invalidate it: aws cloudfront create-invalidation --distribution-id {} --paths {path}",
+                    self.distribution_id
+                        .as_deref()
+                        .unwrap_or("<DistributionId>")
+                ),
+            }
+        }
+        println!(
+            "Added {} to {version}: {}",
+            installer.filename, installer.url
+        );
+        Ok(())
+    }
+
+    fn publish_locked(&self, staged: &Staged, temp: &Path) -> Result<()> {
         let artifact = &staged.artifact;
         let version = artifact.version.to_string();
-        let lock = self.json_file(
-            temp,
-            "lock.json",
-            &serde_json::json!({"id": id, "version": version, "startedAt": crate::repo::iso_now()}),
-        )?;
-        self.put(LOCK_KEY, &lock, "application/json", false, true).map_err(|e| {
-            if is_precondition_failed(&e) {
-                anyhow!(
-                    "another publish holds {LOCK_KEY}; if it has certainly stopped, inspect and remove only that lock"
-                )
-            } else {
-                e
-            }
-        })?;
-        *locked = true;
+        let installer = self.installer(staged)?;
 
         let previous: Option<StableFeed> = self.read("updates/stable.json", temp)?;
         if let Some(previous) = &previous {
@@ -450,6 +649,10 @@ impl<'a> Publisher<'a> {
             "application/json",
             temp,
         )?;
+        if let Some((installer, file)) = installer {
+            self.upload_installer(artifact.version, installer, file, temp)?;
+        }
+        // Names the installer, so it goes up after it.
         self.immutable(
             &format!("{prefix}/{}.json", artifact.platform),
             &staged.artifact_path,
@@ -459,24 +662,8 @@ impl<'a> Publisher<'a> {
 
         // The exact package must come from the public CDN before the feed advertises it.
         println!("Verifying the public CDN download…");
-        let size = artifact.bytes;
-        let public_hash = ranged_digest(
-            size,
-            self.verify_chunk,
-            |start, end| {
-                let r = self.cdn.get_range(&platform.url, start, end)?;
-                if r.status != 206
-                    || r.content_range.as_deref() != Some(&format!("bytes {start}-{end}/{size}"))
-                {
-                    bail!("invalid public package range: HTTP {}", r.status);
-                }
-                Ok(r.body)
-            },
-            |p| println!("Public download verified {p}%…"),
-        )?;
-        if public_hash != artifact.sha256 {
-            bail!("public package hash mismatch");
-        }
+        self.verify_public(&platform.url, artifact.bytes, &artifact.sha256)
+            .context("the public package")?;
 
         let link = ChangelogLink {
             version: artifact.version,

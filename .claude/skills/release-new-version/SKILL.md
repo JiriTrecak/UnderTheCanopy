@@ -75,13 +75,14 @@ Free text after the command:
    - This loads the updater signing key from `~/.config/under-the-canopy/updater.key`.
    - **Never display, log, copy, commit or upload the key**, and never regenerate it.
    - If the key is missing, stop and tell Jiri; don't work around it.
-   - The staged files land in `build/releases/<version>/darwin-aarch64/`.
+   - The staged files land in `build/releases/<version>/darwin-aarch64/`: the update package
+     and the first-install disk image (`.dmg`), which the build mount-checks.
 8. **Verify, AWS included (dry run).**
    ```sh
    just release-publish --artifact build/releases/<version>/darwin-aarch64/artifact.json
    ```
-   - It verifies the package, signature, notes, gallery and that the AWS identity is the
-     release account `533797168831`.
+   - It verifies the package, signature, disk image, notes, gallery and that the AWS identity
+     is the release account `533797168831`.
    - If the default AWS identity is another account, retry with `--profile canopy`.
    - If no credentials work, stop and tell Jiri to log in (`aws sso login` or his usual way).
      Never put credentials in files or commands.
@@ -99,7 +100,9 @@ Free text after the command:
     - If a crashed publish left `publishing.lock`, check its owner has stopped before deleting
       only the lock (docs/releases.md).
 11. **Confirm it's live.** Fetch https://d3dte7yaa1v3g8.cloudfront.net/stable.json (it can take
-    a minute) and check it names the new version.
+    a minute) and check it names the new version, and that
+    `https://d3dte7yaa1v3g8.cloudfront.net/releases/<version>/darwin-aarch64.json` names its
+    `installer` (the download page links that DMG).
 12. **Push** `main` only if Jiri said "push". Otherwise, report how far `origin/main` is behind.
 
 ## Report

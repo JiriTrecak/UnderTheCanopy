@@ -58,7 +58,13 @@
 
   <section>
     <h2>Installing</h2>
-    <ol>
+    <ol id="steps-dmg">
+      <li>Open the downloaded disk image; a window with <b>Under the Canopy</b> and <b>Applications</b> appears.</li>
+      <li>Drag <b>Under the Canopy</b> onto <b>Applications</b>.</li>
+      <li>Open <b>Under the Canopy</b> from your Applications folder. You can eject the disk image afterwards.</li>
+      <li>The first time, macOS says it can't check the app. Open <b>System Settings → Privacy &amp; Security</b>, scroll down and click <b>Open Anyway</b>.</li>
+    </ol>
+    <ol id="steps-archive" hidden>
       <li>Open the downloaded file; macOS unpacks it into <b>Under the Canopy</b>.</li>
       <li>Drag <b>Under the Canopy</b> into your Applications folder and open it.</li>
       <li>The first time, macOS says it can't check the app. Open <b>System Settings → Privacy &amp; Security</b>, scroll down and click <b>Open Anyway</b>.</li>
@@ -80,11 +86,25 @@
   try {
     const feed = await (await fetch(base + "/stable.json", { cache: "no-store" })).json();
     const mac = feed.platforms && feed.platforms["darwin-aarch64"];
-    if (mac) {
-      const a = $("download");
+    // The disk image, when the release has one (releases/<version>/<platform>.json, `installer`).
+    let installer = null;
+    try {
+      const release = await fetch(base + "/releases/" + feed.version + "/darwin-aarch64.json", { cache: "no-store" });
+      const found = release.ok ? (await release.json()).installer : null;
+      if (found && typeof found.url === "string" && found.url.startsWith("https://")) installer = found;
+    } catch (_) { /* no installer: offer the package */ }
+    const a = $("download");
+    if (installer) {
+      a.href = installer.url;
+      a.removeAttribute("aria-disabled");
+      const gb = Number(installer.bytes) / 1e9;
+      a.textContent = "Download for Mac" + (gb > 0 ? " · " + gb.toFixed(1) + " GB" : "");
+    } else if (mac) {
       a.href = mac.url;
       a.removeAttribute("aria-disabled");
       a.textContent = "Download " + feed.version + " for Mac";
+      $("steps-dmg").hidden = true;
+      $("steps-archive").hidden = false;
     }
     let title = "";
     try {

@@ -152,6 +152,12 @@ release-build *args:
 release-publish *args:
     cargo run -q -p canopy-release-tool -- publish "$@"
 
+# Backfill a published release's disk image: `just release-installer --version 0.4.2 [--apply]` makes it from the staged package; `--apply` uploads it and adds `installer` to its <platform>.json
+[positional-arguments]
+[unix]
+release-installer *args:
+    cargo run -q -p canopy-release-tool -- installer "$@"
+
 # Upload the download page (releases/site/download.html) to <BaseUrl>/download: it reads the feed, so one link always offers the newest release
 [unix]
 release-site *args:
