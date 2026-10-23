@@ -1,8 +1,6 @@
 {
   "id": "item.broodkeeper-lantern",
   "itemTier": 2,
-  "name": "Broodkeeper’s Lantern",
-  "description": "Aura: allied living units within 6 tiles regenerate 2 health per second.",
   "model": "asset.models.props.neutral-loot-bundle",
   "icon": "asset.icons.item-broodkeeper-lantern",
   "stackLimit": 1,

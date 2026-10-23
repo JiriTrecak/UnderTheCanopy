@@ -1,7 +1,5 @@
 {
   "id": "unit.ants.nectarist",
-  "name": "Gardener",
-  "description": "Fungus keeper under a wide mushroom cap. Fungus Circle heals the allies standing in it; Spore Cloud, learned through Pheromone Mastery, chokes enemies. Requires a Great Nest; uses 2 supply.",
   "model": "asset.models.units.ants-gardener",
   "icon": "asset.portraits.units.ants-gardener",
   "selectionClass": "army",

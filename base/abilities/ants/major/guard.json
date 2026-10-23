@@ -1,7 +1,5 @@
 {
   "id": "ability.ants.guard",
-  "name": "Guard",
-  "description": "Small ants within 6 units of a Major take 15% less damage. Living Wall raises it to 25%.",
   "activation": "passive",
   "aura": {
     "radius": 6,

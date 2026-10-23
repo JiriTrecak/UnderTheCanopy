@@ -1,7 +1,5 @@
 {
   "id": "ability.ants.volatile-draught",
-  "name": "Volatile Draught",
-  "description": "Throw a flask of substance venom: it bursts on the target for 90/140/190 spell damage to every enemy within 4 units.",
   "activation": "targeted",
   "delivery": {
     "kind": "projectile",

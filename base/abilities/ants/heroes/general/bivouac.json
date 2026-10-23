@@ -1,7 +1,5 @@
 {
   "id": "ability.ants.bivouac",
-  "name": "Bivouac",
-  "description": "Ultimate. The General and up to 24 allies within 7 units lock together into a living fortress for 8/10 seconds: they cannot move, take 60/70% less damage and return 35% of melee damage to attackers.",
   "activation": "targeted",
   "ranks": [
     {

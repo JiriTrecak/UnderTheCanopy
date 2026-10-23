@@ -1,7 +1,5 @@
 {
   "id": "unit.beetles.shieldbearer",
-  "name": "Shieldbearer",
-  "description": "Front-line tank behind a riveted tower shield, swinging a piston hammer. Lock Shields braces it in place for heavy armor. Slow and stubborn; uses 2 supply.",
   "model": "asset.models.units.beetles-shieldbearer",
   "icon": "asset.portraits.units.beetles-shieldbearer",
   "selectionClass": "army",

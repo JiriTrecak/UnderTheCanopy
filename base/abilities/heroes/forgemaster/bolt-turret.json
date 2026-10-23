@@ -1,7 +1,5 @@
 {
   "id": "ability.forgemaster.bolt-turret",
-  "name": "Bolt Turret",
-  "description": "Unfold a brass repeater turret at a point for 40 seconds. It shoots ground and air units and can be destroyed. Rank 3 deploys two.",
   "activation": "targeted",
   "ranks": [
     {

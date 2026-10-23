@@ -1,7 +1,5 @@
 {
   "id": "unit.neutral.twigcaster",
-  "name": "Twigcaster",
-  "description": "Rootbound Guardians · ranged forest creature. Ancient roots defending an overgrown grove.",
   "model": "asset.models.units.neutral-twigcaster",
   "icon": "asset.portraits.units.neutral-twigcaster",
   "selectionClass": "army",

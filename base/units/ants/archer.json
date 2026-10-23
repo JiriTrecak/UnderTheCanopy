@@ -1,7 +1,5 @@
 {
   "id": "unit.ants.archer",
-  "name": "Needler",
-  "description": "An ant creature bristling with chitin needles that it fires at ground and air targets. Barbed Needles, from the Fungus Garden, makes each hit strip armor. Uses 2 supply.",
   "model": "asset.models.units.ants-needler",
   "icon": "asset.portraits.units.ants-needler",
   "selectionClass": "army",

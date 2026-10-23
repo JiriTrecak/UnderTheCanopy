@@ -1,7 +1,5 @@
 {
   "id": "unit.beetles.bombard",
-  "name": "Bombard",
-  "description": "Six-legged mortar crawler with a crewman. Long-range splash that wrecks clumps and buildings, but it cannot fire at anything within 7 units. Requires a Great Bastion; uses 3 supply.",
   "model": "asset.models.units.beetles-bombard",
   "icon": "asset.portraits.units.beetles-bombard",
   "selectionClass": "army",

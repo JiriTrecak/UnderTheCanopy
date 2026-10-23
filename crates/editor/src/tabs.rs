@@ -68,6 +68,8 @@ pub struct Doc {
     error: Option<String>,
     /// The inspector's name field while it is not being typed in.
     pub name_field: String,
+    /// The description being typed (a named element's, from the text library).
+    pub description_field: String,
 }
 
 impl Doc {
@@ -84,6 +86,7 @@ impl Doc {
             edit: String::new(),
             error: None,
             name_field: String::new(),
+            description_field: String::new(),
         }
     }
 
@@ -180,14 +183,7 @@ impl TabViewer for Viewer<'_> {
     }
 
     fn title(&mut self, tab: &mut Doc) -> egui::WidgetText {
-        let name = match self.store.get(&tab.document) {
-            Ok(Some(value)) => value
-                .get("name")
-                .and_then(Value::as_str)
-                .unwrap_or(&tab.name)
-                .to_string(),
-            _ => tab.name.clone(),
-        };
+        let name = name_in(self.store, tab);
         if unsaved(self.store, &tab.document) {
             dirty_title(&name)
         } else {
@@ -396,16 +392,9 @@ impl TabViewer for Viewer<'_> {
 }
 
 impl Viewer<'_> {
-    /// The document's name: its `name` field while it has one.
+    /// The document's name: its name in the text library, or its `name` field.
     fn name_of(&mut self, tab: &Doc) -> String {
-        match self.store.get(&tab.document) {
-            Ok(Some(value)) => value
-                .get("name")
-                .and_then(Value::as_str)
-                .unwrap_or(&tab.name)
-                .to_string(),
-            _ => tab.name.clone(),
-        }
+        name_in(self.store, tab)
     }
 
     /// The switches in the tab bar, right of the tabs, for the document shown: its views
@@ -631,4 +620,24 @@ pub fn documents(ui: &mut Ui, kind: Kind, dock: &mut DockState<Doc>, viewer: &mu
                 .tab_context_menus(false)
                 .show_inside(ui, viewer);
         });
+}
+
+/// A tab's name: a named element's from its package's text library (D96), another
+/// document's `name` field, or the name it opened with.
+fn name_in(store: &mut crate::document::Store, tab: &Doc) -> String {
+    let Ok(Some(value)) = store.get(&tab.document).map(|v| v.cloned()) else {
+        return tab.name.clone();
+    };
+    if let Some((key, file)) =
+        crate::text::key(&tab.document, &value).zip(crate::text::file(&tab.document))
+        && let Ok(Some(text)) = store.get(&file)
+        && let Some(name) = text.get(format!("{key}.name")).and_then(Value::as_str)
+    {
+        return name.to_string();
+    }
+    value
+        .get("name")
+        .and_then(Value::as_str)
+        .unwrap_or(&tab.name)
+        .to_string()
 }

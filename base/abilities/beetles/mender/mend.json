@@ -1,7 +1,5 @@
 {
   "id": "ability.beetles.mend",
-  "name": "Mend",
-  "description": "Inject a wounded ally with pressurised tonic, restoring 110/160 health. Works on beetles and machines alike. Autocast.",
   "activation": "targeted",
   "autocast": {
     "intervalTicks": 16,

@@ -1,7 +1,5 @@
 {
   "id": "ability.ants.war-column",
-  "name": "War Column",
-  "description": "Allies within 10 units of the General move 10/15/20% faster and deal 10/15/20% more damage.",
   "activation": "passive",
   "aura": {
     "radius": 10,

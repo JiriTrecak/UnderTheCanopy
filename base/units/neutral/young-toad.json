@@ -1,7 +1,5 @@
 {
   "id": "unit.neutral.young-toad",
-  "name": "Young Toad",
-  "description": "Bog Toad Hunters · melee forest creature. Large amphibians and pond spirits hunting at the waterline.",
   "model": "asset.models.units.neutral-young-toad",
   "icon": "asset.portraits.units.neutral-young-toad",
   "selectionClass": "army",

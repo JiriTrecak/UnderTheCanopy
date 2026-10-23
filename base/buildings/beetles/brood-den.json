@@ -1,7 +1,5 @@
 {
   "id": "building.beetles.brood-den",
-  "name": "Brood Den",
-  "description": "An iron-banded shell nursery: provides 8 supply and extends the substance network with a generous radius. Researches Pressure Mains once a Great Bastion stands.",
   "model": "asset.models.buildings.beetles-brood-den",
   "icon": "asset.portraits.buildings.beetles-brood-den",
   "body": {

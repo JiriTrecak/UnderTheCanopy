@@ -1,7 +1,5 @@
 {
   "id": "research.ants.carapace-2",
-  "name": "Carapace II",
-  "description": "Ant troops gain 1 armor (level II; levels add up). Requires a Great Nest.",
   "icon": "asset.icons.research-ants-carapace-2",
   "priority": 79,
   "requires": [

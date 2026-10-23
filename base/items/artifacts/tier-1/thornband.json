@@ -1,8 +1,6 @@
 {
   "id": "item.thornband",
   "itemTier": 1,
-  "name": "Thornband",
-  "description": "+6 attack damage.",
   "model": "asset.models.props.neutral-loot-bundle",
   "icon": "asset.icons.item-thornband",
   "stackLimit": 1,

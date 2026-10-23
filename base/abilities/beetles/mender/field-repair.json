@@ -1,7 +1,5 @@
 {
   "id": "ability.beetles.field-repair",
-  "name": "Field Repair",
-  "description": "Channel the welding torch for 4 seconds on a machine or building, restoring 45/70 health each second. Unlocked by Specialist Training.",
   "activation": "targeted",
   "ranks": [
     {

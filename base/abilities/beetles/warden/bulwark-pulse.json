@@ -1,7 +1,5 @@
 {
   "id": "ability.beetles.bulwark-pulse",
-  "name": "Bulwark Pulse",
-  "description": "Pulse the projector: up to 8 allies within 8 units gain a field shield absorbing 120/180 damage for 10 seconds. Unlocked by Specialist Training.",
   "activation": "targeted",
   "ranks": [
     {

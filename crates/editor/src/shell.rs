@@ -1103,6 +1103,10 @@ impl Shell {
                 }
             }
         }
+        // The text library names elements by id (D96), so a rename carries its keys.
+        if let Some(store) = &self.store {
+            out.extend(store.text_documents(crate::text::LANGUAGE));
+        }
         out.sort();
         out.dedup();
         out
@@ -1691,14 +1695,38 @@ impl Shell {
                                 Some(schema) => Form::new(Some(schema), &path, &[]).default_of(schema),
                                 None => Value::Object(Default::default()),
                             };
+                            let mut commands = Vec::new();
                             if let Value::Object(object) = &mut value {
                                 object.shift_insert(0, "id".into(), Value::String(id.clone()));
-                                let named = schema
-                                    .as_ref()
-                                    .and_then(|s| s.pointer("/properties/name"))
-                                    .is_some();
-                                if named && !object.contains_key("name") {
-                                    object.shift_insert(1, "name".into(), Value::String(tail.to_string()));
+                                // A named element's name goes to its package's text library
+                                // (D96); other documents keep a `name` of their own.
+                                object.shift_remove("description");
+                                let text = crate::text::key(&path, &Value::Object(object.clone()))
+                                    .zip(crate::text::file(&path));
+                                if let Some((key, file)) = text {
+                                    object.shift_remove("name");
+                                    let entry = format!("{key}.name");
+                                    let name = Value::String(tail.to_string());
+                                    commands.push(match store.as_mut().map(|s| s.get(&file)) {
+                                        Some(Ok(Some(_))) => Command::Set {
+                                            document: file,
+                                            pointer: crate::text::pointer(&entry),
+                                            value: name,
+                                            at: None,
+                                        },
+                                        _ => Command::Create {
+                                            document: file,
+                                            value: serde_json::json!({ entry: name }),
+                                        },
+                                    });
+                                } else {
+                                    let named = schema
+                                        .as_ref()
+                                        .and_then(|s| s.pointer("/properties/name"))
+                                        .is_some();
+                                    if named && !object.contains_key("name") {
+                                        object.shift_insert(1, "name".into(), Value::String(tail.to_string()));
+                                    }
                                 }
                             }
                             outcome = Outcome::Run(Edit {
@@ -1708,10 +1736,12 @@ impl Shell {
                                     document: path.clone(),
                                     pointer: None,
                                 },
-                                commands: vec![Command::Create {
+                                commands: std::iter::once(Command::Create {
                                     document: path,
                                     value,
-                                }],
+                                })
+                                .chain(commands)
+                                .collect(),
                                 merge: None,
                             });
                         }

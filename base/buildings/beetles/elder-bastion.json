@@ -1,7 +1,5 @@
 {
   "id": "building.beetles.elder-bastion",
-  "name": "Elder Bastion",
-  "description": "Hall tier 3, upgraded once an Engine Yard stands: unlocks the Juggernaut, level III research, Specialist Training Master, the Arc Tower and a third hero.",
   "model": "asset.models.buildings.beetles-elder-bastion",
   "icon": "asset.portraits.buildings.beetles-elder-bastion",
   "body": {

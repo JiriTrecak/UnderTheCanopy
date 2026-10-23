@@ -1,7 +1,5 @@
 {
   "id": "unit.neutral.dew-sprite",
-  "name": "Dew Sprite",
-  "description": "Dewdrop Sprites · ranged forest creature. Fragile water spirits gathered around wet leaves.",
   "model": "asset.models.units.neutral-dew-sprite",
   "icon": "asset.portraits.units.neutral-dew-sprite",
   "selectionClass": "army",

@@ -1,7 +1,5 @@
 {
   "id": "building.ants.barracks",
-  "name": "Soldier Burrow",
-  "description": "Hatches Raiders (two at a time), Needlers, Bursters and Majors.",
   "model": "asset.models.buildings.ants-soldier-burrow",
   "icon": "asset.portraits.buildings.ants-soldier-burrow",
   "body": {

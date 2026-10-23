@@ -1,7 +1,5 @@
 {
   "id": "unit.neutral.bloom-witch",
-  "name": "Bloom Witch",
-  "description": "Briar Covenant · ranged forest creature. Hostile thorn growth animated into a fighting grove.",
   "model": "asset.models.units.neutral-bloom-witch",
   "icon": "asset.portraits.units.neutral-bloom-witch",
   "selectionClass": "army",

@@ -179,10 +179,16 @@ impl Library {
         let sections = kind.sections();
         let mut library = Library::default();
         let mut errors = Vec::new();
+        // Named elements take their names from the package's text library (D96).
+        let text = canopy_content::text::Text::read(
+            std::slice::from_ref(package),
+            crate::text::LANGUAGE,
+            &mut Vec::new(),
+        );
         for (title, collection) in sections {
             let mut nodes = Vec::new();
             for found in collection.read(package, &mut errors) {
-                let element = element(package, collection, found);
+                let element = element(package, collection, found, &text);
                 let relative = element
                     .path
                     .strip_prefix(collection.dir)
@@ -236,7 +242,12 @@ impl Node {
     }
 }
 
-fn element(package: &Package, collection: &Collection, found: Found) -> Element {
+fn element(
+    package: &Package,
+    collection: &Collection,
+    found: Found,
+    text: &canopy_content::text::Text,
+) -> Element {
     let (document, value) = match collection.form {
         Form::Folders(manifest) => (format!("{}/{manifest}", found.path), found.value),
         Form::Packages(extension) => {
@@ -255,11 +266,15 @@ fn element(package: &Package, collection: &Collection, found: Found) -> Element 
         }
         _ => (found.path.clone(), found.value),
     };
-    let name = value
-        .get("name")
-        .and_then(Value::as_str)
-        .unwrap_or(&found.id)
-        .to_string();
+    let named = crate::text::key(&document, &value)
+        .and_then(|key| text.get(&format!("{key}.name")).map(str::to_string));
+    let name = named.unwrap_or_else(|| {
+        value
+            .get("name")
+            .and_then(Value::as_str)
+            .unwrap_or(&found.id)
+            .to_string()
+    });
     Element {
         id: found.id,
         name,

@@ -1,8 +1,6 @@
 {
   "id": "item.moon-dew",
   "itemTier": 1,
-  "name": "Moon Dew",
-  "description": "Restore 80 mana. Consumed on use.",
   "model": "asset.models.props.neutral-loot-bundle",
   "icon": "asset.icons.item-moon-dew",
   "stackLimit": 1,

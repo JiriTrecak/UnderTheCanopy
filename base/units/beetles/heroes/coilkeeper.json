@@ -1,7 +1,5 @@
 {
   "id": "unit.beetles.coilkeeper",
-  "name": "Coilkeeper",
-  "description": "Substance savant with a coil halo and a lantern-staff. Lashes enemies with chained lightning, Overloads their mana, Recharges allies and, once, lets the substance loose: Unbottled.",
   "model": "asset.models.units.beetles-coilkeeper",
   "icon": "asset.portraits.units.beetles-coilkeeper",
   "selectionClass": "army",

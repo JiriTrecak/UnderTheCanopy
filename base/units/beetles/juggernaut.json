@@ -1,7 +1,5 @@
 {
   "id": "unit.beetles.juggernaut",
-  "name": "Juggernaut",
-  "description": "Ultimate walking fortress: six legs, a violet furnace window, two cannons and a crew. Fires Broadside; Furnace Plating turns aside 30% of spell damage. One at a time. Requires an Elder Bastion; uses 8 supply.",
   "model": "asset.models.units.beetles-juggernaut",
   "icon": "asset.portraits.units.beetles-juggernaut",
   "selectionClass": "army",

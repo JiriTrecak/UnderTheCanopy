@@ -361,6 +361,64 @@ impl Store {
         Ok(self.documents.get_mut(document).expect("just loaded"))
     }
 
+    /// The text library's files of `language` (D96) in the package and its nested map
+    /// and campaign packages, on disk or created in this session.
+    pub fn text_documents(&self, language: &str) -> Vec<String> {
+        let mut out: Vec<String> = self
+            .documents
+            .iter()
+            .filter(|(path, doc)| path.contains("text/") && doc.value.is_some())
+            .map(|(path, _)| path.clone())
+            .collect();
+        let suffix = format!("text/{language}");
+        let mut packages = vec![String::new()];
+        for pattern in ["campaigns", "maps"] {
+            let Ok(entries) = std::fs::read_dir(self.root.join(pattern)) else {
+                continue;
+            };
+            for entry in entries.flatten() {
+                let name = entry.file_name().to_string_lossy().to_string();
+                if name.ends_with(".utcc") || name.ends_with(".utcm") {
+                    packages.push(format!("{pattern}/{name}/"));
+                    if let Ok(missions) = std::fs::read_dir(entry.path().join("missions")) {
+                        for mission in missions.flatten() {
+                            let m = mission.file_name().to_string_lossy().to_string();
+                            packages.push(format!("{pattern}/{name}/missions/{m}/"));
+                        }
+                    }
+                } else if let Ok(inner) = std::fs::read_dir(entry.path()) {
+                    for map in inner.flatten() {
+                        let m = map.file_name().to_string_lossy().to_string();
+                        if m.ends_with(".utcm") {
+                            packages.push(format!("{pattern}/{name}/{m}/"));
+                        }
+                    }
+                }
+            }
+        }
+        for package in packages {
+            let dir = format!("{package}{suffix}");
+            let mut stack = vec![dir];
+            while let Some(dir) = stack.pop() {
+                let Ok(entries) = std::fs::read_dir(self.root.join(&dir)) else {
+                    continue;
+                };
+                for entry in entries.flatten() {
+                    let name = entry.file_name().to_string_lossy().to_string();
+                    let path = format!("{dir}/{name}");
+                    if entry.path().is_dir() {
+                        stack.push(path);
+                    } else if name.ends_with(".json") {
+                        out.push(path);
+                    }
+                }
+            }
+        }
+        out.sort();
+        out.dedup();
+        out
+    }
+
     /// A document's current value (`None` when it does not exist).
     pub fn get(&mut self, document: &str) -> Result<Option<&Value>, Error> {
         if is_grid(document) {

@@ -1,7 +1,5 @@
 {
   "id": "ability.forgemaster.field-forge",
-  "name": "Field Forge",
-  "description": "Allies within 10 units gain 2/3/4 armor. Every second, allied machines and buildings within 10 units are repaired for 6/10/14 health.",
   "activation": "passive",
   "aura": {
     "radius": 10,

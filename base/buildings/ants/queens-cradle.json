@@ -1,7 +1,5 @@
 {
   "id": "building.ants.queens-cradle",
-  "name": "Queen's Cradle",
-  "description": "The amber reliquary where a Reaver Queen is raised, one at a time. Requires the Queen's Chamber.",
   "model": "asset.models.buildings.ants-queens-cradle",
   "icon": "asset.portraits.buildings.ants-queens-cradle",
   "body": {

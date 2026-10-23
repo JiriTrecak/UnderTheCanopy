@@ -1,8 +1,6 @@
 {
   "id": "item.worldroot-heart",
   "itemTier": 3,
-  "name": "Worldroot Heart",
-  "description": "+450 maximum health and +4 health per second. Activate: restore 20% maximum health. 70s cooldown.",
   "model": "asset.models.props.neutral-loot-bundle",
   "icon": "asset.icons.item-worldroot-heart",
   "stackLimit": 1,

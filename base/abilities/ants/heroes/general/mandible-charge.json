@@ -1,7 +1,5 @@
 {
   "id": "ability.ants.mandible-charge",
-  "name": "Mandible Charge",
-  "description": "Rush an enemy and seize it in the mandibles: 80/130/180 damage and a 1/1.5/2-second stun.",
   "activation": "targeted",
   "delivery": {
     "kind": "charge",

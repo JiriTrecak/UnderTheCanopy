@@ -1,7 +1,5 @@
 {
   "id": "ability.hornbreaker.colossus",
-  "name": "Colossus",
-  "description": "Become a living siege engine for 18/24 seconds: gain 300/500 maximum health and health, 12/20 damage, 3/5 armor, and 35/50% frontal cleave within 1.5 cells. Physical clearance is unchanged; expiry caps health at the normal maximum.",
   "activation": "targeted",
   "ranks": [
     {

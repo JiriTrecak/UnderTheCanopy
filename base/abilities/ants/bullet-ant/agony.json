@@ -1,7 +1,5 @@
 {
   "id": "ability.ants.agony",
-  "name": "Agony",
-  "description": "The most painful sting in the forest: 40 spell damage and a 1-second stun, then for 6 seconds the target moves 30% slower and takes 25% more damage. Venom Glands makes it last 10 seconds.",
   "activation": "targeted",
   "ranks": [
     {

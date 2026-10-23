@@ -1,7 +1,5 @@
 {
   "id": "ability.ants.plug",
-  "name": "Plug",
-  "description": "Toggle. The Major plants its huge head like a door: it cannot move, but gains 5 armor and takes half damage from missiles and 30% less from siege.",
   "activation": "targeted",
   "persistent": {
     "durationTicks": 144000,

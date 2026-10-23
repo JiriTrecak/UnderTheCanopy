@@ -1,7 +1,5 @@
 {
   "id": "unit.ants.spire-spitter",
-  "name": "Spire Spitter",
-  "description": "The spitter in an ant spire's mouth.",
   "model": "asset.models.units.ants-needler",
   "icon": "asset.portraits.units.ants-needler",
   "body": {

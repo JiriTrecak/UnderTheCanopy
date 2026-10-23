@@ -1,8 +1,6 @@
 {
   "id": "item.resin-salve",
   "itemTier": 1,
-  "name": "Resin Salve",
-  "description": "Consume to restore 160 health.",
   "model": "asset.models.props.neutral-loot-bundle",
   "icon": "asset.icons.item-resin-salve",
   "stackLimit": 1,

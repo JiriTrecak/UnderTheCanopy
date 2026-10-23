@@ -1,7 +1,5 @@
 {
   "id": "ability.beetles.broadside",
-  "name": "Broadside",
-  "description": "Fire both cannons at once into an area: 140 siege damage to everything hostile in a 5-radius.",
   "activation": "targeted",
   "ranks": [
     {}

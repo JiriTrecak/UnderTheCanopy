@@ -1,7 +1,5 @@
 {
   "id": "ability.ants.trail",
-  "name": "Trail",
-  "description": "Lay a pheromone trail for 12 seconds: allied units in it move 35% faster.",
   "activation": "targeted",
   "persistent": {
     "durationTicks": 480,

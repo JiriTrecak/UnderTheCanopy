@@ -1,7 +1,5 @@
 {
   "id": "building.ants.sanctuary",
-  "name": "Royal Chamber",
-  "description": "Where the colony's heroes are raised and revived: the Queen, the Royal Alchemist and the General.",
   "model": "asset.models.buildings.ants-royal-chamber",
   "icon": "asset.portraits.buildings.ants-royal-chamber",
   "body": {

@@ -1,7 +1,5 @@
 {
   "id": "ability.ants.overdose",
-  "name": "Overdose",
-  "description": "Ultimate. Allies in a 6-radius swell with substance for 10 seconds: they attack 40/60% faster, deal 25/40% more damage and move 20% faster, but lose 10 health every second while it lasts.",
   "activation": "targeted",
   "ranks": [
     {

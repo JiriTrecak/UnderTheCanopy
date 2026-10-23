@@ -1,7 +1,5 @@
 {
   "id": "building.ants.great-mound",
-  "name": "Great Nest",
-  "description": "Hall tier 2 and a tunnel mound: unlocks the Fungus Garden, the Scent Hall, the Deep Gallery, tier-2 troops and level II research. Upgrades to the Queen's Chamber once a Deep Gallery stands.",
   "model": "asset.models.buildings.ants-great-nest",
   "icon": "asset.portraits.buildings.ants-great-nest",
   "body": {

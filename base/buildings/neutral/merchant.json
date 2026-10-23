@@ -1,7 +1,5 @@
 {
   "id": "building.neutral.merchant",
-  "name": "Pill-Bug Peddler",
-  "description": "A travelling trader and his cart of salves, flasks and trinkets. Bring a hero near to buy; what sells out comes back in time.",
   "model": "asset.models.props.neutral-merchant",
   "icon": "asset.portraits.buildings.neutral-merchant",
   "footprint": {

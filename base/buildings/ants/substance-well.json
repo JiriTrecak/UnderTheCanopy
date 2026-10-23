@@ -1,7 +1,5 @@
 {
   "id": "building.ants.substance-well",
-  "name": "Substance Siphon",
-  "description": "Built on a Substance Deposit: its clay spires bow to pour raw substance into a glowing pool. Pumps 10 Substance every 5 seconds by itself; no workers needed. When it falls, the deposit remains.",
   "model": "asset.models.buildings.ants-substance-siphon",
   "icon": "asset.portraits.buildings.ants-substance-siphon",
   "body": {

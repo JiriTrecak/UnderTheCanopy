@@ -1,7 +1,5 @@
 {
   "id": "building.ants.venom-spire",
-  "name": "Venom Spire",
-  "description": "An Acid Spire grown venomous: its spitter deals 26 spell damage and each hit lowers armor by 2. Requires the Queen's Chamber.",
   "model": "asset.models.buildings.ants-acid-spire",
   "icon": "asset.portraits.buildings.ants-venom-spire",
   "body": {

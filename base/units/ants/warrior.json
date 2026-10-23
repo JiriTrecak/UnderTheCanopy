@@ -1,7 +1,5 @@
 {
   "id": "unit.ants.warrior",
-  "name": "Raider",
-  "description": "The colony's Zergling: a small, stocky biting ant with blade fins on its back, hatched two at a time. Fast and cheap; Frenzy makes Raiders hit harder the longer they fight together. Uses 1 supply each.",
   "model": "asset.models.units.ants-raider",
   "icon": "asset.portraits.units.ants-raider",
   "selectionClass": "army",

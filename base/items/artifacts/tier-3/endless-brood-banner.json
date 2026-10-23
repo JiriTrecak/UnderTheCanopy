@@ -1,8 +1,6 @@
 {
   "id": "item.endless-brood-banner",
   "itemTier": 3,
-  "name": "Banner of the Endless Brood",
-  "description": "Aura: allied units within 7 tiles gain 15% attack speed. Activate: nearby allies ignore roots and stuns for 4s. 90s cooldown.",
   "model": "asset.models.props.neutral-loot-bundle",
   "icon": "asset.icons.item-endless-brood-banner",
   "stackLimit": 1,

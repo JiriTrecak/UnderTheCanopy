@@ -1,7 +1,5 @@
 {
   "id": "building.ants.bombardier-workshop",
-  "name": "Deep Gallery",
-  "description": "Galleries of the specialised castes: hatches Honeypots and Alates, and Bullet Ants once the Queen's Chamber stands. Requires a Great Nest.",
   "model": "asset.models.buildings.ants-deep-gallery",
   "icon": "asset.portraits.buildings.ants-deep-gallery",
   "body": {

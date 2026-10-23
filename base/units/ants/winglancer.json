@@ -1,7 +1,5 @@
 {
   "id": "unit.ants.winglancer",
-  "name": "Alate",
-  "description": "A fast winged ant: scout and light harasser that strikes ground targets from the air. Found: it lands, sheds its wings and becomes a new tunnel mound. Requires a Great Nest; uses 2 supply.",
   "model": "asset.models.units.ants-alate",
   "icon": "asset.portraits.units.ants-alate",
   "selectionClass": "army",

@@ -1,7 +1,5 @@
 {
   "id": "ability.beetles.patch-up",
-  "name": "Patch Up",
-  "description": "Bolt fresh plates onto an allied machine, restoring 60 health. Autocast; Tinkers repair buildings by hand.",
   "activation": "targeted",
   "autocast": {
     "intervalTicks": 20,

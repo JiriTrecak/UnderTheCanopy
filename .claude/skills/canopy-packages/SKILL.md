@@ -19,6 +19,7 @@ base/
 ├─ scenery/                                    placeable scenery pieces
 ├─ assets/                                     one folder per asset (skill canopy-assets)
 ├─ landscape/  biomes/  water/
+├─ text/en/                                    every player-facing string (below)
 ├─ campaigns/<id>.utcc/                        nested campaign packages: campaign.json, missions/, assets/
 └─ maps/<group>/<id>.utcm/                     nested map packages (skill canopy-maps)
 ```
@@ -60,12 +61,34 @@ Packages load in order: base, then mods (in the player's order), then the campai
 - **`"base": "<id>"`** starts a new element as a copy of another one in the same collection. The new element's own fields merge on top. A base is resolved *after* layering, so a map's change to the base also reaches elements based on it. Chains are allowed; cycles are errors.
 
   ```jsonc
-  {"id": "unit.ants.elite-warrior", "base": "unit.ants.warrior", "name": "Elite Warrior", "body": {"maxHp": 500}}
+  {"id": "unit.ants.elite-warrior", "base": "unit.ants.warrior", "body": {"maxHp": 500}}
   ```
+
+  A new element needs its own name in the text library (`"unit.ants.elite-warrior.name"`); it never inherits its base's text.
 
 - No namespaces: two packages using one id resolve as an override, and the later one wins.
 
 Behaviour sets (`behaviors/`, `"behaviorSets": [...]` on a definition) are a separate, older mechanism. They resolve after layering and base, merging one level deep inside each behaviour. Lists replace there too.
+
+## Text
+
+Every player-facing string is in the package's text library (D96), `text/<language>/*.json`: flat maps of key → string. English (`en`) is the source; a translation is another folder with the same keys. Files only organise (`units.json`, `abilities.json`, `ui.json`, …).
+
+```json text
+{
+  "unit.ants.warrior.name": "Warrior",
+  "unit.ants.warrior.description": "Frontline caste. Cheap, fast and many.",
+  "race.ants.name": "Ants",
+  "command.move.name": "Move",
+  "armor.light.name": "Light armor",
+  "hud.heroes-fallen": "{count, plural, one {# hero has fallen} other {# heroes have fallen}}"
+}
+```
+
+- **Content text is keyed by id**: `<id>.name` and `<id>.description` for units, buildings, items, resources, abilities and research; `race.<id>.…`; commands `command.<action>.…`, categories `<category id>.…`, navigation `navigation.<id>.…`; `armor.<type>.name`, `damage.<type>.name`. Elements carry no `name` or `description` of their own: the loader fills them from the library, an inline one is an error, and a missing name is an error.
+- **Placeholders** `{name}` and ICU plurals `{count, plural, one {…} other {…}}` (`#` is the number, `=0 {…}` an exact match); the interface's markup (`[b]`, `[color=#…]`) works as usual.
+- **Layering**: a later package's key overrides, so a map can rename a unit for itself: `maps/frost-isle.utcm/text/en/units.json` with `{"unit.ants.warrior.name": "Frost Warrior"}`.
+- The content generators (`tools/content/*/gen.py`) write their elements' text through `tools/text/textlib.py`; `tools/text/migrate_content.py` moves inline text of an older package into its library.
 
 ## Rules files
 

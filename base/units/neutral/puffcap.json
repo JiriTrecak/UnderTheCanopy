@@ -1,7 +1,5 @@
 {
   "id": "unit.neutral.puffcap",
-  "name": "Puffcap",
-  "description": "Mushroom Circle · ranged forest creature. Animated mushrooms hiding among ordinary forest fungi.",
   "model": "asset.models.units.neutral-puffcap",
   "icon": "asset.portraits.units.neutral-puffcap",
   "selectionClass": "army",

@@ -1,7 +1,5 @@
 {
   "id": "ability.ants.alarm",
-  "name": "Alarm",
-  "description": "Sound the alarm: allied units within 9 units deal 35% more damage and attack 15% faster for 6 seconds.",
   "activation": "targeted",
   "ranks": [
     {}

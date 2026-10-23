@@ -1,8 +1,6 @@
 {
   "id": "item.quickstep-spurs",
   "itemTier": 1,
-  "name": "Quickstep Spurs",
-  "description": "+8% movement speed.",
   "model": "asset.models.props.neutral-loot-bundle",
   "icon": "asset.icons.item-quickstep-spurs",
   "stackLimit": 1,

@@ -1,8 +1,6 @@
 {
   "id": "item.heartseed",
   "itemTier": 1,
-  "name": "Heartseed",
-  "description": "+120 maximum health.",
   "model": "asset.models.props.neutral-loot-bundle",
   "icon": "asset.icons.item-heartseed",
   "stackLimit": 1,

@@ -1,7 +1,5 @@
 {
   "id": "unit.beetles.arcwright",
-  "name": "Arcwright",
-  "description": "Specialist with a coil lance. Its arcs jump between enemies; casts Arc Surge, and Static Field after Specialist Training. Requires a Great Bastion; uses 3 supply.",
   "model": "asset.models.units.beetles-arcwright",
   "icon": "asset.portraits.units.beetles-arcwright",
   "selectionClass": "army",

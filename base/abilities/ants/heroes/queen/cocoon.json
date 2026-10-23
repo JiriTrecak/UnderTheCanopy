@@ -1,7 +1,5 @@
 {
   "id": "ability.ants.cocoon",
-  "name": "Cocoon",
-  "description": "The colony cannot lose its queen: she spins a cocoon of living silk around herself and sheds every hostile spell. For 6/9/12 seconds nothing can harm her, and she still moves, fights and casts.",
   "activation": "targeted",
   "ranks": [
     {

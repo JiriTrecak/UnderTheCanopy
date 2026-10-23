@@ -12,6 +12,8 @@ Read the skill **canopy-packages** first for packages, ids and layering. The Rus
 - effects: `crates/content/src/effects/mod.rs` (`VisualEffect`, layers, `EffectBinding`, events) and `effects/rules.rs`;
 - runtime: `crates/sim/src/abilities/`.
 
+An ability's name and description are in the package's text library (D96, skill **canopy-packages**): `<ability id>.name`, `<ability id>.description`. Effects keep their own `name` (authoring only).
+
 When this skill and the code disagree, the code wins; fix the skill.
 
 ## Where the files are
@@ -29,8 +31,6 @@ The definition and its presentation are one document. `presentation` holds the c
 ```json ability
 {
   "id": "ability.example.fireball",
-  "name": "Fireball",
-  "description": "Hurls a burning seed that explodes on impact, scorching nearby enemies.",
   "activation": "targeted",
   "delivery": {"kind": "projectile", "speed": 22},
   "ranks": [{"damage": 80, "splash": 30}, {"damage": 120, "splash": 50}],

@@ -1,7 +1,5 @@
 {
   "id": "unit.neutral.needle-wasp",
-  "name": "Needle Wasp",
-  "description": "Hornet Raiders · ranged forest creature. Wild hornets patrolling a paper nest.",
   "model": "asset.models.units.neutral-needle-wasp",
   "icon": "asset.portraits.units.neutral-needle-wasp",
   "selectionClass": "army",

@@ -1,7 +1,5 @@
 {
   "id": "building.beetles.ancestor-shrine",
-  "name": "Ancestor Shrine",
-  "description": "Where the colony’s heroes are called and reconstituted: trains the Hornbreaker, the Forgemaster and the Coilkeeper, and revives the fallen.",
   "model": "asset.models.buildings.beetles-ancestor-shrine",
   "icon": "asset.portraits.buildings.beetles-ancestor-shrine",
   "body": {

@@ -1,7 +1,5 @@
 {
   "id": "ability.ants.royal-presence",
-  "name": "Royal Presence",
-  "description": "Ants within 10 units of the Reaver Queen attack 15% faster.",
   "activation": "passive",
   "aura": {
     "radius": 10,

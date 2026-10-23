@@ -1,7 +1,5 @@
 {
   "id": "building.ants.fungus-garden",
-  "name": "Fungus Garden",
-  "description": "The colony's substance garden: one-off upgrades for every caste. Requires a Great Nest.",
   "model": "asset.models.buildings.ants-fungus-garden",
   "icon": "asset.portraits.buildings.ants-fungus-garden",
   "body": {

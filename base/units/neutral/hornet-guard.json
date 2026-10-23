@@ -1,7 +1,5 @@
 {
   "id": "unit.neutral.hornet-guard",
-  "name": "Hornet Guard",
-  "description": "Hornet Raiders · melee forest creature. Wild hornets patrolling a paper nest.",
   "model": "asset.models.units.neutral-hornet-guard",
   "icon": "asset.portraits.units.neutral-hornet-guard",
   "selectionClass": "army",

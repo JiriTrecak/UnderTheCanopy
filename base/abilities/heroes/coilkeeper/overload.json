@@ -1,7 +1,5 @@
 {
   "id": "ability.coilkeeper.overload",
-  "name": "Overload",
-  "description": "Detonate an enemy's mana: drain up to 60/100/140 of it and deal 45/70/95 plus the drained amount as spell damage to every enemy within 4 units of the target.",
   "activation": "targeted",
   "ranks": [
     {

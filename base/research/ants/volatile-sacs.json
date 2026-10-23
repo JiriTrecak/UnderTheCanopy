@@ -1,7 +1,5 @@
 {
   "id": "research.ants.volatile-sacs",
-  "name": "Volatile Sacs",
-  "description": "Burster bursts deal 150 damage instead of 100 and no longer hurt allies.",
   "icon": "asset.icons.research-ants-volatile-sacs",
   "priority": 75,
   "items": [

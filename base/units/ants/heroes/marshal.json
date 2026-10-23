@@ -1,7 +1,5 @@
 {
   "id": "unit.ants.marshal",
-  "name": "General",
-  "description": "The army-ant marshal, banner on its back and twin blades in hand. Mandible Charge seizes a foe, Mark Prey sets the army on it, War Column drives the march and, at the last, the army locks into a Bivouac.",
   "model": "asset.models.units.ants-general",
   "icon": "asset.portraits.units.ants-general",
   "hero": true,

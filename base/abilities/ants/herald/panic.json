@@ -1,7 +1,5 @@
 {
   "id": "ability.ants.panic",
-  "name": "Panic",
-  "description": "A cloud of fear-scent: enemies in a 5-radius cannot attack or cast for 3 seconds (1.5 on heroes) and move 20% slower. Learned through Pheromone Mastery.",
   "activation": "targeted",
   "ranks": [
     {}

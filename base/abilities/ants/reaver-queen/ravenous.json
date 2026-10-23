@@ -1,7 +1,5 @@
 {
   "id": "ability.ants.ravenous",
-  "name": "Ravenous",
-  "description": "Mutated. The Reaver Queen starves: she loses 10 health every second, and only Devour and Molt heal her.",
   "activation": "passive",
   "ranks": [
     {}

@@ -1,7 +1,5 @@
 {
   "id": "unit.neutral.nest-mother",
-  "name": "Nest Mother",
-  "description": "Hornet Raiders · melee forest creature. Wild hornets patrolling a paper nest.",
   "model": "asset.models.units.neutral-nest-mother",
   "icon": "asset.portraits.units.neutral-nest-mother",
   "selectionClass": "army",

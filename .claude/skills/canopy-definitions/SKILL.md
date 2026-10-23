@@ -12,6 +12,8 @@ Read the skill **canopy-packages** first for files, ids and layering. The Rust t
 
 Cross-reference rules live in `crates/content/src/registry.rs`. When unsure of a field, read the type: unknown fields are errors.
 
+**Text:** names and descriptions are not in the definitions: they are in the package's text library (D96, skill **canopy-packages**), keyed `<id>.name` and `<id>.description` (`race.<id>.…` for races). Every new unit, building, item, research and race needs its name there.
+
 **Units:** ticks are authored in 25 ms ticks (`*Ticks`, 40 per second). Distances are in cells. `*Permille` values are thousandths.
 
 ## A unit
@@ -21,8 +23,6 @@ Cross-reference rules live in `crates/content/src/registry.rs`. When unsure of a
 ```json unit
 {
   "id": "unit.example.spearman",
-  "name": "Spearman",
-  "description": "Cheap infantry with a long reach.",
   "model": "asset.models.units.ants-cleaver-warrior",
   "icon": "asset.portraits.units.ants-cleaver-warrior",
   "selectionClass": "army",
@@ -77,8 +77,6 @@ Cross-reference rules live in `crates/content/src/registry.rs`. When unsure of a
 ```json building
 {
   "id": "building.example.lodge",
-  "name": "Lodge",
-  "description": "Trains infantry.",
   "model": "asset.models.buildings.ants-leaf-garrison",
   "icon": "asset.portraits.buildings.ants-leaf-garrison",
   "body": {"maxHp": 1200, "armor": 5, "armorType": "structure"},
@@ -109,8 +107,6 @@ Cross-reference rules live in `crates/content/src/registry.rs`. When unsure of a
 ```json building
 {
   "id": "building.example.well",
-  "name": "Well",
-  "description": "Built on a deposit; pumps Substance by itself.",
   "model": "asset.models.buildings.ants-rootworks",
   "icon": "asset.portraits.buildings.ants-rootworks",
   "body": {"maxHp": 1000, "armor": 5, "armorType": "structure"},
@@ -131,8 +127,6 @@ A harvested building (a mine, a deposit) has a `yield` and a `harvesting` policy
 ```json building
 {
   "id": "building.example.deposit",
-  "name": "Deposit",
-  "description": "Never runs out; build a well on it.",
   "model": "asset.models.resources.corrupted-root",
   "icon": "asset.icons.resource-root",
   "footprint": {"width": 8, "depth": 8},
@@ -173,8 +167,6 @@ Warcraft III's destructibles, fountains and Goblin Merchant, as neutral building
 ```json building
 {
   "id": "building.example.crate",
-  "name": "Supply Crate",
-  "description": "Break it open to see what is inside.",
   "model": "asset.models.props.neutral-supply-crate",
   "icon": "asset.portraits.buildings.neutral-supply-crate",
   "body": {"maxHp": 40, "armor": 0, "armorType": "light"},
@@ -188,8 +180,6 @@ Warcraft III's destructibles, fountains and Goblin Merchant, as neutral building
 ```json building
 {
   "id": "building.example.spring",
-  "name": "Sap Spring",
-  "description": "Restores the health of every unit near it.",
   "model": "asset.models.props.neutral-sap-spring",
   "icon": "asset.portraits.buildings.neutral-sap-spring",
   "footprint": {"width": 12, "depth": 12},
@@ -202,8 +192,6 @@ Warcraft III's destructibles, fountains and Goblin Merchant, as neutral building
 ```json building
 {
   "id": "building.example.merchant",
-  "name": "Merchant",
-  "description": "Sells items to heroes standing near.",
   "model": "asset.models.props.neutral-merchant",
   "icon": "asset.portraits.buildings.neutral-merchant",
   "footprint": {"width": 12, "depth": 12},
@@ -225,8 +213,6 @@ On the ground an item shows its `model` (the base game's items all lie as the lo
 {
   "id": "item.example.ward",
   "itemTier": 1,
-  "name": "Bark Ward",
-  "description": "+2 armor.",
   "model": "asset.placeholder.missing-model",
   "icon": "asset.icons.item-barkguard",
   "stackLimit": 1,
@@ -244,8 +230,6 @@ Goods the economy counts are items with `"currency": true` and a `harvest` creat
 ```json race
 {
   "id": "example",
-  "name": "Example Folk",
-  "description": "A test race.",
   "construction": {"scaffold": "asset.models.construction.ants", "padding": 0.4, "revealAt": 0.95, "retractUntil": 0.35, "dustEffect": "effect.construction.dust", "dustIntervalTicks": 20},
   "startingSetup": {
     "id": "setup.example",
@@ -260,8 +244,6 @@ Goods the economy counts are items with `"currency": true` and a `harvest` creat
 ```json research
 {
   "id": "research.example.sharper-spears",
-  "name": "Sharper Spears",
-  "description": "Spearmen deal 25% more damage.",
   "icon": "asset.portraits.units.ants-archer",
   "priority": 80,
   "items": [{"item": "item.amber", "amount": 150}],

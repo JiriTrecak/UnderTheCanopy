@@ -1,8 +1,6 @@
 {
   "id": "item.restoration-draught",
   "itemTier": 2,
-  "name": "Restoration Draught",
-  "description": "2 charges: restore 300 health and 120 mana. 10s cooldown.",
   "model": "asset.models.props.neutral-loot-bundle",
   "icon": "asset.icons.item-restoration-draught",
   "stackLimit": 1,

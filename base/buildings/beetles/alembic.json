@@ -1,7 +1,5 @@
 {
   "id": "building.beetles.alembic",
-  "name": "Alembic",
-  "description": "Distillery of the specialists who handle substance through devices: trains Arcwrights, Menders and Wardens and researches Specialist Training. Requires a Great Bastion.",
   "model": "asset.models.buildings.beetles-alembic",
   "icon": "asset.portraits.buildings.beetles-alembic",
   "body": {

@@ -1,0 +1,11 @@
+{
+  "armor.heavy.name": "Heavy armor",
+  "armor.hero.name": "Hero armor",
+  "armor.light.name": "Light armor",
+  "armor.structure.name": "Building armor",
+  "damage.hero.name": "Hero attack",
+  "damage.melee.name": "Melee",
+  "damage.piercing.name": "Piercing",
+  "damage.siege.name": "Siege",
+  "damage.spell.name": "Spell"
+}

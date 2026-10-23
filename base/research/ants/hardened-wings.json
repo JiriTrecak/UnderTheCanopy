@@ -1,7 +1,5 @@
 {
   "id": "research.ants.hardened-wings",
-  "name": "Hardened Wings",
-  "description": "Alates gain 100 health and fly 20% faster.",
   "icon": "asset.icons.research-ants-hardened-wings",
   "priority": 60,
   "items": [

@@ -1,7 +1,5 @@
 {
   "id": "unit.beetles.mender",
-  "name": "Mender",
-  "description": "Field medic with a pressure syringe-gun and a welding torch. Mends beetles and machines; Field Repair after Specialist Training. Requires a Great Bastion; uses 2 supply.",
   "model": "asset.models.units.beetles-mender",
   "icon": "asset.portraits.units.beetles-mender",
   "selectionClass": "army",

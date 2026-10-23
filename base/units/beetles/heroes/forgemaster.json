@@ -1,7 +1,5 @@
 {
   "id": "unit.beetles.forgemaster",
-  "name": "Forgemaster",
-  "description": "Engineer hero with a smokestack helm and a back arm rig. Deploys Bolt Turrets, Overclocks allies, keeps a Field Forge burning around him and calls down Forgefall.",
   "model": "asset.models.units.beetles-forgemaster",
   "icon": "asset.portraits.units.beetles-forgemaster",
   "selectionClass": "army",

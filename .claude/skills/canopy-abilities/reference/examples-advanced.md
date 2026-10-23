@@ -8,7 +8,7 @@ The unit's own weapon fires once; cost/cooldown are paid at the real release; au
 
 ```json ability
 {
-  "id": "ability.example.frost-shot", "name": "Frost Shot", "activation": "targeted",
+  "id": "ability.example.frost-shot", "activation": "targeted",
   "weaponCast": {"bonus": {"rankParameter": "bonus"}, "weapon": "projectile", "status": "chilled"},
   "autocast": {"intervalTicks": 1, "enabledByDefault": false},
   "ranks": [{"bonus": 5, "slow": -300}, {"bonus": 10, "slow": -500}],
@@ -33,7 +33,7 @@ A toggle grants an `instance` status whose `combatModifiers.attackBonus` pays ma
 
 ```json ability
 {
-  "id": "ability.example.dusk-arrows", "name": "Dusk Arrows", "activation": "targeted",
+  "id": "ability.example.dusk-arrows", "activation": "targeted",
   "persistent": {"durationTicks": 144000, "intervalTicks": 400, "anchor": "caster", "endsWithCaster": true, "toggle": true},
   "ranks": [{"bonus": 10, "cost": 6}],
   "statuses": [{"op": "status", "target": "target", "filter": {"heroes": false, "natures": ["organic"]}, "id": "duskMark", "amount": 80, "polarity": "negative", "dispel": true}],
@@ -56,7 +56,7 @@ A toggle grants an `instance` status whose `combatModifiers.attackBonus` pays ma
 
 ```json ability
 {
-  "id": "ability.example.rot-curse", "name": "Rot Curse", "activation": "targeted",
+  "id": "ability.example.rot-curse", "activation": "targeted",
   "ranks": [{"damage": 40}],
   "targeting": {"kind": "unit", "relations": ["enemy"], "allowSelf": false, "alive": true, "visible": true, "range": 13, "outOfRange": "reject", "filter": {"heroes": false, "maxLevel": 5}},
   "cast": {"prepareTicks": 12, "recoverTicks": 8, "cost": {"resource": "mana", "amount": 150, "commit": "release"}, "cooldown": {"ticks": 4800, "start": "release", "scope": "ability"}, "cancelBeforeRelease": "refund", "revalidateAtRelease": ["caster", "target", "range", "visibility", "relationship"]},
@@ -76,7 +76,7 @@ Player-owned victims of any level, neutral creatures only up to level 5.
 
 ```json ability
 {
-  "id": "ability.example.pheromone-charm", "name": "Pheromone Charm", "activation": "targeted",
+  "id": "ability.example.pheromone-charm", "activation": "targeted",
   "ranks": [{}],
   "targeting": {"kind": "unit", "relations": ["enemy"], "allowSelf": false, "alive": true, "visible": true, "range": 14, "outOfRange": "reject",
     "filter": {"heroes": false, "natures": ["organic", "undead"]},
@@ -95,7 +95,7 @@ Swallow with digestion; a second self spell releases passengers (`releaseContain
 
 ```json ability
 {
-  "id": "ability.example.gullet", "name": "Gullet", "activation": "targeted",
+  "id": "ability.example.gullet", "activation": "targeted",
   "ranks": [{}],
   "targeting": {"kind": "unit", "relations": ["enemy"], "allowSelf": false, "alive": true, "visible": true, "range": 8, "outOfRange": "reject", "filter": {"heroes": false, "locomotion": ["ground"]}},
   "cast": {"prepareTicks": 12, "recoverTicks": 8, "cost": {"resource": "mana", "amount": 0, "commit": "release"}, "cooldown": {"ticks": 0, "start": "release", "scope": "ability"}, "cancelBeforeRelease": "refund", "revalidateAtRelease": ["caster", "target", "range", "visibility", "relationship"]},
@@ -116,7 +116,7 @@ Swallow with digestion; a second self spell releases passengers (`releaseContain
 
 ```json ability
 {
-  "id": "ability.example.colony-offering", "name": "Colony Offering", "activation": "targeted",
+  "id": "ability.example.colony-offering", "activation": "targeted",
   "ranks": [{"factor": 1000}, {"factor": 2000}],
   "targeting": {"kind": "unit", "relations": ["ally"], "allowSelf": false, "alive": true, "visible": true, "range": 12, "outOfRange": "reject", "filter": {"heroes": false}},
   "cast": {"prepareTicks": 10, "recoverTicks": 10, "cost": {"resource": "mana", "amount": 50, "commit": "release"}, "cooldown": {"ticks": 600, "start": "release", "scope": "ability"}, "cancelBeforeRelease": "refund", "revalidateAtRelease": ["caster", "target", "range", "visibility", "relationship"]},
@@ -159,7 +159,7 @@ Self-cast seekers bite visible enemies, carry drained health home and restore th
 
 ```json ability
 {
-  "id": "ability.example.gnat-cloud", "name": "Gnat Cloud", "activation": "targeted",
+  "id": "ability.example.gnat-cloud", "activation": "targeted",
   "delivery": {"kind": "swarm", "count": 12, "durationTicks": 800, "speed": 18, "radius": 16, "launchIntervalTicks": 8, "attackIntervalTicks": 20,
     "maxPerTarget": 4, "returnThreshold": 20, "returnPermille": 750, "maxHitsPerTrip": 4, "returnTimeoutTicks": 400},
   "ranks": [{}],
@@ -180,7 +180,7 @@ Self-cast seekers bite visible enemies, carry drained health home and restore th
 
 ```json ability
 {
-  "id": "ability.example.trinity", "name": "Trinity", "activation": "targeted",
+  "id": "ability.example.trinity", "activation": "targeted",
   "ranks": [{}],
   "targeting": {"kind": "self", "relations": ["ally"], "allowSelf": true, "alive": true, "visible": true, "range": 0, "outOfRange": "reject"},
   "cast": {"prepareTicks": 16, "recoverTicks": 8, "cost": {"resource": "mana", "amount": 125, "commit": "release"}, "cooldown": {"ticks": 4800, "start": "release", "scope": "ability"}, "cancelBeforeRelease": "refund", "revalidateAtRelease": ["caster", "target", "range", "visibility", "relationship"]},
@@ -199,7 +199,7 @@ Unseen point targeting needs `visible: false`. Pair with `"ai": {"intent": "scou
 
 ```json ability
 {
-  "id": "ability.example.far-antennae", "name": "Far Antennae", "activation": "targeted",
+  "id": "ability.example.far-antennae", "activation": "targeted",
   "ranks": [{"range": 128}],
   "targeting": {"kind": "point", "radius": 8, "relations": ["ally"], "allowSelf": false, "alive": true, "visible": false, "range": {"rankParameter": "range"}, "outOfRange": "reject"},
   "cast": {"prepareTicks": 8, "recoverTicks": 8, "cost": {"resource": "mana", "amount": 25, "commit": "release"}, "cooldown": {"ticks": 200, "start": "release", "scope": "ability"}, "cancelBeforeRelease": "refund", "revalidateAtRelease": ["caster", "target", "range", "visibility", "relationship"]},
@@ -223,7 +223,7 @@ Permanent detector (passive aura whose caster operation keeps a detection status
 
 ```json ability
 {
-  "id": "ability.example.keen-antennae", "name": "Keen Antennae", "activation": "passive",
+  "id": "ability.example.keen-antennae", "activation": "passive",
   "aura": {"radius": 1, "meleeOnly": false},
   "ranks": [{"radius": 12}],
   "targeting": {"kind": "self", "relations": ["ally"], "allowSelf": true, "alive": true, "visible": true, "range": 0, "outOfRange": "reject"},
@@ -237,7 +237,7 @@ Permanent detector (passive aura whose caster operation keeps a detection status
 
 ```json ability
 {
-  "id": "ability.example.challenge-hiss", "name": "Challenge Hiss", "activation": "targeted",
+  "id": "ability.example.challenge-hiss", "activation": "targeted",
   "ranks": [{"taunt": 100, "heroTaunt": 50, "armor": 6}],
   "targeting": {"kind": "self", "relations": ["ally"], "allowSelf": true, "alive": true, "visible": true, "range": 0, "outOfRange": "reject"},
   "cast": {"prepareTicks": 16, "recoverTicks": 20, "cost": {"resource": "mana", "amount": 65, "commit": "release"}, "cooldown": {"ticks": 520, "start": "release", "scope": "ability"}, "cancelBeforeRelease": "refund", "revalidateAtRelease": ["caster", "target", "range", "visibility", "relationship"]},
@@ -332,7 +332,7 @@ Auras cannot run periodic damage; a passive interval trigger with a query can.
 
 ```json ability
 {
-  "id": "ability.example.spore-halo", "name": "Spore Halo", "activation": "passive",
+  "id": "ability.example.spore-halo", "activation": "passive",
   "ranks": [{"damage": 6}],
   "targeting": {"kind": "self", "relations": ["ally"], "allowSelf": true, "alive": true, "visible": true, "range": 0, "outOfRange": "reject"},
   "cast": {"prepareTicks": 0, "recoverTicks": 0, "cost": {"resource": "mana", "amount": 0, "commit": "release"}, "cooldown": {"ticks": 0, "start": "release", "scope": "ability"}, "cancelBeforeRelease": "refund", "revalidateAtRelease": ["caster", "target", "range", "visibility", "relationship"]},

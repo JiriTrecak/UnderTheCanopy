@@ -1,7 +1,5 @@
 {
   "id": "research.ants.living-wall",
-  "name": "Living Wall",
-  "description": "Majors gain 2 armor, and their Guard cuts the damage small ants take by 25% instead of 15%.",
   "icon": "asset.icons.research-ants-living-wall",
   "priority": 70,
   "items": [

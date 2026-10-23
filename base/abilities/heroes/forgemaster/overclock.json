@@ -1,7 +1,5 @@
 {
   "id": "ability.forgemaster.overclock",
-  "name": "Overclock",
-  "description": "Pull the governor on an allied unit or machine: it attacks and moves 30/45/60% faster for 8 seconds.",
   "activation": "targeted",
   "ranks": [
     {

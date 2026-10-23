@@ -1,8 +1,6 @@
 {
   "id": "item.barkguard",
   "itemTier": 1,
-  "name": "Barkguard Charm",
-  "description": "+2 armor.",
   "model": "asset.models.props.neutral-loot-bundle",
   "icon": "asset.icons.item-barkguard",
   "stackLimit": 1,

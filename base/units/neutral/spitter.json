@@ -1,7 +1,5 @@
 {
   "id": "unit.neutral.spitter",
-  "name": "Spitter",
-  "description": "Hungry Weblings · ranged forest creature. A webbed hollow with rushing spiders and a silk-spitting defender.",
   "model": "asset.models.units.neutral-spitter",
   "icon": "asset.portraits.units.neutral-spitter",
   "selectionClass": "army",

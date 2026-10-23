@@ -1,7 +1,5 @@
 {
   "id": "unit.neutral.old-root",
-  "name": "Old Root",
-  "description": "Rootbound Guardians · ranged forest creature. Ancient roots defending an overgrown grove.",
   "model": "asset.models.units.neutral-old-root",
   "icon": "asset.portraits.units.neutral-old-root",
   "selectionClass": "army",

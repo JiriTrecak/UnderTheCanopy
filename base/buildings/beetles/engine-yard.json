@@ -1,7 +1,5 @@
 {
   "id": "building.beetles.engine-yard",
-  "name": "Engine Yard",
-  "description": "Machine works: builds Bombards, Steamwings and the Juggernaut, and researches Fragmentation Shells, Riveted Hulls and Afterburners. Requires a Great Bastion.",
   "model": "asset.models.buildings.beetles-engine-yard",
   "icon": "asset.portraits.buildings.beetles-engine-yard",
   "body": {

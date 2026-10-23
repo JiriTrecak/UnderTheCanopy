@@ -1,7 +1,5 @@
 {
   "id": "ability.ants.crystallise",
-  "name": "Crystallise",
-  "description": "Encase a unit in hardened substance for 2/3/4 seconds: an enemy is stunned (half as long on heroes); an ally cannot act but takes no damage.",
   "activation": "targeted",
   "ranks": [
     {

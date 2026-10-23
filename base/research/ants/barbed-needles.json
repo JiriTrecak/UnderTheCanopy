@@ -1,7 +1,5 @@
 {
   "id": "research.ants.barbed-needles",
-  "name": "Barbed Needles",
-  "description": "Needler hits lower the target's armor by 1 for 5 seconds, up to 3.",
   "icon": "asset.icons.research-ants-barbed-needles",
   "priority": 80,
   "items": [

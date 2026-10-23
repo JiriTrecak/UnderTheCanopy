@@ -1,7 +1,5 @@
 {
   "id": "building.beetles.war-lodge",
-  "name": "War Lodge",
-  "description": "Iron-clad barracks for Shieldbearers, Bolters and Breachers. Researches Interlocking Shields, Drum Magazines and Heavy Pistons.",
   "model": "asset.models.buildings.beetles-war-lodge",
   "icon": "asset.portraits.buildings.beetles-war-lodge",
   "body": {

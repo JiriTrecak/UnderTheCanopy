@@ -1,7 +1,5 @@
 {
   "id": "ability.ants.barbed-needles",
-  "name": "Barbed Needles",
-  "description": "Barbed needles stay in the wound: each hit lowers the target's armor by 1 for 5 seconds, up to 3. Learned at the Fungus Garden.",
   "activation": "passive",
   "combatModifiers": {
     "attackBonus": {

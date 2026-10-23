@@ -1,7 +1,5 @@
 {
   "id": "ability.ants.rampage",
-  "name": "Rampage",
-  "description": "Charge an enemy: on contact, 90 damage and a 0.75-second stun to every enemy within 4 units.",
   "activation": "targeted",
   "delivery": {
     "kind": "charge",

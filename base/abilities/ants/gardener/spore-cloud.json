@@ -1,7 +1,5 @@
 {
   "id": "ability.ants.spore-cloud",
-  "name": "Spore Cloud",
-  "description": "Release a cloud of choking spores for 8 seconds: enemies in it attack 40% slower and move 20% slower. Learned through Pheromone Mastery.",
   "activation": "targeted",
   "persistent": {
     "durationTicks": 320,

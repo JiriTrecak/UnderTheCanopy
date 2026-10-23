@@ -1,7 +1,5 @@
 {
   "id": "building.beetles.hornwatch",
-  "name": "Hornwatch",
-  "description": "Armored tower crewed by its own repeater gunner: shoots ground and air units for 24 damage, far harder than other races’ towers. Needs the substance network. Upgrades to the Arc Tower at tier 3.",
   "model": "asset.models.buildings.beetles-hornwatch",
   "icon": "asset.portraits.buildings.beetles-hornwatch",
   "body": {

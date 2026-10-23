@@ -1,7 +1,5 @@
 {
   "id": "building.ants.tower",
-  "name": "Acid Spire",
-  "description": "A spire with a Needler spitting from its mouth at ground and air units. Upgrades to the Venom Spire once the Queen's Chamber stands.",
   "model": "asset.models.buildings.ants-acid-spire",
   "icon": "asset.portraits.buildings.ants-acid-spire",
   "body": {

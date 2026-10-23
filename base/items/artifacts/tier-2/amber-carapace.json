@@ -1,8 +1,6 @@
 {
   "id": "item.amber-carapace",
   "itemTier": 2,
-  "name": "Amber Carapace",
-  "description": "+4 armor. Activate: absorb 180 damage for up to 8s. 45s cooldown.",
   "model": "asset.models.props.neutral-loot-bundle",
   "icon": "asset.icons.item-amber-carapace",
   "stackLimit": 1,

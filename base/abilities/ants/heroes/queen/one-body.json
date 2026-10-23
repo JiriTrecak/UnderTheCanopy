@@ -1,7 +1,5 @@
 {
   "id": "ability.ants.one-body",
-  "name": "One Body",
-  "description": "The colony is one body: allies within 10 units of the Queen, the Queen too, take 10/15/20% less damage.",
   "activation": "passive",
   "aura": {
     "radius": 10,

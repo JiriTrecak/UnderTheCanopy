@@ -1,8 +1,6 @@
 {
   "id": "item.amber-hourglass",
   "itemTier": 3,
-  "name": "Hourglass of Amber",
-  "description": "+100 maximum mana. Activate: reduce remaining hero ability cooldowns by 12s. Does not affect items. 100s cooldown.",
   "model": "asset.models.props.neutral-loot-bundle",
   "icon": "asset.icons.item-amber-hourglass",
   "stackLimit": 1,

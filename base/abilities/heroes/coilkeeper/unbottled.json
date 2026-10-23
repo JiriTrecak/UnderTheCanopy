@@ -1,7 +1,5 @@
 {
   "id": "ability.coilkeeper.unbottled",
-  "name": "Unbottled",
-  "description": "Shatter the lantern. For 6 seconds a violet storm stands around the Coilkeeper: enemies within 14 units are dragged towards her, enemies within 7 are lifted off the ground and stunned, and arcs strike up to 6 enemies for 16/24 spell damage five times a second. Allies inside are shielded for 220/320 damage.",
   "activation": "targeted",
   "persistent": {
     "durationTicks": 240,

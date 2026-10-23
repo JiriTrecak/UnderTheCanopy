@@ -1,11 +1,9 @@
 {
   "id": "ants",
-  "name": "Ants",
   "hud": {
     "frame": "image.woodland-connected-hud",
     "resources": "asset.interface.woodland.resource-ribbon"
   },
-  "description": "One body, ten thousand legs: a swarm of cheap, fast castes that travels underground between its mounds, with mutated monsters at the top of the colony.",
   "startingSetup": {
     "fort": "building.ants.fort",
     "inventory": {

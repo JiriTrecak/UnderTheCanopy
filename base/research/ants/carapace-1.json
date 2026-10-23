@@ -1,7 +1,5 @@
 {
   "id": "research.ants.carapace-1",
-  "name": "Carapace I",
-  "description": "Ant troops gain 1 armor (level I; levels add up).",
   "icon": "asset.icons.research-ants-carapace-1",
   "priority": 80,
   "items": [

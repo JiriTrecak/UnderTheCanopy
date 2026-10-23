@@ -1,7 +1,5 @@
 {
   "id": "ability.ants.rupture",
-  "name": "Rupture",
-  "description": "Burst now, wherever the Burster stands (Unstable deals the damage).",
   "activation": "targeted",
   "ranks": [
     {}

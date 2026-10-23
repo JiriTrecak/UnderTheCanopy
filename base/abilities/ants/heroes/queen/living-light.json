@@ -1,7 +1,5 @@
 {
   "id": "ability.ants.living-light",
-  "name": "Living Light",
-  "description": "The Queen's living light: it heals an ally 200/400/600 health, or sears an enemy for 100/200/300 spell damage. It never touches the Queen herself.",
   "activation": "targeted",
   "ranks": [
     {

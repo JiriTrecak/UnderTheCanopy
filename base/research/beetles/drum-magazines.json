@@ -1,7 +1,5 @@
 {
   "id": "research.beetles.drum-magazines",
-  "name": "Drum Magazines",
-  "description": "Bolters attack 25% faster.",
   "icon": "asset.icons.research-beetles-drum-magazines",
   "priority": 75,
   "items": [

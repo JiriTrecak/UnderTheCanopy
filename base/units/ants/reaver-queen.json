@@ -1,7 +1,5 @@
 {
   "id": "unit.ants.reaver-queen",
-  "name": "Reaver Queen",
-  "description": "Mutated: the colony's ultimate monster, one at a time. Devours enemies whole, Rampages through their lines, and Molts to heal; nearby ants attack faster in her presence. Ravenous: she starves without prey, Gardeners cannot heal her, and she is too big for the tunnels. Requires the Queen's Chamber; uses 8 supply.",
   "model": "asset.models.units.ants-reaver-queen",
   "icon": "asset.portraits.units.ants-reaver-queen",
   "selectionClass": "army",

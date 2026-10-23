@@ -1,7 +1,5 @@
 {
   "id": "building.beetles.bastion",
-  "name": "Bastion",
-  "description": "The beetle colony’s iron-clad main hall: stores goods, trains Tinkers, provides 15 supply and feeds the substance network. Upgrades to the Great Bastion.",
   "model": "asset.models.buildings.beetles-bastion",
   "icon": "asset.portraits.buildings.beetles-bastion",
   "body": {

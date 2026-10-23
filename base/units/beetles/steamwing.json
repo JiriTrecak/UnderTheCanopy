@@ -1,7 +1,5 @@
 {
   "id": "unit.beetles.steamwing",
-  "name": "Steamwing",
-  "description": "Boiler-winged flyer: a scout and anti-air harasser whose chin emitter fires violet bolts at ground and air. Flak Beam adds damage against flyers. Requires a Great Bastion; uses 3 supply.",
   "model": "asset.models.units.beetles-steamwing",
   "icon": "asset.portraits.units.beetles-steamwing",
   "selectionClass": "army",

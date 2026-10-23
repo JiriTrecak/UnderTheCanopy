@@ -1,11 +1,9 @@
 {
   "id": "beetles",
-  "name": "Beetles",
   "hud": {
     "frame": "asset.interface.beetles.connected-hud",
     "resources": "asset.interface.beetles.resource-ribbon"
   },
-  "description": "Slow, stubborn and territorial: expensive, durable troops and machines that run on substance they never let touch them.",
   "startingSetup": {
     "fort": "building.beetles.bastion",
     "inventory": {
@@ -87,7 +85,6 @@
     "unit.beetles.bolt-turret-mk2",
     "unit.beetles.hornwatch-gunner",
     "unit.beetles.arc-coil",
-    "unit.beetles.supply-cart",
     "building.beetles.bastion",
     "building.beetles.great-bastion",
     "building.beetles.elder-bastion",

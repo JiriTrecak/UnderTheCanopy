@@ -1,7 +1,5 @@
 {
   "id": "unit.neutral.seedcaster",
-  "name": "Seedcaster",
-  "description": "Briar Covenant · ranged forest creature. Hostile thorn growth animated into a fighting grove.",
   "model": "asset.models.units.neutral-seedcaster",
   "icon": "asset.portraits.units.neutral-seedcaster",
   "selectionClass": "army",

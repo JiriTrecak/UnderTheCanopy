@@ -13,6 +13,9 @@ pub struct Use {
     pub pointer: String,
     /// An object key rather than a value.
     pub key: bool,
+    /// For a key in the text library that holds the id inside it (`unit.x.name`,
+    /// `race.x.description`, D96): what stands before and after the id.
+    pub around: Option<(String, String)>,
 }
 
 fn token(key: &str) -> String {
@@ -24,12 +27,26 @@ pub fn find(document: &str, value: &Value, id: &str, out: &mut Vec<Use>) {
     walk(document, value, id, String::new(), out);
 }
 
+/// A text library key naming `id` (`<id>.<field>` or `race.<id>.<field>`) in a text file:
+/// what stands before and after the id.
+fn text_key(document: &str, key: &str, id: &str) -> Option<(String, String)> {
+    if !document.contains("text/") {
+        return None;
+    }
+    ["", "race."].iter().find_map(|prefix| {
+        let rest = key.strip_prefix(prefix)?.strip_prefix(id)?;
+        rest.starts_with('.')
+            .then(|| (prefix.to_string(), rest.to_string()))
+    })
+}
+
 fn walk(document: &str, value: &Value, id: &str, pointer: String, out: &mut Vec<Use>) {
     match value {
         Value::String(text) if text == id => out.push(Use {
             document: document.to_string(),
             pointer,
             key: false,
+            around: None,
         }),
         Value::Array(items) => {
             for (i, item) in items.iter().enumerate() {
@@ -44,6 +61,16 @@ fn walk(document: &str, value: &Value, id: &str, pointer: String, out: &mut Vec<
                         document: document.to_string(),
                         pointer: child.clone(),
                         key: true,
+                        around: None,
+                    });
+                } else if pointer.is_empty()
+                    && let Some(around) = text_key(document, key, id)
+                {
+                    out.push(Use {
+                        document: document.to_string(),
+                        pointer: child.clone(),
+                        key: true,
+                        around: Some(around),
                     });
                 }
                 walk(document, item, id, child, out);
@@ -96,15 +123,19 @@ pub fn rename(
         let Some(at) = object.keys().position(|k| *k == old) else {
             continue;
         };
+        let renamed = match &u.around {
+            Some((before, after)) => format!("{before}{new}{after}"),
+            None => new.to_string(),
+        };
         let value = object.shift_remove(&old).expect("present");
-        object.shift_insert(at, new.to_string(), value.clone());
+        object.shift_insert(at, renamed.clone(), value.clone());
         commands.push(Command::Remove {
             document: u.document.clone(),
             pointer: u.pointer.clone(),
         });
         commands.push(Command::Set {
             document: u.document.clone(),
-            pointer: format!("{parent}/{}", token(new)),
+            pointer: format!("{parent}/{}", token(&renamed)),
             value,
             at: Some(at),
         });
@@ -117,6 +148,40 @@ mod tests {
     use super::*;
     use crate::document::{Context, Store, format};
     use serde_json::json;
+
+    #[test]
+    fn renames_carry_the_text_library_keys() {
+        let text = json!({
+            "unit.knight.name": "Knight",
+            "unit.knight.description": "Rides.",
+            "unit.knighted.name": "Not this one",
+            "race.unit.knight.name": "Odd but carried"
+        });
+        let mut uses = Vec::new();
+        find("text/en/units.json", &text, "unit.knight", &mut uses);
+        assert_eq!(uses.len(), 3, "{uses:?}");
+        let commands = rename(&uses, "unit.paladin", |_| Some(text.clone()));
+        let set: Vec<String> = commands
+            .iter()
+            .filter_map(|c| match c {
+                Command::Set { pointer, .. } => Some(pointer.clone()),
+                _ => None,
+            })
+            .collect();
+        assert!(set.contains(&"/unit.paladin.name".to_string()), "{set:?}");
+        assert!(
+            set.contains(&"/unit.paladin.description".to_string()),
+            "{set:?}"
+        );
+        assert!(
+            set.contains(&"/race.unit.paladin.name".to_string()),
+            "{set:?}"
+        );
+        // Outside the text library, keys must equal the id.
+        let mut elsewhere = Vec::new();
+        find("units/knight.json", &text, "unit.knight", &mut elsewhere);
+        assert!(elsewhere.is_empty());
+    }
 
     #[test]
     fn renames_values_and_keys_in_place() {

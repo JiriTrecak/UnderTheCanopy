@@ -1,7 +1,5 @@
 {
   "id": "building.neutral.dew-spring",
-  "name": "Dew Spring",
-  "description": "Dew heavy with the forest's magic gathers in a stone bowl. Every unit near it slowly regains its mana.",
   "model": "asset.models.props.neutral-dew-spring",
   "icon": "asset.portraits.buildings.neutral-dew-spring",
   "footprint": {

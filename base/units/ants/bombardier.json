@@ -1,7 +1,5 @@
 {
   "id": "unit.ants.bombardier",
-  "name": "Honeypot",
-  "description": "Mutated: a swollen amber replete fused with its carriers. Lobs bursting nectar globs over long range, but cannot fire at anything within 7 units, is slow, and too bloated for the tunnels. Requires a Great Nest; uses 3 supply.",
   "model": "asset.models.units.ants-honeypot",
   "icon": "asset.portraits.units.ants-honeypot",
   "selectionClass": "army",

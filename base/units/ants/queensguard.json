@@ -1,7 +1,5 @@
 {
   "id": "unit.ants.queensguard",
-  "name": "Major",
-  "description": "The colony's armoured tank, with a huge armoured head and a great shield. Guard: small ants beside it take less damage. Plug: it plants its head like a door and holds. Requires a Great Nest; uses 3 supply.",
   "model": "asset.models.units.ants-major",
   "icon": "asset.portraits.units.ants-major",
   "selectionClass": "army",

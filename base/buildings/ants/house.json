@@ -1,7 +1,5 @@
 {
   "id": "building.ants.house",
-  "name": "Brood Mound",
-  "description": "Brood chambers around a tunnel shaft: provides 8 supply and is a tunnel mound. Researches Wider Tunnels.",
   "model": "asset.models.buildings.ants-brood-mound",
   "icon": "asset.portraits.buildings.ants-brood-mound",
   "body": {

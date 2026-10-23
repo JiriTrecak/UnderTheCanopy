@@ -1,7 +1,5 @@
 {
   "id": "unit.neutral.tree-frog",
-  "name": "Tree Frog",
-  "description": "Bog Toad Hunters · ranged forest creature. Large amphibians and pond spirits hunting at the waterline.",
   "model": "asset.models.units.neutral-tree-frog",
   "icon": "asset.portraits.units.neutral-tree-frog",
   "selectionClass": "army",

@@ -1,8 +1,6 @@
 {
   "id": "item.stormwing-spurs",
   "itemTier": 2,
-  "name": "Stormwing Spurs",
-  "description": "+10% movement speed and +12% attack speed.",
   "model": "asset.models.props.neutral-loot-bundle",
   "icon": "asset.icons.item-stormwing-spurs",
   "stackLimit": 1,

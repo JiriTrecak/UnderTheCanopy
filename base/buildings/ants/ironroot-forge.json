@@ -1,7 +1,5 @@
 {
   "id": "building.ants.ironroot-forge",
-  "name": "Chitin Works",
-  "description": "Grows weapons and armour for the colony: Mandibles, Needle Hardening and Carapace, three levels each. Level II needs a Great Nest, level III the Queen's Chamber.",
   "model": "asset.models.buildings.ants-chitin-works",
   "icon": "asset.portraits.buildings.ants-chitin-works",
   "body": {

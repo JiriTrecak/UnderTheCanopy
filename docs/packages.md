@@ -77,6 +77,7 @@ base/
 │  ├─ biomes/
 │  └─ water/
 ├─ assets/                 one folder per asset (see Assets)
+├─ text/en/                every player-facing string, keyed (D96; skill canopy-packages)
 ├─ campaigns/              <name>.utcc
 └─ maps/                   e.g. skirmish/frozen-dream.utcm
 ```

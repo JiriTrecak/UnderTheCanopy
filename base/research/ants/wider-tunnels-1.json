@@ -1,7 +1,5 @@
 {
   "id": "research.ants.wider-tunnels-1",
-  "name": "Wider Tunnels I",
-  "description": "Every mound lets 50% more ants into the tunnels each second (level I; levels add up).",
   "icon": "asset.icons.research-ants-wider-tunnels-1",
   "priority": 50,
   "items": [

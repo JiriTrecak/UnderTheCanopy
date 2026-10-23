@@ -1,7 +1,5 @@
 {
   "id": "ability.ants.molt",
-  "name": "Molt",
-  "description": "Shed the old carapace: heal 35% of her health and move 30% faster for 10 seconds, with 3 less armor until the new one hardens.",
   "activation": "targeted",
   "ranks": [
     {}

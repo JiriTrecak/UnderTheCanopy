@@ -1,7 +1,5 @@
 {
   "id": "unit.ants.royal-alchemist",
-  "name": "Royal Alchemist",
-  "description": "Distils substance in her own body. Throws Volatile Draughts, moves life from foe to friend with Transfusion, Crystallises friend or foe and, at the last, drives the army into an Overdose.",
   "model": "asset.models.units.ants-royal-alchemist",
   "icon": "asset.portraits.units.ants-royal-alchemist",
   "hero": true,

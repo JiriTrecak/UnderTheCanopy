@@ -1,7 +1,5 @@
 {
   "id": "unit.neutral.root-seer",
-  "name": "Root Seer",
-  "description": "The Rotwood Court · ranged forest creature. A corrupted ancient surrounded by rootbeasts and violet spores.",
   "model": "asset.models.units.neutral-root-seer",
   "icon": "asset.portraits.units.neutral-root-seer",
   "selectionClass": "army",

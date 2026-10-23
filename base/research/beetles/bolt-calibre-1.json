@@ -1,7 +1,5 @@
 {
   "id": "research.beetles.bolt-calibre-1",
-  "name": "Bolt Calibre I",
-  "description": "Bolters, Steamwings, Hornwatch gunners and Bolt Turrets deal 12% more attack damage (level I; levels add up).",
   "icon": "asset.icons.research-beetles-bolt-calibre-1",
   "priority": 85,
   "items": [

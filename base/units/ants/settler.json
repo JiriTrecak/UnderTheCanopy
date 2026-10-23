@@ -1,7 +1,5 @@
 {
   "id": "unit.ants.settler",
-  "name": "Worker",
-  "description": "Gathers amber, builds the colony and, like every ant, travels through the tunnels. Uses 1 supply.",
   "model": "asset.models.units.ants-forager",
   "icon": "asset.portraits.units.ants-forager",
   "selectionClass": "worker",

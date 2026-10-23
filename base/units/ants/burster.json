@@ -1,7 +1,5 @@
 {
   "id": "unit.ants.burster",
-  "name": "Burster",
-  "description": "Mutated: a huge sloshing sac of liquid substance on legs. It bursts on its first bite, or on command, for heavy damage to enemies and buildings around it, and hurts nearby allies too. Too bloated for the tunnels. Requires a Great Nest; uses 1 supply.",
   "model": "asset.models.units.ants-burster",
   "icon": "asset.portraits.units.ants-burster",
   "selectionClass": "army",

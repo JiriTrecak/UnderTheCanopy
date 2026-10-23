@@ -1,7 +1,5 @@
 {
   "id": "building.neutral.sap-spring",
-  "name": "Sap Spring",
-  "description": "Golden healing sap wells up from an old root. Every unit near it slowly regains its health.",
   "model": "asset.models.props.neutral-sap-spring",
   "icon": "asset.portraits.buildings.neutral-sap-spring",
   "footprint": {

@@ -178,11 +178,113 @@ impl DataFolder {
                 &Value::Object(e),
             );
         }
+        extract_text(&root.join(crate::BASE_DIR));
         root
     }
 
     pub fn load(&self, name: &str) -> Result<Content, Errors> {
         Content::load(&self.write(name))
+    }
+}
+
+/// Moves the names and descriptions written into a test package's content files into its
+/// text library (`text/en/content.json`, D96), as `tools/text/migrate_content.py` does for
+/// shipped packages, so tests keep writing their elements whole.
+pub fn extract_text(package: &std::path::Path) {
+    use serde_json::Map;
+    let mut text = Map::new();
+    let read = |path: &std::path::Path| -> Value {
+        serde_json::from_str(&std::fs::read_to_string(path).unwrap()).unwrap()
+    };
+    let write = |path: &std::path::Path, value: &Value| {
+        std::fs::write(path, serde_json::to_string_pretty(value).unwrap()).unwrap()
+    };
+    fn files(dir: &std::path::Path, out: &mut Vec<std::path::PathBuf>) {
+        let Ok(entries) = std::fs::read_dir(dir) else {
+            return;
+        };
+        for entry in entries.flatten() {
+            let path = entry.path();
+            if path.is_dir() {
+                files(&path, out);
+            } else if path.extension().is_some_and(|e| e == "json") {
+                out.push(path);
+            }
+        }
+    }
+    let mut take = |value: &mut Value, key: &str, fields: &[&str]| {
+        if let Some(object) = value.as_object_mut() {
+            for field in fields {
+                if let Some(string) = object.remove(*field) {
+                    text.insert(format!("{key}.{field}"), string);
+                }
+            }
+        }
+    };
+    for folder in [
+        "units",
+        "buildings",
+        "items",
+        "resources",
+        "abilities",
+        "research",
+        "races",
+    ] {
+        let mut found = Vec::new();
+        files(&package.join(folder), &mut found);
+        for path in found {
+            let mut value = read(&path);
+            let Some(id) = value.get("id").and_then(Value::as_str).map(str::to_string) else {
+                continue;
+            };
+            let key = if folder == "races" {
+                format!("race.{id}")
+            } else {
+                id
+            };
+            take(&mut value, &key, &["name", "description"]);
+            write(&path, &value);
+        }
+    }
+    let commands = package.join("rules/commands.json");
+    if commands.exists() {
+        let mut value = read(&commands);
+        for (group, prefix) in [
+            ("actions", "command."),
+            ("categories", ""),
+            ("navigation", "navigation."),
+        ] {
+            if let Some(Value::Object(entries)) = value.get_mut(group) {
+                for (id, entry) in entries.iter_mut() {
+                    take(entry, &format!("{prefix}{id}"), &["name", "description"]);
+                }
+            }
+        }
+        write(&commands, &value);
+    }
+    let combat = package.join("rules/combat.json");
+    if combat.exists() {
+        let mut value = read(&combat);
+        for (field, prefix) in [("armorTypes", "armor"), ("damageTypes", "damage")] {
+            if let Some(Value::Object(types)) = value.get_mut(field) {
+                for (id, entry) in types.iter_mut() {
+                    take(entry, &format!("{prefix}.{id}"), &["name"]);
+                }
+            }
+        }
+        write(&combat, &value);
+    }
+    if !text.is_empty() {
+        let dir = package.join(crate::text::folder(crate::text::SOURCE_LANGUAGE));
+        std::fs::create_dir_all(&dir).unwrap();
+        let path = dir.join("content.json");
+        let mut existing = if path.exists() {
+            read(&path).as_object().cloned().unwrap_or_default()
+        } else {
+            Map::new()
+        };
+        existing.extend(text);
+        write(&path, &Value::Object(existing));
     }
 }
 

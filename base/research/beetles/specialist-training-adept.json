@@ -1,7 +1,5 @@
 {
   "id": "research.beetles.specialist-training-adept",
-  "name": "Specialist Training: Adept",
-  "description": "Arcwrights learn Static Field, Menders Field Repair and Wardens Bulwark Pulse.",
   "icon": "asset.icons.research-beetles-specialist-training-adept",
   "priority": 80,
   "items": [

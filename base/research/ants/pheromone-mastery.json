@@ -1,7 +1,5 @@
 {
   "id": "research.ants.pheromone-mastery",
-  "name": "Pheromone Mastery",
-  "description": "Heralds learn Panic and Gardeners learn Spore Cloud.",
   "icon": "asset.icons.research-ants-pheromone-mastery",
   "priority": 85,
   "requires": [

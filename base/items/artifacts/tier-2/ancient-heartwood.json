@@ -1,8 +1,6 @@
 {
   "id": "item.ancient-heartwood",
   "itemTier": 2,
-  "name": "Ancient Heartwood",
-  "description": "+280 maximum health and +2 health per second.",
   "model": "asset.models.props.neutral-loot-bundle",
   "icon": "asset.icons.item-ancient-heartwood",
   "stackLimit": 1,

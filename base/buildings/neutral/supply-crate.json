@@ -1,7 +1,5 @@
 {
   "id": "building.neutral.supply-crate",
-  "name": "Beetle Supply Crate",
-  "description": "A riveted crate a beetle column left behind on the march. Break it open for what it holds.",
   "model": "asset.models.props.neutral-supply-crate",
   "icon": "asset.portraits.buildings.neutral-supply-crate",
   "footprint": {

@@ -1,7 +1,5 @@
 {
   "id": "unit.ants.thornblade",
-  "name": "Bullet Ant",
-  "description": "Elite duellist with a bristling mane, hunting the biggest prey: +15 damage against heroes and large units. Agony: a sting that stuns, then slows and weakens. Requires the Queen's Chamber; uses 3 supply.",
   "model": "asset.models.units.ants-bullet-ant",
   "icon": "asset.portraits.units.ants-bullet-ant",
   "selectionClass": "army",

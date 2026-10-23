@@ -1,7 +1,5 @@
 {
   "id": "research.beetles.riveted-hulls-1",
-  "name": "Riveted Hulls I",
-  "description": "Machines gain health: Bombards +100, Steamwings +80, the Juggernaut +450.",
   "icon": "asset.icons.research-beetles-riveted-hulls-1",
   "priority": 70,
   "items": [

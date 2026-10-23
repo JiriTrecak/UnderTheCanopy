@@ -1,7 +1,5 @@
 {
   "id": "unit.neutral.thorn-slinger",
-  "name": "Thorn Slinger",
-  "description": "Thornback Foragers · ranged forest creature. Bramble-nesting rodents that guard berries and fling thorns.",
   "model": "asset.models.units.neutral-thorn-slinger",
   "icon": "asset.portraits.units.neutral-thorn-slinger",
   "selectionClass": "army",

@@ -1,7 +1,5 @@
 {
   "id": "ability.ants.corrosion",
-  "name": "Corrosion",
-  "description": "Venom eats armor: each hit lowers the target's armor by 2 for 5 seconds.",
   "activation": "passive",
   "combatModifiers": {
     "attackBonus": {

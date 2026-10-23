@@ -1,8 +1,6 @@
 {
   "id": "item.trailkeeper-flask",
   "itemTier": 1,
-  "name": "Trailkeeper’s Flask",
-  "description": "3 charges: restore 70 health and 25 mana. 10s cooldown between uses.",
   "model": "asset.models.props.neutral-loot-bundle",
   "icon": "asset.icons.item-trailkeeper-flask",
   "stackLimit": 1,

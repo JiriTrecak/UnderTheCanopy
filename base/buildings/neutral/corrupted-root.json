@@ -1,7 +1,5 @@
 {
   "id": "building.neutral.corrupted-root",
-  "name": "Substance Deposit",
-  "description": "The forest's raw magic wells up here and never runs out. Build a Substance Well on it: the well pumps Substance by itself, with no workers. When the well falls, the deposit remains.",
   "model": "asset.models.resources.substance-deposit",
   "icon": "asset.portraits.resources.substance-deposit",
   "footprint": {

@@ -1,7 +1,5 @@
 {
   "id": "ability.beetles.furnace-plating",
-  "name": "Furnace Plating",
-  "description": "Riveted furnace plates shrug off magic: spell damage taken is reduced by 30%.",
   "activation": "passive",
   "aura": {
     "radius": 1,

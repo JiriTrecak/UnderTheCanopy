@@ -1,7 +1,5 @@
 {
   "id": "ability.beetles.flak-beam",
-  "name": "Flak Beam",
-  "description": "The substance beam is tuned against flyers: +10 damage against air units.",
   "activation": "passive",
   "combatModifiers": {
     "attackBonus": {

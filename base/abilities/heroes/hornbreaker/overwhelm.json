@@ -1,7 +1,5 @@
 {
   "id": "ability.hornbreaker.overwhelm",
-  "name": "Overwhelm",
-  "description": "Each damaging primary melee hit marks its target for six seconds, stacking three times. Subsequent basic attacks from this hero gain 5/10/15 damage per stack; the target loses 5/7/10% movement per stack. First hit has no bonus. Hits refresh all stacks; allies do not gain the damage bonus.",
   "activation": "passive",
   "combatModifiers": {
     "attackBonus": {

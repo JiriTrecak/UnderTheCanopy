@@ -1,7 +1,5 @@
 {
   "id": "building.beetles.substance-well",
-  "name": "Substance Well",
-  "description": "Built on a Substance Deposit. Pumps 10 Substance every 5 seconds by itself; no workers needed. When it falls, the deposit remains.",
   "model": "asset.models.buildings.beetles-substance-well",
   "icon": "asset.portraits.buildings.beetles-substance-well",
   "body": {

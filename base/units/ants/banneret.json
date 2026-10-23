@@ -1,7 +1,5 @@
 {
   "id": "unit.ants.banneret",
-  "name": "Herald",
-  "description": "Pheromone caster with a crown of golden feathers. Trail speeds allies along the ground, Alarm drives them into a fury, and Panic, learned through Pheromone Mastery, leaves enemies unable to fight. Requires a Great Nest; uses 2 supply.",
   "model": "asset.models.units.ants-herald",
   "icon": "asset.portraits.units.ants-herald",
   "selectionClass": "army",

@@ -156,40 +156,54 @@ pub fn show(ui: &mut Ui, dock: &mut DockState<Doc>, inspect: Inspect) -> Option<
                     .and_then(Value::as_str)
                     .map(str::to_string)
             };
-            match field_of("name") {
-                Some(name) => {
-                    ui.label(RichText::new("Name").color(MUTED).size(11.0));
-                    let id = Id::new(("name-field", &doc.document));
-                    if !ui.memory(|m| m.has_focus(id)) {
-                        doc.name_field = name.clone();
+            let named = value
+                .as_ref()
+                .and_then(|v| crate::text::key(&doc.document, v))
+                .zip(crate::text::file(&doc.document));
+            if let Some((key, file)) = named {
+                text_fields(
+                    ui,
+                    (inspect.kind, &mut *inspect.store, &mut *inspect.edits),
+                    doc,
+                    &key,
+                    &file,
+                );
+            } else {
+                match field_of("name") {
+                    Some(name) => {
+                        ui.label(RichText::new("Name").color(MUTED).size(11.0));
+                        let id = Id::new(("name-field", &doc.document));
+                        if !ui.memory(|m| m.has_focus(id)) {
+                            doc.name_field = name.clone();
+                        }
+                        let response = ui.add(
+                            TextEdit::singleline(&mut doc.name_field)
+                                .id(id)
+                                .desired_width(f32::INFINITY)
+                                .margin(Margin::symmetric(8, 6)),
+                        );
+                        // Committed as it is typed (one undo step), so a click elsewhere or a
+                        // save never loses it.
+                        if response.changed() && doc.name_field != name {
+                            inspect.edits.push(Edit {
+                                label: format!("Rename {name}"),
+                                context: Context {
+                                    editor: inspect.kind,
+                                    document: doc.document.clone(),
+                                    pointer: Some("/name".into()),
+                                },
+                                commands: vec![Command::Set {
+                                    document: doc.document.clone(),
+                                    pointer: "/name".into(),
+                                    value: Value::String(doc.name_field.clone()),
+                                    at: None,
+                                }],
+                                merge: Some(format!("{}/name", doc.document)),
+                            });
+                        }
                     }
-                    let response = ui.add(
-                        TextEdit::singleline(&mut doc.name_field)
-                            .id(id)
-                            .desired_width(f32::INFINITY)
-                            .margin(Margin::symmetric(8, 6)),
-                    );
-                    // Committed as it is typed (one undo step), so a click elsewhere or a
-                    // save never loses it.
-                    if response.changed() && doc.name_field != name {
-                        inspect.edits.push(Edit {
-                            label: format!("Rename {name}"),
-                            context: Context {
-                                editor: inspect.kind,
-                                document: doc.document.clone(),
-                                pointer: Some("/name".into()),
-                            },
-                            commands: vec![Command::Set {
-                                document: doc.document.clone(),
-                                pointer: "/name".into(),
-                                value: Value::String(doc.name_field.clone()),
-                                at: None,
-                            }],
-                            merge: Some(format!("{}/name", doc.document)),
-                        });
-                    }
+                    None => field(ui, "Name", &doc.name, false),
                 }
-                None => field(ui, "Name", &doc.name, false),
             }
             let id = field_of("id").unwrap_or_else(|| doc.id.clone());
             field(ui, "Id", &id, true);
@@ -238,4 +252,76 @@ pub fn show(ui: &mut Ui, dock: &mut DockState<Doc>, inspect: Inspect) -> Option<
             }
         });
     request
+}
+
+/// A named element's name and description, edited in its package's text library (D96):
+/// each keystroke is one undoable edit of the text file, created when it is missing.
+fn text_fields(
+    ui: &mut Ui,
+    (kind, store, edits): (Kind, &mut Store, &mut Vec<Edit>),
+    doc: &mut Doc,
+    key: &str,
+    file: &str,
+) {
+    let text = store.get(file).ok().flatten().cloned();
+    for (field, multiline) in [("name", false), ("description", true)] {
+        let entry = format!("{key}.{field}");
+        let current = text
+            .as_ref()
+            .and_then(|t| t.get(&entry))
+            .and_then(Value::as_str)
+            .unwrap_or_default()
+            .to_string();
+        ui.label(
+            RichText::new(if multiline { "Description" } else { "Name" })
+                .color(MUTED)
+                .size(11.0),
+        );
+        let id = Id::new((field, "text-field", &doc.document));
+        let buffer = if multiline {
+            &mut doc.description_field
+        } else {
+            &mut doc.name_field
+        };
+        if !ui.memory(|m| m.has_focus(id)) {
+            *buffer = current.clone();
+        }
+        let edit = if multiline {
+            TextEdit::multiline(buffer).desired_rows(3)
+        } else {
+            TextEdit::singleline(buffer)
+        };
+        let response = ui.add(
+            edit.id(id)
+                .desired_width(f32::INFINITY)
+                .margin(Margin::symmetric(8, 6)),
+        );
+        if response.changed() && *buffer != current {
+            let value = Value::String(buffer.clone());
+            let command = if text.is_some() {
+                Command::Set {
+                    document: file.to_string(),
+                    pointer: crate::text::pointer(&entry),
+                    value,
+                    at: None,
+                }
+            } else {
+                Command::Create {
+                    document: file.to_string(),
+                    value: serde_json::json!({ entry.clone(): value }),
+                }
+            };
+            edits.push(Edit {
+                label: format!("Edit {entry}"),
+                context: Context {
+                    editor: kind,
+                    document: file.to_string(),
+                    pointer: Some(crate::text::pointer(&entry)),
+                },
+                commands: vec![command],
+                merge: Some(format!("{file}#{entry}")),
+            });
+        }
+        ui.add_space(4.0);
+    }
 }

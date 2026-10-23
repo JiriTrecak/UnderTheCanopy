@@ -1,7 +1,5 @@
 {
   "id": "building.neutral.seed-pod",
-  "name": "Fallen Seed Pod",
-  "description": "A woody husk fallen from the canopy, sweet sap still glowing between its seeds. Crack it open for a salve.",
   "model": "asset.models.props.neutral-seed-pod",
   "icon": "asset.portraits.buildings.neutral-seed-pod",
   "footprint": {

@@ -1,7 +1,5 @@
 {
   "id": "unit.neutral.puddle-wisp",
-  "name": "Puddle Wisp",
-  "description": "Dewdrop Sprites · melee forest creature. Fragile water spirits gathered around wet leaves.",
   "model": "asset.models.units.neutral-puddle-wisp",
   "icon": "asset.portraits.units.neutral-puddle-wisp",
   "selectionClass": "army",

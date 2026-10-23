@@ -1,7 +1,5 @@
 {
   "id": "item.amber",
-  "name": "Amber",
-  "description": "Precious forest resin mined from ancient roots and carried to the Mound.",
   "model": "asset.models.cargo.amber",
   "icon": "asset.icons.resource-amber",
   "stackLimit": 16,

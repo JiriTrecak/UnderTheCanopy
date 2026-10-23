@@ -1,8 +1,6 @@
 {
   "id": "item.firefly-pendant",
   "itemTier": 1,
-  "name": "Firefly Pendant",
-  "description": "+50 maximum mana and +0.5 mana per second.",
   "model": "asset.models.props.neutral-loot-bundle",
   "icon": "asset.icons.item-firefly-pendant",
   "stackLimit": 1,

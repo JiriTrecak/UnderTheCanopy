@@ -1,41 +1,32 @@
 {
   "armorTypes": {
     "light": {
-      "name": "Light armor",
       "icon": "asset.icons.stat-armor-light"
     },
     "heavy": {
-      "name": "Heavy armor",
       "icon": "asset.icons.stat-armor-heavy"
     },
     "structure": {
-      "name": "Building armor",
       "icon": "asset.icons.stat-armor-structure"
     },
     "hero": {
-      "name": "Hero armor",
       "icon": "asset.icons.stat-armor-heavy"
     }
   },
   "damageTypes": {
     "melee": {
-      "name": "Melee",
       "appliesArmor": true
     },
     "piercing": {
-      "name": "Piercing",
       "appliesArmor": true
     },
     "hero": {
-      "name": "Hero attack",
       "appliesArmor": true
     },
     "spell": {
-      "name": "Spell",
       "appliesArmor": false
     },
     "siege": {
-      "name": "Siege",
       "appliesArmor": true
     }
   },

@@ -1,7 +1,5 @@
 {
   "id": "ability.beetles.static-field",
-  "name": "Static Field",
-  "description": "Charge the ground for 5 seconds: enemies in a 4-radius take 10/15 spell damage each second and move 25/35% slower. Unlocked by Specialist Training.",
   "activation": "targeted",
   "persistent": {
     "durationTicks": 200,

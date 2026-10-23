@@ -1,7 +1,5 @@
 {
   "id": "unit.beetles.hornbreaker",
-  "name": "Hornbreaker",
-  "description": "Beetle warlord with a Hercules horn and a great hammer. Charges into battle, overwhelms a chosen enemy, steadies nearby allies and becomes a Colossus.",
   "model": "asset.models.units.beetles-hornbreaker",
   "icon": "asset.portraits.units.beetles-hornbreaker",
   "selectionClass": "army",

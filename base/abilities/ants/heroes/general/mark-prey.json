@@ -1,7 +1,5 @@
 {
   "id": "ability.ants.mark-prey",
-  "name": "Mark Prey",
-  "description": "Mark an enemy with hunting scent for 12 seconds: it takes 15/25/35% more damage from everything.",
   "activation": "targeted",
   "ranks": [
     {

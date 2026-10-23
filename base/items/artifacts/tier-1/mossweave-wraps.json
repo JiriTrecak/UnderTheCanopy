@@ -1,8 +1,6 @@
 {
   "id": "item.mossweave-wraps",
   "itemTier": 1,
-  "name": "Mossweave Wraps",
-  "description": "Regenerate 1.5 extra health per second.",
   "model": "asset.models.props.neutral-loot-bundle",
   "icon": "asset.icons.item-mossweave-wraps",
   "stackLimit": 1,

@@ -1,7 +1,5 @@
 {
   "id": "unit.ants.queen",
-  "name": "The Queen",
-  "description": "Aurelith, the colony's young queen and the campaign's protagonist, touched by substance. Her Living Light heals an ally or sears an enemy, her Cocoon keeps her from harm, the colony fights as One Body around her and, at the last, she pours raw substance into the fallen for their Rebirth.",
   "model": "asset.models.units.ants-queen",
   "icon": "asset.portraits.units.ants-queen",
   "hero": true,

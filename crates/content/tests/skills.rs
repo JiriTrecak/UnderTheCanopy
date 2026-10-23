@@ -63,9 +63,38 @@ fn definition(mut value: Value, kind: &str) -> Result<Definition, String> {
     serde_json::from_value(value).map_err(|e| e.to_string())
 }
 
+/// Named kinds take their name and description from the text library (D96): an example
+/// writing them inline is wrong; otherwise they are filled as the loader fills them.
+fn named(kind: &str, mut value: Value) -> Result<Value, String> {
+    if matches!(
+        kind,
+        "unit" | "building" | "item" | "resource" | "race" | "research" | "ability"
+    ) && let Some(object) = value.as_object_mut()
+    {
+        for field in ["name", "description"] {
+            if object.contains_key(field) {
+                return Err(format!(
+                    "`{field}` belongs in the text library (`<id>.{field}`), not in the element"
+                ));
+            }
+            object.insert(field.into(), Value::String("Text".into()));
+        }
+    }
+    Ok(value)
+}
+
 fn check(kind: &str, value: Value) -> Result<(), String> {
     let e = |e: serde_json::Error| e.to_string();
+    let value = named(kind, value)?;
     match kind {
+        "text" => match value.as_object() {
+            Some(entries) => entries.iter().try_for_each(|(key, string)| {
+                canopy_content::text::check_key(key)?;
+                let string = string.as_str().ok_or("a text entry is a string")?;
+                canopy_content::text::check_string(string)
+            }),
+            None => Err("a text file is an object of key → string".into()),
+        },
         "package" => serde_json::from_value::<Manifest>(value)
             .map(drop)
             .map_err(e),

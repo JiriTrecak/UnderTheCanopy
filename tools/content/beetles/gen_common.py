@@ -1,13 +1,20 @@
 """Shared helpers for writing the beetle content."""
-import json, os
+import atexit, json, os, sys
+
+sys.path.insert(0, os.path.join(os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__)))), 'text'))
+import textlib  # noqa: E402  (tools/text/textlib.py)
 
 # The repository this file sits in (tools/content/beetles), so a worktree writes its own base/.
 ROOT = os.path.dirname(os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))) + '/'
 BASE = ROOT + 'base/'
 WRITTEN = []
+# Names and descriptions go to the text library (D96), merged once the generator finishes.
+TEXT = textlib.Pending()
+atexit.register(lambda: TEXT.flush(BASE))
 
 
 def write(rel, doc):
+    TEXT.take(rel, doc)
     path = BASE + rel
     os.makedirs(os.path.dirname(path), exist_ok=True)
     text = json.dumps(doc, indent=2, ensure_ascii=False) + '\n'

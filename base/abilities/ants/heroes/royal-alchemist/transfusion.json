@@ -1,7 +1,5 @@
 {
   "id": "ability.ants.transfusion",
-  "name": "Transfusion",
-  "description": "Draw 80/120/160 health out of an enemy and pour it into the most wounded ally within 12 units of the Alchemist.",
   "activation": "targeted",
   "ranks": [
     {

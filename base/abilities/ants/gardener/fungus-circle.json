@@ -1,7 +1,5 @@
 {
   "id": "ability.ants.fungus-circle",
-  "name": "Fungus Circle",
-  "description": "Grow a ring of glowing fungus for 10 seconds: allied units in it heal 15 health every second. The Reaver Queen is too far gone to be healed.",
   "activation": "targeted",
   "persistent": {
     "durationTicks": 400,

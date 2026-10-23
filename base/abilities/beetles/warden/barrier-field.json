@@ -1,7 +1,5 @@
 {
   "id": "ability.beetles.barrier-field",
-  "name": "Barrier Field",
-  "description": "Toggle. Raise the projector pane: enemy missiles fired at the Warden or anyone behind it from the front stop at the pane, 4 units ahead, and shells burst against it. The Warden moves 30% slower and the field costs 2/1 mana each second.",
   "activation": "targeted",
   "persistent": {
     "durationTicks": 144000,

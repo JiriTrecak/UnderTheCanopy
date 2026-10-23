@@ -1,7 +1,5 @@
 {
   "id": "ability.coilkeeper.recharge",
-  "name": "Recharge",
-  "description": "Pour substance into allies in a 6-radius: they regain 40/70/100 mana and gain a shield absorbing 80/130/180 damage for 8 seconds.",
   "activation": "targeted",
   "ranks": [
     {

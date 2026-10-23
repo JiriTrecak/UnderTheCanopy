@@ -1,7 +1,5 @@
 {
   "id": "unit.beetles.supply-cart",
-  "name": "Supply Cart",
-  "description": "A draft beetle hauling glass tanks of substance along the beetles' roads. Slow, sturdy and unarmed; whoever breaks one takes the amber it carries.",
   "model": "asset.models.units.beetles-supply-cart",
   "icon": "asset.portraits.units.beetles-supply-cart",
   "selectionClass": "army",

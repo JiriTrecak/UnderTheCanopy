@@ -1,7 +1,5 @@
 {
   "id": "ability.core.holy-light-lite",
-  "name": "Holy Light",
-  "description": "Restore an ally with a flash of warm light, or sear an enemy with it.",
   "activation": "targeted",
   "ranks": [
     {

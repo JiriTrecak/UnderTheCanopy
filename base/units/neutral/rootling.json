@@ -1,7 +1,5 @@
 {
   "id": "unit.neutral.rootling",
-  "name": "Rootling",
-  "description": "Rootbound Guardians · melee forest creature. Ancient roots defending an overgrown grove.",
   "model": "asset.models.units.neutral-rootling",
   "icon": "asset.portraits.units.neutral-rootling",
   "selectionClass": "army",

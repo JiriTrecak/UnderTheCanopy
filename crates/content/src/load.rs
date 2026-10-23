@@ -13,6 +13,7 @@ use crate::{
     game::{Actions, Definition, Kind, RenderAsset, Rules},
     package::{Collection, Layers, Package, check_order},
     registry,
+    text::{SOURCE_LANGUAGE, Text},
 };
 use serde_json::{Map, Value};
 use std::{collections::BTreeMap, path::Path};
@@ -88,6 +89,9 @@ pub struct Content {
     pub abilities: AbilityLibrary,
     /// Sorted by id.
     pub effects: Vec<VisualEffect>,
+    /// Every player-facing string in the source language (D96); definitions' names and
+    /// descriptions are filled from it.
+    pub text: Text,
     /// The file that last authored each element, by element id (definitions, abilities,
     /// effects, races, research, loot pools, behaviour sets) and `rules/<name>`.
     pub files: BTreeMap<String, String>,
@@ -119,16 +123,76 @@ pub(crate) fn elements(
         .collect()
 }
 
-/// A keyed rule map (`research`, `lootPools`, `races`): id → document without its id.
+/// Text fields an element takes from the library (D96): its name, and its description
+/// when it has one.
+const NAMED: &[&str] = &["name", "description"];
+const NAME_ONLY: &[&str] = &["name"];
+
+/// Fills `fields` of `value` from the text library under `key` (`<key>.name`, …). Text
+/// written into the element itself is an error: it belongs in the library. A missing
+/// name is an error; a missing description is left to the element's own rules.
+fn fill(
+    value: &mut Value,
+    key: &str,
+    fields: &[&str],
+    text: &Text,
+    file: &str,
+    errors: &mut Vec<Error>,
+) {
+    let Some(object) = value.as_object_mut() else {
+        return;
+    };
+    for field in fields {
+        let entry = format!("{key}.{field}");
+        if object.contains_key(*field) {
+            errors.push(Error::new(
+                file,
+                *field,
+                format!(
+                    "text lives in the text library: move it to `{entry}` in text/{SOURCE_LANGUAGE}"
+                ),
+            ));
+            continue;
+        }
+        match text.get(&entry) {
+            Some(string) => {
+                object.insert((*field).into(), Value::String(string.to_string()));
+            }
+            None if *field == "name" => errors.push(Error::new(
+                file,
+                *field,
+                format!("no `{entry}` in text/{SOURCE_LANGUAGE}"),
+            )),
+            None => {}
+        }
+    }
+}
+
+/// The text library and how an element's id becomes its key.
+type Naming<'a> = Option<(&'a Text, fn(&str) -> String)>;
+
+/// A keyed rule map (`research`, `lootPools`, `races`): id → document without its id,
+/// with its text filled under `key(id)` when given.
 fn keyed(
     collection: &Collection,
     packages: &[Package],
     files: &mut BTreeMap<String, String>,
     errors: &mut Vec<Error>,
+    text: Naming,
 ) -> Value {
     let mut map = Map::new();
     for element in elements(collection, packages, files, errors) {
         let mut value = element.value;
+        if let Some((text, key)) = text {
+            fill(
+                &mut value,
+                &key(&element.id),
+                NAMED,
+                text,
+                &element.file,
+                errors,
+            );
+        }
         if let Some(object) = value.as_object_mut() {
             object.remove("id");
         }
@@ -150,6 +214,7 @@ struct Source {
 
 fn read_source(
     packages: &[Package],
+    text: &Text,
     files: &mut BTreeMap<String, String>,
     errors: &mut Vec<Error>,
 ) -> Source {
@@ -163,6 +228,14 @@ fn read_source(
         (RESOURCES, "resource", "produce"),
     ] {
         for mut element in elements(&collection, packages, files, errors) {
+            fill(
+                &mut element.value,
+                &element.id,
+                NAMED,
+                text,
+                &element.file,
+                errors,
+            );
             if let Some(object) = element.value.as_object_mut() {
                 if let Some(command) = object.remove("command") {
                     overrides.insert(format!("{verb}:{}", element.id), command);
@@ -180,6 +253,24 @@ fn read_source(
         files.insert(format!("rules/{}", element.id), element.file);
         rule_files.insert(element.id, element.value);
     }
+    // Armour and damage types are named in the library (`armor.<type>.name`, …).
+    if let Some(combat) = rule_files.get_mut("combat") {
+        let file = files.get("rules/combat").cloned().unwrap_or_default();
+        for (field, prefix) in [("armorTypes", "armor"), ("damageTypes", "damage")] {
+            if let Some(Value::Object(types)) = combat.get_mut(field) {
+                for (id, value) in types.iter_mut() {
+                    fill(
+                        value,
+                        &format!("{prefix}.{id}"),
+                        NAME_ONLY,
+                        text,
+                        &file,
+                        errors,
+                    );
+                }
+            }
+        }
+    }
     let mut rules = Map::new();
     for name in ["game", "combat"] {
         if let Some(Value::Object(fields)) = rule_files.remove(name) {
@@ -189,12 +280,27 @@ fn read_source(
     if let Some(experience) = rule_files.remove("experience") {
         rules.insert("experience".into(), experience);
     }
-    rules.insert("research".into(), keyed(&RESEARCH, packages, files, errors));
+    rules.insert(
+        "research".into(),
+        keyed(
+            &RESEARCH,
+            packages,
+            files,
+            errors,
+            Some((text, |id| id.to_string())),
+        ),
+    );
     rules.insert(
         "lootPools".into(),
-        keyed(&LOOT_POOLS, packages, files, errors),
+        keyed(&LOOT_POOLS, packages, files, errors, None),
     );
-    let races = keyed(&RACES, packages, files, errors);
+    let races = keyed(
+        &RACES,
+        packages,
+        files,
+        errors,
+        Some((text, |id| format!("race.{id}"))),
+    );
     // The default race's starting setup is also the setup of seats and maps that name no
     // race (`Rules::starting_setup`).
     let default_race = rules
@@ -210,14 +316,45 @@ fn read_source(
         Some(Value::Object(fields)) => fields,
         _ => Map::new(),
     };
+    // Commands, categories and navigation entries are named in the library.
+    let commands_file = files.get("rules/commands").cloned().unwrap_or_default();
+    for (group, prefix) in [
+        ("actions", "command."),
+        ("categories", ""),
+        ("navigation", "navigation."),
+    ] {
+        if let Some(Value::Object(entries)) = actions.get_mut(group) {
+            for (id, value) in entries.iter_mut() {
+                fill(
+                    value,
+                    &format!("{prefix}{id}"),
+                    NAMED,
+                    text,
+                    &commands_file,
+                    errors,
+                );
+            }
+        }
+    }
     actions.insert("overrides".into(), Value::Object(overrides));
 
+    let mut abilities = elements(&ABILITIES, packages, files, errors);
+    for element in &mut abilities {
+        fill(
+            &mut element.value,
+            &element.id,
+            NAMED,
+            text,
+            &element.file,
+            errors,
+        );
+    }
     Source {
         behavior_sets: elements(&BEHAVIORS, packages, files, errors),
         definitions,
         rules: Value::Object(rules),
         actions: Value::Object(actions),
-        abilities: elements(&ABILITIES, packages, files, errors),
+        abilities,
         effects: elements(&EFFECTS, packages, files, errors),
     }
 }
@@ -294,7 +431,8 @@ impl Content {
         errors: &mut Vec<Error>,
     ) -> Option<Self> {
         let mut files = BTreeMap::new();
-        let source = read_source(packages, &mut files, errors);
+        let text = Text::read(packages, SOURCE_LANGUAGE, errors);
+        let source = read_source(packages, &text, &mut files, errors);
         let file = |name: &str| {
             files
                 .get(name)
@@ -356,6 +494,7 @@ impl Content {
             scenery: index.scenery,
             abilities: abilities?,
             effects: effects?,
+            text,
             files,
             definition_index,
             asset_index,

@@ -1,7 +1,5 @@
 {
   "id": "unit.neutral.barkguard",
-  "name": "Barkguard",
-  "description": "The Hollow Stag · melee forest creature. A sacred forest guardian and its bark-and-willow retinue.",
   "model": "asset.models.units.neutral-barkguard",
   "icon": "asset.portraits.units.neutral-barkguard",
   "selectionClass": "army",

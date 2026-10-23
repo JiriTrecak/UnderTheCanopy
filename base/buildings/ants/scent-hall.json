@@ -1,7 +1,5 @@
 {
   "id": "building.ants.scent-hall",
-  "name": "Scent Hall",
-  "description": "Where the pheromone castes are raised: hatches Heralds and Gardeners. Requires a Great Nest.",
   "model": "asset.models.buildings.ants-scent-hall",
   "icon": "asset.portraits.buildings.ants-scent-hall",
   "body": {

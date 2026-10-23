@@ -18,6 +18,7 @@ pub mod placement;
 pub mod schema;
 #[cfg(feature = "testing")]
 pub mod testing;
+pub mod text;
 
 mod load;
 mod registry;

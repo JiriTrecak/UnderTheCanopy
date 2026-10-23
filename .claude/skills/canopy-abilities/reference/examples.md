@@ -15,8 +15,7 @@ Heals an injured ally, damages an enemy. Shows ranks, a targeting condition, a b
 
 ```json ability
 {
-  "id": "ability.example.sap-blessing", "name": "Sap Blessing",
-  "description": "Heals an injured ally or scorches an enemy with hot sap.",
+  "id": "ability.example.sap-blessing", 
   "activation": "targeted",
   "ranks": [{"mana": 30, "range": 12, "heal": 120, "damage": 60}, {"mana": 35, "range": 12, "heal": 180, "damage": 90}],
   "targeting": {
@@ -93,7 +92,7 @@ Primary hit, splash to others, slow on everyone in the area (negative ranked mod
 
 ```json ability
 {
-  "id": "ability.example.hoarfrost-burst", "name": "Hoarfrost Burst", "activation": "targeted",
+  "id": "ability.example.hoarfrost-burst", "activation": "targeted",
   "ranks": [{"mana": 40, "range": 14, "slowMove": -300, "slowAttack": -200}],
   "targeting": {"kind": "unit", "relations": ["enemy"], "allowSelf": false, "alive": true, "visible": true, "range": {"rankParameter": "range"}, "outOfRange": "reject"},
   "cast": {"prepareTicks": 10, "recoverTicks": 8, "cost": {"resource": "mana", "amount": {"rankParameter": "mana"}, "commit": "release"}, "cooldown": {"ticks": 240, "start": "release", "scope": "ability"}, "cancelBeforeRelease": "refund", "revalidateAtRelease": ["caster", "target", "range", "visibility", "relationship"]},
@@ -116,7 +115,7 @@ Point aims require `targeting.radius`; `target: "target"` operations hit the def
 
 ```json ability
 {
-  "id": "ability.example.seed-bomb", "name": "Seed Bomb", "activation": "targeted",
+  "id": "ability.example.seed-bomb", "activation": "targeted",
   "ranks": [{"radius": 4, "damage": 70}, {"radius": 5, "damage": 110}],
   "targeting": {"kind": "point", "radius": {"rankParameter": "radius"}, "maxTargets": 12, "includeBuildings": true, "relations": ["enemy"], "allowSelf": false, "alive": true, "visible": true, "range": 18, "outOfRange": "reject"},
   "cast": {"prepareTicks": 14, "recoverTicks": 8, "cost": {"resource": "mana", "amount": 60, "commit": "release"}, "cooldown": {"ticks": 400, "start": "release", "scope": "ability"}, "cancelBeforeRelease": "refund", "revalidateAtRelease": ["caster", "target", "range", "visibility", "relationship"]},
@@ -135,7 +134,7 @@ Point aims require `targeting.radius`; `target: "target"` operations hit the def
 
 ```json ability
 {
-  "id": "ability.example.earth-stomp", "name": "Earth Stomp", "activation": "targeted",
+  "id": "ability.example.earth-stomp", "activation": "targeted",
   "ranks": [{"damage": 50, "stun": 80, "heroStun": 40}],
   "targeting": {"kind": "self", "relations": ["ally"], "allowSelf": true, "alive": true, "visible": true, "range": 0, "outOfRange": "reject"},
   "cast": {"prepareTicks": 10, "recoverTicks": 8, "cost": {"resource": "mana", "amount": 50, "commit": "release"}, "cooldown": {"ticks": 320, "start": "release", "scope": "ability"}, "cancelBeforeRelease": "refund", "revalidateAtRelease": ["caster", "target", "range", "visibility", "relationship"]},
@@ -157,7 +156,7 @@ Point aims require `targeting.radius`; `target: "target"` operations hit the def
 
 ```json ability
 {
-  "id": "ability.example.hailstorm", "name": "Hailstorm", "activation": "targeted",
+  "id": "ability.example.hailstorm", "activation": "targeted",
   "ranks": [{"mana": 75, "damage": 25, "waves": 6}, {"mana": 90, "damage": 35, "waves": 8}],
   "targeting": {"kind": "point", "radius": 5, "maxTargets": 64, "relations": ["enemy"], "allowSelf": false, "alive": true, "visible": true, "range": 18, "outOfRange": "reject"},
   "cast": {"prepareTicks": 12, "recoverTicks": 8,
@@ -177,7 +176,7 @@ Ends if the target dies, hides, becomes ineligible or leaves `tetherRange`. Bind
 
 ```json ability
 {
-  "id": "ability.example.sap-siphon", "name": "Sap Siphon", "activation": "targeted",
+  "id": "ability.example.sap-siphon", "activation": "targeted",
   "ranks": [{"drain": 25}],
   "targeting": {"kind": "unit", "relations": ["enemy"], "allowSelf": false, "alive": true, "visible": true, "range": 12, "outOfRange": "reject", "filter": {"natures": ["organic"]}},
   "cast": {"prepareTicks": 10, "recoverTicks": 8, "channel": {"waves": 8, "intervalTicks": 40, "tetherRange": 14},
@@ -195,7 +194,7 @@ Ends if the target dies, hides, becomes ineligible or leaves `tetherRange`. Bind
 
 ```json ability
 {
-  "id": "ability.example.pebble-bolt", "name": "Pebble Bolt", "activation": "targeted",
+  "id": "ability.example.pebble-bolt", "activation": "targeted",
   "delivery": {"kind": "projectile", "speed": 20},
   "ranks": [{"damage": 90, "stun": 80, "heroStun": 40}],
   "targeting": {"kind": "unit", "relations": ["enemy"], "allowSelf": false, "alive": true, "visible": true, "range": 16, "outOfRange": "reject"},
@@ -227,7 +226,7 @@ Retention scales heal/damage/drain/mana per hop, not status durations. Bind `imp
 
 ```json ability
 {
-  "id": "ability.example.dew-chain", "name": "Dew Chain", "activation": "targeted",
+  "id": "ability.example.dew-chain", "activation": "targeted",
   "delivery": {"kind": "chain", "bounces": {"rankParameter": "hits"}, "radius": 8, "intervalTicks": 6, "retentionPermille": 800, "skipFullHealth": true},
   "ranks": [{"hits": 3, "heal": 100, "armor": 2}, {"hits": 4, "heal": 130, "armor": 3}],
   "targeting": {"kind": "unit", "relations": ["ally"], "allowSelf": true, "alive": true, "visible": true, "range": 16, "outOfRange": "reject",
@@ -259,7 +258,7 @@ Point aim (no `targeting.radius` needed: the line uses `width`). Each crossed un
 
 ```json ability
 {
-  "id": "ability.example.burrow-wave", "name": "Burrow Wave", "activation": "targeted",
+  "id": "ability.example.burrow-wave", "activation": "targeted",
   "delivery": {"kind": "line", "speed": 24, "length": 20, "width": 1.6},
   "ranks": [{"damage": 75, "slow": -350}],
   "targeting": {"kind": "point", "relations": ["enemy"], "allowSelf": false, "alive": true, "visible": true, "range": 20, "outOfRange": "reject", "filter": {"locomotion": ["ground"]}},
@@ -281,7 +280,7 @@ Recipient statuses use amount 1 (rebuilt every tick). The caster-targeted marker
 
 ```json ability
 {
-  "id": "ability.example.thornward-aura", "name": "Thornward Aura", "activation": "passive",
+  "id": "ability.example.thornward-aura", "activation": "passive",
   "aura": {"radius": 10, "meleeOnly": false},
   "ranks": [{"reflect": 150}, {"reflect": 250}, {"reflect": 350}],
   "targeting": {"kind": "self", "relations": ["ally"], "allowSelf": true, "alive": true, "visible": true, "range": 0, "outOfRange": "reject"},
@@ -314,7 +313,7 @@ Pulses at release and every interval at the fixed point; the caster is free mean
 
 ```json ability
 {
-  "id": "ability.example.spore-field", "name": "Spore Field", "activation": "targeted",
+  "id": "ability.example.spore-field", "activation": "targeted",
   "persistent": {"durationTicks": 240, "intervalTicks": 40, "anchor": "point", "endsWithCaster": false},
   "ranks": [{"damage": 8}],
   "targeting": {"kind": "point", "radius": 4, "relations": ["enemy"], "allowSelf": false, "alive": true, "visible": true, "range": 18, "outOfRange": "reject"},
@@ -336,7 +335,7 @@ A toggle is a caster-anchored self persistent; recasting turns it off. The `inst
 
 ```json ability
 {
-  "id": "ability.example.ember-mantle", "name": "Ember Mantle", "activation": "targeted",
+  "id": "ability.example.ember-mantle", "activation": "targeted",
   "persistent": {"durationTicks": 144000, "intervalTicks": 40, "anchor": "caster", "endsWithCaster": true, "upkeepMana": 4, "toggle": true},
   "ranks": [{"damage": 10}, {"damage": 16}],
   "targeting": {"kind": "self", "relations": ["ally"], "allowSelf": true, "alive": true, "visible": true, "range": 0, "outOfRange": "reject"},
@@ -357,7 +356,7 @@ Autocast fires only if the unit binding includes `ai` control. AI scores positiv
 
 ```json ability
 {
-  "id": "ability.example.frenzy-pheromone", "name": "Frenzy Pheromone", "activation": "targeted",
+  "id": "ability.example.frenzy-pheromone", "activation": "targeted",
   "autocast": {"intervalTicks": 12, "enabledByDefault": false},
   "ranks": [{"haste": 300, "speed": 200}],
   "targeting": {"kind": "unit", "relations": ["ally"], "allowSelf": true, "alive": true, "visible": true, "range": 14, "outOfRange": "reject"},
@@ -374,7 +373,7 @@ Autocast fires only if the unit binding includes `ai` control. AI scores positiv
 
 ```json ability
 {
-  "id": "ability.example.vine-snare", "name": "Vine Snare", "activation": "targeted",
+  "id": "ability.example.vine-snare", "activation": "targeted",
   "ranks": [{"damage": 12, "duration": 240, "heroDuration": 80}],
   "targeting": {"kind": "unit", "relations": ["enemy"], "allowSelf": false, "alive": true, "visible": true, "range": 16, "outOfRange": "reject", "filter": {"locomotion": ["ground"]}},
   "cast": {"prepareTicks": 10, "recoverTicks": 8, "cost": {"resource": "mana", "amount": 45, "commit": "release"}, "cooldown": {"ticks": 320, "start": "release", "scope": "ability"}, "cancelBeforeRelease": "refund", "revalidateAtRelease": ["caster", "target", "range", "visibility", "relationship"]},
@@ -405,7 +404,7 @@ A mark-only attack bonus (amount 0) applies a source-scoped stacking template on
 
 ```json ability
 {
-  "id": "ability.example.pressure-strikes", "name": "Pressure Strikes", "activation": "passive",
+  "id": "ability.example.pressure-strikes", "activation": "passive",
   "combatModifiers": {"attackBonus": {"status": "pressure", "amount": 0, "manaCost": 0, "weapon": "melee", "blockedBySilence": false}},
   "ranks": [{"bonus": 5, "slow": -50}, {"bonus": 10, "slow": -80}],
   "statuses": [{"op": "status", "target": "target", "id": "pressure", "amount": 240, "polarity": "negative", "dispel": true,
@@ -425,7 +424,7 @@ Timed group that replaces the previous group (`summoned` event per group):
 
 ```json ability
 {
-  "id": "ability.example.call-spirits", "name": "Call Spirits", "activation": "targeted",
+  "id": "ability.example.call-spirits", "activation": "targeted",
   "ranks": [{"count": 2}, {"count": 3}],
   "targeting": {"kind": "self", "relations": ["ally"], "allowSelf": true, "alive": true, "visible": true, "range": 0, "outOfRange": "reject"},
   "cast": {"prepareTicks": 12, "recoverTicks": 8, "cost": {"resource": "mana", "amount": 75, "commit": "release"}, "cooldown": {"ticks": 1200, "start": "release", "scope": "ability"}, "cancelBeforeRelease": "refund", "revalidateAtRelease": ["caster", "target", "range", "visibility", "relationship"]},
@@ -440,7 +439,7 @@ Corpse-fed summon at a point (one group per consumed visible corpse; AI samples 
 
 ```json ability
 {
-  "id": "ability.example.husk-raise", "name": "Husk Raise", "activation": "targeted",
+  "id": "ability.example.husk-raise", "activation": "targeted",
   "autocast": {"intervalTicks": 20, "enabledByDefault": false},
   "ranks": [{}],
   "targeting": {"kind": "point", "radius": 3, "relations": ["ally", "enemy"], "allowSelf": true, "alive": true, "visible": true, "range": 14, "outOfRange": "reject"},
@@ -457,7 +456,7 @@ Factory composition: the summoned producer receives a template whose `interval` 
 
 ```json ability
 {
-  "id": "ability.example.brood-mother", "name": "Brood Mother", "activation": "targeted",
+  "id": "ability.example.brood-mother", "activation": "targeted",
   "ranks": [{"period": 200, "burst": 40}, {"period": 160, "burst": 60}],
   "statuses": [
     {"op": "status", "target": "target", "id": "producing", "amount": 0, "polarity": "positive", "dispel": false, "lifetime": "untilDeath"},
@@ -485,7 +484,7 @@ Self form: new model and weapon profile, stat boost, then an explicit heal (rais
 
 ```json ability
 {
-  "id": "ability.example.hunter-form", "name": "Hunter Form", "activation": "targeted",
+  "id": "ability.example.hunter-form", "activation": "targeted",
   "ranks": [{"duration": 800, "health": 150, "damage": 15}],
   "targeting": {"kind": "self", "relations": ["ally"], "allowSelf": true, "alive": true, "visible": true, "range": 0, "outOfRange": "reject"},
   "cast": {"prepareTicks": 12, "recoverTicks": 8, "cost": {"resource": "mana", "amount": 75, "commit": "release"}, "cooldown": {"ticks": 1600, "start": "release", "scope": "ability"}, "cancelBeforeRelease": "refund", "revalidateAtRelease": ["caster", "target", "range", "visibility", "relationship"]},
@@ -512,7 +511,7 @@ Flight toggle: an instance-lifetime air form; switching off lands the unit (or k
 
 ```json ability
 {
-  "id": "ability.example.wing-form", "name": "Wing Form", "activation": "targeted",
+  "id": "ability.example.wing-form", "activation": "targeted",
   "persistent": {"durationTicks": 144000, "intervalTicks": 40, "anchor": "caster", "endsWithCaster": true, "toggle": true},
   "ranks": [{}],
   "targeting": {"kind": "self", "relations": ["ally"], "allowSelf": true, "alive": true, "visible": true, "range": 0, "outOfRange": "reject"},
@@ -531,7 +530,7 @@ Blink to a point (bind `teleported`: origin is the departure, point the arrival)
 
 ```json ability
 {
-  "id": "ability.example.shadow-step", "name": "Shadow Step", "activation": "targeted",
+  "id": "ability.example.shadow-step", "activation": "targeted",
   "ranks": [{"range": 20}],
   "targeting": {"kind": "point", "radius": 1, "relations": ["ally"], "allowSelf": false, "alive": true, "visible": true, "range": {"rankParameter": "range"}, "outOfRange": "reject"},
   "cast": {"prepareTicks": 4, "recoverTicks": 8, "cost": {"resource": "mana", "amount": 25, "commit": "release"}, "cooldown": {"ticks": 200, "start": "release", "scope": "ability"}, "cancelBeforeRelease": "refund", "revalidateAtRelease": ["caster", "target", "range", "visibility", "relationship"]},
@@ -550,7 +549,7 @@ Group transport to an allied unit, keeping formation (pair with `"intent": "rein
 
 ```json ability
 {
-  "id": "ability.example.colony-recall", "name": "Colony Recall", "activation": "targeted",
+  "id": "ability.example.colony-recall", "activation": "targeted",
   "ranks": [{}],
   "targeting": {"kind": "unit", "relations": ["ally"], "allowSelf": false, "alive": true, "visible": true, "range": 128, "outOfRange": "reject"},
   "cast": {"prepareTicks": 120, "recoverTicks": 8, "cost": {"resource": "mana", "amount": 100, "commit": "release"}, "cooldown": {"ticks": 2400, "start": "release", "scope": "ability"}, "cancelBeforeRelease": "refund", "revalidateAtRelease": ["caster", "target", "range", "visibility", "relationship"]},
@@ -567,7 +566,7 @@ Charge: the caster physically runs to a grounded target; `onRelease` on contact.
 
 ```json ability
 {
-  "id": "ability.example.mandible-rush", "name": "Mandible Rush", "activation": "targeted",
+  "id": "ability.example.mandible-rush", "activation": "targeted",
   "delivery": {"kind": "charge", "speed": 32, "maxTicks": 80},
   "ranks": [{"damage": 70}],
   "targeting": {"kind": "unit", "relations": ["enemy"], "allowSelf": false, "alive": true, "visible": true, "range": 20, "outOfRange": "reject", "filter": {"locomotion": ["ground"]}},
@@ -589,7 +588,7 @@ Learned passives need no `whileStatus`. Several triggers can share one ability. 
 
 ```json ability
 {
-  "id": "ability.example.veteran-instincts", "name": "Veteran Instincts", "activation": "passive",
+  "id": "ability.example.veteran-instincts", "activation": "passive",
   "combatModifiers": {"critical": {"chancePermille": 150, "multiplierPermille": {"rankParameter": "crit"}}, "evasionPermille": 100,
     "cleave": {"damagePermille": 300, "radius": 3, "arcDegrees": 120, "maxTargets": 4}},
   "ranks": [{"crit": 1750, "haste": 150, "heal": 30}, {"crit": 2000, "haste": 250, "heal": 45}],
@@ -625,7 +624,7 @@ Hero self-rebirth on death, once per cooldown (needs an actual hero):
 
 ```json ability
 {
-  "id": "ability.example.second-molt", "name": "Second Molt", "activation": "passive",
+  "id": "ability.example.second-molt", "activation": "passive",
   "ranks": [{"delay": 280, "cooldown": 9600}],
   "targeting": {"kind": "self", "relations": ["ally"], "allowSelf": true, "alive": true, "visible": true, "range": 0, "outOfRange": "reject"},
   "cast": {"prepareTicks": 0, "recoverTicks": 0, "cost": {"resource": "mana", "amount": 0, "commit": "release"}, "cooldown": {"ticks": 0, "start": "release", "scope": "ability"}, "cancelBeforeRelease": "refund", "revalidateAtRelease": ["caster", "target", "range", "visibility", "relationship"]},
@@ -643,7 +642,7 @@ Mass resurrection of allied corpses (permanent, original owners):
 
 ```json ability
 {
-  "id": "ability.example.spring-awakening", "name": "Spring Awakening", "activation": "targeted",
+  "id": "ability.example.spring-awakening", "activation": "targeted",
   "ranks": [{}],
   "targeting": {"kind": "self", "relations": ["ally"], "allowSelf": true, "alive": true, "visible": true, "range": 0, "outOfRange": "reject"},
   "cast": {"prepareTicks": 20, "recoverTicks": 16, "cost": {"resource": "mana", "amount": 200, "commit": "release"}, "cooldown": {"ticks": 9600, "start": "release", "scope": "ability"}, "cancelBeforeRelease": "refund", "revalidateAtRelease": ["caster", "target", "range", "visibility", "relationship"]},
@@ -659,7 +658,7 @@ Temporary reanimation under the caster's control with protective grants (templat
 
 ```json ability
 {
-  "id": "ability.example.hollow-march", "name": "Hollow March", "activation": "targeted",
+  "id": "ability.example.hollow-march", "activation": "targeted",
   "ranks": [{"duration": 1600}],
   "statuses": [
     {"op": "status", "target": "target", "id": "hollowWard", "amount": {"rankParameter": "duration"}, "polarity": "positive", "dispel": false, "immunity": "physical"},

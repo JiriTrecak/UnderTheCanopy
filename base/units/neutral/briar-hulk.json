@@ -1,7 +1,5 @@
 {
   "id": "unit.neutral.briar-hulk",
-  "name": "Briar Hulk",
-  "description": "Briar Covenant · melee forest creature. Hostile thorn growth animated into a fighting grove.",
   "model": "asset.models.units.neutral-briar-hulk",
   "icon": "asset.portraits.units.neutral-briar-hulk",
   "selectionClass": "army",

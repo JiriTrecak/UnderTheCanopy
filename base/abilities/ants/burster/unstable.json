@@ -1,7 +1,5 @@
 {
   "id": "ability.ants.unstable",
-  "name": "Unstable",
-  "description": "Mutated. The Burster bursts on its first bite, and whenever it dies: 100 siege damage to enemies and buildings within 4 units, and 40 to its own allies there. Volatile Sacs raises the blast to 150 and spares allies.",
   "activation": "passive",
   "ranks": [
     {

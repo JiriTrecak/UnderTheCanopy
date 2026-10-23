@@ -1,7 +1,5 @@
 {
   "id": "building.ants.fort",
-  "name": "Nest",
-  "description": "The colony's main hall and its first tunnel mound: stores goods, hatches Workers and provides 15 supply. Ants travel between mounds underground. Upgrades to the Great Nest.",
   "model": "asset.models.buildings.ants-nest",
   "icon": "asset.portraits.buildings.ants-nest",
   "body": {

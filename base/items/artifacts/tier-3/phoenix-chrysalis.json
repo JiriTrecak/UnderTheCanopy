@@ -1,8 +1,6 @@
 {
   "id": "item.phoenix-chrysalis",
   "itemTier": 3,
-  "name": "Phoenix Chrysalis",
-  "description": "+120 maximum health. Once: prevent a lethal hit, restore 35% health and become invulnerable for 1.5s. The chrysalis then breaks.",
   "model": "asset.models.props.neutral-loot-bundle",
   "icon": "asset.icons.item-phoenix-chrysalis",
   "stackLimit": 1,

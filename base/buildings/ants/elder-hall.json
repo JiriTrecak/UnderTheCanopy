@@ -1,7 +1,5 @@
 {
   "id": "building.ants.elder-hall",
-  "name": "Queen's Chamber",
-  "description": "Hall tier 3 and a tunnel mound: unlocks the Queen's Cradle, the Bullet Ant, the Venom Spire, level III research and Wider Tunnels II.",
   "model": "asset.models.buildings.ants-queens-chamber",
   "icon": "asset.portraits.buildings.ants-queens-chamber",
   "body": {

@@ -1,7 +1,5 @@
 {
   "id": "ability.ants.giant-killer",
-  "name": "Giant Killer",
-  "description": "Bullet Ants go for the biggest prey: +15 damage against heroes and units of level 3 and up.",
   "activation": "passive",
   "combatModifiers": {
     "attackBonus": {

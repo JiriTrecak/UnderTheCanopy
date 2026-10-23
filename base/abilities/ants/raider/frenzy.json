@@ -1,7 +1,5 @@
 {
   "id": "ability.ants.frenzy",
-  "name": "Frenzy",
-  "description": "Raiders work each other into a frenzy: every second a Raider fights beside other small ants, they gain 6% attack damage, up to 24%. It fades a moment after they part.",
   "activation": "passive",
   "ranks": [
     {}

@@ -1,7 +1,5 @@
 {
   "id": "ability.ants.rebirth",
-  "name": "Rebirth",
-  "description": "Ultimate. The Queen pours raw substance into her fallen: up to 8 dead allies within 14 units rise again at full health. The substance stays in them: the reborn deal 25% more damage until they fall again.",
   "activation": "targeted",
   "ranks": [
     {}

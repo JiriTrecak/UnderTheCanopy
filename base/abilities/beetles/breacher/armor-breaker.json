@@ -1,7 +1,5 @@
 {
   "id": "ability.beetles.armor-breaker",
-  "name": "Armor Breaker",
-  "description": "Every drill strike cracks the target open: its armor falls by 3 for 6 seconds.",
   "activation": "passive",
   "combatModifiers": {
     "attackBonus": {

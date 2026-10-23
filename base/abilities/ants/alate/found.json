@@ -1,7 +1,5 @@
 {
   "id": "ability.ants.found",
-  "name": "Found",
-  "description": "The Alate lands, sheds its wings and becomes a Brood Mound where it stands: a new tunnel mound and 8 supply. The Alate is used up.",
   "activation": "targeted",
   "ranks": [
     {}

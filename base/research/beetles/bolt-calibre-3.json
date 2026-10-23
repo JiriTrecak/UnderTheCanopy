@@ -1,7 +1,5 @@
 {
   "id": "research.beetles.bolt-calibre-3",
-  "name": "Bolt Calibre III",
-  "description": "Bolters, Steamwings, Hornwatch gunners and Bolt Turrets deal 12% more attack damage (level III; levels add up). Requires an Elder Bastion.",
   "icon": "asset.icons.research-beetles-bolt-calibre-3",
   "priority": 83,
   "requires": [

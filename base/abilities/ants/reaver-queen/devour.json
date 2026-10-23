@@ -1,7 +1,5 @@
 {
   "id": "ability.ants.devour",
-  "name": "Devour",
-  "description": "Swallow a non-hero enemy whole and heal 300 health. It is digested over 10 seconds (35 damage a second); killing the Reaver Queen frees it.",
   "activation": "targeted",
   "ranks": [
     {}

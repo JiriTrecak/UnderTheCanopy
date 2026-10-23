@@ -1,8 +1,6 @@
 {
   "id": "item.royal-crest",
   "itemTier": 2,
-  "name": "Royal Crest",
-  "description": "+10 damage, +3 armor and +100 maximum health.",
   "model": "asset.models.props.neutral-loot-bundle",
   "icon": "asset.icons.item-royal-crest",
   "stackLimit": 1,

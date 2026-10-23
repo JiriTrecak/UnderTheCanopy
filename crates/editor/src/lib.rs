@@ -24,6 +24,7 @@ mod shell;
 mod stage;
 pub mod starcraft;
 mod tabs;
+mod text;
 pub mod theme;
 mod watch;
 mod widgets;

@@ -1,7 +1,5 @@
 {
   "id": "item.root",
-  "name": "Substance",
-  "description": "The forest's raw magic, drawn from contested Substance Deposits. A Substance Well built on a deposit pumps it by itself.",
   "model": "asset.models.cargo.root",
   "icon": "asset.icons.resource-root",
   "stackLimit": 16,

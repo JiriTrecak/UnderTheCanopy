@@ -1,7 +1,5 @@
 {
   "id": "ability.beetles.arc-surge",
-  "name": "Arc Surge",
-  "description": "Discharge the coil lance into an enemy: a violet arc that jumps to 3/5 enemies, dealing 55/75 spell damage and keeping 80% of it on each jump.",
   "activation": "targeted",
   "delivery": {
     "kind": "chain",

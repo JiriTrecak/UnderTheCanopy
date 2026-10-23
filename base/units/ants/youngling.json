@@ -1,7 +1,5 @@
 {
   "id": "unit.ants.youngling",
-  "name": "Youngling",
-  "description": "Briarwatch campaign character.",
   "model": "asset.models.units.ants-worker",
   "icon": "asset.portraits.units.ants-worker",
   "selectionClass": "worker",

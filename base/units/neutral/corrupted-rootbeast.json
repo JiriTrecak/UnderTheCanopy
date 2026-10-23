@@ -1,7 +1,5 @@
 {
   "id": "unit.neutral.corrupted-rootbeast",
-  "name": "Corrupted Rootbeast",
-  "description": "The Rotwood Court · melee forest creature. A corrupted ancient surrounded by rootbeasts and violet spores.",
   "model": "asset.models.units.neutral-corrupted-rootbeast",
   "icon": "asset.portraits.units.neutral-corrupted-rootbeast",
   "selectionClass": "army",
