@@ -1,29 +1,38 @@
 {
   "schemaVersion": 1,
   "unreleased": {
-    "added": [
-      "Unit movement rebuilt in the manner of StarCraft II: your own units part for each other, squeeze through chokes and close round their targets, while enemies and units fighting or holding position still block",
-      "Heroes stand out: a golden burst when they gain a level, a level badge and a glowing card while a skill point waits, and a soft pool of their player's colour",
-      "An army button and key (F1), groups of buildings that share their training and research, and grid hotkeys for every command card cell",
-      "Windowed, borderless and exclusive fullscreen display modes, and a Voice volume setting",
-      "Reset campaign, to play a campaign again from the start"
-    ],
-    "improved": [
-      "Four unit body sizes, with every model scaled to the space it takes",
-      "Substance Wells pump faster: 10 Substance every 3 seconds",
-      "Queued units take supply only once they start training, and Reaver Queens and Juggernauts are no longer limited to one",
-      "Buildings sit firmly on the ground, with a soft shadow at their base",
-      "The third ant mission's beetles no longer rebuild what you destroy"
-    ],
-    "fixed": [
-      "Neutral camps and computer players fight back together, ranged attackers included",
-      "Melee units no longer jam or vibrate behind allies already fighting",
-      "The camera reaches the edges and corners of the map, and on macOS exclusive fullscreen keeps hot corners away",
-      "Animation, sleeping-creature and ramp fixes"
-    ],
+    "added": [],
+    "improved": [],
+    "fixed": [],
     "knownIssues": []
   },
   "releases": [
+    {
+      "added": [
+        "Unit movement rebuilt in the manner of StarCraft II: your own units part for each other, squeeze through chokes and close round their targets, while enemies and units fighting or holding position still block",
+        "Heroes stand out: a golden burst when they gain a level, a level badge and a glowing card while a skill point waits, and a soft pool of their player's colour",
+        "An army button and key (F1), groups of buildings that share their training and research, and grid hotkeys for every command card cell",
+        "Windowed, borderless and exclusive fullscreen display modes, and a Voice volume setting",
+        "Reset campaign, to play a campaign again from the start"
+      ],
+      "improved": [
+        "Four unit body sizes, with every model scaled to the space it takes",
+        "Substance Wells pump faster: 10 Substance every 3 seconds",
+        "Queued units take supply only once they start training, and Reaver Queens and Juggernauts are no longer limited to one",
+        "Buildings sit firmly on the ground, with a soft shadow at their base",
+        "The third ant mission's beetles no longer rebuild what you destroy"
+      ],
+      "fixed": [
+        "Neutral camps and computer players fight back together, ranged attackers included",
+        "Melee units no longer jam or vibrate behind allies already fighting",
+        "The camera reaches the edges and corners of the map, and on macOS exclusive fullscreen keeps hot corners away",
+        "Animation, sleeping-creature and ramp fixes"
+      ],
+      "knownIssues": [],
+      "version": "0.4.3",
+      "publishedAt": "2026-10-24T19:19:40.395Z",
+      "title": "Fluid Armies"
+    },
     {
       "images": [
         {
