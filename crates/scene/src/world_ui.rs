@@ -559,6 +559,16 @@ impl WorldUi {
                 .map(|i| &bodies[i])
         };
         let at = |b: &Body| position(b.key).unwrap_or(b.position);
+        // Buildings are grounded by a soft shadow where their base meets the ground
+        // (UND-22: without it a pale base on bright ground reads as floating).
+        for b in bodies
+            .iter()
+            .filter(|b| b.building && !b.item && b.surface == 0)
+        {
+            if let Some(footprint) = b.footprint {
+                contact_shadow(out, footprint, at(b), field);
+            }
+        }
         // The network lies under every other mark.
         if !input.network.is_empty() {
             network(out, &input.network, field);
@@ -887,6 +897,60 @@ fn solid(out: &mut WorldUiFrame, [x0, y0, x1, y1]: [f32; 4], color: [f32; 4]) {
         ..Default::default()
     };
     out.quad([v(x0, y0), v(x1, y0), v(x1, y1), v(x0, y1)]);
+}
+
+/// A building's contact shadow: its reach beyond the footprint (a share of the shorter
+/// side, kept within metres), its darkness at the base, its footprint corners' rounding
+/// (a share of the shorter half side) and the grid it is draped with (points per side).
+const CONTACT_REACH: (f32, f32, f32) = (0.16, 1.0, 2.4);
+const CONTACT_ALPHA: f32 = 0.38;
+const CONTACT_CORNER: f32 = 0.35;
+const CONTACT_GRID: usize = 14;
+
+/// A building's contact shadow draped on the ground around and under its footprint
+/// (`[width, depth]` metres, centred on `at`): darkest at the footprint's rounded edge,
+/// fading out over its reach (profile 4).
+fn contact_shadow(out: &mut WorldUiFrame, [w, d]: [f32; 2], at: Vec3, field: &dyn WaterField) {
+    let reach = (w.min(d) * CONTACT_REACH.0).clamp(CONTACT_REACH.1, CONTACT_REACH.2);
+    let (hw, hd) = (w / 2.0, d / 2.0);
+    let corner = hw.min(hd) * CONTACT_CORNER;
+    // Signed distance outside the footprint's rounded rectangle (negative inside).
+    let outside = |x: f32, z: f32| {
+        let (qx, qz) = (x.abs() - (hw - corner), z.abs() - (hd - corner));
+        qx.max(0.0).hypot(qz.max(0.0)) + qx.max(qz).min(0.0) - corner
+    };
+    let (ex, ez) = (hw + reach, hd + reach);
+    let n = CONTACT_GRID;
+    let vertex = |i: usize, j: usize| {
+        let x = -ex + 2.0 * ex * i as f32 / n as f32;
+        let z = -ez + 2.0 * ez * j as f32 / n as f32;
+        let (px, pz) = (at.x + x, at.z + z);
+        GroundVertex {
+            position: [px, field.walk(px, pz, 0) + 0.05, pz],
+            color: [0.0, 0.0, 0.0, CONTACT_ALPHA],
+            across: outside(x, z).max(0.0) / reach,
+            ring_profile: 4.0,
+        }
+    };
+    let grid: Vec<GroundVertex> = (0..=n)
+        .flat_map(|j| (0..=n).map(move |i| (i, j)))
+        .map(|(i, j)| vertex(i, j))
+        .collect();
+    for j in 0..n {
+        for i in 0..n {
+            let (a, b, c, e) = (
+                grid[j * (n + 1) + i],
+                grid[j * (n + 1) + i + 1],
+                grid[(j + 1) * (n + 1) + i + 1],
+                grid[(j + 1) * (n + 1) + i],
+            );
+            // Cells wholly beyond the shadow's reach draw nothing.
+            if [a, b, c, e].iter().all(|v| v.across >= 1.0) {
+                continue;
+            }
+            out.ground.extend_from_slice(&[a, b, c, a, c, e]);
+        }
+    }
 }
 
 /// A hero's glow: its radius in body radii (kept within metres), its alpha at the

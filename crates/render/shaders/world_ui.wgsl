@@ -60,7 +60,12 @@ fn fs_ground(in: GroundOut) -> SceneOut {
     var out: SceneOut;
     out.color = in.color;
     let width = fwidth(in.ring.x);
-    if (in.ring.y > 2.5) {
+    if (in.ring.y > 3.5) {
+        // A building's contact shadow: `ring.x` runs 0 at its footprint's edge (and
+        // under it) to 1 where the shadow ends, fading softly outwards.
+        let fall = 1.0 - clamp(in.ring.x, 0.0, 1.0);
+        out.color.a *= fall * fall;
+    } else if (in.ring.y > 2.5) {
         // A hero's glow: `ring.x` runs 0 at its centre to 1 at its edge; broad, and
         // fading to nothing with no slope at the edge, so no rim shows.
         let r = clamp(in.ring.x, 0.0, 1.0);

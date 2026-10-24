@@ -18,7 +18,8 @@
       "Units come in four body sizes that match their models: small (workers, Raiders, beetle infantry), medium, large (every hero and the big beasts) and huge (Juggernaut, Reaver Queen). Small and medium units fit through one-block lanes; large and huge ones need wider ways.",
       "Unit models are scaled to the space they take, so armies no longer look like piles of overlapping legs; the ants shrank most.",
       "Substance Wells pump faster: 10 Substance every 3 seconds instead of every 5.",
-      "In The Glass Road the beetles no longer rebuild the towers and buildings you destroy."
+      "In The Glass Road the beetles no longer rebuild the towers and buildings you destroy.",
+      "Buildings sit firmly on the ground, with a soft shadow where their base meets it"
     ],
     "fixed": [
       "The camera can now centre on the very edges and corners of the map, as in Warcraft III.",

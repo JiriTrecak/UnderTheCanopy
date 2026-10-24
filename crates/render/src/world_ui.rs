@@ -25,7 +25,8 @@ pub struct GroundVertex {
     /// the network field.
     pub across: f32,
     /// 1 for a selection ring, 2 for the power network's field (D66), 3 for a hero's
-    /// glow (`across` 0 at its centre to 1 at its edge).
+    /// glow (`across` 0 at its centre to 1 at its edge), 4 for a building's contact
+    /// shadow (`across` 0 at its footprint's edge to 1 where the shadow ends).
     pub ring_profile: f32,
 }
 
