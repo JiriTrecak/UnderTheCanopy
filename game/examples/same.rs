@@ -3,7 +3,8 @@
 //! the same name in the second and reports identical, or how many pixels differ and by how
 //! much: the largest and the mean channel difference, and the share of pixels whose
 //! largest channel difference exceeds 2/255. Exits with failure if any differ or are
-//! missing.
+//! missing. With `SAME_DIFF=<folder>` it also writes each before image there, dimmed,
+//! with the pixels differing by more than 2/255 in magenta.
 
 use anyhow::{Context, Result};
 use std::{path::Path, process::ExitCode};
@@ -19,6 +20,7 @@ struct Difference {
 }
 
 fn compare(a: &Path, b: &Path) -> Result<Option<Difference>> {
+    let name = a.file_name().map(|n| n.to_owned()).unwrap_or_default();
     let a = image::open(a)
         .with_context(|| a.display().to_string())?
         .to_rgba8();
@@ -27,6 +29,30 @@ fn compare(a: &Path, b: &Path) -> Result<Option<Difference>> {
         .to_rgba8();
     if a.dimensions() != b.dimensions() {
         anyhow::bail!("sizes differ: {:?} vs {:?}", a.dimensions(), b.dimensions());
+    }
+    if let Ok(dir) = std::env::var("SAME_DIFF") {
+        let mut out = a.clone();
+        let (mut lo, mut hi) = ([u32::MAX; 2], [0u32; 2]);
+        for (x, y, p) in out.enumerate_pixels_mut() {
+            let q = b.get_pixel(x, y);
+            let d =
+                p.0.iter()
+                    .zip(q.0)
+                    .map(|(x, y)| x.abs_diff(y))
+                    .max()
+                    .unwrap_or(0);
+            if d > 2 {
+                *p = image::Rgba([255, 0, 255, 255]);
+                lo = [lo[0].min(x), lo[1].min(y)];
+                hi = [hi[0].max(x), hi[1].max(y)];
+            } else {
+                p.0[0] /= 3;
+                p.0[1] /= 3;
+                p.0[2] /= 3;
+            }
+        }
+        eprintln!("diff box {lo:?}..{hi:?}");
+        out.save(Path::new(&dir).join(&name))?;
     }
     let (mut differing, mut largest, mut sum, mut above_two) = (0, 0, 0u64, 0);
     for (p, q) in a.pixels().zip(b.pixels()) {

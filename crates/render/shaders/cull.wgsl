@@ -1,12 +1,19 @@
 // GPU culling of static instances for the camera (view 0) and the sun (view 1): each
 // visible instance is appended to its model's list for that view, then every draw's
-// indirect instance count is set from the lists.
+// indirect instance count is set from the lists. The sun's list keeps only casters whose
+// shadow can reach the camera's view (shadow.rs, `CasterCull`).
 
 struct Params {
     // 6 planes per view: n·p + d ≥ 0 inside
     planes: array<vec4f, 12>,
     // items, draws, 0, 0
     counts: vec4u,
+    // The camera's side and near planes for casters (CasterCull::planes).
+    caster_planes: array<vec4f, 5>,
+    // xyz towards the sun, w the margin
+    sweep: vec4f,
+    // the shadow map's depth row
+    sun_depth: vec4f,
 }
 
 struct Item {
@@ -44,6 +51,26 @@ fn inside(view: u32, sphere: vec4f) -> bool {
     return true;
 }
 
+// `CasterCull::casts_into_view`.
+fn casts_into_view(sphere: vec4f) -> bool {
+    let towards_sun = params.sweep.xyz;
+    let radius = sphere.w + params.sweep.w;
+    let rate = -dot(params.sun_depth.xyz, towards_sun);
+    if (rate <= 1e-6) {
+        return true;
+    }
+    let depth = dot(params.sun_depth, vec4f(sphere.xyz, 1.0));
+    let length = max((1.0 - depth) / rate, 0.0) + radius;
+    let end = sphere.xyz - towards_sun * length;
+    for (var i = 0u; i < 5u; i++) {
+        let p = params.caster_planes[i];
+        if (dot(p.xyz, sphere.xyz) + p.w < -radius && dot(p.xyz, end) + p.w < -radius) {
+            return false;
+        }
+    }
+    return true;
+}
+
 @compute @workgroup_size(64)
 fn cull(@builtin(global_invocation_id) id: vec3u) {
     let index = id.x;
@@ -59,7 +86,7 @@ fn cull(@builtin(global_invocation_id) id: vec3u) {
         if (view == 1u && item.info.y == 0u) {
             continue;
         }
-        if (inside(view, item.sphere)) {
+        if (inside(view, item.sphere) && (view == 0u || casts_into_view(item.sphere))) {
             let slot = atomicAdd(&counters[model * 2u + view], 1u);
             visible[regions[model].base[view] + slot] = index;
         }

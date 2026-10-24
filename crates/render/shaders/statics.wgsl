@@ -33,7 +33,9 @@ struct VertexIn {
 }
 
 struct VsOut {
-    @builtin(position) clip: vec4f,
+    // Invariant: the depth prepass and the lit pass of opaque sections must place every
+    // vertex identically (the lit pass tests depth for equality).
+    @builtin(position) @invariant clip: vec4f,
     @location(0) world: vec3f,
     @location(1) normal: vec3f,
     @location(2) uv: vec2f,
@@ -103,8 +105,8 @@ fn vs_main(in: VertexIn, @builtin(instance_index) slot: u32) -> VsOut {
     return out;
 }
 
-@fragment
-fn fs_main(in: VsOut, @builtin(front_facing) front: bool) -> SceneOut {
+// The shaded fragment of a section (cutaway and alpha test aside).
+fn lit(in: VsOut, front: bool) -> vec4f {
     var f: MaterialFragment;
     f.frag = in.clip;
     f.world = in.world;
@@ -121,14 +123,44 @@ fn fs_main(in: VsOut, @builtin(front_facing) front: bool) -> SceneOut {
     if (has(FOLIAGE)) {
         f.tint = foliage_variation(instances[in.instance]);
     }
-    if (cut_away(in.instance, in.clip.xy, in.world) || above_rts(in.instance, in.clip.xy, in.world)) {
+    return shade_material(f);
+}
+
+fn cut(in: VsOut) -> bool {
+    return cut_away(in.instance, in.clip.xy, in.world) || above_rts(in.instance, in.clip.xy, in.world);
+}
+
+// Alpha-tested and blended sections.
+@fragment
+fn fs_main(in: VsOut, @builtin(front_facing) front: bool) -> SceneOut {
+    if (cut(in)) {
         discard;
     }
-    let shaded = shade_material(f);
+    let shaded = lit(in, front);
     if (has(ALPHA_MASK) && shaded.a <= 0.0) {
         discard;
     }
     return scene_out(shaded, in.world);
+}
+
+// Opaque sections draw twice: a depth prepass (`fs_prepass`, or `fs_prepass_cut` for
+// canopy models, which carries the cutaway's discards) settles which samples they cover,
+// then this pass shades exactly those samples (depth equal, no writes). Without a
+// discard here the GPU shades only the visible surface, never the hidden back faces
+// and models behind models.
+@fragment
+fn fs_lit(in: VsOut, @builtin(front_facing) front: bool) -> SceneOut {
+    return scene_out(lit(in, front), in.world);
+}
+
+@fragment
+fn fs_prepass() {}
+
+@fragment
+fn fs_prepass_cut(in: VsOut) {
+    if (cut(in)) {
+        discard;
+    }
 }
 
 // Foliage variation: every instance of a foliage model gets its own value and warmth from

@@ -53,7 +53,19 @@ struct PointLight {
 @group(0) @binding(2) var shadow_sampler: sampler_comparison;
 @group(0) @binding(3) var canopy_pattern: texture_2d<f32>;
 @group(0) @binding(4) var repeat_sampler: sampler;
-@group(0) @binding(5) var<storage, read> point_lights: array<PointLight>;
+// The frame's point lights and a grid over the ground that lists, per cell, the lights
+// whose range reaches it (frame.rs, `LightGrid`).
+struct Lights {
+    list: array<PointLight, 64>,
+    // xy: world x, z of the grid's corner; z: cells per world unit
+    grid: vec4f,
+    // columns, rows
+    size: vec4u,
+    // per cell: bit i of the 64 set when light i may reach it
+    cells: array<vec2u>,
+}
+
+@group(0) @binding(5) var<storage, read> lights: Lights;
 @group(0) @binding(6) var fog_map: texture_2d<f32>;
 @group(0) @binding(7) var fog_sampler: sampler;
 // Scenery cutaway mask (cutaway.rs): r the covering unit's view depth, g its weight.

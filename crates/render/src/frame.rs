@@ -4,6 +4,9 @@ use crate::{camera::CameraView, environment::Lighting};
 use bytemuck::{Pod, Zeroable};
 use glam::Mat4;
 
+/// How far receivers step along their normal before reading the sun's map, world units.
+pub const NORMAL_OFFSET: f32 = 0.025;
+
 /// Mirrors `Frame` in `shaders/lib/frame.wgsl`.
 #[repr(C)]
 #[derive(Debug, Clone, Copy, Pod, Zeroable)]
@@ -52,6 +55,70 @@ pub struct PointLight {
     pub range: f32,
     pub color: [f32; 3],
     pub pad: f32,
+}
+
+/// Most cells of the light grid on a side.
+const LIGHT_GRID: f32 = 64.0;
+/// Bytes of the lights buffer: the lights, the grid's header and its largest cell list.
+pub const LIGHTS_BYTES: usize = MAX_POINT_LIGHTS * std::mem::size_of::<PointLight>()
+    + 32
+    + (LIGHT_GRID as usize) * (LIGHT_GRID as usize) * 8;
+
+/// The light grid (`Lights` in frame.wgsl): a grid over the ground covering every
+/// light's reach, each cell listing, as a 64-bit mask, the lights whose range reaches
+/// it. A surface sums only its cell's lights, in their order, so its light is the same
+/// as summing them all (those left out are out of range and add nothing).
+pub fn light_buffer_contents(lights: &[PointLight]) -> Vec<u8> {
+    let lights = &lights[..lights.len().min(MAX_POINT_LIGHTS)];
+    let mut list = [PointLight::zeroed(); MAX_POINT_LIGHTS];
+    list[..lights.len()].copy_from_slice(lights);
+    let mut bytes = bytemuck::cast_slice::<_, u8>(&list).to_vec();
+    // Reach in xz, a little generous so rounding at a cell's edge never drops a light.
+    let reach = |l: &PointLight| l.range.max(0.0) * 1.001 + 0.05;
+    let (mut lo, mut hi) = ([f32::MAX; 2], [f32::MIN; 2]);
+    for l in lights {
+        let r = reach(l);
+        lo = [lo[0].min(l.position[0] - r), lo[1].min(l.position[2] - r)];
+        hi = [hi[0].max(l.position[0] + r), hi[1].max(l.position[2] + r)];
+    }
+    if lights.is_empty() || !(lo[0].is_finite() && hi[0].is_finite()) {
+        bytes.extend_from_slice(bytemuck::cast_slice(&[0.0f32; 4]));
+        bytes.extend_from_slice(bytemuck::cast_slice(&[0u32; 4]));
+        return bytes;
+    }
+    let cell = ((hi[0] - lo[0]).max(hi[1] - lo[1]) / LIGHT_GRID).max(0.5);
+    let size = [
+        (((hi[0] - lo[0]) / cell).ceil() as usize).clamp(1, LIGHT_GRID as usize),
+        (((hi[1] - lo[1]) / cell).ceil() as usize).clamp(1, LIGHT_GRID as usize),
+    ];
+    let mut cells = vec![[0u32; 2]; size[0] * size[1]];
+    for (i, l) in lights.iter().enumerate() {
+        let r = reach(l);
+        let (x, z) = (l.position[0], l.position[2]);
+        let first =
+            |c: f32, o: f32, n: usize| (((c - r - o) / cell).floor().max(0.0) as usize).min(n - 1);
+        let last =
+            |c: f32, o: f32, n: usize| (((c + r - o) / cell).floor().max(0.0) as usize).min(n - 1);
+        for cz in first(z, lo[1], size[1])..=last(z, lo[1], size[1]) {
+            for cx in first(x, lo[0], size[0])..=last(x, lo[0], size[0]) {
+                // The cell square's nearest point to the light.
+                let nx = x.clamp(lo[0] + cx as f32 * cell, lo[0] + (cx + 1) as f32 * cell);
+                let nz = z.clamp(lo[1] + cz as f32 * cell, lo[1] + (cz + 1) as f32 * cell);
+                if (nx - x).hypot(nz - z) <= r {
+                    cells[cz * size[0] + cx][i / 32] |= 1 << (i % 32);
+                }
+            }
+        }
+    }
+    bytes.extend_from_slice(bytemuck::cast_slice(&[lo[0], lo[1], 1.0 / cell, 0.0]));
+    bytes.extend_from_slice(bytemuck::cast_slice(&[
+        size[0] as u32,
+        size[1] as u32,
+        0,
+        0,
+    ]));
+    bytes.extend_from_slice(bytemuck::cast_slice(&cells));
+    bytes
 }
 
 fn v4(v: glam::Vec3, w: f32) -> [f32; 4] {
@@ -112,7 +179,7 @@ impl FrameUniform {
                 p.shadow_texel,
                 l.shadow_softness,
                 // Normal offset of receivers, and a constant depth bias.
-                0.025,
+                NORMAL_OFFSET,
                 0.0004,
             ],
             background: v4(l.background, crate::surroundings::view_fade(p.camera)),

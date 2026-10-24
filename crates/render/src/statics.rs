@@ -12,6 +12,7 @@ use crate::{
     camera::frustum_planes,
     device::GpuFeatures,
     material::{GpuMaterial, Textures, Variant},
+    shadow::CasterCull,
     targets,
 };
 use anyhow::{Context, Result};
@@ -88,6 +89,9 @@ struct CullItem {
 struct CullParams {
     planes: [[f32; 4]; 12],
     counts: [u32; 4],
+    caster_planes: [[f32; 4]; 5],
+    sweep: [f32; 4],
+    sun_depth: [f32; 4],
 }
 
 /// One indirect draw.
@@ -110,6 +114,8 @@ struct GpuModel {
     sections: Vec<canopy_assets::Section>,
     materials: Vec<GpuMaterial>,
     masked_shadow_sections: Vec<usize>,
+    /// A canopy model: the cutaway may open it (its prepass discards).
+    canopy: bool,
     /// First visible slot per view.
     region: [u32; 2],
     depth_index_count: u32,
@@ -128,9 +134,13 @@ pub struct StaticsStats {
 pub struct StaticsGpu {
     models: Vec<GpuModel>,
     forward_draws: Vec<DrawRecord>,
+    /// The opaque sections lead `forward_draws`.
+    opaque_draws: usize,
     blend_draws: Vec<DrawRecord>,
     shadow_draws: Vec<DrawRecord>,
     pipelines: HashMap<Variant, wgpu::RenderPipeline>,
+    /// Depth prepass of opaque sections by (double sided, canopy).
+    prepass_pipelines: HashMap<(bool, bool), wgpu::RenderPipeline>,
     depth_pipeline: wgpu::RenderPipeline,
     masked_pipeline: wgpu::RenderPipeline,
     instance_group: wgpu::BindGroup,
@@ -389,6 +399,7 @@ impl StaticsGpu {
                 sections: meta.sections.clone(),
                 materials,
                 masked_shadow_sections,
+                canopy: uniform.wind[2] > 0.0,
                 region,
                 depth_index_count: meta.depth.index_count,
                 instances: count,
@@ -459,6 +470,17 @@ impl StaticsGpu {
             let section = model.sections[d.section.unwrap_or(0)];
             (model.materials[section.material as usize].variant, d.model)
         });
+        let opaque_draws = forward_draws
+            .iter()
+            .take_while(|d| {
+                let model = &models[d.model];
+                let section = model.sections[d.section.unwrap_or(0)];
+                matches!(
+                    model.materials[section.material as usize].variant,
+                    Variant::Opaque { .. }
+                )
+            })
+            .count();
 
         let storage_init = |label: &str, contents: &[u8], extra| {
             device.create_buffer_init(&wgpu::util::BufferInitDescriptor {
@@ -698,6 +720,8 @@ impl StaticsGpu {
                     (double_sided, false, Some(wgpu::BlendState::ALPHA_BLENDING))
                 }
             };
+            // Opaque sections shade only what their prepass left visible.
+            let opaque = matches!(variant, Variant::Opaque { .. });
             let pipeline = device.create_render_pipeline(&wgpu::RenderPipelineDescriptor {
                 label: Some("statics"),
                 layout: Some(&layout),
@@ -711,11 +735,15 @@ impl StaticsGpu {
                     cull_mode: (!double_sided).then_some(wgpu::Face::Back),
                     ..Default::default()
                 },
-                depth_stencil: Some(targets::scene_depth(blend.is_none())),
+                depth_stencil: Some(if opaque {
+                    targets::scene_depth_equal()
+                } else {
+                    targets::scene_depth(blend.is_none())
+                }),
                 multisample: targets::scene_multisample(a2c),
                 fragment: Some(wgpu::FragmentState {
                     module: &module,
-                    entry_point: Some("fs_main"),
+                    entry_point: Some(if opaque { "fs_lit" } else { "fs_main" }),
                     compilation_options: Default::default(),
                     targets: &targets::forward_targets(blend, blend.is_none()),
                 }),
@@ -723,6 +751,40 @@ impl StaticsGpu {
                 cache: None,
             });
             pipelines.insert(variant, pipeline);
+        }
+        let mut prepass_pipelines = HashMap::new();
+        for double_sided in [false, true] {
+            for canopy in [false, true] {
+                let pipeline = device.create_render_pipeline(&wgpu::RenderPipelineDescriptor {
+                    label: Some("statics prepass"),
+                    layout: Some(&layout),
+                    vertex: wgpu::VertexState {
+                        module: &module,
+                        entry_point: Some("vs_main"),
+                        compilation_options: Default::default(),
+                        buffers: &main_buffers,
+                    },
+                    primitive: wgpu::PrimitiveState {
+                        cull_mode: (!double_sided).then_some(wgpu::Face::Back),
+                        ..Default::default()
+                    },
+                    depth_stencil: Some(targets::scene_depth(true)),
+                    multisample: targets::scene_multisample(false),
+                    fragment: Some(wgpu::FragmentState {
+                        module: &module,
+                        entry_point: Some(if canopy {
+                            "fs_prepass_cut"
+                        } else {
+                            "fs_prepass"
+                        }),
+                        compilation_options: Default::default(),
+                        targets: &targets::depth_only_targets(),
+                    }),
+                    multiview_mask: None,
+                    cache: None,
+                });
+                prepass_pipelines.insert((double_sided, canopy), pipeline);
+            }
         }
         let depth_attributes = wgpu::vertex_attr_array![0 => Unorm16x4];
         let depth_pipeline = device.create_render_pipeline(&wgpu::RenderPipelineDescriptor {
@@ -787,10 +849,12 @@ impl StaticsGpu {
             item_buffer,
             slot_of,
             models,
+            opaque_draws,
             forward_draws,
             blend_draws,
             shadow_draws,
             pipelines,
+            prepass_pipelines,
             depth_pipeline,
             masked_pipeline,
             instance_group,
@@ -806,7 +870,7 @@ impl StaticsGpu {
     }
 
     /// Sets the culling planes of the camera and the sun.
-    pub fn prepare(&self, queue: &wgpu::Queue, camera: Mat4, sun: Mat4) {
+    pub fn prepare(&self, queue: &wgpu::Queue, camera: Mat4, sun: Mat4, casters: &CasterCull) {
         let mut planes = [[0.0; 4]; 12];
         for (i, p) in frustum_planes(camera)
             .iter()
@@ -818,6 +882,9 @@ impl StaticsGpu {
         let params = CullParams {
             planes,
             counts: [self.items, self.draws, 0, 0],
+            caster_planes: casters.planes.map(|p| p.to_array()),
+            sweep: casters.sweep.to_array(),
+            sun_depth: casters.depth.to_array(),
         };
         queue.write_buffer(&self.params, 0, bytemuck::bytes_of(&params));
     }
@@ -845,10 +912,16 @@ impl StaticsGpu {
         ]
     }
 
-    fn draw_sections(&self, pass: &mut wgpu::RenderPass<'_>, draws: &[DrawRecord]) -> u32 {
+    fn draw_sections<'a>(
+        &self,
+        pass: &mut wgpu::RenderPass<'_>,
+        draws: impl Iterator<Item = &'a DrawRecord>,
+    ) -> u32 {
         let mut current: Option<Variant> = None;
         let mut bound_model = usize::MAX;
+        let mut count = 0;
         for draw in draws {
+            count += 1;
             let model = &self.models[draw.model];
             let section = model.sections[draw.section.expect("a section draw")];
             let material = &model.materials[section.material as usize];
@@ -867,12 +940,50 @@ impl StaticsGpu {
             pass.set_bind_group(1, &material.bind_group, &[]);
             pass.draw_indexed_indirect(&self.args, (draw.args * 20) as u64);
         }
-        draws.len() as u32
+        count
+    }
+
+    /// The depth prepass of opaque sections: record first in the forward pass, before
+    /// anything they may cover.
+    pub fn draw_prepass(&self, pass: &mut wgpu::RenderPass<'_>, frame: &wgpu::BindGroup) -> u32 {
+        pass.set_bind_group(0, frame, &[]);
+        let mut current = None;
+        let mut bound_model = usize::MAX;
+        let mut count = 0;
+        for draw in &self.forward_draws {
+            let model = &self.models[draw.model];
+            let section = model.sections[draw.section.expect("a section draw")];
+            let material = &model.materials[section.material as usize];
+            let Variant::Opaque { double_sided } = material.variant else {
+                continue;
+            };
+            let key = (double_sided, model.canopy);
+            if current != Some(key) {
+                pass.set_pipeline(&self.prepass_pipelines[&key]);
+                current = Some(key);
+            }
+            if bound_model != draw.model {
+                pass.set_bind_group(2, &self.instance_group, &self.offsets(draw.model, 0));
+                pass.set_vertex_buffer(0, model.vertices.slice(..));
+                pass.set_vertex_buffer(1, model.colors.slice(..));
+                pass.set_vertex_buffer(2, model.leaves.slice(..));
+                pass.set_index_buffer(model.indices.slice(..), model.index_format);
+                bound_model = draw.model;
+            }
+            // The vertex stage reads the material (foliage flutter).
+            pass.set_bind_group(1, &material.bind_group, &[]);
+            pass.draw_indexed_indirect(&self.args, (draw.args * 20) as u64);
+            count += 1;
+        }
+        count
     }
 
     pub fn draw_forward(&self, pass: &mut wgpu::RenderPass<'_>, frame: &wgpu::BindGroup) -> u32 {
         pass.set_bind_group(0, frame, &[]);
-        self.draw_sections(pass, &self.forward_draws)
+        // Opaque sections pass where their depth equals the prepass's: where two tie, the
+        // last drawn wins here but the first one won the prepass, so they shade in reverse.
+        let (opaque, rest) = self.forward_draws.split_at(self.opaque_draws);
+        self.draw_sections(pass, opaque.iter().rev().chain(rest))
     }
 
     pub fn draw_transparent(
@@ -881,7 +992,7 @@ impl StaticsGpu {
         frame: &wgpu::BindGroup,
     ) -> u32 {
         pass.set_bind_group(0, frame, &[]);
-        self.draw_sections(pass, &self.blend_draws)
+        self.draw_sections(pass, self.blend_draws.iter())
     }
 
     pub fn draw_shadow(&self, pass: &mut wgpu::RenderPass<'_>, frame: &wgpu::BindGroup) -> u32 {
