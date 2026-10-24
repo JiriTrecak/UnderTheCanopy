@@ -1064,9 +1064,22 @@ pub struct Rules {
     /// declares none (D90): what marks dropped loot. States: `always`.
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub item_effects: Vec<StateEffect>,
+    /// What a hero gaining a level plays where it stands (it follows the hero).
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub level_up: Option<LevelUp>,
     /// `rules/sounds.json` (D97): menu music, end stings and interface sounds.
     #[serde(default)]
     pub sounds: crate::sounds::SoundRules,
+}
+
+/// A hero's level-up as players see and hear it.
+#[skip_serializing_none]
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize, schemars::JsonSchema)]
+#[serde(rename_all = "camelCase", deny_unknown_fields)]
+pub struct LevelUp {
+    pub effect: Id,
+    /// A world sound event.
+    pub sound: Option<Id>,
 }
 
 /// A race with the global starting setup filled in where it has none.

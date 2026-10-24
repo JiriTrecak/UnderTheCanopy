@@ -167,6 +167,9 @@ pub type Palette = Vec<[u8; 3]>;
 
 pub struct Hud {
     nodes: Option<Nodes>,
+    /// Hero cards with a skill point to spend, as laid out last frame (physical pixels):
+    /// motes rise behind them.
+    rising: Vec<canopy_ui::Rect>,
     appearance: [Option<String>; 2],
     requests: BTreeSet<String>,
     /// The portrait shows the live render target `@portrait` instead of the icon.
@@ -203,10 +206,89 @@ impl Default for Hud {
     }
 }
 
+/// Seconds of one breath of a hero card's skill-point glow.
+const MOTE_PULSE: f32 = 1.6;
+/// Motes rising behind one card at a time, and how long each lives (s).
+const MOTES: u32 = 22;
+const MOTE_LIFE: f32 = 1.9;
+
 impl Hud {
+    /// A breathing gold halo and motes rising from behind each hero card with a skill
+    /// point to spend, drawn under the HUD so the card stands in front of them (`now`:
+    /// the match's clock).
+    pub fn draw_motes(&self, list: &mut canopy_ui::DrawList, now: std::time::Duration, scale: f32) {
+        use canopy_ui::{Batch, Color, Quad, QuadKind, Rect};
+        if self.rising.is_empty() {
+            return;
+        }
+        let t = now.as_secs_f32();
+        let mut quads = Vec::new();
+        let breath = 0.6 + 0.4 * (t * std::f32::consts::TAU / MOTE_PULSE).sin();
+        for (c, card) in self.rising.iter().enumerate() {
+            // A shadow quad covers the blur's reach around the card it is cast from.
+            let (spread, blur) = (3.0 * scale, 16.0 * scale);
+            let reach = spread + blur + 1.0;
+            let mut halo = Quad::new(
+                QuadKind::Shadow,
+                Rect::new(
+                    card.x - reach,
+                    card.y - reach,
+                    card.w + 2.0 * reach,
+                    card.h + 2.0 * reach,
+                ),
+                Color::rgba(0xf6, 0xb8, 0x4a, (235.0 * breath) as u8),
+            );
+            halo.radius = 4.0 * scale;
+            halo.border = spread;
+            halo.soft = blur;
+            halo.uv = [0.0; 4];
+            quads.push(halo);
+            for m in 0..MOTES {
+                // A fixed scatter per mote; each rises through its life and starts again.
+                let hash = |k: u32| {
+                    let x = (c as u32 * 7919 + m * 104_729 + k * 15_485_863)
+                        .wrapping_mul(2_654_435_761);
+                    (x >> 8) as f32 / (1u32 << 24) as f32
+                };
+                let age = (t / MOTE_LIFE + hash(1)).fract();
+                let spread = card.w + 14.0 * scale;
+                let x = card.x - 7.0 * scale
+                    + spread * hash(2)
+                    + (age * 6.0 + hash(3) * 6.3).sin() * 3.0 * scale;
+                let y = card.bottom() - age * (card.h + 44.0 * scale);
+                let size = (3.5 + 5.0 * hash(4)) * scale * (1.0 - 0.45 * age);
+                let alpha = ((age * std::f32::consts::PI).sin().powf(0.6) * 255.0) as u8;
+                let mut q = Quad::new(
+                    QuadKind::Radial,
+                    Rect::new(x - size, y - size, size * 2.0, size * 2.0),
+                    Color::rgba(0xff, 0xe6, 0xa6, alpha),
+                );
+                q.color2 = Color::rgba(0xf2, 0xa8, 0x38, 0).to_array();
+                q.radius = size;
+                quads.push(q);
+            }
+        }
+        // Under the HUD: shift its batches past the motes.
+        let n = quads.len() as u32;
+        for batch in &mut list.batches {
+            batch.quads = batch.quads.start + n..batch.quads.end + n;
+        }
+        list.batches.insert(
+            0,
+            Batch {
+                texture: None,
+                scissor: None,
+                quads: 0..n,
+            },
+        );
+        quads.append(&mut list.quads);
+        list.quads = quads;
+    }
+
     pub fn new() -> Self {
         Self {
             nodes: None,
+            rising: Vec::new(),
             appearance: [None, None],
             requests: BTreeSet::new(),
             live_portrait: false,
@@ -465,6 +547,7 @@ impl Hud {
     }
 
     fn heroes(&mut self, ui: &mut Ui, n: &Nodes, play: &Play, k: &Knowledge) {
+        self.rising.clear();
         let heroes = play.heroes();
         ui.set_count(n.heroes, heroes.len());
         for (i, &id) in heroes.iter().enumerate() {
@@ -481,6 +564,18 @@ impl Hud {
             if let Some(bar) = ui.find_in(cell, "health") {
                 ui.set_value(bar, ratio);
                 ui.set_color(bar, Some(health_color(ratio)));
+            }
+            // Its level on the badge; an unspent skill point makes the card glow and
+            // motes rise behind it.
+            let level = e.combat.as_ref().map_or(1, |c| c.stats.level);
+            if let Some(badge) = ui.find_in(cell, "level") {
+                ui.set_text(badge, &level.to_string());
+            }
+            let points = super::card::unspent(k, id);
+            if points > 0
+                && let Some(rect) = ui.rect(cell)
+            {
+                self.rising.push(rect);
             }
             let label = if i < 3 {
                 play.keymap.label(Shortcut::Hero(i))
@@ -506,8 +601,9 @@ impl Hud {
             ui.set_tooltip(
                 cell,
                 Some(Tooltip {
-                    title: d.name.clone(),
+                    title: tr!("hud.hero-title", name = &d.name, level = level),
                     hotkey: (!label.is_empty()).then_some(label),
+                    note: (points > 0).then(|| tr!("hud.hero-skill-points", count = points)),
                     body: if available {
                         tr!("hud.hero-select-tip")
                     } else if let Some(Some(s)) = revival {

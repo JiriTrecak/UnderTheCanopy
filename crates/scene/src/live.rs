@@ -576,6 +576,10 @@ pub struct Presenter {
     /// newest unit seen (later ones are new), the buildings standing as sites, the tick
     /// deaths were last heard up to.
     sound_cues: Vec<crate::sounds::SoundCue>,
+    /// Each hero's level as last shown, and the level-up effects following their hero
+    /// (its cues, until this tick).
+    levels: BTreeMap<EntityId, u32>,
+    rising: Vec<(EntityId, Vec<u32>, u32)>,
     newest_unit: Option<u32>,
     sites: BTreeSet<EntityId>,
     heard_deaths: Option<u32>,
@@ -769,6 +773,8 @@ impl Presenter {
             fired: BTreeMap::new(),
             struck: BTreeMap::new(),
             sound_cues: Vec::new(),
+            levels: BTreeMap::new(),
+            rising: Vec::new(),
             newest_unit: None,
             sites: BTreeSet::new(),
             heard_deaths: None,
@@ -894,6 +900,8 @@ impl Presenter {
     /// moment (a replay seek). The next presentation shows that moment afresh.
     pub fn reset(&mut self) {
         self.units.clear();
+        self.levels.clear();
+        self.rising.clear();
         self.newest_unit = None;
         self.sites.clear();
         self.heard_deaths = None;
@@ -1114,6 +1122,7 @@ impl Presenter {
         }
         // Looping state effects onto their sockets this tick.
         let mut moves: BTreeMap<u32, Vec3> = BTreeMap::new();
+        let mut leveled: Vec<(EntityId, Vec3)> = Vec::new();
         let mut damaged: Vec<Damaged> = Vec::new();
         let mut posed: BTreeMap<u32, Posed> = BTreeMap::new();
         let mut bodies: Vec<Body> = Vec::new();
@@ -1484,6 +1493,21 @@ impl Presenter {
                             &events,
                             position,
                         );
+                    }
+                    // A hero gaining a level shines (rules `levelUp`), the light following it.
+                    if d.is_hero()
+                        && let Some(level) = combat.map(|c| c.stats.level)
+                        && self
+                            .levels
+                            .insert(id, level)
+                            .is_some_and(|before| level > before)
+                    {
+                        leveled.push((id, position));
+                    }
+                    for (_, cues, _) in self.rising.iter().filter(|(hero, _, _)| *hero == id) {
+                        for &cue in cues {
+                            moves.insert(cue, position);
+                        }
                     }
                     if let Some(effects) = asset.effects.as_deref() {
                         let state = tracked
@@ -1921,7 +1945,11 @@ impl Presenter {
                 keep
             })
             .collect();
+        for (hero, at) in leveled {
+            self.level_up(hero, at, tick);
+        }
         self.effects.relocate(&moves);
+        self.rising.retain(|(_, _, until)| *until > tick);
         let anchors: BTreeMap<u32, Vec3> = actors
             .iter()
             .filter(|a| a.key >> 40 == Part::Entity as u64)
@@ -1964,6 +1992,37 @@ impl Presenter {
             bodies,
             pops: self.pops.clone(),
             sounds: std::mem::take(&mut self.sound_cues),
+        }
+    }
+
+    /// Plays the level-up effect (and sound) on a hero at `at`.
+    fn level_up(&mut self, hero: EntityId, at: Vec3, tick: u32) {
+        let Some(rule) = self.content.rules.level_up.clone() else {
+            return;
+        };
+        if let Some(effect) = self.effects.find(rule.effect.as_str()) {
+            let cues = self.effects.play(Play {
+                effect,
+                tick: f64::from(tick),
+                seed: hero.0.wrapping_mul(0x9e37_79b1) ^ tick,
+                at,
+                from: None,
+                radius: None,
+            });
+            let length = self
+                .content
+                .effects
+                .iter()
+                .find(|e| e.id == rule.effect)
+                .map_or(64, |e| e.duration_ticks);
+            self.rising.push((hero, cues, tick + length));
+        }
+        if let Some(sound) = rule.sound {
+            self.sound_cues.push(crate::sounds::SoundCue {
+                sound: sound.to_string(),
+                at: [at.x, at.z],
+                hold: None,
+            });
         }
     }
 

@@ -563,6 +563,24 @@ impl WorldUi {
         if !input.network.is_empty() {
             network(out, &input.network, field);
         }
+        // Heroes stand in a soft pool of their player's colour that faintly lights them
+        // (Warcraft III's hero glow): a hero is found at a glance.
+        for b in bodies
+            .iter()
+            .filter(|b| b.hero && !b.remembered && b.hp.is_some_and(|hp| hp > 0))
+        {
+            let color = self.player_color(b.owner);
+            let p = at(b);
+            hero_glow(out, b.radius * HERO_GLOW_RADIUS, b.surface, p, field, color);
+            if out.lights.len() < canopy_render::world_ui::MAX_MARK_LIGHTS {
+                out.lights.push(canopy_render::frame::PointLight {
+                    position: [p.x, p.y + HERO_LIGHT_HEIGHT, p.z],
+                    range: b.radius * HERO_LIGHT_RANGE,
+                    color: color.map(|c| c * HERO_LIGHT),
+                    pad: 0.0,
+                });
+            }
+        }
         // Attack targets of the selection.
         let targets: Vec<u32> = bodies
             .iter()
@@ -867,6 +885,40 @@ fn solid(out: &mut WorldUiFrame, [x0, y0, x1, y1]: [f32; 4], color: [f32; 4]) {
         ..Default::default()
     };
     out.quad([v(x0, y0), v(x1, y0), v(x1, y1), v(x0, y1)]);
+}
+
+/// A hero's glow: its radius in body radii, its alpha at the centre, and its light's
+/// height, reach (body radii) and strength.
+const HERO_GLOW_RADIUS: f32 = 2.4;
+const HERO_GLOW_ALPHA: f32 = 0.55;
+const HERO_LIGHT_HEIGHT: f32 = 1.2;
+const HERO_LIGHT_RANGE: f32 = 4.0;
+const HERO_LIGHT: f32 = 1.4;
+
+/// A hero's glow draped on the walking surface: a fan of sectors from its centre, its
+/// soft fall drawn per pixel (profile 3).
+fn hero_glow(
+    out: &mut WorldUiFrame,
+    radius: f32,
+    surface: u32,
+    at: Vec3,
+    field: &dyn WaterField,
+    color: [f32; 3],
+) {
+    let vertex = |x: f32, z: f32, across: f32| GroundVertex {
+        position: [x, field.walk(x, z, surface) + 0.06, z],
+        color: [color[0], color[1], color[2], HERO_GLOW_ALPHA],
+        across,
+        ring_profile: 3.0,
+    };
+    let centre = vertex(at.x, at.z, 0.0);
+    let rim = |s: usize| {
+        let a = s as f32 / SECTORS as f32 * std::f32::consts::TAU;
+        vertex(at.x + a.cos() * radius, at.z + a.sin() * radius, 1.0)
+    };
+    for s in 0..SECTORS {
+        out.ground.extend_from_slice(&[centre, rim(s), rim(s + 1)]);
+    }
 }
 
 /// A selection ring draped on the walking surface (old `SelectionCircles.drape`): one

@@ -24,7 +24,7 @@ use crate::{
         gpu::{WaterGpu, WaterStats, WaterTextures},
         ripples::Ripples,
     },
-    world_ui::{AtlasImage, WorldUiFrame, WorldUiGpu},
+    world_ui::{AtlasImage, MAX_MARK_LIGHTS, WorldUiFrame, WorldUiGpu},
 };
 use anyhow::Result;
 use glam::{Mat4, Vec3};
@@ -789,11 +789,11 @@ impl Renderer {
         );
         actors.sync_models(&gpu.device, &gpu.queue, pack, &world.actor_models);
         self.actors = Some(actors);
-        // Room for the effect lights after the map's own.
+        // Room for the marks' and the effect lights after the map's own.
         let lights = &world.point_lights[..world
             .point_lights
             .len()
-            .min(MAX_POINT_LIGHTS - MAX_EFFECT_LIGHTS)];
+            .min(MAX_POINT_LIGHTS - MAX_EFFECT_LIGHTS - MAX_MARK_LIGHTS)];
         self.map_lights = lights.to_vec();
         self.lights_dirty = true;
         self.effect_frame.clear();
@@ -999,6 +999,9 @@ impl Renderer {
     }
 
     pub fn set_world_ui(&mut self, frame: &mut WorldUiFrame) {
+        if !frame.lights.is_empty() || !self.world_ui_frame.lights.is_empty() {
+            self.lights_dirty = true;
+        }
         std::mem::swap(&mut self.world_ui_frame, frame);
     }
 
@@ -1120,6 +1123,13 @@ impl Renderer {
         );
         if self.lights_dirty {
             let mut lights = self.map_lights.clone();
+            lights.extend(
+                self.world_ui_frame
+                    .lights
+                    .iter()
+                    .take(MAX_MARK_LIGHTS)
+                    .copied(),
+            );
             lights.extend(
                 self.effect_frame
                     .lights

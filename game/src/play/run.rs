@@ -1235,6 +1235,7 @@ impl InMatch {
             return;
         };
         overlay::draw(list, screen.scale, &self.play.world_ui());
+        self.hud.draw_motes(list, self.play.now(), screen.scale);
     }
 
     /// Renders the frame into `output` with the UI (already submitted to the renderer's

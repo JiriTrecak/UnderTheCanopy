@@ -1,0 +1,254 @@
+{
+  "id": "effect.heroes.level-up",
+  "name": "Hero level up",
+  "description": "A hero grows stronger: a warm gold flash, a golden sigil spreading under it, a column of light rising through it, sparks bursting at its chest and motes rising around it.",
+  "durationTicks": 66,
+  "loop": false,
+  "layers": [
+    {
+      "id": "flash",
+      "enabled": true,
+      "startTick": 0,
+      "anchor": "target",
+      "shape": "light",
+      "colour": "#ffc75a",
+      "accent": "#fff1c4",
+      "durationTicks": 22,
+      "count": 1,
+      "size": 16,
+      "height": 2.5,
+      "intensity": 34
+    },
+    {
+      "id": "sigil",
+      "enabled": true,
+      "startTick": 0,
+      "anchor": "target",
+      "shape": "billboard",
+      "orientation": "ground",
+      "blend": "normal",
+      "colour": "#ffcf63",
+      "accent": "#fff4d6",
+      "durationTicks": 56,
+      "count": 1,
+      "size": 5.2,
+      "height": 0.06,
+      "intensity": 1.4,
+      "soft": 0,
+      "scaleOverLife": [
+        {
+          "at": 0,
+          "value": 0.35
+        },
+        {
+          "at": 0.18,
+          "value": 1.0
+        },
+        {
+          "at": 1,
+          "value": 1.15
+        }
+      ],
+      "opacityOverLife": [
+        {
+          "at": 0,
+          "value": 0
+        },
+        {
+          "at": 0.1,
+          "value": 1
+        },
+        {
+          "at": 0.6,
+          "value": 0.85
+        },
+        {
+          "at": 1,
+          "value": 0
+        }
+      ],
+      "texture": {
+        "asset": "asset.effects.holy-light-sigil",
+        "role": "image",
+        "index": 1
+      }
+    },
+    {
+      "id": "ring",
+      "enabled": true,
+      "startTick": 2,
+      "anchor": "target",
+      "shape": "ring",
+      "colour": "#f2b13e",
+      "accent": "#fff1c4",
+      "durationTicks": 30,
+      "count": 1,
+      "size": 7,
+      "height": 0.1,
+      "intensity": 1.6
+    },
+    {
+      "id": "column",
+      "enabled": true,
+      "startTick": 0,
+      "anchor": "target",
+      "shape": "pillar",
+      "colour": "#ffbe4d",
+      "accent": "#fff4d6",
+      "durationTicks": 44,
+      "count": 1,
+      "size": 2.6,
+      "height": 15,
+      "intensity": 0.95,
+      "opacityOverLife": [
+        {
+          "at": 0,
+          "value": 0
+        },
+        {
+          "at": 0.08,
+          "value": 1
+        },
+        {
+          "at": 0.45,
+          "value": 0.8
+        },
+        {
+          "at": 1,
+          "value": 0
+        }
+      ],
+      "scaleOverLife": [
+        {
+          "at": 0,
+          "value": 0.4
+        },
+        {
+          "at": 0.12,
+          "value": 1.0
+        },
+        {
+          "at": 1,
+          "value": 0.7
+        }
+      ]
+    },
+    {
+      "id": "halo",
+      "enabled": true,
+      "startTick": 0,
+      "anchor": "target",
+      "shape": "glow",
+      "orientation": "camera",
+      "blend": "additive",
+      "colour": "#ffcf6b",
+      "accent": "#fff4d6",
+      "durationTicks": 40,
+      "count": 1,
+      "size": 3.4,
+      "height": 2.6,
+      "intensity": 1.3,
+      "opacityOverLife": [
+        {
+          "at": 0,
+          "value": 0
+        },
+        {
+          "at": 0.1,
+          "value": 1
+        },
+        {
+          "at": 1,
+          "value": 0
+        }
+      ]
+    },
+    {
+      "id": "sparks",
+      "sustain": false,
+      "enabled": true,
+      "startTick": 0,
+      "emitter": {
+        "mode": "burst",
+        "lifetimeTicks": 26,
+        "rate": 60,
+        "speed": 11,
+        "speedVariation": 0.5,
+        "direction": {
+          "x": 0,
+          "y": 1,
+          "z": 0
+        },
+        "coneDegrees": 80,
+        "gravity": 6,
+        "drag": 1.4,
+        "spawnRadius": 0.5,
+        "startSize": 0.8,
+        "endSize": 0.05,
+        "spin": 3,
+        "fadeIn": 0.0,
+        "fadeOut": 0.5,
+        "stretch": 0.05
+      },
+      "anchor": "target",
+      "shape": "particles",
+      "colour": "#fff1c4",
+      "accent": "#ffb43c",
+      "durationTicks": 28,
+      "count": 40,
+      "size": 0.3,
+      "height": 2.2,
+      "blend": "additive",
+      "intensity": 3.4,
+      "core": 0.8,
+      "texture": {
+        "asset": "asset.effects.vfx.mote",
+        "role": "image",
+        "index": 1
+      }
+    },
+    {
+      "id": "motes",
+      "sustain": false,
+      "enabled": true,
+      "startTick": 4,
+      "emitter": {
+        "mode": "burst",
+        "lifetimeTicks": 58,
+        "rate": 60,
+        "speed": 4.5,
+        "speedVariation": 0.5,
+        "direction": {
+          "x": 0,
+          "y": 1,
+          "z": 0
+        },
+        "coneDegrees": 18,
+        "gravity": -3,
+        "drag": 0.5,
+        "spawnRadius": 1.7,
+        "startSize": 0.95,
+        "endSize": 0.08,
+        "spin": 1.5,
+        "fadeIn": 0.1,
+        "fadeOut": 0.6
+      },
+      "anchor": "target",
+      "shape": "particles",
+      "colour": "#ffe3a0",
+      "accent": "#f2a93a",
+      "durationTicks": 62,
+      "count": 64,
+      "size": 0.3,
+      "height": 0.3,
+      "blend": "additive",
+      "intensity": 3.0,
+      "core": 0.7,
+      "texture": {
+        "asset": "asset.effects.vfx.mote",
+        "role": "image",
+        "index": 1
+      }
+    }
+  ]
+}

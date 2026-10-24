@@ -168,6 +168,11 @@
     "hero-health": { "position": "absolute", "left": "3px", "right": "3px", "bottom": "2px", "height": "3px", "background": "#23100f" },
     "hero-timer": { "position": "absolute", "left": "0", "right": "0", "top": "20px", "text-align": "center", "font": "600 20px/1 ui", "color": "#f4e7c0", "text-shadow": "0 1px 4px #000, 0 0 2px #000" },
     "hero-key": { "position": "absolute", "right": "4px", "bottom": "7px", "font": "11px/1 ui", "color": "#fff", "text-shadow": "0 1px 3px #000" },
+    "hero-level": {
+      "position": "absolute", "left": "-7px", "top": "-7px", "width": "21px", "height": "21px", "border-radius": "11px",
+      "background": "radial-gradient(circle, #3a2a10, #140d05)", "border": "1px solid #d9b45f",
+      "box-shadow": "0 1px 4px #000c", "text-align": "center", "font": "700 12px/19px ui", "color": "#f7e6b0", "text-shadow": "0 1px 2px #000"
+    },
 
     "error": { "position": "absolute", "left": "0", "right": "0", "bottom": "34%", "text-align": "center", "font": "600 17px ui", "color": "#ff5252", "text-shadow": "0 2px 4px #000" },
 

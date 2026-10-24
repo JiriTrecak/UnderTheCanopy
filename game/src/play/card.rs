@@ -942,6 +942,43 @@ pub fn commands(k: &Knowledge, selection: &[u32]) -> Vec<Command> {
     finish(out, ended)
 }
 
+/// The skill points hero `id` could spend now: its level less the ranks it learned,
+/// when some ability is ready to take one (the learn entries' rule).
+pub fn unspent(k: &Knowledge, id: u32) -> u32 {
+    let Some(hero) = k.entity(id).filter(|e| k.controlled(e)) else {
+        return 0;
+    };
+    let (Some(cv), Some(policy)) = (
+        hero.magic.as_ref().and_then(|m| m.caster.as_ref()),
+        k.catalog.spells.caster(hero.definition()),
+    ) else {
+        return 0;
+    };
+    let level = hero.combat.as_ref().map_or(1, |c| c.stats.level);
+    let rank = |i: usize| cv.ranks.get(i).copied().unwrap_or(0);
+    let spent: u32 = policy
+        .bindings
+        .iter()
+        .enumerate()
+        .map(|(i, b)| u32::from(rank(i).saturating_sub(b.initial_rank)))
+        .sum();
+    let learnable = policy.bindings.iter().enumerate().any(|(i, b)| {
+        let Some(levels) = &b.learning else {
+            return false;
+        };
+        let ability = &k.content.abilities.abilities[usize::from(b.ability.0)];
+        let r = rank(i);
+        b.allows(canopy_content::abilities::Control::Player)
+            && usize::from(r) < ability.ranks.len()
+            && levels.get(usize::from(r)).is_some_and(|&l| level >= l)
+    });
+    if learnable {
+        level.saturating_sub(spent)
+    } else {
+        0
+    }
+}
+
 /// The focus type's spells: learn entries (banner menu) and cast entries (bottom row).
 fn spells(
     k: &Knowledge,

@@ -603,6 +603,31 @@ impl Rig {
                     .insert(id, amount);
                 self.step()?;
             }
+            "xp" => {
+                // Experience for the player's heroes whose definition id contains the
+                // fragment (a level-up to look at).
+                let (fragment, amount) = arg.split_once(',').context("xp:<hero>,<amount>")?;
+                let amount: u32 = amount.parse().context("an amount")?;
+                let heroes: Vec<u32> = k
+                    .view
+                    .entities
+                    .iter()
+                    .filter(|e| k.own(e) && k.alive(e) && k.def(e).is_hero())
+                    .filter(|e| k.def(e).id.as_str().contains(fragment))
+                    .map(|e| e.id().0)
+                    .collect();
+                for id in heroes {
+                    let state = self.game.world.state_mut();
+                    if let Some(p) = state
+                        .entities
+                        .get_mut(canopy_sim::entity::EntityId(id))
+                        .and_then(|e| e.progression.as_mut())
+                    {
+                        p.experience += amount;
+                    }
+                }
+                self.step()?;
+            }
             "fall" => {
                 let heroes: Vec<u32> = k
                     .view
@@ -898,6 +923,7 @@ impl Rig {
         let mut list = ui.frame(now.as_secs_f64()).clone();
         let world_ui = self.play.world_ui();
         overlay::draw(&mut list, screen.scale, &world_ui);
+        hud.draw_motes(&mut list, self.play.now(), screen.scale);
         self.live.world_ui_input = super::run::world_ui_input(&world_ui, screen.scale, self.me);
         self.live.eye = Some(screen.camera.eye);
         self.renderer.set_cutaway(

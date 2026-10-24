@@ -6,7 +6,10 @@
       "An army button left of the idle worker button (F1) selects every army unit and hero you control; the hero keys move to F2–F4.",
       "Several buildings of one type can be selected together by box, Shift-click or double-click; training and research alternate between them, and rally points, pausing and cancelling apply to all.",
       "Command card cells without a hotkey of their own, such as buildings in the build menus, now use their grid key (Q W E R, A S D F, Z X C V).",
-      "The Display setting offers windowed, borderless fullscreen and exclusive fullscreen."
+      "The Display setting offers windowed, borderless fullscreen and exclusive fullscreen.",
+      "Heroes shine with a column of golden light when they gain a level",
+      "Hero cards show the hero's level, and glow with rising motes while a skill point waits",
+      "Heroes stand in a soft glow of their player's colour, easy to find at a glance"
     ],
     "improved": [
       "Queued units no longer take supply: only the unit in training does, and the rest wait their turn.",

@@ -24,7 +24,8 @@ pub struct GroundVertex {
     /// Line widths from the ring's core for a selection ring; metres inside the edge for
     /// the network field.
     pub across: f32,
-    /// 1 for a selection ring, 2 for the power network's field (D66).
+    /// 1 for a selection ring, 2 for the power network's field (D66), 3 for a hero's
+    /// glow (`across` 0 at its centre to 1 at its edge).
     pub ring_profile: f32,
 }
 
@@ -64,12 +65,18 @@ pub struct WorldUiFrame {
     pub ground: Vec<GroundVertex>,
     /// Triangles.
     pub overlay: Vec<OverlayVertex>,
+    /// Faint lights the marks give (heroes' glows); at most [`MAX_MARK_LIGHTS`].
+    pub lights: Vec<crate::frame::PointLight>,
 }
+
+/// Most lights the world UI's marks give at once.
+pub const MAX_MARK_LIGHTS: usize = 12;
 
 impl WorldUiFrame {
     pub fn clear(&mut self) {
         self.ground.clear();
         self.overlay.clear();
+        self.lights.clear();
     }
 
     /// A quad of the overlay (corners clockwise from the top left).

@@ -30,5 +30,8 @@
       "radius": 3.5,
       "formationSpacing": 7.25
     }
+  },
+  "levelUp": {
+    "effect": "effect.heroes.level-up"
   }
 }

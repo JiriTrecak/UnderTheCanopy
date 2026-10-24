@@ -1490,6 +1490,14 @@ fn item_effects(check: &mut Checker) {
             check.fail(at, "an item effect's socket is a socket* model node");
         }
     }
+    if let Some(level_up) = &content.rules.level_up
+        && !content.effects.iter().any(|v| v.id == level_up.effect)
+    {
+        check.fail(
+            "rules.levelUp",
+            format!("unknown effect {}", level_up.effect),
+        );
+    }
 }
 
 /// A `presentation.effects` entry (D65): a known effect, exactly one of a state the

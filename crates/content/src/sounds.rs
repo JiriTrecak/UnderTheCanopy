@@ -427,6 +427,14 @@ pub(crate) fn validate(content: &crate::Content, errors: &mut Vec<Error>) {
             refer(id, &[Music, Interface], format!("rules/sounds.{name}"));
         }
     }
+    if let Some(sound) = content
+        .rules
+        .level_up
+        .as_ref()
+        .and_then(|l| l.sound.as_ref())
+    {
+        refer(sound, &[World], "rules.levelUp.sound".into());
+    }
     for (name, id) in &rules.interface {
         refer(id, &[Interface], format!("rules/sounds.interface.{name}"));
     }
