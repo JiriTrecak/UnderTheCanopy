@@ -295,6 +295,12 @@ M4 Max, frame ms (GPU ms):
 
 A base M1 has about a seventh of this GPU: Medium's worst view (spectator) lands near 16 ms, player views near 10 ms. The spectator view is vertex-bound (about 1 M forward and 1 M shadow triangles). Unmeasured on a base M1.
 
+### GPU frame cost on the campaign forests (2026-10-25)
+
+`just bench-render` also covers the campaign's Underleaf forests: `forest-road` (The Glass Road at 200,200 zoom 1), `forest-road-east` (its densest giant scenery, 330,150 zoom 1) and `forest-hollow` (The Hollow Brood at 200,200 zoom 1). They carry about 1,700 static instances, 100 forward draws, the forest's 88 trunks and 34k leaves, water, haze and bloom.
+
+Baseline, M4 Max, 1920×1080, frame ms (High / Medium): default 2.48 / 1.93, spectator 3.65 / 2.97, crowd 4.67 / 2.94, forest-road 4.77 / 3.38, forest-road-east 5.81 / 4.34, forest-hollow 5.48 / 4.13. Targets on this machine: forest views ≤ 2.4 ms Medium (about 60 FPS on a base M1) and ≤ 3.0 ms High, the default view ≤ 1.8 ms, the crowd ≤ 3.0 ms.
+
 ### Building foundations (D44)
 
 Buildings stand at their centre's ground height; `terrain/foundations.rs` keeps them from floating. The game passes the presentation's footprints each frame (`canopy_scene::live::foundations` → `Renderer::set_foundations`; an equal list costs a comparison). The terrain owns the drawing: a pad (rounded corners) and a mound per footprint, vertex-pulled from the height texture (`vs_foundation`, 80 spokes × 8 bands + the pad's fan = 4,080 vertices), smoothstep-profiled into the ground with normals turning into the terrain's at the toe, and shaded by `ground_at` — the terrain's own layer composite at that place, nothing added — in one instanced forward draw and one shadow draw for the footprints in view (CPU-culled). Buried where the ground is level or higher. The world UI drapes its ground marks over mounds through `canopy_scene::live::FoundationGround` (the mound height on the CPU, `Foundation::surface`). `canopy shot` prints the count.
