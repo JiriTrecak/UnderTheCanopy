@@ -452,6 +452,23 @@ pub fn run(ctx: &mut Ctx, state: &mut State, mut run: Run) {
         _ => Vec::new(),
     };
     let operations = std::mem::replace(&mut run.operations, Ops::List(Vec::new())).list();
+    // Until the first recipient is reached nothing has changed the world, so a snapshot
+    // taken now equals the ones above: they are reused instead of taken again.
+    let mut pristine = true;
+    let caster_now = |pristine: bool, ctx: &Ctx, state: &State| {
+        if pristine {
+            resource_caster.clone()
+        } else {
+            current(ctx, state, &caster)
+        }
+    };
+    let actor_now = |pristine: bool, ctx: &Ctx, state: &State, id: EntityId| {
+        if pristine && run.aim.id() == Some(id) {
+            resource_target.clone()
+        } else {
+            actor::get(&ctx.senses, state, id)
+        }
+    };
     for operation in &operations {
         let (declarations, branch): (
             Vec<(&Effect, bool)>,
@@ -467,13 +484,13 @@ pub fn run(ctx: &mut Ctx, state: &mut State, mut run: Run) {
                 Some(b),
             ),
         };
-        let branch_caster = branch.map(|_| current(ctx, state, &caster));
+        let branch_caster = branch.map(|_| caster_now(pristine, ctx, state));
         let mut decisions: Vec<(Option<EntityId>, bool)> = Vec::new();
         for (effect, arm) in declarations {
-            let operation_caster = current(ctx, state, &caster);
+            let operation_caster = caster_now(pristine, ctx, state);
             let operation_aim = match (effect, &run.aim) {
                 (Effect::Teleport(t), Aim::Unit(a)) if t.destination == Anchor::Target => {
-                    match actor::get(&ctx.senses, state, a.id) {
+                    match actor_now(pristine, ctx, state, a.id) {
                         Some(live) => Aim::Unit(Box::new(live)),
                         None => run.aim.clone(),
                     }
@@ -501,7 +518,9 @@ pub fn run(ctx: &mut Ctx, state: &mut State, mut run: Run) {
             for target in targets {
                 let live = target
                     .id()
-                    .and_then(|id| actor::get(&ctx.senses, state, id));
+                    .and_then(|id| actor_now(pristine, ctx, state, id));
+                // What follows may change the world.
+                pristine = false;
                 if let Some(b) = branch {
                     let chosen = match decisions.iter().find(|(id, _)| *id == target.id()) {
                         Some((_, d)) => *d,

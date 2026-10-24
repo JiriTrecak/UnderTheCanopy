@@ -28,6 +28,11 @@ impl Clearance {
         this
     }
 
+    /// Closed cells, one bit each, rows of [`SteepEdges::words_per_row`] words.
+    pub fn closed(&self) -> &[u32] {
+        &self.closed
+    }
+
     pub fn refresh(&mut self, cell: u32, walkable: bool) {
         let (x, y) = (cell as usize % self.size, cell as usize / self.size);
         let word = y * self.words + x / 32;

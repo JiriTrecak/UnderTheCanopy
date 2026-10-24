@@ -216,6 +216,7 @@ fn nearby(f: &Frame, p: Pt, radius: i32) -> Vec<(i32, i32)> {
 /// Whether a worker of the widest ground body could still walk from `approach` to the
 /// doorway with the foundation in place (old `doorReachable`).
 fn door_reachable(f: &Frame, cells: &CellBounds, approach: Pt, door: Pt, outpost: bool) -> bool {
+    let _span = tracing::trace_span!("ai door reach").entered();
     let geo = f.geo;
     let size = geo.size;
     let (radius_cells, height) = f.base_body();
@@ -234,7 +235,20 @@ fn door_reachable(f: &Frame, cells: &CellBounds, approach: Pt, door: Pt, outpost
                 <= MAX_GROUND_STEP_CM
     };
     let check = |nav: Option<&mut ObservedNavigation>| -> bool {
-        let adjacent = AdjacentSweep::new(radius);
+        // Compiled once per radius by the navigation; without it (maps with decks) only
+        // the layered sweep below is used.
+        let compiled;
+        let (nav, adjacent): (Option<&ObservedNavigation>, &AdjacentSweep) = match nav {
+            Some(nav) => {
+                nav.sweep(radius);
+                let nav = &*nav;
+                (Some(nav), nav.compiled_sweep(radius).expect("compiled"))
+            }
+            None => {
+                compiled = AdjacentSweep::new(radius);
+                (None, &compiled)
+            }
+        };
         let pattern = sweep_pattern(radius);
         let point = |c: u32| Fixed::cell((c % size) as i32, (c / size) as i32, None);
         let exact = |a: u32, b: u32, overlay: bool| -> bool {
@@ -259,7 +273,7 @@ fn door_reachable(f: &Frame, cells: &CellBounds, approach: Pt, door: Pt, outpost
             }
         };
         let certified = |a: u32, b: u32, overlay: bool| -> bool {
-            if let Some(nav) = nav.as_deref() {
+            if let Some(nav) = nav {
                 let (ax, ay) = (f64::from(a % size), f64::from(a / size));
                 let (bx, by) = (f64::from(b % size), f64::from(b / size));
                 let r = f64::from(radius) / 1000.0;
@@ -293,6 +307,7 @@ fn door_reachable(f: &Frame, cells: &CellBounds, approach: Pt, door: Pt, outpost
             return false;
         }
         goals.sort_unstable();
+        let _span = tracing::trace_span!("ai door flood").entered();
         flood(
             f,
             origin,

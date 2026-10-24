@@ -62,6 +62,7 @@ pub struct Scratch {
     heap: BinaryHeap<Reverse<(i64, i64, u32)>>,
     probe: Vec<u32>,
     reverse: Vec<u32>,
+    queue: Vec<u32>,
     /// Nodes expanded by the latest search.
     pub expanded: u32,
 }
@@ -124,9 +125,13 @@ pub struct GridNavigation {
     size: u32,
     edges: Vec<u8>,
     known: Vec<u8>,
-    /// The exact reachable region of the latest exhausted unrestricted search.
-    origin: Option<(u32, Vec<bool>)>,
+    /// The exact reachable regions of the latest exhausted unrestricted searches and the
+    /// cells they started from, newest first.
+    origins: Vec<(u32, Vec<bool>)>,
 }
+
+/// Exhausted regions remembered per step rule.
+const ORIGINS: usize = 8;
 
 impl GridNavigation {
     pub fn new(size: u32) -> Self {
@@ -135,13 +140,24 @@ impl GridNavigation {
             size,
             edges: vec![0; n],
             known: vec![0; n],
-            origin: None,
+            origins: Vec::new(),
         }
     }
 
     /// Forgets cached edges within `padding` cells of changed cells (all, for `None`).
     pub fn invalidate(&mut self, cells: Option<&[u32]>, padding: i32) {
-        self.origin = None;
+        self.origins.clear();
+        self.forget_edges(cells, padding);
+    }
+
+    /// [`GridNavigation::invalidate`] for changes that only closed cells, under a step
+    /// rule that only passes open cells: no step appears, so a remembered region still
+    /// holds everything its cells reach ([`GridNavigation::proven_unreachable`]).
+    pub fn invalidate_closed(&mut self, cells: &[u32], padding: i32) {
+        self.forget_edges(Some(cells), padding);
+    }
+
+    fn forget_edges(&mut self, cells: Option<&[u32]>, padding: i32) {
         let Some(cells) = cells else {
             self.known.fill(0);
             return;
@@ -157,11 +173,20 @@ impl GridNavigation {
         }
     }
 
-    /// Whether an earlier exhausted search from `start` proved `goal` unreachable.
+    /// Whether the latest exhausted search, from `start`, proved `goal` unreachable.
     pub fn known_unreachable(&self, start: u32, goal: u32) -> bool {
-        self.origin
-            .as_ref()
+        self.origins
+            .first()
             .is_some_and(|(s, cells)| *s == start && !cells[goal as usize])
+    }
+
+    /// Whether an earlier exhausted search proved `goal` unreachable from `start`: it
+    /// reached `start`, so everything `start` reaches it reached too. Only for callers
+    /// whose every route is a chain of this grid's steps.
+    pub fn proven_unreachable(&self, start: u32, goal: u32) -> bool {
+        self.origins
+            .iter()
+            .any(|(_, cells)| cells[start as usize] && !cells[goal as usize])
     }
 
     fn edge(
@@ -227,32 +252,33 @@ impl GridNavigation {
         true
     }
 
-    /// The cells after `start` up to and including `goal`, or `None`.
-    pub fn path(
+    /// The cheap proofs every search starts with: `Err` with the answer when one decides
+    /// it, else the search epoch and whether the goal-side probe already met `start`.
+    fn prelude(
         &mut self,
         s: &mut Scratch,
         step: &mut impl FnMut(u32, u32) -> bool,
         connected: impl FnOnce(u32, u32) -> bool,
         start: u32,
         goal: u32,
-        q: Search,
-    ) -> Option<Vec<u32>> {
+        q: &Search,
+    ) -> Result<(u32, bool), Option<Vec<u32>>> {
         let size = self.size;
         let n = size * size;
         s.expanded = 0;
         if start >= n || goal >= n {
-            return None;
+            return Err(None);
         }
         if start == goal {
-            return Some(Vec::new());
+            return Err(Some(Vec::new()));
         }
         if !connected(start, goal) {
-            return None;
+            return Err(None);
         }
         let epoch = s.begin(n as usize);
         let blocked = q.blocked.filter(|b| !b.is_empty());
         if blocked.is_some_and(|b| b.contains(goal)) {
-            return None;
+            return Err(None);
         }
         let obstacle = |c: u32| blocked.is_some_and(|b| b.contains(c));
         let in_map = |x: i32, y: i32| x >= 0 && y >= 0 && x < size as i32 && y < size as i32;
@@ -269,7 +295,7 @@ impl GridNavigation {
             }
         }
         if !open_start {
-            return None;
+            return Err(None);
         }
         // Reject an enclosed destination before flooding the map.
         let (gx, gy) = ((goal % size) as i32, (goal / size) as i32);
@@ -288,7 +314,7 @@ impl GridNavigation {
             }
         }
         if !enterable {
-            return None;
+            return Err(None);
         }
         // A small goal-side pocket proves failure cheaply; larger ones fall through.
         s.reverse.clear();
@@ -324,8 +350,31 @@ impl GridNavigation {
             cursor += 1;
         }
         if !reached && cursor >= s.reverse.len() {
-            return None;
+            return Err(None);
         }
+        Ok((epoch, reached))
+    }
+
+    /// The cells after `start` up to and including `goal`, or `None`.
+    pub fn path(
+        &mut self,
+        s: &mut Scratch,
+        step: &mut impl FnMut(u32, u32) -> bool,
+        connected: impl FnOnce(u32, u32) -> bool,
+        start: u32,
+        goal: u32,
+        q: Search,
+    ) -> Option<Vec<u32>> {
+        let epoch = match self.prelude(s, step, connected, start, goal, &q) {
+            Ok((epoch, _)) => epoch,
+            Err(answer) => return answer,
+        };
+        let size = self.size;
+        let n = size * size;
+        let blocked = q.blocked.filter(|b| !b.is_empty());
+        let in_map = |x: i32, y: i32| x >= 0 && y >= 0 && x < size as i32 && y < size as i32;
+        let (sx, sy) = ((start % size) as i32, (start / size) as i32);
+        let (gx, gy) = ((goal % size) as i32, (goal / size) as i32);
         let weighted = q.heuristic_permille > 1000;
         let priority = |h: i64| {
             if weighted {
@@ -425,12 +474,114 @@ impl GridNavigation {
         // Only an exhaustive unrestricted search proves the whole reachable region.
         if q.remember_origin && q.corridor.is_none() && blocked.is_none() && q.max_cost == i64::MAX
         {
-            let mut cells = self.origin.take().map(|(_, c)| c).unwrap_or_default();
+            let mut cells = if self.origins.len() >= ORIGINS {
+                self.origins.pop().map(|(_, c)| c).unwrap_or_default()
+            } else {
+                Vec::new()
+            };
             cells.clear();
             cells.extend(s.closed[..n as usize].iter().map(|&c| c == epoch));
-            self.origin = Some((start, cells));
+            self.origins.insert(0, (start, cells));
         }
         None
+    }
+
+    /// Whether [`GridNavigation::path`] would find a route, answered by a flood over the
+    /// same steps instead of the ordered search (the route itself is not needed). An
+    /// exhausted unrestricted flood is remembered like an exhausted search. Searches with
+    /// a cost limit take the search.
+    pub fn reaches(
+        &mut self,
+        s: &mut Scratch,
+        step: &mut impl FnMut(u32, u32) -> bool,
+        connected: impl FnOnce(u32, u32) -> bool,
+        start: u32,
+        goal: u32,
+        q: Search,
+    ) -> bool {
+        if q.max_cost != i64::MAX {
+            return self.path(s, step, connected, start, goal, q).is_some();
+        }
+        let (epoch, reached) = match self.prelude(s, step, connected, start, goal, &q) {
+            Ok(found) => found,
+            Err(answer) => return answer.is_some(),
+        };
+        // The probe's chain from `start` is a route the search would take, corridor aside.
+        if reached && q.corridor.is_none() {
+            return true;
+        }
+        let size = self.size;
+        let n = size * size;
+        let blocked = q.blocked.filter(|b| !b.is_empty());
+        let in_map = |x: i32, y: i32| x >= 0 && y >= 0 && x < size as i32 && y < size as i32;
+        let sector_width = size.div_ceil(super::sectors::SECTOR_SIZE);
+        let mut queue = std::mem::take(&mut s.queue);
+        queue.clear();
+        queue.push(start);
+        s.closed[start as usize] = epoch;
+        let mut cursor = 0;
+        let mut found = false;
+        'flood: while cursor < queue.len() {
+            let id = queue[cursor];
+            cursor += 1;
+            s.expanded += 1;
+            let i = id as usize;
+            let (x, y) = ((id % size) as i32, (id / size) as i32);
+            let candidates = self.edges[i] | !self.known[i];
+            for (direction, (dx, dy)) in DIRECTIONS.into_iter().enumerate() {
+                if candidates & (1 << direction) == 0 {
+                    continue;
+                }
+                let (nx, ny) = (x + dx, y + dy);
+                if !in_map(nx, ny) {
+                    continue;
+                }
+                if let Some(corridor) = q.corridor {
+                    let sector = (ny as u32 / super::sectors::SECTOR_SIZE) * sector_width
+                        + nx as u32 / super::sectors::SECTOR_SIZE;
+                    if !corridor[sector as usize] {
+                        continue;
+                    }
+                }
+                let next = ny as u32 * size + nx as u32;
+                let j = next as usize;
+                if s.closed[j] == epoch {
+                    continue;
+                }
+                if let Some(blocked) = blocked
+                    && (blocked.contains(next)
+                        || (dx != 0
+                            && dy != 0
+                            && (blocked.contains((i64::from(id) + i64::from(dx)) as u32)
+                                || blocked.contains(
+                                    (i64::from(id) + i64::from(dy) * i64::from(size)) as u32,
+                                ))))
+                {
+                    continue;
+                }
+                if !self.edge(id, next, 1 << direction, step) {
+                    continue;
+                }
+                if next == goal {
+                    found = true;
+                    break 'flood;
+                }
+                s.closed[j] = epoch;
+                queue.push(next);
+            }
+        }
+        s.queue = queue;
+        if !found && q.remember_origin && q.corridor.is_none() && blocked.is_none() {
+            let mut cells = if self.origins.len() >= ORIGINS {
+                self.origins.pop().map(|(_, c)| c).unwrap_or_default()
+            } else {
+                Vec::new()
+            };
+            cells.clear();
+            cells.extend(s.closed[..n as usize].iter().map(|&c| c == epoch));
+            self.origins.insert(0, (start, cells));
+        }
+        found
     }
 }
 
@@ -519,5 +670,48 @@ mod tests {
             nav.path(&mut scratch, &mut step, |_, _| true, 0, 18, q)
                 .is_none()
         );
+    }
+
+    #[test]
+    fn floods_answer_as_searches_and_remember_what_they_exhaust() {
+        // A 24-cell map split by a wall with one gap, and one-way steps into column 20.
+        let size = 24u32;
+        let wall = |c: u32| c % size == 12 && c / size != 3;
+        let open = |a: u32, b: u32| !wall(b) && !(b % size == 20 && a % size == 21);
+        let mut nav = GridNavigation::new(size);
+        let mut scratch = Scratch::default();
+        for (start, goal) in [(0, 23), (25, 400), (300, 13), (5, 575), (100, 100)] {
+            for remember in [false, true] {
+                let q = Search {
+                    remember_origin: remember,
+                    ..Search::default()
+                };
+                let mut step = open;
+                let searched = nav
+                    .path(&mut scratch, &mut step, |_, _| true, start, goal, q)
+                    .is_some();
+                let mut step = open;
+                let flooded = nav.reaches(&mut scratch, &mut step, |_, _| true, start, goal, q);
+                assert_eq!(searched, flooded, "{start} → {goal}");
+            }
+        }
+        // Closed off: the column 22–23 pocket walled by a one-way column and a full wall.
+        let pocket = |a: u32, b: u32| b % size != 21 || a % size == 22;
+        let mut nav = GridNavigation::new(size);
+        let q = Search {
+            remember_origin: true,
+            probe_limit: 1,
+            ..Search::default()
+        };
+        let mut step = pocket;
+        assert!(!nav.reaches(&mut scratch, &mut step, |_, _| true, 0, 23, q));
+        // Every cell the exhausted flood reached reaches no further.
+        assert!(nav.proven_unreachable(0, 23));
+        assert!(nav.proven_unreachable(5 * size + 7, 23));
+        assert!(!nav.proven_unreachable(23, 0));
+        nav.invalidate_closed(&[30], 1);
+        assert!(nav.proven_unreachable(0, 23));
+        nav.invalidate(Some(&[30]), 1);
+        assert!(!nav.proven_unreachable(0, 23));
     }
 }

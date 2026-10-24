@@ -735,12 +735,15 @@ impl Spatial {
 
     fn invalidate(&mut self, changed: &[u32]) {
         let surfaces = self.terrain.surfaces();
+        let mut opened = false;
         for &node in changed {
             let base = match surfaces {
                 Some(s) => s.walkable(node),
                 None => self.terrain.walkable(node as usize),
             };
-            self.walk[node as usize] = base && !self.occupancy.blocked(node);
+            let walk = base && !self.occupancy.blocked(node);
+            opened |= walk && !self.walk[node as usize];
+            self.walk[node as usize] = walk;
             if let Some(clearance) = &mut self.clearance {
                 clearance.refresh(node, self.walk[node as usize]);
             }
@@ -750,8 +753,13 @@ impl Spatial {
             cache.invalidate(self.size, changed, (radius + 999) / 1000 + 2);
         }
         let padding = 1 + (self.profiles.max_radius + 500) / 1000;
+        // Body steps pass only walkable cells, so closing cells opens no route.
         for grid in self.grids.values_mut() {
-            grid.invalidate(Some(changed), padding);
+            if opened {
+                grid.invalidate(Some(changed), padding);
+            } else {
+                grid.invalidate_closed(changed, padding);
+            }
         }
         let ground: Vec<u32> = changed
             .iter()
@@ -1146,6 +1154,109 @@ impl Spatial {
         if mover.is_some_and(|m| m.ignores) {
             return true;
         }
+        !self.claimed(spot, except, &body, known)
+    }
+
+    /// Bodies touching a mover standing at any cell centre of a rectangle, answered once
+    /// for the whole rectangle: [`Spatial::free_scanned`] then answers what
+    /// [`Spatial::free`] would at each cell without querying the bodies again. `None` on
+    /// layered maps, where the answer depends on each spot's floor.
+    pub fn spot_scan(
+        &self,
+        (x0, y0): (i32, i32),
+        (x1, y1): (i32, i32),
+        except: Option<EntityId>,
+        body: &Body,
+    ) -> Option<SpotScan> {
+        if self.layered() || x0 > x1 || y0 > y1 {
+            return None;
+        }
+        let ignores = except
+            .and_then(|id| self.bodies.get(id))
+            .is_some_and(|m| m.ignores);
+        let (w, h) = ((x1 - x0 + 1) as usize, (y1 - y0 + 1) as usize);
+        let mut scan = SpotScan {
+            x0,
+            y0,
+            w,
+            h,
+            touched: vec![false; w * h],
+            ignores,
+        };
+        if ignores {
+            return Some(scan);
+        }
+        // What `unit_segment_clear(p, p, except, Some(body), None, None)` tests at each
+        // centre `p`: solid bodies of the mover's layer other than itself, inside its reach
+        // box, whose centres stand closer than the two radii.
+        let radius = body.radius_milli();
+        let reach = i64::from(radius + self.profiles.max_radius);
+        let (lo_x, lo_y) = (i64::from(x0) * 1000 - reach, i64::from(y0) * 1000 - reach);
+        let (hi_x, hi_y) = (i64::from(x1) * 1000 + reach, i64::from(y1) * 1000 + reach);
+        self.bodies.within(lo_x, lo_y, hi_x, hi_y, |unit| {
+            if Some(unit.id) == except || !unit.solid() || unit.air != body.air {
+                return true;
+            }
+            let (ux, uy) = (i64::from(unit.x), i64::from(unit.y));
+            let separation = i64::from(radius + unit.radius);
+            let span = separation.min(reach);
+            let cells = |u: i64, lo: i32, hi: i32| {
+                let a = (u - span).div_euclid(1000).max(i64::from(lo));
+                let b = ((u + span).div_euclid(1000) + 1).min(i64::from(hi));
+                a..=b
+            };
+            for cy in cells(uy, y0, y1) {
+                let py = cy * 1000;
+                if (uy - py).abs() > reach {
+                    continue;
+                }
+                for cx in cells(ux, x0, x1) {
+                    let px = cx * 1000;
+                    if (ux - px).abs() > reach {
+                        continue;
+                    }
+                    // `geometry::body_blocks_segment` of a point.
+                    let (sx, sy) = ((ux - px) as f64, (uy - py) as f64);
+                    if sx * sx + sy * sy < (separation * separation) as f64 {
+                        let i = (cy - i64::from(y0)) as usize * w + (cx - i64::from(x0)) as usize;
+                        scan.touched[i] = true;
+                    }
+                }
+            }
+            true
+        });
+        Some(scan)
+    }
+
+    /// [`Spatial::free`] at a cell of a [`SpotScan`] made for the same mover and body,
+    /// without the terrain fit ([`Spatial::unit_walkable`]), which the caller tests.
+    pub fn free_scanned(
+        &self,
+        scan: &SpotScan,
+        spot: Spot,
+        except: Option<EntityId>,
+        body: &Body,
+    ) -> bool {
+        if spot.x < 0 || spot.y < 0 || spot.x >= self.size as i32 || spot.y >= self.size as i32 {
+            return false;
+        }
+        let (cx, cy) = ((spot.x - scan.x0) as usize, (spot.y - scan.y0) as usize);
+        assert!(cx < scan.w && cy < scan.h, "spot outside its scan");
+        if scan.touched[cy * scan.w + cx] {
+            return false;
+        }
+        scan.ignores || !self.claimed(spot, except, body, None)
+    }
+
+    /// Whether another body stands in or has reserved `spot` (the last test of
+    /// [`Spatial::free`]).
+    fn claimed(
+        &self,
+        spot: Spot,
+        except: Option<EntityId>,
+        body: &Body,
+        known: Option<&dyn Fn(&BodyRecord) -> bool>,
+    ) -> bool {
         let node = self.node(spot);
         let layered = self.layered();
         let spot_floor = if layered {
@@ -1165,8 +1276,7 @@ impl Spatial {
             .bodies
             .in_cell(spot.x, spot.y)
             .any(|e| geometry::grid(e.x) == spot.x && geometry::grid(e.y) == spot.y && occupies(e));
-        let reserved = node.is_some_and(|n| self.bodies.reserved_at(n).any(&occupies));
-        !standing && !reserved
+        standing || node.is_some_and(|n| self.bodies.reserved_at(n).any(&occupies))
     }
 
     /// The exact body of a recorded unit.
@@ -1273,6 +1383,17 @@ fn definitions_radii(profiles: &Profiles, catalog: &Catalog) -> Vec<i32> {
         .collect();
     radii.push(profiles.navigation_body.radius_milli());
     radii
+}
+
+/// Which cell centres of a rectangle a body touches, from [`Spatial::spot_scan`].
+pub struct SpotScan {
+    x0: i32,
+    y0: i32,
+    w: usize,
+    h: usize,
+    touched: Vec<bool>,
+    /// The mover ghosts through bodies: only the terrain decides.
+    ignores: bool,
 }
 
 /// Bodies touching a mover, from [`Spatial::near_bodies`].

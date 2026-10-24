@@ -2,7 +2,7 @@
 //!
 //! ```text
 //! cargo run --release -p canopy-sim --example match_bench -- --data . --map frozen-dream \
-//!     [--crowd 50 | --ai 2] [--ticks 1600] [--warmup 0] [--no-spans] [--save <file>]
+//!     [--crowd 50 | --ai 2] [--ticks 1600] [--warmup 0] [--no-spans] [--top 16] [--save <file>]
 //! ```
 //!
 //! `--crowd N` is the measured battle of `canopy shot --crowd N` (eight players with N
@@ -88,6 +88,8 @@ struct Args {
     warmup: u32,
     /// Time the whole tick only, without the span subscriber's overhead.
     no_spans: bool,
+    /// Inner spans listed.
+    top: usize,
     save: Option<PathBuf>,
 }
 
@@ -100,6 +102,7 @@ fn args() -> Result<Args, String> {
         ticks: 1600,
         warmup: 0,
         no_spans: false,
+        top: 16,
         save: None,
     };
     let mut it = std::env::args().skip(1);
@@ -114,6 +117,7 @@ fn args() -> Result<Args, String> {
             "--ticks" => out.ticks = number(value()?)?,
             "--warmup" => out.warmup = number(value()?)?,
             "--no-spans" => out.no_spans = true,
+            "--top" => out.top = number(value()?)? as usize,
             "--save" => out.save = Some(value()?.into()),
             other => return Err(format!("unknown option {other}")),
         }
@@ -277,7 +281,7 @@ fn main() -> Result<(), String> {
         .map(|(k, v)| (v.iter().sum::<f64>() / n.max(1) as f64, *k, v))
         .collect();
     inner.sort_by(|a, b| b.0.total_cmp(&a.0));
-    for (_, name, costs) in inner.iter().take(16) {
+    for (_, name, costs) in inner.iter().take(args.top) {
         report(name, costs);
     }
     println!("fingerprints {ticks_digest:016x}");

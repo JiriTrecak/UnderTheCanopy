@@ -12,6 +12,8 @@ pub struct SteepEdges {
     /// Plane `(dy + 1) * 3 + dx + 1` marks cells entered from `(x − dx, y − dy)` across a
     /// step higher than [`MAX_GROUND_STEP_CM`].
     planes: [Vec<u32>; 9],
+    /// Cells entered across a steep step from any side.
+    any: Vec<u32>,
 }
 
 impl SteepEdges {
@@ -38,11 +40,20 @@ impl SteepEdges {
                 }
             }
         }
+        let any = (0..words_per_row * size)
+            .map(|w| planes.iter().fold(0, |bits, p| bits | p[w]))
+            .collect();
         Self {
             size,
             words_per_row,
             planes,
+            any,
         }
+    }
+
+    /// The cells entered across a steep step in any direction.
+    pub fn any(&self) -> &[u32] {
+        &self.any
     }
 
     pub fn words_per_row(&self) -> usize {

@@ -198,6 +198,22 @@ pub fn candidates(
             );
             dx * dx + dy * dy <= r2
         })
+        // The tests below that read only the entity, before taking its snapshot.
+        .filter(|e| {
+            let side = actor::relation_of(
+                &ctx.senses,
+                caster.id,
+                caster.owner,
+                caster.camp.as_deref(),
+                e.id,
+                e.owner,
+                actor::camp(e),
+            );
+            actor::targetable(e)
+                && (e.unit.is_some() || spell.targeting.include_buildings == Some(true))
+                && (spell.targeting.allow_self || e.id != caster.id)
+                && side.is(&spell.targeting.relations)
+        })
         .map(|e| actor::of(&ctx.senses, state, e))
         .filter(|t| {
             let side = actor::relation(&ctx.senses, caster, t);

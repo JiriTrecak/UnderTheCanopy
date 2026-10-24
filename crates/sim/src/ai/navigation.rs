@@ -18,7 +18,7 @@ use crate::{
         surfaces::{SurfaceScratch, clear_layered_sweep},
     },
     spatial::{
-        adjacent::AdjacentSweep,
+        adjacent::{AdjacentSweep, Planes},
         clearance::Clearance,
         geometry::{Fixed, clear_sweep, sweep_pattern},
     },
@@ -208,6 +208,8 @@ pub struct ObservedNavigation {
     surface_scratch: SurfaceScratch,
     /// Reachability searches run (profiling).
     pub searches: u64,
+    /// Compiled neighbour sweeps by radius (milli-cells), for checks outside the profiles.
+    sweeps: BTreeMap<i32, AdjacentSweep>,
 }
 
 const MAX_ANSWERS: usize = 1024;
@@ -240,6 +242,7 @@ impl ObservedNavigation {
             scratch: Scratch::default(),
             surface_scratch: SurfaceScratch::default(),
             searches: 0,
+            sweeps: BTreeMap::new(),
         }
     }
 
@@ -308,6 +311,18 @@ impl ObservedNavigation {
         self.profiles.len() - 1
     }
 
+    /// The neighbour sweep of a body of `radius` milli-cells, compiled once.
+    pub fn sweep(&mut self, radius: i32) -> &AdjacentSweep {
+        self.sweeps
+            .entry(radius)
+            .or_insert_with(|| AdjacentSweep::new(radius))
+    }
+
+    /// The neighbour sweep [`ObservedNavigation::sweep`] compiled for `radius`.
+    pub fn compiled_sweep(&self, radius: i32) -> Option<&AdjacentSweep> {
+        self.sweeps.get(&radius)
+    }
+
     /// Builds the sector graph and the meshes of these ground bodies ahead of play.
     pub fn prepare(&mut self, geo: &Geography, movers: &[Mover]) {
         if let Some(sectors) = &mut self.sectors {
@@ -326,6 +341,7 @@ impl ObservedNavigation {
     }
 
     fn mesh(&mut self, geo: &Geography, i: usize) {
+        let _span = tracing::trace_span!("ai mesh").entered();
         let input = MeshInput {
             size: self.size,
             walkable: &self.walk,
@@ -445,6 +461,7 @@ impl ObservedNavigation {
     }
 
     fn find_reachable(&mut self, geo: &Geography, i: usize, from: &Mover, to: Pt) -> bool {
+        let _span = tracing::trace_span!("ai reach search").entered();
         self.searches += 1;
         let a = from.at;
         let b = fixed(to);
@@ -559,8 +576,17 @@ impl ObservedNavigation {
         let mut scratch = std::mem::take(&mut self.scratch);
         let (_, p) = &mut self.profiles[i];
         let adjacent = &p.adjacent;
-        let mut step = |x: u32, y: u32| adjacent.clear(size, x, y, |u, v| ground.step(u, v));
-        let mut route = p.grid.path(
+        let steep = geo.terrain.steep_edges();
+        let planes = self.clearance.as_ref().map(|c| Planes {
+            closed: c.closed(),
+            steep: steep.any(),
+            words: steep.words_per_row(),
+        });
+        let mut step = |x: u32, y: u32| match planes {
+            Some(planes) => adjacent.clear_planes(size, x, y, planes, |u, v| ground.step(u, v)),
+            None => adjacent.clear(size, x, y, |u, v| ground.step(u, v)),
+        };
+        let route = p.grid.path(
             &mut scratch,
             &mut step,
             |x, y| sectors.connected(&ground, x, y),
@@ -572,8 +598,10 @@ impl ObservedNavigation {
                 ..Search::default()
             },
         );
-        if route.is_none() && corridor.is_some() {
-            route = p.grid.path(
+        // Only whether a route exists matters: the unrestricted retry floods.
+        let mut found = route.is_some();
+        if !found && corridor.is_some() {
+            found = p.grid.reaches(
                 &mut scratch,
                 &mut step,
                 |x, y| sectors.connected(&ground, x, y),
@@ -587,7 +615,7 @@ impl ObservedNavigation {
             );
         }
         self.scratch = scratch;
-        route.is_some()
+        found
     }
 }
 
