@@ -1996,7 +1996,7 @@
         "vision": false,
         "ai": {
           "behaviour": "waves",
-          "rebuild": true,
+          "rebuild": false,
           "waves": [
             {
               "every": 120,

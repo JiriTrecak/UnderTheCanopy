@@ -1,0 +1,470 @@
+{
+  "name": "Melee on a tower",
+  "description": "Twelve Warriors and the Queen attack a beetle Arc Tower in the open, and another flush against a wall: how many reach it.",
+  "size": 128,
+  "duration": 900,
+  "closed": [
+    {
+      "y": 40,
+      "x": 104,
+      "length": 20
+    },
+    {
+      "y": 41,
+      "x": 104,
+      "length": 20
+    },
+    {
+      "y": 42,
+      "x": 104,
+      "length": 20
+    },
+    {
+      "y": 43,
+      "x": 104,
+      "length": 20
+    },
+    {
+      "y": 44,
+      "x": 104,
+      "length": 20
+    },
+    {
+      "y": 45,
+      "x": 104,
+      "length": 20
+    },
+    {
+      "y": 46,
+      "x": 104,
+      "length": 20
+    },
+    {
+      "y": 47,
+      "x": 104,
+      "length": 20
+    },
+    {
+      "y": 48,
+      "x": 104,
+      "length": 20
+    },
+    {
+      "y": 49,
+      "x": 104,
+      "length": 20
+    },
+    {
+      "y": 50,
+      "x": 104,
+      "length": 20
+    },
+    {
+      "y": 51,
+      "x": 104,
+      "length": 20
+    },
+    {
+      "y": 52,
+      "x": 104,
+      "length": 20
+    },
+    {
+      "y": 53,
+      "x": 104,
+      "length": 20
+    },
+    {
+      "y": 54,
+      "x": 104,
+      "length": 20
+    },
+    {
+      "y": 55,
+      "x": 104,
+      "length": 20
+    },
+    {
+      "y": 56,
+      "x": 104,
+      "length": 20
+    },
+    {
+      "y": 57,
+      "x": 104,
+      "length": 20
+    },
+    {
+      "y": 58,
+      "x": 104,
+      "length": 20
+    },
+    {
+      "y": 59,
+      "x": 104,
+      "length": 20
+    },
+    {
+      "y": 60,
+      "x": 104,
+      "length": 20
+    },
+    {
+      "y": 61,
+      "x": 104,
+      "length": 20
+    },
+    {
+      "y": 62,
+      "x": 104,
+      "length": 20
+    },
+    {
+      "y": 63,
+      "x": 104,
+      "length": 20
+    },
+    {
+      "y": 64,
+      "x": 104,
+      "length": 20
+    },
+    {
+      "y": 65,
+      "x": 104,
+      "length": 20
+    },
+    {
+      "y": 66,
+      "x": 104,
+      "length": 20
+    },
+    {
+      "y": 67,
+      "x": 104,
+      "length": 20
+    },
+    {
+      "y": 68,
+      "x": 104,
+      "length": 20
+    },
+    {
+      "y": 69,
+      "x": 104,
+      "length": 20
+    },
+    {
+      "y": 70,
+      "x": 104,
+      "length": 20
+    },
+    {
+      "y": 71,
+      "x": 104,
+      "length": 20
+    },
+    {
+      "y": 72,
+      "x": 104,
+      "length": 20
+    },
+    {
+      "y": 73,
+      "x": 104,
+      "length": 20
+    },
+    {
+      "y": 74,
+      "x": 104,
+      "length": 20
+    },
+    {
+      "y": 75,
+      "x": 104,
+      "length": 20
+    },
+    {
+      "y": 76,
+      "x": 104,
+      "length": 20
+    },
+    {
+      "y": 77,
+      "x": 104,
+      "length": 20
+    },
+    {
+      "y": 78,
+      "x": 104,
+      "length": 20
+    },
+    {
+      "y": 79,
+      "x": 104,
+      "length": 20
+    },
+    {
+      "y": 80,
+      "x": 104,
+      "length": 20
+    },
+    {
+      "y": 81,
+      "x": 104,
+      "length": 20
+    },
+    {
+      "y": 82,
+      "x": 104,
+      "length": 20
+    },
+    {
+      "y": 83,
+      "x": 104,
+      "length": 20
+    },
+    {
+      "y": 84,
+      "x": 104,
+      "length": 20
+    },
+    {
+      "y": 85,
+      "x": 104,
+      "length": 20
+    },
+    {
+      "y": 86,
+      "x": 104,
+      "length": 20
+    },
+    {
+      "y": 87,
+      "x": 104,
+      "length": 20
+    },
+    {
+      "y": 88,
+      "x": 104,
+      "length": 20
+    },
+    {
+      "y": 89,
+      "x": 104,
+      "length": 20
+    }
+  ],
+  "units": [
+    {
+      "definition": "building.beetles.arc-tower",
+      "owner": "player.2",
+      "x": 39.5,
+      "y": 63.5,
+      "group": "open-tower"
+    },
+    {
+      "definition": "building.beetles.arc-tower",
+      "owner": "player.2",
+      "x": 99.5,
+      "y": 63.5,
+      "group": "wall-tower"
+    },
+    {
+      "definition": "unit.ants.warrior",
+      "owner": "player.1",
+      "x": 32.0,
+      "y": 96.0,
+      "group": "open"
+    },
+    {
+      "definition": "unit.ants.warrior",
+      "owner": "player.1",
+      "x": 35.0,
+      "y": 96.0,
+      "group": "open"
+    },
+    {
+      "definition": "unit.ants.warrior",
+      "owner": "player.1",
+      "x": 38.0,
+      "y": 96.0,
+      "group": "open"
+    },
+    {
+      "definition": "unit.ants.warrior",
+      "owner": "player.1",
+      "x": 41.0,
+      "y": 96.0,
+      "group": "open"
+    },
+    {
+      "definition": "unit.ants.warrior",
+      "owner": "player.1",
+      "x": 44.0,
+      "y": 96.0,
+      "group": "open"
+    },
+    {
+      "definition": "unit.ants.warrior",
+      "owner": "player.1",
+      "x": 47.0,
+      "y": 96.0,
+      "group": "open"
+    },
+    {
+      "definition": "unit.ants.warrior",
+      "owner": "player.1",
+      "x": 32.0,
+      "y": 99.0,
+      "group": "open"
+    },
+    {
+      "definition": "unit.ants.warrior",
+      "owner": "player.1",
+      "x": 35.0,
+      "y": 99.0,
+      "group": "open"
+    },
+    {
+      "definition": "unit.ants.warrior",
+      "owner": "player.1",
+      "x": 38.0,
+      "y": 99.0,
+      "group": "open"
+    },
+    {
+      "definition": "unit.ants.warrior",
+      "owner": "player.1",
+      "x": 41.0,
+      "y": 99.0,
+      "group": "open"
+    },
+    {
+      "definition": "unit.ants.warrior",
+      "owner": "player.1",
+      "x": 44.0,
+      "y": 99.0,
+      "group": "open"
+    },
+    {
+      "definition": "unit.ants.warrior",
+      "owner": "player.1",
+      "x": 47.0,
+      "y": 99.0,
+      "group": "open"
+    },
+    {
+      "definition": "unit.ants.queen",
+      "owner": "player.1",
+      "x": 40.0,
+      "y": 102.0,
+      "group": "open"
+    },
+    {
+      "definition": "unit.ants.warrior",
+      "owner": "player.1",
+      "x": 92.0,
+      "y": 96.0,
+      "group": "wall"
+    },
+    {
+      "definition": "unit.ants.warrior",
+      "owner": "player.1",
+      "x": 95.0,
+      "y": 96.0,
+      "group": "wall"
+    },
+    {
+      "definition": "unit.ants.warrior",
+      "owner": "player.1",
+      "x": 98.0,
+      "y": 96.0,
+      "group": "wall"
+    },
+    {
+      "definition": "unit.ants.warrior",
+      "owner": "player.1",
+      "x": 101.0,
+      "y": 96.0,
+      "group": "wall"
+    },
+    {
+      "definition": "unit.ants.warrior",
+      "owner": "player.1",
+      "x": 104.0,
+      "y": 96.0,
+      "group": "wall"
+    },
+    {
+      "definition": "unit.ants.warrior",
+      "owner": "player.1",
+      "x": 107.0,
+      "y": 96.0,
+      "group": "wall"
+    },
+    {
+      "definition": "unit.ants.warrior",
+      "owner": "player.1",
+      "x": 92.0,
+      "y": 99.0,
+      "group": "wall"
+    },
+    {
+      "definition": "unit.ants.warrior",
+      "owner": "player.1",
+      "x": 95.0,
+      "y": 99.0,
+      "group": "wall"
+    },
+    {
+      "definition": "unit.ants.warrior",
+      "owner": "player.1",
+      "x": 98.0,
+      "y": 99.0,
+      "group": "wall"
+    },
+    {
+      "definition": "unit.ants.warrior",
+      "owner": "player.1",
+      "x": 101.0,
+      "y": 99.0,
+      "group": "wall"
+    },
+    {
+      "definition": "unit.ants.warrior",
+      "owner": "player.1",
+      "x": 104.0,
+      "y": 99.0,
+      "group": "wall"
+    },
+    {
+      "definition": "unit.ants.warrior",
+      "owner": "player.1",
+      "x": 107.0,
+      "y": 99.0,
+      "group": "wall"
+    },
+    {
+      "definition": "unit.ants.queen",
+      "owner": "player.1",
+      "x": 100.0,
+      "y": 102.0,
+      "group": "wall"
+    }
+  ],
+  "orders": [
+    {
+      "tick": 0,
+      "group": "open",
+      "order": "attack",
+      "target": "open-tower"
+    },
+    {
+      "tick": 0,
+      "group": "wall",
+      "order": "attack",
+      "target": "wall-tower"
+    }
+  ]
+}

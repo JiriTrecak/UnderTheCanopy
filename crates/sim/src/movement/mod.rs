@@ -583,6 +583,23 @@ impl Motion {
         if u.goal.is_none() || u.route.is_empty() {
             return false;
         }
+        // Only foes and planted allies are walls to the escape, as to steering (D100):
+        // allies walking or idle are pushed aside, and counting them would leave a unit
+        // pressed among them no way out at all.
+        let span = 1000 * (i64::from(4 * probe) + 1) + i64::from(self.spatial.profiles.max_radius);
+        let (x, y) = (i64::from(current.x), i64::from(current.y));
+        let mut walls = Vec::new();
+        self.spatial
+            .bodies
+            .within(x - span, y - span, x + span, y + span, |b| {
+                if b.id != id && self.solid_to(state, owner, b.id) {
+                    walls.push(b.id);
+                }
+                true
+            });
+        walls.sort_unstable();
+        let wall = |b: &crate::spatial::BodyRecord| walls.binary_search(&b.id).is_ok();
+        let wall = &wall as &dyn Fn(&crate::spatial::BodyRecord) -> bool;
         let spatial = &self.spatial;
         let local = &mut self.local;
         let cells = |p: Spot| {
@@ -642,7 +659,14 @@ impl Motion {
             (x * x + y * y).sqrt() <= reach
                 && spatial.clear_segment(p.fixed(), next.fixed(), None, &mover.body)
                 && spatial.clear_segment(p.fixed(), p.fixed(), Some(&reservations), &mover.body)
-                && spatial.unit_segment_clear(p.fixed(), p.fixed(), Some(id), None, None, None)
+                && spatial.unit_segment_clear(
+                    p.fixed(),
+                    p.fixed(),
+                    Some(id),
+                    None,
+                    Some(wall),
+                    None,
+                )
         };
         let target = if distance <= reach {
             Some(next).filter(usable)
@@ -672,8 +696,8 @@ impl Motion {
                 && i64::from(b.y) >= 0
                 && i64::from(b.x) <= edge
                 && i64::from(b.y) <= edge
-                && spatial.unit_segment_clear(a, b, Some(id), None, None, None)
-                && spatial.clear_local_segment(a, b, &reservations, &mover.body)
+                && spatial.unit_segment_clear(a, b, Some(id), None, Some(wall), None)
+                && spatial.clear_local_segment(a, b, &|_: u32| false, &mover.body)
         });
         let Some(points) = points else {
             return false;
@@ -935,14 +959,20 @@ impl Motion {
                 current.deck,
             )
         };
+        // Walls as for steering (D100): terrain, foes and planted allies; allies on the move
+        // or idle are pushed aside rather than ending the detour.
         let clear = {
-            let reservations =
-                reservations(&self.teams, &self.spatial, &self.units, tick, &mover, owner);
+            let wall = |b: &crate::spatial::BodyRecord| self.solid_to(state, owner, b.id);
             self.spatial
-                .clear_segment(current, proposed, Some(&reservations), &mover.body)
-                && self
-                    .spatial
-                    .unit_segment_clear(current, proposed, Some(id), None, None, None)
+                .clear_segment(current, proposed, None, &mover.body)
+                && self.spatial.unit_segment_clear(
+                    current,
+                    proposed,
+                    Some(id),
+                    None,
+                    Some(&wall as &dyn Fn(&crate::spatial::BodyRecord) -> bool),
+                    None,
+                )
         };
         let e = state.entities.get_mut(id).expect("unit");
         let u = e.unit.as_mut().expect("unit");

@@ -16,13 +16,17 @@
       "Reaver Queens and Juggernauts are no longer limited to one at a time.",
       "Units move like StarCraft II: your own units no longer block each other. A moving unit pushes idle allies aside, allies squeeze past each other in chokes, and only enemies and units holding position or fighting stand in the way, so body blocking and surrounds still work.",
       "Units come in four body sizes that match their models: small (workers, Raiders, beetle infantry), medium, large (every hero and the big beasts) and huge (Juggernaut, Reaver Queen). Small and medium units fit through one-block lanes; large and huge ones need wider ways.",
-      "Unit models are scaled to the space they take, so armies no longer look like piles of overlapping legs; the ants shrank most."
+      "Unit models are scaled to the space they take, so armies no longer look like piles of overlapping legs; the ants shrank most.",
+      "Substance Wells pump faster: 10 Substance every 3 seconds instead of every 5.",
+      "In The Glass Road the beetles no longer rebuild the towers and buildings you destroy."
     ],
     "fixed": [
       "The camera can now centre on the very edges and corners of the map, as in Warcraft III.",
       "Neutral camps fight back together: striking one creep, even from range, or walking into one creep's sight now brings the whole camp; a peaceful camp that is attacked answers as a whole too.",
       "Computer players' units now answer ranged attackers that outrange them instead of standing still.",
-      "Units waiting behind their own army's front line no longer block their allies: only units actually fighting, holding position or casting stand firm."
+      "Units waiting behind their own army's front line no longer block their allies: only units actually fighting, holding position or casting stand firm.",
+      "On macOS, exclusive fullscreen keeps the system's hot corners from opening while you scroll the camera into a corner.",
+      "Melee units stuck behind allies already fighting no longer vibrate in place: they walk round them to a free side of the target or wait behind."
     ],
     "knownIssues": []
   },

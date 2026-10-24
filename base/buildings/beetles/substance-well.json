@@ -45,7 +45,7 @@
   "income": {
     "item": "item.root",
     "amount": 10,
-    "intervalTicks": 200
+    "intervalTicks": 120
   },
   "network": {
     "role": "source",
