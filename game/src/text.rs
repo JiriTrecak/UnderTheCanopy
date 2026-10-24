@@ -8,12 +8,24 @@ use std::sync::{Arc, RwLock};
 
 static TEXT: RwLock<Option<Arc<Text>>> = RwLock::new(None);
 
-/// Reads the base package's text library of `language` (the source language when it has
-/// none) from the data folder. Fast: no other content is read.
+/// Reads the text library of `language` (the source language when it has none) from the
+/// data folder: the base package's, with every shipped campaign's, mission's and map's own
+/// over it (D96). Fast: no other content is read.
 pub fn load(data: &Path, language: &str) -> Text {
     let mut errors = Vec::new();
-    let base = canopy_content::package::Package::open(&data.join(canopy_content::BASE_DIR));
-    let packages: Vec<_> = base.into_iter().collect();
+    let base = data.join(canopy_content::BASE_DIR);
+    let mut packages: Vec<_> = canopy_content::package::Package::open(&base)
+        .into_iter()
+        .collect();
+    let mut folders = Vec::new();
+    packages_under(&base.join("campaigns"), &mut folders);
+    packages_under(&base.join("maps"), &mut folders);
+    folders.sort();
+    packages.extend(
+        folders
+            .iter()
+            .filter_map(|f| canopy_content::package::Package::open(f).ok()),
+    );
     let text = Text::read(&packages, language, &mut errors);
     if text.is_empty() && language != SOURCE_LANGUAGE {
         return load(data, SOURCE_LANGUAGE);
@@ -22,6 +34,23 @@ pub fn load(data: &Path, language: &str) -> Text {
         tracing::warn!(%error, "text library");
     }
     text
+}
+
+/// Every campaign and map package folder below `dir` (missions inside campaigns too).
+fn packages_under(dir: &Path, out: &mut Vec<std::path::PathBuf>) {
+    let Ok(entries) = std::fs::read_dir(dir) else {
+        return;
+    };
+    for path in entries.flatten().map(|e| e.path()).filter(|p| p.is_dir()) {
+        let package = path.extension().is_some_and(|e| {
+            e == canopy_content::package::CAMPAIGN_EXTENSION
+                || e == canopy_content::package::MAP_EXTENSION
+        });
+        if package {
+            out.push(path.clone());
+        }
+        packages_under(&path, out);
+    }
 }
 
 /// Makes `text` the game's text.

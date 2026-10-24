@@ -135,6 +135,11 @@ fn apply_kill(which: &str, game: &mut world::Match) {
 }
 
 pub fn run(options: &Options, paths: &Paths, out: &Path, size: [u32; 2]) -> Result<()> {
+    // Mission maps' objectives and lines read from their own text (D96).
+    crate::text::install(crate::text::load(
+        &paths.data,
+        canopy_content::text::SOURCE_LANGUAGE,
+    ));
     if let Some(scene) = &options.scene {
         return crate::play::preview::run(options, paths, out, size, scene);
     }

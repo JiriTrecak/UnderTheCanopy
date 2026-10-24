@@ -61,10 +61,11 @@ fn fs_ground(in: GroundOut) -> SceneOut {
     out.color = in.color;
     let width = fwidth(in.ring.x);
     if (in.ring.y > 2.5) {
-        // A hero's glow: `ring.x` runs 0 at its centre to 1 at its edge.
+        // A hero's glow: `ring.x` runs 0 at its centre to 1 at its edge; broad, and
+        // fading to nothing with no slope at the edge, so no rim shows.
         let r = clamp(in.ring.x, 0.0, 1.0);
-        let fall = 1.0 - r;
-        out.color.a *= fall * fall * (3.0 - 2.0 * fall);
+        let fall = 1.0 - r * r;
+        out.color.a *= fall * fall;
     } else if (in.ring.y > 1.5) {
         out.color = network_color(in.color.rgb, in.ring.x, width);
     } else if (in.ring.y > 0.5) {

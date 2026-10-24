@@ -571,11 +571,13 @@ impl WorldUi {
         {
             let color = self.player_color(b.owner);
             let p = at(b);
-            hero_glow(out, b.radius * HERO_GLOW_RADIUS, b.surface, p, field, color);
+            let radius = (b.radius * HERO_GLOW_RADIUS).clamp(HERO_GLOW_SIZES.0, HERO_GLOW_SIZES.1);
+            hero_glow(out, radius, b.surface, p, field, color);
             if out.lights.len() < canopy_render::world_ui::MAX_MARK_LIGHTS {
+                // High enough that the ground under it brightens softly, not in a spot.
                 out.lights.push(canopy_render::frame::PointLight {
                     position: [p.x, p.y + HERO_LIGHT_HEIGHT, p.z],
-                    range: b.radius * HERO_LIGHT_RANGE,
+                    range: radius * HERO_LIGHT_RANGE,
                     color: color.map(|c| c * HERO_LIGHT),
                     pad: 0.0,
                 });
@@ -887,13 +889,14 @@ fn solid(out: &mut WorldUiFrame, [x0, y0, x1, y1]: [f32; 4], color: [f32; 4]) {
     out.quad([v(x0, y0), v(x1, y0), v(x1, y1), v(x0, y1)]);
 }
 
-/// A hero's glow: its radius in body radii, its alpha at the centre, and its light's
-/// height, reach (body radii) and strength.
-const HERO_GLOW_RADIUS: f32 = 2.4;
-const HERO_GLOW_ALPHA: f32 = 0.55;
-const HERO_LIGHT_HEIGHT: f32 = 1.2;
-const HERO_LIGHT_RANGE: f32 = 4.0;
-const HERO_LIGHT: f32 = 1.4;
+/// A hero's glow: its radius in body radii (kept within metres), its alpha at the
+/// centre, and its light's height (metres), reach (glow radii) and strength.
+const HERO_GLOW_RADIUS: f32 = 2.2;
+const HERO_GLOW_SIZES: (f32, f32) = (2.5, 5.5);
+const HERO_GLOW_ALPHA: f32 = 0.32;
+const HERO_LIGHT_HEIGHT: f32 = 1.7;
+const HERO_LIGHT_RANGE: f32 = 1.8;
+const HERO_LIGHT: f32 = 1.2;
 
 /// A hero's glow draped on the walking surface: a fan of sectors from its centre, its
 /// soft fall drawn per pixel (profile 3).
