@@ -629,7 +629,15 @@ fn lab(rig: &mut Rig, paths: &Paths) -> Result<()> {
     type LabShot<'a> = (&'a str, u32, f32, f32, f32, f32, &'a [&'a str]);
     let shots: [LabShot; 9] = [
         ("look-check", 1, 62.0, 63.0, 106.0, 0.977, &[]),
-        ("look-check", 2, 62.0, 63.0, 106.0, 1.5707, &["bodies"]),
+        (
+            "look-check",
+            2,
+            62.0,
+            63.0,
+            106.0,
+            std::f32::consts::FRAC_PI_2,
+            &["bodies"],
+        ),
         ("body-sizes", 1, 88.0, 70.0, 150.0, 1.5, &["bodies"]),
         (
             "ring-still",
