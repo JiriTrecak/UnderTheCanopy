@@ -2,36 +2,24 @@
   "schemaVersion": 1,
   "unreleased": {
     "added": [
-      "A Voice volume setting, for unit voices and spoken dialogue",
-      "An army button left of the idle worker button (F1) selects every army unit and hero you control; the hero keys move to F2–F4.",
-      "Several buildings of one type can be selected together by box, Shift-click or double-click; training and research alternate between them, and rally points, pausing and cancelling apply to all.",
-      "Command card cells without a hotkey of their own, such as buildings in the build menus, now use their grid key (Q W E R, A S D F, Z X C V).",
-      "The Display setting offers windowed, borderless fullscreen and exclusive fullscreen.",
-      "Heroes shine with a column of golden light when they gain a level",
-      "Hero cards show the hero's level, and glow with rising motes while a skill point waits",
-      "Heroes stand in a soft glow of their player's colour, easy to find at a glance",
-      "Reset campaign on the campaign screen starts a campaign over as if never played, after asking first."
+      "Unit movement rebuilt in the manner of StarCraft II: your own units part for each other, squeeze through chokes and close round their targets, while enemies and units fighting or holding position still block",
+      "Heroes stand out: a golden burst when they gain a level, a level badge and a glowing card while a skill point waits, and a soft pool of their player's colour",
+      "An army button and key (F1), groups of buildings that share their training and research, and grid hotkeys for every command card cell",
+      "Windowed, borderless and exclusive fullscreen display modes, and a Voice volume setting",
+      "Reset campaign, to play a campaign again from the start"
     ],
     "improved": [
-      "Queued units no longer take supply: only the unit in training does, and the rest wait their turn.",
-      "Reaver Queens and Juggernauts are no longer limited to one at a time.",
-      "Units move like StarCraft II: your own units no longer block each other. A moving unit pushes idle allies aside, allies squeeze past each other in chokes, and only enemies and units holding position or fighting stand in the way, so body blocking and surrounds still work.",
-      "Units come in four body sizes that match their models: small (workers, Raiders, beetle infantry), medium, large (every hero and the big beasts) and huge (Juggernaut, Reaver Queen). Small and medium units fit through one-block lanes; large and huge ones need wider ways.",
-      "Unit models are scaled to the space they take, so armies no longer look like piles of overlapping legs; the ants shrank most.",
-      "Substance Wells pump faster: 10 Substance every 3 seconds instead of every 5.",
-      "In The Glass Road the beetles no longer rebuild the towers and buildings you destroy.",
-      "Buildings sit firmly on the ground, with a soft shadow where their base meets it"
+      "Four unit body sizes, with every model scaled to the space it takes",
+      "Substance Wells pump faster: 10 Substance every 3 seconds",
+      "Queued units take supply only once they start training, and Reaver Queens and Juggernauts are no longer limited to one",
+      "Buildings sit firmly on the ground, with a soft shadow at their base",
+      "The third ant mission's beetles no longer rebuild what you destroy"
     ],
     "fixed": [
-      "The camera can now centre on the very edges and corners of the map, as in Warcraft III.",
-      "Neutral camps fight back together: striking one creep, even from range, or walking into one creep's sight now brings the whole camp; a peaceful camp that is attacked answers as a whole too.",
-      "Computer players' units now answer ranged attackers that outrange them instead of standing still.",
-      "Units waiting behind their own army's front line no longer block their allies: only units actually fighting, holding position or casting stand firm.",
-      "On macOS, exclusive fullscreen keeps the system's hot corners from opening while you scroll the camera into a corner.",
-      "Melee units stuck behind allies already fighting no longer vibrate in place: they walk round them to a free side of the target or wait behind.",
-      "A sleeping creature stays asleep while a battle passes, until it is ordered or hurt",
-      "The Royal Alchemist runs without her arm snapping back each stride, and throws on the swing",
-      "Glass Road ramps lie in their slopes instead of floating above them"
+      "Neutral camps and computer players fight back together, ranged attackers included",
+      "Melee units no longer jam or vibrate behind allies already fighting",
+      "The camera reaches the edges and corners of the map, and on macOS exclusive fullscreen keeps hot corners away",
+      "Animation, sleeping-creature and ramp fixes"
     ],
     "knownIssues": []
   },
