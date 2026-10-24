@@ -14,6 +14,9 @@
   "campaign.play": "Play",
   "campaign.race-campaign": "The {race} campaign",
   "campaign.read": "Read",
+  "campaign.reset": "Reset",
+  "campaign.reset-body": "“{name}” starts over as if never played: every step, carried hero and choice is cleared.",
+  "campaign.reset-q": "Reset this campaign?",
   "campaign.story": "Story",
   "campaign.the-race": "The {race}",
   "campaign.watch": "Watch"

@@ -135,6 +135,8 @@ const VICTORY_SECONDS: f32 = 2.5;
 enum Ask {
     DeleteSave(String),
     DeleteReplay(String),
+    /// Clears a campaign's progress, by campaign id.
+    ResetCampaign(String),
 }
 
 struct Dialog {
@@ -1902,6 +1904,11 @@ impl Game {
                     self.continue_campaign(&campaign);
                 }
             }
+            "steps.reset" if clicked => {
+                if let Screen::Campaign { campaign } = self.flow.screen().clone() {
+                    self.ask_reset(&campaign);
+                }
+            }
             "steps.act" if clicked => {
                 if let (Screen::Campaign { campaign }, Some(step)) = (
                     self.flow.screen().clone(),
@@ -2356,6 +2363,26 @@ impl Game {
         }
     }
 
+    /// Reset campaign on the campaign screen: asks first, then clears its progress.
+    fn ask_reset(&mut self, campaign: &str) {
+        let Some(name) = self
+            .data
+            .as_ref()
+            .and_then(|d| d.campaign(campaign))
+            .map(|c| plain(c.name()))
+        else {
+            return;
+        };
+        self.ask(Dialog {
+            ask: Ask::ResetCampaign(campaign.to_string()),
+            title: tr!("campaign.reset-q"),
+            body: tr!("campaign.reset-body", name = &name),
+            confirm: tr!("campaign.reset"),
+            danger: true,
+            second: None,
+        });
+    }
+
     fn ask(&mut self, dialog: Dialog) {
         self.dialog = Some(dialog);
         self.apply(Intent::Show(Overlay::Confirm));
@@ -2375,6 +2402,9 @@ impl Game {
                     self.saves_status = tr!("menu.cannot-delete", error = &format!("{error:#}"));
                 }
                 self.list_saves();
+            }
+            Ask::ResetCampaign(campaign) => {
+                self.store_progress(&campaign, crate::campaign::Progress::default());
             }
         }
     }

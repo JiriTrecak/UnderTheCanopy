@@ -9,7 +9,8 @@
       "The Display setting offers windowed, borderless fullscreen and exclusive fullscreen.",
       "Heroes shine with a column of golden light when they gain a level",
       "Hero cards show the hero's level, and glow with rising motes while a skill point waits",
-      "Heroes stand in a soft glow of their player's colour, easy to find at a glance"
+      "Heroes stand in a soft glow of their player's colour, easy to find at a glance",
+      "Reset campaign on the campaign screen starts a campaign over as if never played, after asking first."
     ],
     "improved": [
       "Queued units no longer take supply: only the unit in training does, and the rest wait their turn.",

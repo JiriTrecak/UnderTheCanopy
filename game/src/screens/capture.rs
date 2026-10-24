@@ -384,7 +384,7 @@ pub fn run(
 /// its screen fresh, a chapter card, a story page revealing and revealed, a mission's
 /// loading screen while loading and once loaded, the mission, a won mission moving on to
 /// a cinematic's card, the screen part way through, a lost mission's result with Retry,
-/// and the screen of a finished campaign.
+/// the screen of a finished campaign, and Reset campaign asking and done.
 fn campaigns(rig: &mut Rig, paths: &Paths) -> Result<()> {
     rig.game.apply(Intent::Open(Screen::Campaigns));
     rig.settle(0.4);
@@ -494,6 +494,19 @@ fn campaigns(rig: &mut Rig, paths: &Paths) -> Result<()> {
     rig.settle(0.3);
     open(rig);
     rig.shoot("campaign-complete")?;
+    // Reset campaign asks first, then leaves the campaign as never played.
+    rig.game.ask_reset(&id);
+    rig.settle(0.3);
+    rig.shoot("campaign-reset-ask")?;
+    if let Some(dialog) = rig.game.dialog.take() {
+        rig.game.apply(Intent::Back);
+        rig.game.answer(dialog.ask, false);
+    }
+    rig.settle(0.3);
+    rig.shoot("campaign-reset")?;
+    if crate::campaign::Progress::load(paths, &id).started() {
+        anyhow::bail!("reset campaign left progress behind");
+    }
     rig.game.apply(Intent::Back);
     rig.game.apply(Intent::Back);
     rig.settle(0.3);

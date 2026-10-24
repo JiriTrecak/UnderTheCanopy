@@ -362,7 +362,9 @@
     "cs-next-act": { "padding": "13px 24px", "font-size": "18px", "color": "#fde9b8", "border-color": "#d8a456", "background": "linear-gradient(#5b3e1c, #2b1d0f)", ":hover": { "background": "linear-gradient(#73502a, #3a2814)", "color": "#fff6dc" } },
     "cs-complete": { "font": "italic 15px/1.4 serif", "color": "#cdbb94", "margin-top": "12px" },
     "cs-footer": { "display": "flex", "flex-direction": "row", "align-items": "center", "justify-content": "space-between", "gap": "18px", "margin-top": "22px", "padding-right": "16px" },
+    "cs-footer-left": { "display": "flex", "flex-direction": "row", "align-items": "center", "gap": "12px" },
     "cs-back": { "width": "170px", "height": "48px", "font-size": "17px" },
+    "cs-reset": { "width": "176px", "height": "48px", "font-size": "15px" },
     "cs-continue": {
       "width": "300px", "height": "60px", "display": "flex", "text-align": "center", "vertical-align": "middle",
       "font": "23px/1 serif", "font-variant": "small-caps", "letter-spacing": "0.03em", "color": "#fff2cf",

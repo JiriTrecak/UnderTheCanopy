@@ -282,6 +282,7 @@ pub fn show_steps(
         }
     }
     widgets::visible(ui, "campaign-steps/complete", progress.complete);
+    widgets::visible(ui, "campaign-steps/reset", progress.started());
     widgets::visible(ui, "campaign-steps/continue", !progress.complete);
     widgets::text(
         ui,
