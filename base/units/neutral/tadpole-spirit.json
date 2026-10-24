@@ -5,7 +5,7 @@
   "selectionClass": "army",
   "dimensions": {
     "size": "medium",
-    "height": 7.23
+    "height": 5.5
   },
   "body": {
     "maxHp": 280,
@@ -38,7 +38,7 @@
   },
   "level": 3,
   "supplyCost": 1,
-  "modelScale": 5.56,
+  "modelScale": 4.22,
   "presentation": {
     "projectileSocket": "socket_projectile",
     "launchEffect": "effect.neutral.tadpole-spirit-bolt",

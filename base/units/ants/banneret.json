@@ -115,9 +115,9 @@
   "supplyCost": 2,
   "dimensions": {
     "size": "medium",
-    "height": 4.8
+    "height": 3.1
   },
-  "modelScale": 3.3,
+  "modelScale": 2.1,
   "presentation": {
     "castContact": 0.5,
     "projectile": "effect.weapon.nectar",

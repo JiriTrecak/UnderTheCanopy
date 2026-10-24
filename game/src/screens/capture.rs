@@ -627,7 +627,9 @@ fn lab(rig: &mut Rig, paths: &Paths) -> Result<()> {
     settle(&mut editor, rig, 20);
     /// A scenario, the ticks run, the camera's cell, distance and pitch, the layers on.
     type LabShot<'a> = (&'a str, u32, f32, f32, f32, f32, &'a [&'a str]);
-    let shots: [LabShot; 7] = [
+    let shots: [LabShot; 9] = [
+        ("look-check", 1, 62.0, 63.0, 106.0, 0.977, &[]),
+        ("look-check", 2, 62.0, 63.0, 106.0, 1.5707, &["bodies"]),
         ("body-sizes", 1, 88.0, 70.0, 150.0, 1.5, &["bodies"]),
         (
             "ring-still",

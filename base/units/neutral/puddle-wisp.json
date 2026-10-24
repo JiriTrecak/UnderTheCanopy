@@ -5,7 +5,7 @@
   "selectionClass": "army",
   "dimensions": {
     "size": "small",
-    "height": 5.35
+    "height": 4.7
   },
   "body": {
     "maxHp": 205,
@@ -35,5 +35,5 @@
   },
   "level": 1,
   "supplyCost": 1,
-  "modelScale": 3.57
+  "modelScale": 3.12
 }

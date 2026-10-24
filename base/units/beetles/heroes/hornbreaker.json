@@ -275,9 +275,9 @@
   "supplyCost": 4,
   "dimensions": {
     "size": "large",
-    "height": 9.6
+    "height": 7.1
   },
-  "modelScale": 6.1,
+  "modelScale": 4.5,
   "presentation": {
     "impactEffect": "effect.beetles.weapons.shield-bash",
     "castContact": 0.47

@@ -5,7 +5,7 @@
   "selectionClass": "army",
   "dimensions": {
     "size": "large",
-    "height": 8.42
+    "height": 6.5
   },
   "body": {
     "maxHp": 360,
@@ -38,7 +38,7 @@
   },
   "level": 6,
   "supplyCost": 1,
-  "modelScale": 4.43,
+  "modelScale": 3.42,
   "presentation": {
     "projectileSocket": "socket_projectile",
     "launchEffect": "effect.neutral.violet-sporeling-bolt",

@@ -226,4 +226,19 @@ scenario(
     'against its model from above.',
     192, 5, units=lineup)
 
+# 13. Every player colour at game zoom: how the armies read (D102's model scales).
+look = []
+for player in range(1, 9):
+    y = 28 + (player - 1) * 10
+    row = ([RAIDER] * 8) + ([ARCHER] * 3) + ([SHIELD] * 2) + [BOMBARDIER, 'unit.ants.queen']
+    x = 30
+    for definition in row:
+        look.append({'definition': definition, 'owner': f'player.{player}', 'x': float(x), 'y': float(y)})
+        x += 6 if definition in (BOMBARDIER, 'unit.ants.queen') else 4
+scenario(
+    'look-check', 'Every colour at game zoom',
+    'Each player\'s Raiders, Archers, Shieldbearers, a Bombardier and a hero, in all eight '
+    'colours, to check how units read at game zoom.',
+    128, 5, units=look)
+
 print('wrote', len(os.listdir(OUT)), 'scenarios to', OUT)

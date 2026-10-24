@@ -12,7 +12,8 @@
       "Queued units no longer take supply: only the unit in training does, and the rest wait their turn.",
       "Reaver Queens and Juggernauts are no longer limited to one at a time.",
       "Units move like StarCraft II: your own units no longer block each other. A moving unit pushes idle allies aside, allies squeeze past each other in chokes, and only enemies and units holding position or fighting stand in the way, so body blocking and surrounds still work.",
-      "Units come in four body sizes that match their models: small (workers, Raiders, beetle infantry), medium, large (every hero and the big beasts) and huge (Juggernaut, Reaver Queen). Small and medium units fit through one-block lanes; large and huge ones need wider ways."
+      "Units come in four body sizes that match their models: small (workers, Raiders, beetle infantry), medium, large (every hero and the big beasts) and huge (Juggernaut, Reaver Queen). Small and medium units fit through one-block lanes; large and huge ones need wider ways.",
+      "Unit models are scaled to the space they take, so armies no longer look like piles of overlapping legs; the ants shrank most."
     ],
     "fixed": [
       "The camera can now centre on the very edges and corners of the map, as in Warcraft III.",

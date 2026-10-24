@@ -89,9 +89,9 @@
   "supplyCost": 3,
   "dimensions": {
     "size": "medium",
-    "height": 6.4
+    "height": 3.5
   },
-  "modelScale": 4.2,
+  "modelScale": 2.32,
   "presentation": {
     "castContact": 0.5,
     "impactEffect": "effect.ants.kit.hit-heavy"

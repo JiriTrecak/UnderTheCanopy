@@ -82,9 +82,9 @@
   "supplyCost": 3,
   "dimensions": {
     "size": "small",
-    "height": 5.6
+    "height": 3.7
   },
-  "modelScale": 2.9,
+  "modelScale": 1.94,
   "presentation": {
     "impactEffect": "effect.beetles.weapons.drill-strike",
     "cameraAnchor": {

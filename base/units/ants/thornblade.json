@@ -88,9 +88,9 @@
   "supplyCost": 3,
   "dimensions": {
     "size": "large",
-    "height": 4.8
+    "height": 3.8
   },
-  "modelScale": 2.4,
+  "modelScale": 1.92,
   "presentation": {
     "impactEffect": "effect.ants.kit.hit-sting"
   }

@@ -70,9 +70,9 @@
   "supplyCost": 2,
   "dimensions": {
     "size": "medium",
-    "height": 4.8
+    "height": 2.8
   },
-  "modelScale": 2.4,
+  "modelScale": 1.39,
   "presentation": {
     "projectile": "effect.weapon.thorn",
     "projectileSocket": "socket_projectile",

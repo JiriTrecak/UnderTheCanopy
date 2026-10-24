@@ -84,9 +84,9 @@
   "unitNature": "mechanical",
   "dimensions": {
     "size": "large",
-    "height": 5.5
+    "height": 3.6
   },
-  "modelScale": 2.2,
+  "modelScale": 1.45,
   "presentation": {
     "projectile": "effect.beetles.steamwing-bolt",
     "projectileSocket": "socket_projectile",

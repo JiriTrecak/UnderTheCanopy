@@ -77,9 +77,9 @@
   "supplyCost": 2,
   "dimensions": {
     "size": "medium",
-    "height": 5
+    "height": 2.9
   },
-  "modelScale": 2.4,
+  "modelScale": 1.38,
   "presentation": {
     "castContact": 0.4722222222222222,
     "impactEffect": "effect.ants.kit.hit-needle"

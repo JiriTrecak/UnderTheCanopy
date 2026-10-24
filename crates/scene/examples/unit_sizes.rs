@@ -1,5 +1,5 @@
-//! Each unit's body against its model's footprint as drawn (D102): the definition's radius
-//! and the model's rest bounds from above at its drawn scale, as a table.
+//! Each unit's body against its model's footprint as drawn (D102): the definition's radius,
+//! and the model's rest bounds from above at its drawn scale (size and centre), as a table.
 //!
 //! ```text
 //! cargo run -p canopy-scene --example unit_sizes -- <data folder> <pack>
@@ -17,7 +17,7 @@ fn main() {
     );
     let content = Content::load(&data).unwrap_or_else(|e| panic!("{e}"));
     let pack = canopy_assets::Pack::open(&pack).unwrap_or_else(|e| panic!("{e}"));
-    println!("id\thero\tradius\twidth\tdepth\theight");
+    println!("id\thero\tradius\twidth\tdepth\theight\tcentre_x\tcentre_z\tmodel_scale\tasset");
     for d in content.definitions.iter().filter(|d| d.kind == Kind::Unit) {
         let Some(asset) = content.render_of(d, d.model.as_str()) else {
             continue;
@@ -31,14 +31,19 @@ fn main() {
         let b = &model.meta.rest_bounds;
         let scale = asset.scale.unwrap_or(1.0) * d.model_scale.unwrap_or(1.0);
         let size = |i: usize| f64::from(b.max[i] - b.min[i]) * scale;
+        let centre = |i: usize| f64::from(b.max[i] + b.min[i]) / 2.0 * scale;
         println!(
-            "{}\t{}\t{}\t{:.2}\t{:.2}\t{:.2}",
+            "{}\t{}\t{}\t{:.2}\t{:.2}\t{:.2}\t{:.2}\t{:.2}\t{}\t{}",
             d.id,
             d.is_hero(),
             d.dimensions.as_ref().map_or(0.0, |x| x.radius),
             size(0),
             size(2),
-            size(1)
+            size(1),
+            centre(0),
+            centre(2),
+            d.model_scale.unwrap_or(1.0),
+            d.model
         );
     }
 }

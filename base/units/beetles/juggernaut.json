@@ -99,9 +99,9 @@
   "unitNature": "mechanical",
   "dimensions": {
     "size": "huge",
-    "height": 6.5
+    "height": 5.3
   },
-  "modelScale": 0.95,
+  "modelScale": 0.77,
   "presentation": {
     "projectile": "effect.units.juggernaut-shell",
     "projectileSocket": "socket_projectile",

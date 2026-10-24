@@ -275,9 +275,9 @@
   "supplyCost": 4,
   "dimensions": {
     "size": "large",
-    "height": 9.6
+    "height": 7.7
   },
-  "modelScale": 5.4,
+  "modelScale": 4.34,
   "presentation": {
     "projectileSocket": "socket_projectile",
     "launchEffect": "effect.beetles.weapons.arc",

@@ -5,7 +5,7 @@
   "selectionClass": "army",
   "dimensions": {
     "size": "small",
-    "height": 5.81
+    "height": 5.5
   },
   "body": {
     "maxHp": 135,
@@ -38,7 +38,7 @@
   },
   "level": 1,
   "supplyCost": 1,
-  "modelScale": 3.42,
+  "modelScale": 3.23,
   "presentation": {
     "projectileSocket": "socket_projectile",
     "launchEffect": "effect.neutral.dew-sprite-bolt",

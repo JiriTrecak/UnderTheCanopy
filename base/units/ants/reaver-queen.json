@@ -138,9 +138,9 @@
   "supplyCost": 8,
   "dimensions": {
     "size": "huge",
-    "height": 6.4
+    "height": 4.5
   },
-  "modelScale": 2.4,
+  "modelScale": 1.7,
   "presentation": {
     "cameraAnchor": {
       "height": 1.4,

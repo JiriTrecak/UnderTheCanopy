@@ -5,7 +5,7 @@
   "selectionClass": "army",
   "dimensions": {
     "size": "medium",
-    "height": 4.03
+    "height": 3.1
   },
   "body": {
     "maxHp": 160,
@@ -38,7 +38,7 @@
   },
   "level": 1,
   "supplyCost": 1,
-  "modelScale": 3.1,
+  "modelScale": 2.36,
   "presentation": {
     "projectile": "effect.weapon.silk",
     "projectileSocket": "socket_projectile",

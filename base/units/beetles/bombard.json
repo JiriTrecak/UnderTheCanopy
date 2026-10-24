@@ -58,9 +58,9 @@
   "unitNature": "mechanical",
   "dimensions": {
     "size": "large",
-    "height": 4.9
+    "height": 3.3
   },
-  "modelScale": 0.98,
+  "modelScale": 0.67,
   "presentation": {
     "projectile": "effect.units.bombard-shell",
     "projectileSocket": "socket_muzzle",

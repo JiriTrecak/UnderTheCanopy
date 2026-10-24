@@ -95,9 +95,9 @@
   "supplyCost": 2,
   "dimensions": {
     "size": "small",
-    "height": 4.8
+    "height": 4.0
   },
-  "modelScale": 2.4,
+  "modelScale": 1.99,
   "presentation": {
     "projectile": "effect.weapon.nectar",
     "projectileSocket": "socket_projectile",

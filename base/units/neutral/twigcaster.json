@@ -5,7 +5,7 @@
   "selectionClass": "army",
   "dimensions": {
     "size": "small",
-    "height": 7.39
+    "height": 5.8
   },
   "body": {
     "maxHp": 330,
@@ -38,7 +38,7 @@
   },
   "level": 3,
   "supplyCost": 1,
-  "modelScale": 3.08,
+  "modelScale": 2.41,
   "presentation": {
     "projectile": "effect.weapon.thorn",
     "projectileSocket": "socket_projectile",

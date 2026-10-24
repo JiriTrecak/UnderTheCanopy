@@ -28,7 +28,7 @@
   "unitNature": "mechanical",
   "dimensions": {
     "size": "huge",
-    "height": 3.6
+    "height": 3.0
   },
-  "modelScale": 1.4
+  "modelScale": 1.17
 }

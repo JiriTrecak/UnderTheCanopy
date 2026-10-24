@@ -275,9 +275,9 @@
   "supplyCost": 4,
   "dimensions": {
     "size": "large",
-    "height": 9.6
+    "height": 7.2
   },
-  "modelScale": 6.6,
+  "modelScale": 4.95,
   "presentation": {
     "projectile": "effect.beetles.weapons.bolt",
     "projectileSocket": "socket_projectile",

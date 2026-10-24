@@ -83,9 +83,9 @@
   "supplyCost": 1,
   "dimensions": {
     "size": "large",
-    "height": 4.8
+    "height": 4.1
   },
-  "modelScale": 2.4,
+  "modelScale": 2.05,
   "presentation": {},
   "underground": false
 }

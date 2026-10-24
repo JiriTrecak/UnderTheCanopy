@@ -64,9 +64,9 @@
   "supplyCost": 1,
   "dimensions": {
     "size": "small",
-    "height": 4.8
+    "height": 2.9
   },
-  "modelScale": 2.4,
+  "modelScale": 1.47,
   "presentation": {
     "impactEffect": "effect.ants.kit.hit-bite"
   }

@@ -1,0 +1,728 @@
+{
+  "name": "Every colour at game zoom",
+  "description": "Each player's Raiders, Archers, Shieldbearers, a Bombardier and a hero, in all eight colours, to check how units read at game zoom.",
+  "size": 128,
+  "duration": 200,
+  "units": [
+    {
+      "definition": "unit.ants.warrior",
+      "owner": "player.1",
+      "x": 30.0,
+      "y": 28.0
+    },
+    {
+      "definition": "unit.ants.warrior",
+      "owner": "player.1",
+      "x": 34.0,
+      "y": 28.0
+    },
+    {
+      "definition": "unit.ants.warrior",
+      "owner": "player.1",
+      "x": 38.0,
+      "y": 28.0
+    },
+    {
+      "definition": "unit.ants.warrior",
+      "owner": "player.1",
+      "x": 42.0,
+      "y": 28.0
+    },
+    {
+      "definition": "unit.ants.warrior",
+      "owner": "player.1",
+      "x": 46.0,
+      "y": 28.0
+    },
+    {
+      "definition": "unit.ants.warrior",
+      "owner": "player.1",
+      "x": 50.0,
+      "y": 28.0
+    },
+    {
+      "definition": "unit.ants.warrior",
+      "owner": "player.1",
+      "x": 54.0,
+      "y": 28.0
+    },
+    {
+      "definition": "unit.ants.warrior",
+      "owner": "player.1",
+      "x": 58.0,
+      "y": 28.0
+    },
+    {
+      "definition": "unit.ants.archer",
+      "owner": "player.1",
+      "x": 62.0,
+      "y": 28.0
+    },
+    {
+      "definition": "unit.ants.archer",
+      "owner": "player.1",
+      "x": 66.0,
+      "y": 28.0
+    },
+    {
+      "definition": "unit.ants.archer",
+      "owner": "player.1",
+      "x": 70.0,
+      "y": 28.0
+    },
+    {
+      "definition": "unit.beetles.shieldbearer",
+      "owner": "player.1",
+      "x": 74.0,
+      "y": 28.0
+    },
+    {
+      "definition": "unit.beetles.shieldbearer",
+      "owner": "player.1",
+      "x": 78.0,
+      "y": 28.0
+    },
+    {
+      "definition": "unit.ants.bombardier",
+      "owner": "player.1",
+      "x": 82.0,
+      "y": 28.0
+    },
+    {
+      "definition": "unit.ants.queen",
+      "owner": "player.1",
+      "x": 88.0,
+      "y": 28.0
+    },
+    {
+      "definition": "unit.ants.warrior",
+      "owner": "player.2",
+      "x": 30.0,
+      "y": 38.0
+    },
+    {
+      "definition": "unit.ants.warrior",
+      "owner": "player.2",
+      "x": 34.0,
+      "y": 38.0
+    },
+    {
+      "definition": "unit.ants.warrior",
+      "owner": "player.2",
+      "x": 38.0,
+      "y": 38.0
+    },
+    {
+      "definition": "unit.ants.warrior",
+      "owner": "player.2",
+      "x": 42.0,
+      "y": 38.0
+    },
+    {
+      "definition": "unit.ants.warrior",
+      "owner": "player.2",
+      "x": 46.0,
+      "y": 38.0
+    },
+    {
+      "definition": "unit.ants.warrior",
+      "owner": "player.2",
+      "x": 50.0,
+      "y": 38.0
+    },
+    {
+      "definition": "unit.ants.warrior",
+      "owner": "player.2",
+      "x": 54.0,
+      "y": 38.0
+    },
+    {
+      "definition": "unit.ants.warrior",
+      "owner": "player.2",
+      "x": 58.0,
+      "y": 38.0
+    },
+    {
+      "definition": "unit.ants.archer",
+      "owner": "player.2",
+      "x": 62.0,
+      "y": 38.0
+    },
+    {
+      "definition": "unit.ants.archer",
+      "owner": "player.2",
+      "x": 66.0,
+      "y": 38.0
+    },
+    {
+      "definition": "unit.ants.archer",
+      "owner": "player.2",
+      "x": 70.0,
+      "y": 38.0
+    },
+    {
+      "definition": "unit.beetles.shieldbearer",
+      "owner": "player.2",
+      "x": 74.0,
+      "y": 38.0
+    },
+    {
+      "definition": "unit.beetles.shieldbearer",
+      "owner": "player.2",
+      "x": 78.0,
+      "y": 38.0
+    },
+    {
+      "definition": "unit.ants.bombardier",
+      "owner": "player.2",
+      "x": 82.0,
+      "y": 38.0
+    },
+    {
+      "definition": "unit.ants.queen",
+      "owner": "player.2",
+      "x": 88.0,
+      "y": 38.0
+    },
+    {
+      "definition": "unit.ants.warrior",
+      "owner": "player.3",
+      "x": 30.0,
+      "y": 48.0
+    },
+    {
+      "definition": "unit.ants.warrior",
+      "owner": "player.3",
+      "x": 34.0,
+      "y": 48.0
+    },
+    {
+      "definition": "unit.ants.warrior",
+      "owner": "player.3",
+      "x": 38.0,
+      "y": 48.0
+    },
+    {
+      "definition": "unit.ants.warrior",
+      "owner": "player.3",
+      "x": 42.0,
+      "y": 48.0
+    },
+    {
+      "definition": "unit.ants.warrior",
+      "owner": "player.3",
+      "x": 46.0,
+      "y": 48.0
+    },
+    {
+      "definition": "unit.ants.warrior",
+      "owner": "player.3",
+      "x": 50.0,
+      "y": 48.0
+    },
+    {
+      "definition": "unit.ants.warrior",
+      "owner": "player.3",
+      "x": 54.0,
+      "y": 48.0
+    },
+    {
+      "definition": "unit.ants.warrior",
+      "owner": "player.3",
+      "x": 58.0,
+      "y": 48.0
+    },
+    {
+      "definition": "unit.ants.archer",
+      "owner": "player.3",
+      "x": 62.0,
+      "y": 48.0
+    },
+    {
+      "definition": "unit.ants.archer",
+      "owner": "player.3",
+      "x": 66.0,
+      "y": 48.0
+    },
+    {
+      "definition": "unit.ants.archer",
+      "owner": "player.3",
+      "x": 70.0,
+      "y": 48.0
+    },
+    {
+      "definition": "unit.beetles.shieldbearer",
+      "owner": "player.3",
+      "x": 74.0,
+      "y": 48.0
+    },
+    {
+      "definition": "unit.beetles.shieldbearer",
+      "owner": "player.3",
+      "x": 78.0,
+      "y": 48.0
+    },
+    {
+      "definition": "unit.ants.bombardier",
+      "owner": "player.3",
+      "x": 82.0,
+      "y": 48.0
+    },
+    {
+      "definition": "unit.ants.queen",
+      "owner": "player.3",
+      "x": 88.0,
+      "y": 48.0
+    },
+    {
+      "definition": "unit.ants.warrior",
+      "owner": "player.4",
+      "x": 30.0,
+      "y": 58.0
+    },
+    {
+      "definition": "unit.ants.warrior",
+      "owner": "player.4",
+      "x": 34.0,
+      "y": 58.0
+    },
+    {
+      "definition": "unit.ants.warrior",
+      "owner": "player.4",
+      "x": 38.0,
+      "y": 58.0
+    },
+    {
+      "definition": "unit.ants.warrior",
+      "owner": "player.4",
+      "x": 42.0,
+      "y": 58.0
+    },
+    {
+      "definition": "unit.ants.warrior",
+      "owner": "player.4",
+      "x": 46.0,
+      "y": 58.0
+    },
+    {
+      "definition": "unit.ants.warrior",
+      "owner": "player.4",
+      "x": 50.0,
+      "y": 58.0
+    },
+    {
+      "definition": "unit.ants.warrior",
+      "owner": "player.4",
+      "x": 54.0,
+      "y": 58.0
+    },
+    {
+      "definition": "unit.ants.warrior",
+      "owner": "player.4",
+      "x": 58.0,
+      "y": 58.0
+    },
+    {
+      "definition": "unit.ants.archer",
+      "owner": "player.4",
+      "x": 62.0,
+      "y": 58.0
+    },
+    {
+      "definition": "unit.ants.archer",
+      "owner": "player.4",
+      "x": 66.0,
+      "y": 58.0
+    },
+    {
+      "definition": "unit.ants.archer",
+      "owner": "player.4",
+      "x": 70.0,
+      "y": 58.0
+    },
+    {
+      "definition": "unit.beetles.shieldbearer",
+      "owner": "player.4",
+      "x": 74.0,
+      "y": 58.0
+    },
+    {
+      "definition": "unit.beetles.shieldbearer",
+      "owner": "player.4",
+      "x": 78.0,
+      "y": 58.0
+    },
+    {
+      "definition": "unit.ants.bombardier",
+      "owner": "player.4",
+      "x": 82.0,
+      "y": 58.0
+    },
+    {
+      "definition": "unit.ants.queen",
+      "owner": "player.4",
+      "x": 88.0,
+      "y": 58.0
+    },
+    {
+      "definition": "unit.ants.warrior",
+      "owner": "player.5",
+      "x": 30.0,
+      "y": 68.0
+    },
+    {
+      "definition": "unit.ants.warrior",
+      "owner": "player.5",
+      "x": 34.0,
+      "y": 68.0
+    },
+    {
+      "definition": "unit.ants.warrior",
+      "owner": "player.5",
+      "x": 38.0,
+      "y": 68.0
+    },
+    {
+      "definition": "unit.ants.warrior",
+      "owner": "player.5",
+      "x": 42.0,
+      "y": 68.0
+    },
+    {
+      "definition": "unit.ants.warrior",
+      "owner": "player.5",
+      "x": 46.0,
+      "y": 68.0
+    },
+    {
+      "definition": "unit.ants.warrior",
+      "owner": "player.5",
+      "x": 50.0,
+      "y": 68.0
+    },
+    {
+      "definition": "unit.ants.warrior",
+      "owner": "player.5",
+      "x": 54.0,
+      "y": 68.0
+    },
+    {
+      "definition": "unit.ants.warrior",
+      "owner": "player.5",
+      "x": 58.0,
+      "y": 68.0
+    },
+    {
+      "definition": "unit.ants.archer",
+      "owner": "player.5",
+      "x": 62.0,
+      "y": 68.0
+    },
+    {
+      "definition": "unit.ants.archer",
+      "owner": "player.5",
+      "x": 66.0,
+      "y": 68.0
+    },
+    {
+      "definition": "unit.ants.archer",
+      "owner": "player.5",
+      "x": 70.0,
+      "y": 68.0
+    },
+    {
+      "definition": "unit.beetles.shieldbearer",
+      "owner": "player.5",
+      "x": 74.0,
+      "y": 68.0
+    },
+    {
+      "definition": "unit.beetles.shieldbearer",
+      "owner": "player.5",
+      "x": 78.0,
+      "y": 68.0
+    },
+    {
+      "definition": "unit.ants.bombardier",
+      "owner": "player.5",
+      "x": 82.0,
+      "y": 68.0
+    },
+    {
+      "definition": "unit.ants.queen",
+      "owner": "player.5",
+      "x": 88.0,
+      "y": 68.0
+    },
+    {
+      "definition": "unit.ants.warrior",
+      "owner": "player.6",
+      "x": 30.0,
+      "y": 78.0
+    },
+    {
+      "definition": "unit.ants.warrior",
+      "owner": "player.6",
+      "x": 34.0,
+      "y": 78.0
+    },
+    {
+      "definition": "unit.ants.warrior",
+      "owner": "player.6",
+      "x": 38.0,
+      "y": 78.0
+    },
+    {
+      "definition": "unit.ants.warrior",
+      "owner": "player.6",
+      "x": 42.0,
+      "y": 78.0
+    },
+    {
+      "definition": "unit.ants.warrior",
+      "owner": "player.6",
+      "x": 46.0,
+      "y": 78.0
+    },
+    {
+      "definition": "unit.ants.warrior",
+      "owner": "player.6",
+      "x": 50.0,
+      "y": 78.0
+    },
+    {
+      "definition": "unit.ants.warrior",
+      "owner": "player.6",
+      "x": 54.0,
+      "y": 78.0
+    },
+    {
+      "definition": "unit.ants.warrior",
+      "owner": "player.6",
+      "x": 58.0,
+      "y": 78.0
+    },
+    {
+      "definition": "unit.ants.archer",
+      "owner": "player.6",
+      "x": 62.0,
+      "y": 78.0
+    },
+    {
+      "definition": "unit.ants.archer",
+      "owner": "player.6",
+      "x": 66.0,
+      "y": 78.0
+    },
+    {
+      "definition": "unit.ants.archer",
+      "owner": "player.6",
+      "x": 70.0,
+      "y": 78.0
+    },
+    {
+      "definition": "unit.beetles.shieldbearer",
+      "owner": "player.6",
+      "x": 74.0,
+      "y": 78.0
+    },
+    {
+      "definition": "unit.beetles.shieldbearer",
+      "owner": "player.6",
+      "x": 78.0,
+      "y": 78.0
+    },
+    {
+      "definition": "unit.ants.bombardier",
+      "owner": "player.6",
+      "x": 82.0,
+      "y": 78.0
+    },
+    {
+      "definition": "unit.ants.queen",
+      "owner": "player.6",
+      "x": 88.0,
+      "y": 78.0
+    },
+    {
+      "definition": "unit.ants.warrior",
+      "owner": "player.7",
+      "x": 30.0,
+      "y": 88.0
+    },
+    {
+      "definition": "unit.ants.warrior",
+      "owner": "player.7",
+      "x": 34.0,
+      "y": 88.0
+    },
+    {
+      "definition": "unit.ants.warrior",
+      "owner": "player.7",
+      "x": 38.0,
+      "y": 88.0
+    },
+    {
+      "definition": "unit.ants.warrior",
+      "owner": "player.7",
+      "x": 42.0,
+      "y": 88.0
+    },
+    {
+      "definition": "unit.ants.warrior",
+      "owner": "player.7",
+      "x": 46.0,
+      "y": 88.0
+    },
+    {
+      "definition": "unit.ants.warrior",
+      "owner": "player.7",
+      "x": 50.0,
+      "y": 88.0
+    },
+    {
+      "definition": "unit.ants.warrior",
+      "owner": "player.7",
+      "x": 54.0,
+      "y": 88.0
+    },
+    {
+      "definition": "unit.ants.warrior",
+      "owner": "player.7",
+      "x": 58.0,
+      "y": 88.0
+    },
+    {
+      "definition": "unit.ants.archer",
+      "owner": "player.7",
+      "x": 62.0,
+      "y": 88.0
+    },
+    {
+      "definition": "unit.ants.archer",
+      "owner": "player.7",
+      "x": 66.0,
+      "y": 88.0
+    },
+    {
+      "definition": "unit.ants.archer",
+      "owner": "player.7",
+      "x": 70.0,
+      "y": 88.0
+    },
+    {
+      "definition": "unit.beetles.shieldbearer",
+      "owner": "player.7",
+      "x": 74.0,
+      "y": 88.0
+    },
+    {
+      "definition": "unit.beetles.shieldbearer",
+      "owner": "player.7",
+      "x": 78.0,
+      "y": 88.0
+    },
+    {
+      "definition": "unit.ants.bombardier",
+      "owner": "player.7",
+      "x": 82.0,
+      "y": 88.0
+    },
+    {
+      "definition": "unit.ants.queen",
+      "owner": "player.7",
+      "x": 88.0,
+      "y": 88.0
+    },
+    {
+      "definition": "unit.ants.warrior",
+      "owner": "player.8",
+      "x": 30.0,
+      "y": 98.0
+    },
+    {
+      "definition": "unit.ants.warrior",
+      "owner": "player.8",
+      "x": 34.0,
+      "y": 98.0
+    },
+    {
+      "definition": "unit.ants.warrior",
+      "owner": "player.8",
+      "x": 38.0,
+      "y": 98.0
+    },
+    {
+      "definition": "unit.ants.warrior",
+      "owner": "player.8",
+      "x": 42.0,
+      "y": 98.0
+    },
+    {
+      "definition": "unit.ants.warrior",
+      "owner": "player.8",
+      "x": 46.0,
+      "y": 98.0
+    },
+    {
+      "definition": "unit.ants.warrior",
+      "owner": "player.8",
+      "x": 50.0,
+      "y": 98.0
+    },
+    {
+      "definition": "unit.ants.warrior",
+      "owner": "player.8",
+      "x": 54.0,
+      "y": 98.0
+    },
+    {
+      "definition": "unit.ants.warrior",
+      "owner": "player.8",
+      "x": 58.0,
+      "y": 98.0
+    },
+    {
+      "definition": "unit.ants.archer",
+      "owner": "player.8",
+      "x": 62.0,
+      "y": 98.0
+    },
+    {
+      "definition": "unit.ants.archer",
+      "owner": "player.8",
+      "x": 66.0,
+      "y": 98.0
+    },
+    {
+      "definition": "unit.ants.archer",
+      "owner": "player.8",
+      "x": 70.0,
+      "y": 98.0
+    },
+    {
+      "definition": "unit.beetles.shieldbearer",
+      "owner": "player.8",
+      "x": 74.0,
+      "y": 98.0
+    },
+    {
+      "definition": "unit.beetles.shieldbearer",
+      "owner": "player.8",
+      "x": 78.0,
+      "y": 98.0
+    },
+    {
+      "definition": "unit.ants.bombardier",
+      "owner": "player.8",
+      "x": 82.0,
+      "y": 98.0
+    },
+    {
+      "definition": "unit.ants.queen",
+      "owner": "player.8",
+      "x": 88.0,
+      "y": 98.0
+    }
+  ]
+}

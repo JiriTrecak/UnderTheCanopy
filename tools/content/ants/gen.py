@@ -661,7 +661,8 @@ def unit(rel, *, name, description, body_, combat, speed, creation, supply, leve
         d['maxOwned'] = max_owned
     if presentation is not None:
         d['presentation'] = presentation
-    if scale:
+    # A unit with a body class (D102) keeps the scale fitted to its body.
+    if scale and not d.get('dimensions', {}).get('size'):
         d['modelScale'] = scale
     d.pop('underground', None)
     if underground is not None and ENGINE:

@@ -5,7 +5,7 @@
   "selectionClass": "army",
   "dimensions": {
     "size": "small",
-    "height": 6.66
+    "height": 4.5
   },
   "body": {
     "maxHp": 550,
@@ -38,7 +38,7 @@
   },
   "level": 3,
   "supplyCost": 1,
-  "modelScale": 2.56,
+  "modelScale": 1.75,
   "presentation": {
     "projectileSocket": "socket_projectile",
     "launchEffect": "effect.neutral.bloom-witch-bolt",

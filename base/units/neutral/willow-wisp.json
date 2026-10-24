@@ -5,7 +5,7 @@
   "selectionClass": "army",
   "dimensions": {
     "size": "medium",
-    "height": 9.16
+    "height": 5.3
   },
   "body": {
     "maxHp": 370,
@@ -38,7 +38,7 @@
   },
   "level": 6,
   "supplyCost": 1,
-  "modelScale": 4.58,
+  "modelScale": 2.66,
   "presentation": {
     "projectileSocket": "socket_projectile",
     "launchEffect": "effect.neutral.willow-wisp-bolt",

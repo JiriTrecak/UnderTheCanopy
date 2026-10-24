@@ -887,16 +887,19 @@ def unit(name, title, description, body, combat, speed, creation, supply, dims, 
         d['unitNature'] = nature
     # A unit that moves names its body class (D102, rules' bodySizes): the class already in
     # its file is kept; units that never move keep their own radius.
-    current = {}
+    # Its model scale and height are fitted to the class (D102) and kept too.
+    existing = {}
     path = os.path.join(BASE, 'units', 'beetles', ('heroes/' if name in HEROES else '') + name + '.json')
     if os.path.exists(path):
         with open(path) as f:
-            current = json.load(f).get('dimensions', {})
+            existing = json.load(f)
+    current = existing.get('dimensions', {})
     if speed is not None and current.get('size'):
-        d['dimensions'] = {'size': current['size'], 'height': dims[1]}
+        d['dimensions'] = dict(current)
+        d['modelScale'] = existing.get('modelScale', scale)
     else:
         d['dimensions'] = {'radius': dims[0], 'height': dims[1], 'formationSpacing': dims[2]}
-    d['modelScale'] = scale
+        d['modelScale'] = scale
     if presentation:
         d['presentation'] = presentation
     if top:

@@ -96,9 +96,9 @@
   "supplyCost": 3,
   "dimensions": {
     "size": "small",
-    "height": 5.2
+    "height": 4.7
   },
-  "modelScale": 2.6,
+  "modelScale": 2.36,
   "presentation": {
     "projectileSocket": "socket_projectile",
     "launchEffect": "effect.beetles.weapons.prong-zap",
