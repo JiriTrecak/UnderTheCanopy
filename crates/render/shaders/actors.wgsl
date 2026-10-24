@@ -102,8 +102,7 @@ fn vs_main(in: VertexIn, @builtin(instance_index) id: u32) -> VsOut {
     return out;
 }
 
-@fragment
-fn fs_main(in: VsOut, @builtin(front_facing) front: bool) -> SceneOut {
+fn actor_color(in: VsOut, front: bool) -> vec4f {
     let actor = actors[in.instance];
     var f: MaterialFragment;
     f.tint = vec3f(1.0);
@@ -119,11 +118,23 @@ fn fs_main(in: VsOut, @builtin(front_facing) front: bool) -> SceneOut {
     // The night's rim and fill keep units and buildings readable; effect models (tinted)
     // keep their own look.
     f.unit = select(0.0, 1.0, all(actor.tint == vec4f(1.0)));
-    let shaded = shade_material(f) * actor.tint;
-    if ((has(ALPHA_MASK) && shaded.a <= 0.0) || dither_discard(1.0 - actor.look.x, in.clip.xy)) {
+    return shade_material(f) * actor.tint;
+}
+
+@fragment
+fn fs_main(in: VsOut, @builtin(front_facing) front: bool) -> SceneOut {
+    let shaded = actor_color(in, front);
+    if ((has(ALPHA_MASK) && shaded.a <= 0.0) || dither_discard(1.0 - actors[in.instance].look.x, in.clip.xy)) {
         discard;
     }
     return scene_out(shaded, in.world);
+}
+
+// Opaque sections of fully opaque instances: nothing to discard, so the GPU shades only
+// the visible surface.
+@fragment
+fn fs_solid(in: VsOut, @builtin(front_facing) front: bool) -> SceneOut {
+    return scene_out(actor_color(in, front), in.world);
 }
 
 // --- Shadows -------------------------------------------------------------------------

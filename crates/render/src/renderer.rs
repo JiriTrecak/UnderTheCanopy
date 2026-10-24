@@ -1205,6 +1205,7 @@ impl Renderer {
             shadow_texel,
             lighting.shadow_softness,
             crate::frame::NORMAL_OFFSET,
+            self.terrain.as_ref().map_or(f32::MIN, TerrainGpu::lowest),
         );
         if let Some(statics) = &self.statics {
             statics.prepare(queue, camera.view_projection, shadow_matrix, &casters);
@@ -1289,7 +1290,7 @@ impl Renderer {
                 device,
                 queue,
                 camera.view_projection,
-                self.shadows.then_some(shadow_matrix),
+                self.shadows.then_some((shadow_matrix, &casters)),
                 Some(&lod),
             );
             report.actors = actors.stats;
@@ -1413,7 +1414,11 @@ impl Renderer {
                             report.draws += terrain.draw_shadow(&mut rp, &self.shadow_frame_group);
                         }
                         if let Some(statics) = &self.statics {
-                            report.draws += statics.draw_shadow(&mut rp, &self.shadow_frame_group);
+                            report.draws += statics.draw_shadow(
+                                &mut rp,
+                                &self.shadow_frame_group,
+                                self.environment.lighting.shadow_ceiling,
+                            );
                         }
                         if let Some(actors) = &self.actors {
                             report.draws += actors.draw_shadow(&mut rp, &self.shadow_frame_group);
@@ -1486,7 +1491,8 @@ impl Renderer {
                         multiview_mask: None,
                     });
                     if let Some(statics) = &self.statics {
-                        report.draws += statics.draw_prepass(&mut rp, &self.frame_group);
+                        report.draws +=
+                            statics.draw_prepass(&mut rp, &self.frame_group, self.cutaway.active);
                     }
                     if let Some(terrain) = &self.terrain {
                         report.draws += terrain.draw_forward(&mut rp, &self.frame_group);

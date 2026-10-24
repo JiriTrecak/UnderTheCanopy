@@ -104,7 +104,8 @@ pub fn fit(
 /// inside the camera's view, and reads it only where its depth is inside the map. A
 /// caster can only shade a point that lies behind it, away from the sun; so a caster
 /// matters only when its bounding sphere, swept away from the sun until the map's far
-/// plane, touches the camera's view. The sphere grows by every offset a read takes:
+/// plane or below the lowest ground (nothing under all of the ground can be seen),
+/// touches the camera's view. The sphere grows by every offset a read takes:
 /// the receivers' normal offset, the filter disk and the hardware filter's texels, and
 /// a little sway. Skipping the others leaves every texel any visible pixel reads as it
 /// was.
@@ -116,6 +117,8 @@ pub struct CasterCull {
     pub sweep: Vec4,
     /// The map's depth row: `depth · (p, 1)` is a point's depth in the map (0 at the sun).
     pub depth: Vec4,
+    /// Height under which nothing can be seen (the lowest ground), world units.
+    pub floor: f32,
 }
 
 /// Wind sway beyond a model's rest bounds, world units (scenery's flutter is centimetres).
@@ -123,7 +126,8 @@ const SWAY_MARGIN: f32 = 0.5;
 
 impl CasterCull {
     /// `texel`: the map's world units per texel; `filter`: the filter disk's radius in
-    /// texels (`shadow_softness`); `normal_offset`: the receivers' offset, world units.
+    /// texels (`shadow_softness`); `normal_offset`: the receivers' offset, world units;
+    /// `floor`: the lowest ground (`f32::MIN` when unknown).
     pub fn new(
         camera: Mat4,
         shadow: Mat4,
@@ -131,6 +135,7 @@ impl CasterCull {
         texel: f32,
         filter: f32,
         normal_offset: f32,
+        floor: f32,
     ) -> Self {
         let p = frustum_planes(camera);
         // The disk's radius (at least half a texel), the 2×2 comparison filter and the
@@ -142,6 +147,7 @@ impl CasterCull {
             planes: [p[0], p[1], p[2], p[3], p[5]],
             sweep: towards_sun.normalize().extend(margin),
             depth: shadow.row(2),
+            floor,
         }
     }
 
@@ -156,7 +162,10 @@ impl CasterCull {
             return true;
         }
         let depth = self.depth.dot(start.extend(1.0));
-        let length = ((1.0 - depth) / rate).max(0.0) + radius;
+        let mut length = ((1.0 - depth) / rate).max(0.0) + radius;
+        if towards_sun.y > 1e-3 {
+            length = length.min(((start.y + radius - self.floor) / towards_sun.y).max(0.0));
+        }
         let end = start - towards_sun * length;
         self.planes.iter().all(|p| {
             p.truncate().dot(start) + p.w >= -radius || p.truncate().dot(end) + p.w >= -radius
@@ -219,6 +228,7 @@ mod tests {
             shadow.texel,
             1.5,
             0.025,
+            f32::MIN,
         );
         let planes = frustum_planes(camera.view_projection);
         let visible = |p: Vec3| planes.iter().all(|q| q.truncate().dot(p) + q.w >= 0.0);

@@ -12,6 +12,8 @@ struct Params {
     caster_planes: array<vec4f, 5>,
     // xyz towards the sun, w the margin
     sweep: vec4f,
+    // x: the lowest ground (CasterCull::floor)
+    floor: vec4f,
     // the shadow map's depth row
     sun_depth: vec4f,
 }
@@ -60,7 +62,10 @@ fn casts_into_view(sphere: vec4f) -> bool {
         return true;
     }
     let depth = dot(params.sun_depth, vec4f(sphere.xyz, 1.0));
-    let length = max((1.0 - depth) / rate, 0.0) + radius;
+    var length = max((1.0 - depth) / rate, 0.0) + radius;
+    if (towards_sun.y > 1e-3) {
+        length = min(length, max((sphere.y + radius - params.floor.x) / towards_sun.y, 0.0));
+    }
     let end = sphere.xyz - towards_sun * length;
     for (var i = 0u; i < 5u; i++) {
         let p = params.caster_planes[i];

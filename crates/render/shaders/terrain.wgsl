@@ -278,22 +278,28 @@ fn ground_at(
         let layer = terrain.layers[id];
         let kind = layer.kind.x;
         let floor_slot = s == 0u;
-        let weight0 = textureSampleLevel(masks, clamp_sampler, mask_uv, id, 0.0).r;
+        // A tiled layer that covers the cell needs no weight; one with none here adds
+        // nothing, so its tiles are not read.
+        let covers = kind == KIND_BASE || (kind == KIND_TILED && floor_slot);
+        var weight0 = 1.0;
+        if (!covers) {
+            weight0 = textureSampleLevel(masks, clamp_sampler, mask_uv, id, 0.0).r;
+        }
 
         if (kind == KIND_BASE || kind == KIND_TILED) {
+            if (!covers && weight0 <= 0.0) {
+                continue;
+            }
             let scale = layer.params.x * 0.08;
             let uv = xz * scale;
             var lar = sample_tile(layer.kind.y, 0u, uv, dx * scale, dy * scale);
             let lnh = sample_tile(layer.kind.z, 1u, uv, dx * scale, dy * scale);
             lar = vec4f(lar.rgb * layer.tint.rgb, lar.a);
-            if (kind == KIND_BASE || floor_slot) {
+            if (covers) {
                 g.ar = lar;
                 g.nh = lnh;
                 g.om = vec2f(1.0, 0.0);
                 g.painted = 0.0;
-                continue;
-            }
-            if (weight0 <= 0.0) {
                 continue;
             }
             let blend = layer.params.y;

@@ -205,9 +205,10 @@ fn cut_away(id: u32, frag: vec2f, world: vec3f) -> bool {
     return dither_discard(amount, frag);
 }
 
-// Giants above the RTS view: a canopy model's parts more than `RTS_CEILING` above its base
-// stipple away as the camera pitches down (the surroundings' rule, surroundings.wgsl), so a
-// tree can rise into the canopy for close cameras without covering the map from above.
+// Giants above the RTS view: a canopy model's parts more than `RTS_CEILING` above its
+// base stipple away as the camera pitches down (the surroundings' rule, surroundings.wgsl),
+// so a tree can rise into the canopy for close cameras without covering the map from
+// above. statics.rs keeps its own `RTS_CEILING` in step.
 // Shadows keep the whole tree, so its crown still shades the ground.
 const RTS_CEILING: f32 = 75.0;
 

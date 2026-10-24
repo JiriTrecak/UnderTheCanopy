@@ -289,6 +289,8 @@ struct Range {
     /// Camera-visible opaque instances per level of detail, in order (they partition
     /// `camera`).
     lods: [u32; MAX_LODS],
+    /// Of those, the last ones per level are faded (opacity below 1: screen-door).
+    faded: [u32; MAX_LODS],
     /// The level the shadow map draws every caster of the model at.
     shadow_lod: u8,
     /// Largest scale of the model's shadow casters.
@@ -354,6 +356,8 @@ pub struct ActorsGpu {
     names: Vec<String>,
     glows: BTreeMap<String, Glow>,
     pipelines: HashMap<Variant, wgpu::RenderPipeline>,
+    /// Opaque sections of unfaded instances, by double-sidedness: no discard.
+    solid_pipelines: HashMap<bool, wgpu::RenderPipeline>,
     depth_pipeline: wgpu::RenderPipeline,
     masked_pipeline: wgpu::RenderPipeline,
     skin_pipeline: wgpu::ComputePipeline,
@@ -475,6 +479,7 @@ impl ActorsGpu {
             vertex(8, &skin_attributes[..]),
         ];
         let mut pipelines = HashMap::new();
+        let mut solid_pipelines = HashMap::new();
         for variant in Variant::ALL {
             let (cull_mode, a2c, blend) = variant.states();
             let pipeline = device.create_render_pipeline(&wgpu::RenderPipelineDescriptor {
@@ -502,6 +507,33 @@ impl ActorsGpu {
                 cache: None,
             });
             pipelines.insert(variant, pipeline);
+            if let Variant::Opaque { double_sided } = variant {
+                let solid = device.create_render_pipeline(&wgpu::RenderPipelineDescriptor {
+                    label: Some("actors solid"),
+                    layout: Some(&layout),
+                    vertex: wgpu::VertexState {
+                        module: &module,
+                        entry_point: Some("vs_main"),
+                        compilation_options: Default::default(),
+                        buffers: &main_buffers,
+                    },
+                    primitive: wgpu::PrimitiveState {
+                        cull_mode,
+                        ..Default::default()
+                    },
+                    depth_stencil: Some(targets::scene_depth(true)),
+                    multisample: targets::scene_multisample(a2c),
+                    fragment: Some(wgpu::FragmentState {
+                        module: &module,
+                        entry_point: Some("fs_solid"),
+                        compilation_options: Default::default(),
+                        targets: &targets::forward_targets(None, true),
+                    }),
+                    multiview_mask: None,
+                    cache: None,
+                });
+                solid_pipelines.insert(double_sided, solid);
+            }
         }
         let depth_position = wgpu::vertex_attr_array![0 => Unorm16x4];
         let depth_skin = wgpu::vertex_attr_array![5 => Uint8x4, 6 => Unorm8x4];
@@ -571,6 +603,7 @@ impl ActorsGpu {
             names: Vec::new(),
             glows,
             pipelines,
+            solid_pipelines,
             depth_pipeline,
             masked_pipeline,
             skin_pipeline,
@@ -962,17 +995,19 @@ impl ActorsGpu {
         device: &wgpu::Device,
         queue: &wgpu::Queue,
         camera: Mat4,
-        sun: Option<Mat4>,
+        sun: Option<(Mat4, &crate::shadow::CasterCull)>,
         lod: Option<&LodView>,
     ) {
         let _span = tracing::trace_span!("actors_prepare").entered();
+        let (sun, casters) = (sun.map(|s| s.0), sun.map(|s| s.1));
         let camera_planes = frustum_planes(camera);
         let sun_planes = sun.map(frustum_planes);
         self.ranges.clear();
         self.ranges.resize(self.slots.len(), Range::default());
-        // (model, 0 camera-visible / 1 sun only / 2 translucent, level of detail, input)
-        let mut order: Vec<(u32, u8, u8, u32)> = Vec::with_capacity(self.instances.len());
-        let mut casters = 0;
+        // (model, 0 camera-visible / 1 sun only / 2 translucent, level of detail, faded,
+        // input)
+        let mut order: Vec<(u32, u8, u8, bool, u32)> = Vec::with_capacity(self.instances.len());
+        let mut casters_drawn = 0;
         for (i, instance) in self.instances.iter().enumerate() {
             let Some(Slot::Ready(model)) = self.slots.get(instance.model as usize) else {
                 continue;
@@ -982,23 +1017,26 @@ impl ActorsGpu {
             let in_camera = !instance.shadow_only && sphere_visible(&camera_planes, sphere);
             if instance.translucent() {
                 if in_camera && instance.tint[3] > 0.0 {
-                    order.push((instance.model, 2, 0, i as u32));
+                    order.push((instance.model, 2, 0, false, i as u32));
                 }
                 continue;
             }
             let casts = model.casts
                 && (model.animated || model.height * scale_y >= SHADOW_MIN_HEIGHT)
                 && instance.opacity > 0.5;
-            let in_sun = casts
+            let in_sun_view = casts
                 && sun_planes
                     .as_ref()
                     .is_some_and(|p| sphere_visible(p, sphere));
-            casters += u32::from(in_sun);
             let scale = max_scale(&instance.transform);
-            if in_sun {
+            // The shadow's level of detail follows every caster in the sun's view; only
+            // those whose shadow can reach the camera's view are drawn (shadow.rs).
+            if in_sun_view {
                 let range = &mut self.ranges[instance.model as usize];
                 range.shadow_scale = range.shadow_scale.max(scale);
             }
+            let in_sun = in_sun_view && casters.is_none_or(|c| c.casts_into_view(sphere));
+            casters_drawn += u32::from(in_sun);
             if in_camera {
                 let level = lod.map_or(0, |view| {
                     let depth = -view.view.transform_point3(sphere.truncate()).z;
@@ -1008,16 +1046,18 @@ impl ActorsGpu {
                         / (view.pixels_per_unit * scale.max(1e-6));
                     choose_lod(&model.lods, allowed)
                 });
-                order.push((instance.model, 0, level, i as u32));
+                // Below full opacity the screen-door discards (actors.wgsl `fs_main`).
+                let faded = instance.opacity < 1.0;
+                order.push((instance.model, 0, level, faded, i as u32));
             } else if in_sun {
-                order.push((instance.model, 1, 0, i as u32));
+                order.push((instance.model, 1, 0, false, i as u32));
             }
         }
         order.sort_unstable();
         self.staging_actors.clear();
         self.staging_jobs.clear();
         let mut palette_len = 0u32;
-        for &(m, view, level, i) in &order {
+        for &(m, view, level, faded, i) in &order {
             let instance = &self.instances[i as usize];
             let Slot::Ready(model) = &self.slots[m as usize] else {
                 continue;
@@ -1031,6 +1071,7 @@ impl ActorsGpu {
                     range.camera += 1;
                     range.all += 1;
                     range.lods[usize::from(level)] += 1;
+                    range.faded[usize::from(level)] += u32::from(faded);
                 }
                 1 => range.all += 1,
                 _ => range.translucent += 1,
@@ -1147,7 +1188,7 @@ impl ActorsGpu {
                 .count() as u32,
             instances: self.instances.len() as u32,
             visible: self.ranges.iter().map(|r| r.camera + r.translucent).sum(),
-            shadow_casters: casters,
+            shadow_casters: casters_drawn,
             joints: palette_len,
             draws: 0,
             triangles: 0,
@@ -1201,10 +1242,11 @@ impl ActorsGpu {
     }
 
     fn draw_sections(&self, pass: &mut wgpu::RenderPass<'_>, blend: bool) -> u32 {
-        // (pipeline, model, section, level, instances): opaque instances draw each section
-        // with its own variant, a draw per level of detail; translucent ones draw every
-        // section of the full mesh blended.
-        let mut draws: Vec<(Variant, usize, usize, usize, std::ops::Range<u32>)> = Vec::new();
+        // (pipeline, faded, model, section, level, instances): opaque instances draw each
+        // section with its own variant, a draw per level of detail (opaque sections of
+        // unfaded instances without a discard, then the faded ones); translucent ones draw
+        // every section of the full mesh blended.
+        let mut draws: Vec<(Variant, bool, usize, usize, usize, std::ops::Range<u32>)> = Vec::new();
         for (m, slot) in self.slots.iter().enumerate() {
             let Slot::Ready(model) = slot else { continue };
             let Some(range) = self.ranges.get(m).copied() else {
@@ -1214,29 +1256,47 @@ impl ActorsGpu {
                 let variant = model.materials[section.material as usize].variant;
                 if range.camera > 0 && variant.is_blend() == blend {
                     let mut first = range.first;
-                    for (level, &count) in range.lods.iter().enumerate() {
-                        if count > 0 {
-                            draws.push((variant, m, s, level, first..first + count));
+                    let split = matches!(variant, Variant::Opaque { .. });
+                    for (level, (&count, &faded)) in range.lods.iter().zip(&range.faded).enumerate()
+                    {
+                        let solid = if split { count - faded } else { 0 };
+                        if solid > 0 {
+                            draws.push((variant, false, m, s, level, first..first + solid));
+                        }
+                        if count > solid {
+                            draws.push((variant, true, m, s, level, first + solid..first + count));
                         }
                         first += count;
                     }
                 }
                 if blend && range.translucent > 0 {
                     let first = range.first + range.all;
-                    draws.push((variant.blended(), m, s, 0, first..first + range.translucent));
+                    draws.push((
+                        variant.blended(),
+                        true,
+                        m,
+                        s,
+                        0,
+                        first..first + range.translucent,
+                    ));
                 }
             }
         }
-        draws.sort_unstable_by_key(|d| (d.0, d.1, d.2, d.3, d.4.start));
+        draws.sort_unstable_by_key(|d| (d.0, d.1, d.2, d.3, d.4, d.5.start));
         let mut current = None;
         let mut bound = usize::MAX;
-        for (variant, m, s, level, instances) in &draws {
+        for (variant, faded, m, s, level, instances) in &draws {
             let Slot::Ready(model) = &self.slots[*m] else {
                 continue;
             };
-            if current != Some(*variant) {
-                pass.set_pipeline(&self.pipelines[variant]);
-                current = Some(*variant);
+            if current != Some((*variant, *faded)) {
+                match variant {
+                    Variant::Opaque { double_sided } if !faded => {
+                        pass.set_pipeline(&self.solid_pipelines[double_sided]);
+                    }
+                    _ => pass.set_pipeline(&self.pipelines[variant]),
+                }
+                current = Some((*variant, *faded));
             }
             if bound != *m {
                 self.bind_model(pass, *m, model);
