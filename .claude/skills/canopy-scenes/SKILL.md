@@ -77,7 +77,7 @@ Staging:
 - Crowds: two angles, or move extras aside.
 
 Poses and effects:
-- `animate(unit, "kneel"|"sleep", true)` holds a pose until an order. Kneel exists for the ant marshal, warrior, archer and settler; sleep for the beetle worker and the winglancer.
+- `animate(unit, "kneel"|"sleep", true)` holds a pose until an order. Kneel exists for the ant marshal, warrior, archer and settler; sleep for the beetle worker and the winglancer. A sleeper fights nothing until an order or a wound wakes it, so an easter egg stays in place while a battle passes.
 - `effect_at(key, effect, x, y[, seconds])` and `light_at(key, x, y, colour, intensity, radius[, seconds][, height])`. Keys take letters, digits and `_` only.
 - `fade_out(seconds, colour)` and `fade_in`.
 

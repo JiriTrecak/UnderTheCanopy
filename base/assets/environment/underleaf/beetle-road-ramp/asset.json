@@ -34,7 +34,7 @@
   "capabilities": {
     "vegetationClearance": 4,
     "groundContact": {
-      "mode": "terrain"
+      "mode": "pivot"
     }
   },
   "license": "Original procedural model for Under the Canopy (tools/props/beetle_road.py), textures by gpt-image-2."

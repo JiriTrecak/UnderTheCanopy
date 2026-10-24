@@ -66,7 +66,7 @@
         "events": [
           {
             "name": "hit",
-            "time": 1.333
+            "time": 0.65
           }
         ]
       },

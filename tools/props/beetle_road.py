@@ -168,6 +168,10 @@ def road(name, title, sides, length=TILE, rise=0.0):
         join(brass, name + '-brass')
     a = asset(name, title, tags=('road',))
     a['capabilities']['vegetationClearance'] = 4
+    if rise:
+        # A ramp stands on its pivot, the middle of its slope: with the terrain's soil line
+        # the cooker would lift its buried embankment onto the ground (UND-26).
+        a['capabilities']['groundContact'] = {'mode': 'pivot'}
     kit.export(os.path.join(OUT, name), name, a)
 
 

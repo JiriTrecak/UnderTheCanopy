@@ -311,3 +311,61 @@ fn a_death_nobody_caused_pays_no_bounty() {
     assert!(entity(&world, "cart").is_none());
     assert_eq!(amber(&world), start);
 }
+
+/// A unit asleep in a scene pose (`animate(unit, "sleep", true)`) picks no fight of its
+/// own, so an easter egg dozing in its flower stays there when enemies pass; awake, the
+/// same unit goes for the enemy in its aggro range, and an order or a wound wakes it.
+#[test]
+fn a_sleeping_unit_picks_no_fight_until_woken() {
+    let mission = |pose: &str| {
+        Mission::new(&format!("function on_start() {pose} end"))
+            .entity(unit("sentry", "unit.soldier", 63.0, 70.0))
+            // A camp creature inside the sentry's aggro range that stays home.
+            .entity(json!({"id": "bandit", "definition": "unit.bandit", "position": {"x": 67, "y": 70}, "owner": "none"}))
+            .camp(json!({"id": "camp.bandit", "members": ["bandit"], "home": {"x": 67, "y": 70}, "aggroRange": 1, "leash": 4, "aggression": "players"}))
+    };
+    let x = |world: &World| entity(world, "sentry").expect("the sentry").position.x;
+    let mut awake = mission("").world();
+    steps(&mut awake, 200);
+    assert!(
+        x(&awake) > 64_000,
+        "awake, it goes for the enemy: {}",
+        x(&awake)
+    );
+
+    let asleep = || {
+        let mut world = mission(r#"mission.animate("sentry", "sleep", true)"#).world();
+        steps(&mut world, 200);
+        assert_eq!(error(&world), None);
+        assert_eq!(x(&world), 63_000, "asleep, it stays");
+        world
+    };
+    let mut ordered = asleep();
+    let sentry = entity(&ordered, "sentry").unwrap().id.0;
+    let tick = ordered.tick();
+    ordered
+        .enqueue(Queued {
+            tick,
+            player: 0,
+            seq: 0,
+            action: Action::Move {
+                actors: vec![sentry],
+                destination: CellPoint {
+                    x: 63,
+                    y: 72,
+                    surface: None,
+                },
+                attack_move: Some(true),
+                append: None,
+            },
+        })
+        .unwrap();
+    steps(&mut ordered, 300);
+    assert!(x(&ordered) > 64_000, "an order wakes it: {}", x(&ordered));
+
+    let mut hurt = asleep();
+    let id = entity(&hurt, "sentry").unwrap().id;
+    hurt.state_mut().entities.get_mut(id).unwrap().hp = Some(90);
+    steps(&mut hurt, 300);
+    assert!(x(&hurt) > 64_000, "a wound wakes it: {}", x(&hurt));
+}

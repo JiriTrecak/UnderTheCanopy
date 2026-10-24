@@ -401,6 +401,7 @@ fn plan_unit(
     }
     if target.is_none()
         && let Some(w) = weapon
+        && !crate::mission::asleep(senses.catalog, state, state.entities.get(id).expect("unit"))
         && (staggered
             || matches!(
                 order,

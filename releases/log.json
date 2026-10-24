@@ -26,7 +26,10 @@
       "Computer players' units now answer ranged attackers that outrange them instead of standing still.",
       "Units waiting behind their own army's front line no longer block their allies: only units actually fighting, holding position or casting stand firm.",
       "On macOS, exclusive fullscreen keeps the system's hot corners from opening while you scroll the camera into a corner.",
-      "Melee units stuck behind allies already fighting no longer vibrate in place: they walk round them to a free side of the target or wait behind."
+      "Melee units stuck behind allies already fighting no longer vibrate in place: they walk round them to a free side of the target or wait behind.",
+      "A sleeping creature stays asleep while a battle passes, until it is ordered or hurt",
+      "The Royal Alchemist runs without her arm snapping back each stride, and throws on the swing",
+      "Glass Road ramps lie in their slopes instead of floating above them"
     ],
     "knownIssues": []
   },

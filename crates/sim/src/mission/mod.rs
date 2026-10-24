@@ -134,6 +134,26 @@ pub fn held(state: &State, e: &Entity) -> bool {
             .is_some_and(|m| m.cinema.holds(e.placement.as_deref()))
 }
 
+/// The scene pose a sleeping unit holds (`animate(unit, "sleep", true)`).
+pub const SLEEP: &str = "sleep";
+
+/// Whether `e` sleeps in a scene pose with nothing to do: it picks no fight of its own
+/// (a sleeping easter egg stays in its flower when enemies pass) until an order, the
+/// script's or its player's, wakes it, or it is hurt (Warcraft III's sleeping creeps).
+pub fn asleep(catalog: &crate::catalog::Catalog, state: &State, e: &Entity) -> bool {
+    e.unit.as_ref().is_some_and(|u| u.order.is_none())
+        && e.hp
+            .is_some_and(|hp| hp >= crate::stats::max_hp(catalog, e))
+        && e.placement.as_deref().is_some_and(|p| {
+            state.mission.as_ref().is_some_and(|m| {
+                m.cinema
+                    .animations
+                    .iter()
+                    .any(|a| a.looping && a.name == SLEEP && a.placement == p)
+            })
+        })
+}
+
 /// The campaign player asks to skip the scene in play (Escape): the next tick plays the
 /// rest of it at once. Anything else asking, or nothing skippable playing, changes
 /// nothing.
