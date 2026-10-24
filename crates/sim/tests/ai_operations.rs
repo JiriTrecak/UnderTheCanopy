@@ -355,6 +355,33 @@ fn a_badly_wounded_fighter_is_pulled_back() {
 }
 
 #[test]
+fn soldiers_answer_an_archer_that_outranges_their_alert_radius() {
+    // A human's longbow shoots the computer's soldiers from 17 cells: both turn on it.
+    let map = skirmish(vec![], vec![]);
+    let mut world = World::new(longbow_content(), &map, setup(false)).unwrap();
+    let a = spawn(&mut world, "a", SOLDIER, P1, 90.0, 90.0);
+    let b = spawn(&mut world, "b", SOLDIER, P1, 90.0, 93.0);
+    let bow = spawn(&mut world, "bow", LONGBOW, Owner::Player(1), 107.0, 90.0);
+    let tick = world.tick();
+    world
+        .enqueue(canopy_sim::Queued {
+            tick,
+            player: 1,
+            seq: 0,
+            action: Action::Attack {
+                actors: vec![bow],
+                target: a,
+                force: None,
+                append: None,
+            },
+        })
+        .expect("queued");
+    let engaged = |w: &World, id: u32| matches!(order(w, id), Some(Order::Attack { target, .. }) if target.0 == bow);
+    run_until(&mut world, 300, |w| engaged(w, a) && engaged(w, b));
+    assert!(engaged(&world, a) && engaged(&world, b));
+}
+
+#[test]
 fn commands_respect_the_beat_limits_and_sequence_scheme() {
     let mut world = world(&skirmish(vec![], vec![]), true);
     let mut last_seq = [0u32; 2];

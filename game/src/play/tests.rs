@@ -419,9 +419,9 @@ fn control_groups_assign_recall_and_centre_on_a_double_press() {
         h.play.take_events().as_slice(),
         [Event::LookAt(_)]
     ));
-    // F1 selects the hero.
+    // F2 selects the first hero.
     h.advance(1000);
-    h.key("F1");
+    h.key("F2");
     assert_eq!(h.play.selection.ids(), [hero]);
 }
 
@@ -526,6 +526,102 @@ fn placement_snaps_rotates_validates_and_builds() {
         .filter(|e| h.play.knowledge().own(e) && e.public.construction.is_some())
         .count();
     assert_eq!(sites, 1);
+}
+
+#[test]
+fn selected_buildings_of_a_type_share_training_and_rally_as_a_group() {
+    let mut h = Harness::new(vec![]);
+    let (x, z) = (fx::AWAY.0, fx::AWAY.1);
+    fx::spawn(&mut h.world, "house", fx::HOUSE, OWNER, x - 20.0, z + 0.5);
+    let a = fx::spawn(
+        &mut h.world,
+        "barracks-a",
+        fx::BARRACKS,
+        OWNER,
+        x + 14.0,
+        z - 14.0,
+    );
+    let b = fx::spawn(
+        &mut h.world,
+        "barracks-b",
+        fx::BARRACKS,
+        OWNER,
+        x + 14.0,
+        z + 14.0,
+    );
+    h.apply(&[], 2);
+    // A double click on one selects every one of its type on screen.
+    let p = h.entity_pixel(a);
+    h.input(Input::PointerMoved(p));
+    for _ in 0..2 {
+        h.input(Input::Button {
+            button: Button::Left,
+            pressed: true,
+        });
+        h.input(Input::Button {
+            button: Button::Left,
+            pressed: false,
+        });
+        h.advance(100);
+    }
+    let mut selected = h.play.selection.ids().to_vec();
+    selected.sort_unstable();
+    assert_eq!(selected, [a, b]);
+    let train = format!("produce:{}", fx::SOLDIER);
+    let press = |h: &mut Harness| {
+        let c = h
+            .play
+            .commands
+            .iter()
+            .find(|c| c.id == train)
+            .expect("the barracks train soldiers")
+            .clone();
+        assert_eq!(c.reason, None);
+        h.play.activate(&c, false);
+    };
+    // Presses within one view alternate between the two.
+    press(&mut h);
+    press(&mut h);
+    let sent = h.take();
+    let actors: Vec<u32> = sent
+        .iter()
+        .filter_map(|a| match a {
+            Action::Produce { actor, .. } => Some(*actor),
+            _ => None,
+        })
+        .collect();
+    assert_eq!(actors.len(), 2, "{sent:?}");
+    assert_ne!(actors[0], actors[1]);
+    h.apply(&sent, 2);
+    assert!(h.errors().is_empty(), "{:?}", h.errors());
+    // Shift-click takes one out and adds it back.
+    h.mods(Mods {
+        shift: true,
+        ..Mods::default()
+    });
+    h.click(b);
+    assert_eq!(h.play.selection.ids(), [a]);
+    h.click(b);
+    h.mods(Mods::default());
+    // The card's rally sets both rally points.
+    let rally = h
+        .play
+        .commands
+        .iter()
+        .find(|c| c.id == "rally")
+        .expect("the barracks rally")
+        .clone();
+    h.play.activate(&rally, false);
+    h.click_px(h.pixel(x as f32 + 8.0, z as f32 - 8.0), Button::Left);
+    let sent = h.take();
+    let rallied: Vec<u32> = sent
+        .iter()
+        .filter_map(|a| match a {
+            Action::Rally { actor, .. } => Some(*actor),
+            _ => None,
+        })
+        .collect();
+    assert_eq!(rallied.len(), 2, "{sent:?}");
 }
 
 #[test]
@@ -937,8 +1033,17 @@ fn rebound_command_keys_press_their_commands() {
     let mut h = Harness::new(vec![]);
     let worker = h.mine(fx::WORKER)[0];
     h.click(worker);
-    // The fixture authors no key for Stop; the player binds one.
-    h.key("Z");
+    // The fixture authors no key for Stop: it takes its cell's grid key (UND-19).
+    let cell = h
+        .play
+        .layout
+        .slots
+        .iter()
+        .position(|&i| i.is_some_and(|i| h.play.entries[i].id == "stop"))
+        .expect("Stop is on the card");
+    let stop = h.play.entries.iter().find(|c| c.id == "stop").unwrap();
+    assert_eq!(stop.chord, Some(Chord::key(super::card::GRID[cell])));
+    h.key("Y");
     assert!(h.take().is_empty());
     let catalog = keys::full_catalog(Some(&h.content));
     // The content's commands join the engine's entries (old `shortcutCatalog`).
@@ -957,8 +1062,8 @@ fn rebound_command_keys_press_their_commands() {
     }
     let mut bindings = crate::settings::KeyBindings::default();
     bindings
-        .bind(&catalog, "command.stop", Chord::key("KeyZ"))
-        .expect("Z is free");
+        .bind(&catalog, "command.stop", Chord::key("KeyY"))
+        .expect("Y is free");
     h.play.keymap = super::keys::Keymap::new(&bindings, &catalog);
     h.refresh();
     let label = h
@@ -967,8 +1072,8 @@ fn rebound_command_keys_press_their_commands() {
         .iter()
         .find(|c| c.id == "stop")
         .and_then(|c| c.chord.as_ref().map(Chord::label));
-    assert_eq!(label.as_deref(), Some("Z"));
-    h.key("Z");
+    assert_eq!(label.as_deref(), Some("Y"));
+    h.key("Y");
     assert!(matches!(h.take().as_slice(), [Action::Stop { .. }]));
 }
 
@@ -1373,7 +1478,7 @@ fn the_idle_worker_button_selects_an_idle_worker() {
         &mut h.play,
         vec![canopy_ui::Action {
             node: None,
-            path: Some("hud/dock/idle".into()),
+            path: Some("hud/dock/picks/idle".into()),
             name: Some("idle".into()),
             index: None,
             kind: ActionKind::Click {
@@ -1386,6 +1491,35 @@ fn the_idle_worker_button_selects_an_idle_worker() {
     let selected = h.play.selection.ids();
     assert_eq!(selected.len(), 1);
     assert!(idle.contains(&selected[0]));
+}
+
+#[test]
+fn the_army_key_and_button_select_heroes_and_army_but_no_workers() {
+    use canopy_ui::{ActionKind, Modifiers, PointerButton};
+    let mut h = Harness::new(vec![]);
+    let hero = h.mine(fx::HERO)[0];
+    assert_eq!(h.play.army(), [hero]);
+    h.key("F1");
+    assert_eq!(h.play.selection.ids(), [hero]);
+    h.play.select(h.mine(fx::WORKER), None);
+    let mut ui = shipped_ui();
+    let mut hud = super::hud::Hud::new();
+    hud.act(
+        &mut ui,
+        &mut h.play,
+        vec![canopy_ui::Action {
+            node: None,
+            path: Some("hud/dock/picks/army".into()),
+            name: Some("army".into()),
+            index: None,
+            kind: ActionKind::Click {
+                button: PointerButton::Primary,
+                modifiers: Modifiers::default(),
+                count: 1,
+            },
+        }],
+    );
+    assert_eq!(h.play.selection.ids(), [hero]);
 }
 
 #[test]

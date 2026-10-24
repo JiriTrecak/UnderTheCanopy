@@ -1066,6 +1066,12 @@ fn run(p: &mut Planner) {
         .copied()
         .filter(|b| producers.contains(&b.def))
         .collect();
+    // The AI plans for its whole queue, not only the training that holds supply.
+    let supply = supply::Supply {
+        committed: supply.committed + supply.waiting,
+        available: supply.available.saturating_sub(supply.waiting),
+        ..supply
+    };
     // Planned capacity prevents duplicate houses; started training keeps its reservation.
     let planned: u32 = buildings
         .iter()

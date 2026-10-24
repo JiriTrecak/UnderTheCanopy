@@ -40,13 +40,12 @@ fn run_checked(world: &mut World, ids: &[u32], ticks: u32) {
                         f64::from(o.position.y) / 1000.0,
                     ),
                 );
-                // Sequential movers may close in on space vacated within the tick; allies
-                // both on the move may squeeze past each other in a jam (D51), never past a
-                // standing body.
+                // Soft bodies (D100): a unit on the move may overlap an ally for a moment,
+                // squeezing past one on the move or shoving an idle one aside; never a foe.
                 let moving = |u: &canopy_sim::entity::Entity| {
                     u.unit.as_ref().is_some_and(|u| !u.route.is_empty())
                 };
-                if moving(e) && moving(o) {
+                if e.owner == o.owner && (moving(e) || moving(o)) {
                     continue;
                 }
                 assert!(

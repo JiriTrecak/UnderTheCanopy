@@ -22,6 +22,7 @@ UnderTheCanopy/
 ├─ base/               the base package: all game content, its art and its maps (see below)
 ├─ art/                image-generation styles and profiles (tool inputs)
 ├─ config/             engine settings owned here: lighting, water, glow, player colours, UI (D30)
+├─ labs/               the combat lab's scenarios: development files, never shipped (docs/editor.md)
 ├─ releases/           the release log, gallery media and the release host's identifiers (D43)
 ├─ server/             the match server, TypeScript on node: lobby and lockstep relay (docs/server.md)
 ├─ docs/               plan, decisions, design; reference/ describes the old game

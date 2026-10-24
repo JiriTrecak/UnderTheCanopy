@@ -81,7 +81,7 @@
                 "class": "settings-row",
                 "children": [
                   { "kind": "label", "class": "settings-label", "text": "@ui.settings.display" },
-                  { "id": "window", "kind": "dropdown", "class": "select", "action": "settings.window", "options": ["@ui.settings.window", "@ui.settings.fullscreen"] }
+                  { "id": "window", "kind": "dropdown", "class": "select", "action": "settings.window", "options": ["@ui.settings.windowed", "@ui.settings.borderless", "@ui.settings.exclusive"] }
                 ]
               }
             ]

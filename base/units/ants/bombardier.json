@@ -56,9 +56,8 @@
   "level": 2,
   "supplyCost": 3,
   "dimensions": {
-    "radius": 2.5,
-    "height": 4.8,
-    "formationSpacing": 5.25
+    "size": "large",
+    "height": 4.8
   },
   "modelScale": 2.4,
   "presentation": {

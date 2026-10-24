@@ -33,6 +33,7 @@ pub mod fingerprint;
 pub mod garrisons;
 pub mod heroes;
 pub mod items;
+pub mod lab;
 pub mod math;
 pub mod mission;
 pub mod movement;

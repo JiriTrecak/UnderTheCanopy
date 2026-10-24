@@ -1042,6 +1042,7 @@ fn enter_split(
             u.camp = camp.clone().map(|id| crate::camps::Member {
                 id,
                 returning: false,
+                alarm: None,
             });
         }
         super::links(e).summoned = Some(Summoned {
@@ -1378,6 +1379,7 @@ pub fn transfer(
             camp.map(|id| crate::camps::Member {
                 id: id.to_string(),
                 returning: false,
+                alarm: None,
             })
         } else {
             None

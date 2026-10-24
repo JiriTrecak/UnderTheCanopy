@@ -1,0 +1,1181 @@
+{
+  "name": "Ants through a tunnel",
+  "description": "Thirty Raiders move across a wall whose only way round is far to the south, with a mound on each side: the queue at the tunnel mouth.",
+  "size": 192,
+  "duration": 2400,
+  "closed": [
+    {
+      "y": 0,
+      "x": 94,
+      "length": 4
+    },
+    {
+      "y": 1,
+      "x": 94,
+      "length": 4
+    },
+    {
+      "y": 2,
+      "x": 94,
+      "length": 4
+    },
+    {
+      "y": 3,
+      "x": 94,
+      "length": 4
+    },
+    {
+      "y": 4,
+      "x": 94,
+      "length": 4
+    },
+    {
+      "y": 5,
+      "x": 94,
+      "length": 4
+    },
+    {
+      "y": 6,
+      "x": 94,
+      "length": 4
+    },
+    {
+      "y": 7,
+      "x": 94,
+      "length": 4
+    },
+    {
+      "y": 8,
+      "x": 94,
+      "length": 4
+    },
+    {
+      "y": 9,
+      "x": 94,
+      "length": 4
+    },
+    {
+      "y": 10,
+      "x": 94,
+      "length": 4
+    },
+    {
+      "y": 11,
+      "x": 94,
+      "length": 4
+    },
+    {
+      "y": 12,
+      "x": 94,
+      "length": 4
+    },
+    {
+      "y": 13,
+      "x": 94,
+      "length": 4
+    },
+    {
+      "y": 14,
+      "x": 94,
+      "length": 4
+    },
+    {
+      "y": 15,
+      "x": 94,
+      "length": 4
+    },
+    {
+      "y": 16,
+      "x": 94,
+      "length": 4
+    },
+    {
+      "y": 17,
+      "x": 94,
+      "length": 4
+    },
+    {
+      "y": 18,
+      "x": 94,
+      "length": 4
+    },
+    {
+      "y": 19,
+      "x": 94,
+      "length": 4
+    },
+    {
+      "y": 20,
+      "x": 94,
+      "length": 4
+    },
+    {
+      "y": 21,
+      "x": 94,
+      "length": 4
+    },
+    {
+      "y": 22,
+      "x": 94,
+      "length": 4
+    },
+    {
+      "y": 23,
+      "x": 94,
+      "length": 4
+    },
+    {
+      "y": 24,
+      "x": 94,
+      "length": 4
+    },
+    {
+      "y": 25,
+      "x": 94,
+      "length": 4
+    },
+    {
+      "y": 26,
+      "x": 94,
+      "length": 4
+    },
+    {
+      "y": 27,
+      "x": 94,
+      "length": 4
+    },
+    {
+      "y": 28,
+      "x": 94,
+      "length": 4
+    },
+    {
+      "y": 29,
+      "x": 94,
+      "length": 4
+    },
+    {
+      "y": 30,
+      "x": 94,
+      "length": 4
+    },
+    {
+      "y": 31,
+      "x": 94,
+      "length": 4
+    },
+    {
+      "y": 32,
+      "x": 94,
+      "length": 4
+    },
+    {
+      "y": 33,
+      "x": 94,
+      "length": 4
+    },
+    {
+      "y": 34,
+      "x": 94,
+      "length": 4
+    },
+    {
+      "y": 35,
+      "x": 94,
+      "length": 4
+    },
+    {
+      "y": 36,
+      "x": 94,
+      "length": 4
+    },
+    {
+      "y": 37,
+      "x": 94,
+      "length": 4
+    },
+    {
+      "y": 38,
+      "x": 94,
+      "length": 4
+    },
+    {
+      "y": 39,
+      "x": 94,
+      "length": 4
+    },
+    {
+      "y": 40,
+      "x": 94,
+      "length": 4
+    },
+    {
+      "y": 41,
+      "x": 94,
+      "length": 4
+    },
+    {
+      "y": 42,
+      "x": 94,
+      "length": 4
+    },
+    {
+      "y": 43,
+      "x": 94,
+      "length": 4
+    },
+    {
+      "y": 44,
+      "x": 94,
+      "length": 4
+    },
+    {
+      "y": 45,
+      "x": 94,
+      "length": 4
+    },
+    {
+      "y": 46,
+      "x": 94,
+      "length": 4
+    },
+    {
+      "y": 47,
+      "x": 94,
+      "length": 4
+    },
+    {
+      "y": 48,
+      "x": 94,
+      "length": 4
+    },
+    {
+      "y": 49,
+      "x": 94,
+      "length": 4
+    },
+    {
+      "y": 50,
+      "x": 94,
+      "length": 4
+    },
+    {
+      "y": 51,
+      "x": 94,
+      "length": 4
+    },
+    {
+      "y": 52,
+      "x": 94,
+      "length": 4
+    },
+    {
+      "y": 53,
+      "x": 94,
+      "length": 4
+    },
+    {
+      "y": 54,
+      "x": 94,
+      "length": 4
+    },
+    {
+      "y": 55,
+      "x": 94,
+      "length": 4
+    },
+    {
+      "y": 56,
+      "x": 94,
+      "length": 4
+    },
+    {
+      "y": 57,
+      "x": 94,
+      "length": 4
+    },
+    {
+      "y": 58,
+      "x": 94,
+      "length": 4
+    },
+    {
+      "y": 59,
+      "x": 94,
+      "length": 4
+    },
+    {
+      "y": 60,
+      "x": 94,
+      "length": 4
+    },
+    {
+      "y": 61,
+      "x": 94,
+      "length": 4
+    },
+    {
+      "y": 62,
+      "x": 94,
+      "length": 4
+    },
+    {
+      "y": 63,
+      "x": 94,
+      "length": 4
+    },
+    {
+      "y": 64,
+      "x": 94,
+      "length": 4
+    },
+    {
+      "y": 65,
+      "x": 94,
+      "length": 4
+    },
+    {
+      "y": 66,
+      "x": 94,
+      "length": 4
+    },
+    {
+      "y": 67,
+      "x": 94,
+      "length": 4
+    },
+    {
+      "y": 68,
+      "x": 94,
+      "length": 4
+    },
+    {
+      "y": 69,
+      "x": 94,
+      "length": 4
+    },
+    {
+      "y": 70,
+      "x": 94,
+      "length": 4
+    },
+    {
+      "y": 71,
+      "x": 94,
+      "length": 4
+    },
+    {
+      "y": 72,
+      "x": 94,
+      "length": 4
+    },
+    {
+      "y": 73,
+      "x": 94,
+      "length": 4
+    },
+    {
+      "y": 74,
+      "x": 94,
+      "length": 4
+    },
+    {
+      "y": 75,
+      "x": 94,
+      "length": 4
+    },
+    {
+      "y": 76,
+      "x": 94,
+      "length": 4
+    },
+    {
+      "y": 77,
+      "x": 94,
+      "length": 4
+    },
+    {
+      "y": 78,
+      "x": 94,
+      "length": 4
+    },
+    {
+      "y": 79,
+      "x": 94,
+      "length": 4
+    },
+    {
+      "y": 80,
+      "x": 94,
+      "length": 4
+    },
+    {
+      "y": 81,
+      "x": 94,
+      "length": 4
+    },
+    {
+      "y": 82,
+      "x": 94,
+      "length": 4
+    },
+    {
+      "y": 83,
+      "x": 94,
+      "length": 4
+    },
+    {
+      "y": 84,
+      "x": 94,
+      "length": 4
+    },
+    {
+      "y": 85,
+      "x": 94,
+      "length": 4
+    },
+    {
+      "y": 86,
+      "x": 94,
+      "length": 4
+    },
+    {
+      "y": 87,
+      "x": 94,
+      "length": 4
+    },
+    {
+      "y": 88,
+      "x": 94,
+      "length": 4
+    },
+    {
+      "y": 89,
+      "x": 94,
+      "length": 4
+    },
+    {
+      "y": 90,
+      "x": 94,
+      "length": 4
+    },
+    {
+      "y": 91,
+      "x": 94,
+      "length": 4
+    },
+    {
+      "y": 92,
+      "x": 94,
+      "length": 4
+    },
+    {
+      "y": 93,
+      "x": 94,
+      "length": 4
+    },
+    {
+      "y": 94,
+      "x": 94,
+      "length": 4
+    },
+    {
+      "y": 95,
+      "x": 94,
+      "length": 4
+    },
+    {
+      "y": 96,
+      "x": 94,
+      "length": 4
+    },
+    {
+      "y": 97,
+      "x": 94,
+      "length": 4
+    },
+    {
+      "y": 98,
+      "x": 94,
+      "length": 4
+    },
+    {
+      "y": 99,
+      "x": 94,
+      "length": 4
+    },
+    {
+      "y": 100,
+      "x": 94,
+      "length": 4
+    },
+    {
+      "y": 101,
+      "x": 94,
+      "length": 4
+    },
+    {
+      "y": 102,
+      "x": 94,
+      "length": 4
+    },
+    {
+      "y": 103,
+      "x": 94,
+      "length": 4
+    },
+    {
+      "y": 104,
+      "x": 94,
+      "length": 4
+    },
+    {
+      "y": 105,
+      "x": 94,
+      "length": 4
+    },
+    {
+      "y": 106,
+      "x": 94,
+      "length": 4
+    },
+    {
+      "y": 107,
+      "x": 94,
+      "length": 4
+    },
+    {
+      "y": 108,
+      "x": 94,
+      "length": 4
+    },
+    {
+      "y": 109,
+      "x": 94,
+      "length": 4
+    },
+    {
+      "y": 110,
+      "x": 94,
+      "length": 4
+    },
+    {
+      "y": 111,
+      "x": 94,
+      "length": 4
+    },
+    {
+      "y": 112,
+      "x": 94,
+      "length": 4
+    },
+    {
+      "y": 113,
+      "x": 94,
+      "length": 4
+    },
+    {
+      "y": 114,
+      "x": 94,
+      "length": 4
+    },
+    {
+      "y": 115,
+      "x": 94,
+      "length": 4
+    },
+    {
+      "y": 116,
+      "x": 94,
+      "length": 4
+    },
+    {
+      "y": 117,
+      "x": 94,
+      "length": 4
+    },
+    {
+      "y": 118,
+      "x": 94,
+      "length": 4
+    },
+    {
+      "y": 119,
+      "x": 94,
+      "length": 4
+    },
+    {
+      "y": 120,
+      "x": 94,
+      "length": 4
+    },
+    {
+      "y": 121,
+      "x": 94,
+      "length": 4
+    },
+    {
+      "y": 122,
+      "x": 94,
+      "length": 4
+    },
+    {
+      "y": 123,
+      "x": 94,
+      "length": 4
+    },
+    {
+      "y": 124,
+      "x": 94,
+      "length": 4
+    },
+    {
+      "y": 125,
+      "x": 94,
+      "length": 4
+    },
+    {
+      "y": 126,
+      "x": 94,
+      "length": 4
+    },
+    {
+      "y": 127,
+      "x": 94,
+      "length": 4
+    },
+    {
+      "y": 128,
+      "x": 94,
+      "length": 4
+    },
+    {
+      "y": 129,
+      "x": 94,
+      "length": 4
+    },
+    {
+      "y": 130,
+      "x": 94,
+      "length": 4
+    },
+    {
+      "y": 131,
+      "x": 94,
+      "length": 4
+    },
+    {
+      "y": 132,
+      "x": 94,
+      "length": 4
+    },
+    {
+      "y": 133,
+      "x": 94,
+      "length": 4
+    },
+    {
+      "y": 134,
+      "x": 94,
+      "length": 4
+    },
+    {
+      "y": 135,
+      "x": 94,
+      "length": 4
+    },
+    {
+      "y": 136,
+      "x": 94,
+      "length": 4
+    },
+    {
+      "y": 137,
+      "x": 94,
+      "length": 4
+    },
+    {
+      "y": 138,
+      "x": 94,
+      "length": 4
+    },
+    {
+      "y": 139,
+      "x": 94,
+      "length": 4
+    },
+    {
+      "y": 140,
+      "x": 94,
+      "length": 4
+    },
+    {
+      "y": 141,
+      "x": 94,
+      "length": 4
+    },
+    {
+      "y": 142,
+      "x": 94,
+      "length": 4
+    },
+    {
+      "y": 143,
+      "x": 94,
+      "length": 4
+    },
+    {
+      "y": 144,
+      "x": 94,
+      "length": 4
+    },
+    {
+      "y": 145,
+      "x": 94,
+      "length": 4
+    },
+    {
+      "y": 146,
+      "x": 94,
+      "length": 4
+    },
+    {
+      "y": 147,
+      "x": 94,
+      "length": 4
+    },
+    {
+      "y": 148,
+      "x": 94,
+      "length": 4
+    },
+    {
+      "y": 149,
+      "x": 94,
+      "length": 4
+    },
+    {
+      "y": 150,
+      "x": 94,
+      "length": 4
+    },
+    {
+      "y": 151,
+      "x": 94,
+      "length": 4
+    },
+    {
+      "y": 152,
+      "x": 94,
+      "length": 4
+    },
+    {
+      "y": 153,
+      "x": 94,
+      "length": 4
+    },
+    {
+      "y": 154,
+      "x": 94,
+      "length": 4
+    },
+    {
+      "y": 155,
+      "x": 94,
+      "length": 4
+    },
+    {
+      "y": 156,
+      "x": 94,
+      "length": 4
+    },
+    {
+      "y": 157,
+      "x": 94,
+      "length": 4
+    },
+    {
+      "y": 158,
+      "x": 94,
+      "length": 4
+    },
+    {
+      "y": 159,
+      "x": 94,
+      "length": 4
+    },
+    {
+      "y": 160,
+      "x": 94,
+      "length": 4
+    },
+    {
+      "y": 161,
+      "x": 94,
+      "length": 4
+    },
+    {
+      "y": 162,
+      "x": 94,
+      "length": 4
+    },
+    {
+      "y": 163,
+      "x": 94,
+      "length": 4
+    },
+    {
+      "y": 164,
+      "x": 94,
+      "length": 4
+    },
+    {
+      "y": 165,
+      "x": 94,
+      "length": 4
+    },
+    {
+      "y": 166,
+      "x": 94,
+      "length": 4
+    },
+    {
+      "y": 167,
+      "x": 94,
+      "length": 4
+    },
+    {
+      "y": 168,
+      "x": 94,
+      "length": 4
+    },
+    {
+      "y": 169,
+      "x": 94,
+      "length": 4
+    },
+    {
+      "y": 170,
+      "x": 94,
+      "length": 4
+    },
+    {
+      "y": 171,
+      "x": 94,
+      "length": 4
+    },
+    {
+      "y": 172,
+      "x": 94,
+      "length": 4
+    },
+    {
+      "y": 173,
+      "x": 94,
+      "length": 4
+    },
+    {
+      "y": 174,
+      "x": 94,
+      "length": 4
+    },
+    {
+      "y": 175,
+      "x": 94,
+      "length": 4
+    },
+    {
+      "y": 180,
+      "x": 94,
+      "length": 4
+    },
+    {
+      "y": 181,
+      "x": 94,
+      "length": 4
+    },
+    {
+      "y": 182,
+      "x": 94,
+      "length": 4
+    },
+    {
+      "y": 183,
+      "x": 94,
+      "length": 4
+    },
+    {
+      "y": 184,
+      "x": 94,
+      "length": 4
+    },
+    {
+      "y": 185,
+      "x": 94,
+      "length": 4
+    },
+    {
+      "y": 186,
+      "x": 94,
+      "length": 4
+    },
+    {
+      "y": 187,
+      "x": 94,
+      "length": 4
+    },
+    {
+      "y": 188,
+      "x": 94,
+      "length": 4
+    },
+    {
+      "y": 189,
+      "x": 94,
+      "length": 4
+    },
+    {
+      "y": 190,
+      "x": 94,
+      "length": 4
+    },
+    {
+      "y": 191,
+      "x": 94,
+      "length": 4
+    }
+  ],
+  "units": [
+    {
+      "definition": "unit.ants.warrior",
+      "owner": "player.1",
+      "x": 32.0,
+      "y": 86.0,
+      "group": "ants"
+    },
+    {
+      "definition": "unit.ants.warrior",
+      "owner": "player.1",
+      "x": 36.0,
+      "y": 86.0,
+      "group": "ants"
+    },
+    {
+      "definition": "unit.ants.warrior",
+      "owner": "player.1",
+      "x": 40.0,
+      "y": 86.0,
+      "group": "ants"
+    },
+    {
+      "definition": "unit.ants.warrior",
+      "owner": "player.1",
+      "x": 44.0,
+      "y": 86.0,
+      "group": "ants"
+    },
+    {
+      "definition": "unit.ants.warrior",
+      "owner": "player.1",
+      "x": 48.0,
+      "y": 86.0,
+      "group": "ants"
+    },
+    {
+      "definition": "unit.ants.warrior",
+      "owner": "player.1",
+      "x": 32.0,
+      "y": 90.0,
+      "group": "ants"
+    },
+    {
+      "definition": "unit.ants.warrior",
+      "owner": "player.1",
+      "x": 36.0,
+      "y": 90.0,
+      "group": "ants"
+    },
+    {
+      "definition": "unit.ants.warrior",
+      "owner": "player.1",
+      "x": 40.0,
+      "y": 90.0,
+      "group": "ants"
+    },
+    {
+      "definition": "unit.ants.warrior",
+      "owner": "player.1",
+      "x": 44.0,
+      "y": 90.0,
+      "group": "ants"
+    },
+    {
+      "definition": "unit.ants.warrior",
+      "owner": "player.1",
+      "x": 48.0,
+      "y": 90.0,
+      "group": "ants"
+    },
+    {
+      "definition": "unit.ants.warrior",
+      "owner": "player.1",
+      "x": 32.0,
+      "y": 94.0,
+      "group": "ants"
+    },
+    {
+      "definition": "unit.ants.warrior",
+      "owner": "player.1",
+      "x": 36.0,
+      "y": 94.0,
+      "group": "ants"
+    },
+    {
+      "definition": "unit.ants.warrior",
+      "owner": "player.1",
+      "x": 40.0,
+      "y": 94.0,
+      "group": "ants"
+    },
+    {
+      "definition": "unit.ants.warrior",
+      "owner": "player.1",
+      "x": 44.0,
+      "y": 94.0,
+      "group": "ants"
+    },
+    {
+      "definition": "unit.ants.warrior",
+      "owner": "player.1",
+      "x": 48.0,
+      "y": 94.0,
+      "group": "ants"
+    },
+    {
+      "definition": "unit.ants.warrior",
+      "owner": "player.1",
+      "x": 32.0,
+      "y": 98.0,
+      "group": "ants"
+    },
+    {
+      "definition": "unit.ants.warrior",
+      "owner": "player.1",
+      "x": 36.0,
+      "y": 98.0,
+      "group": "ants"
+    },
+    {
+      "definition": "unit.ants.warrior",
+      "owner": "player.1",
+      "x": 40.0,
+      "y": 98.0,
+      "group": "ants"
+    },
+    {
+      "definition": "unit.ants.warrior",
+      "owner": "player.1",
+      "x": 44.0,
+      "y": 98.0,
+      "group": "ants"
+    },
+    {
+      "definition": "unit.ants.warrior",
+      "owner": "player.1",
+      "x": 48.0,
+      "y": 98.0,
+      "group": "ants"
+    },
+    {
+      "definition": "unit.ants.warrior",
+      "owner": "player.1",
+      "x": 32.0,
+      "y": 102.0,
+      "group": "ants"
+    },
+    {
+      "definition": "unit.ants.warrior",
+      "owner": "player.1",
+      "x": 36.0,
+      "y": 102.0,
+      "group": "ants"
+    },
+    {
+      "definition": "unit.ants.warrior",
+      "owner": "player.1",
+      "x": 40.0,
+      "y": 102.0,
+      "group": "ants"
+    },
+    {
+      "definition": "unit.ants.warrior",
+      "owner": "player.1",
+      "x": 44.0,
+      "y": 102.0,
+      "group": "ants"
+    },
+    {
+      "definition": "unit.ants.warrior",
+      "owner": "player.1",
+      "x": 48.0,
+      "y": 102.0,
+      "group": "ants"
+    },
+    {
+      "definition": "unit.ants.warrior",
+      "owner": "player.1",
+      "x": 32.0,
+      "y": 106.0,
+      "group": "ants"
+    },
+    {
+      "definition": "unit.ants.warrior",
+      "owner": "player.1",
+      "x": 36.0,
+      "y": 106.0,
+      "group": "ants"
+    },
+    {
+      "definition": "unit.ants.warrior",
+      "owner": "player.1",
+      "x": 40.0,
+      "y": 106.0,
+      "group": "ants"
+    },
+    {
+      "definition": "unit.ants.warrior",
+      "owner": "player.1",
+      "x": 44.0,
+      "y": 106.0,
+      "group": "ants"
+    },
+    {
+      "definition": "unit.ants.warrior",
+      "owner": "player.1",
+      "x": 48.0,
+      "y": 106.0,
+      "group": "ants"
+    },
+    {
+      "definition": "building.ants.house",
+      "owner": "player.1",
+      "x": 63.5,
+      "y": 79.5
+    },
+    {
+      "definition": "building.ants.house",
+      "owner": "player.1",
+      "x": 127.5,
+      "y": 79.5
+    }
+  ],
+  "orders": [
+    {
+      "tick": 0,
+      "group": "ants",
+      "order": "move",
+      "x": 160.0,
+      "y": 96.0
+    }
+  ]
+}

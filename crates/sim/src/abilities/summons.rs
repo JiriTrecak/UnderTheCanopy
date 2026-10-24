@@ -244,6 +244,7 @@ fn create(
                 u.camp = Some(crate::camps::Member {
                     id: camp.clone(),
                     returning: false,
+                    alarm: None,
                 });
             }
             super::links(e).summoned = Some(Summoned {

@@ -274,7 +274,7 @@ fn rally_points_send_units_to_a_place_a_resource_or_a_friend() {
 }
 
 #[test]
-fn supply_limits_queueing_and_training() {
+fn only_training_takes_supply() {
     let mut entities = vec![place("house", HOUSE, 33.5, 13.5)];
     for i in 0..4 {
         entities.push(place(
@@ -295,6 +295,12 @@ fn supply_limits_queueing_and_training() {
         get(&world, hall).production.as_ref().unwrap().queue.len(),
         3
     );
+    let s = world.view(P1).colony.unwrap().supply;
+    assert_eq!(
+        (s.reserved, s.waiting, s.committed),
+        (1, 2, 5),
+        "the two waiting take none"
+    );
     // The house falls: queued units already paid for wait for supply instead.
     run(&mut world, 25);
     world.remove_entity(EntityId(house));
@@ -311,20 +317,33 @@ fn supply_limits_queueing_and_training() {
             name = canopy_content::text::name("building.test.house")
         )
     );
-    let colony = world.view(P1).colony.unwrap();
-    assert_eq!(
-        (
-            colony.supply.used,
-            colony.supply.reserved,
-            colony.supply.capacity
-        ),
-        (6, 1, 6)
-    );
+    let s = world.view(P1).colony.unwrap().supply;
+    assert_eq!((s.used, s.reserved, s.waiting, s.capacity), (6, 0, 1, 6));
+    // Behind the waiting one, another can still be queued.
+    assert_eq!(try_command(&mut world, produce(hall, WORKER)), None);
+    world.step();
+    let queue: Vec<u32> = get(&world, hall)
+        .production
+        .as_ref()
+        .unwrap()
+        .queue
+        .iter()
+        .map(|q| q.id)
+        .collect();
+    assert_eq!(queue.len(), 2);
+    for entry in queue {
+        command(
+            &mut world,
+            json!({"type": "cancel", "actor": hall, "queue": entry}),
+        );
+    }
+    world.step();
+    // With nothing ahead it would start at once, so it needs supply now.
     assert_eq!(
         try_command(&mut world, produce(hall, WORKER)),
         Some(canopy_sim::msg!(
             "message.not-enough-supply-build",
-            used = 7,
+            used = 6,
             capacity = 6,
             name = canopy_content::text::name("building.test.house")
         ))

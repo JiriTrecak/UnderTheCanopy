@@ -19,9 +19,11 @@ pub enum Kind {
     Buildings,
     Races,
     Assets,
+    /// The combat lab's scenarios (`crate::lab`), beside the package.
+    Lab,
 }
 
-pub const KINDS: [Kind; 8] = [
+pub const KINDS: [Kind; 9] = [
     Kind::Maps,
     Kind::Campaigns,
     Kind::Units,
@@ -30,6 +32,7 @@ pub const KINDS: [Kind; 8] = [
     Kind::Buildings,
     Kind::Races,
     Kind::Assets,
+    Kind::Lab,
 ];
 
 const MAPS: Collection = Collection {
@@ -37,6 +40,8 @@ const MAPS: Collection = Collection {
     form: Form::Packages(MAP_EXTENSION),
 };
 const BIOMES: Collection = Collection::files("landscape/biomes");
+/// The lab's scenarios: mounted beside the package (`crate::lab`), never read from it.
+const LABS: Collection = Collection::files("@labs");
 /// Campaigns' mission maps (`campaigns/<id>.utcc/missions/<map>.utcm`): the Maps editor
 /// opens them; its library lists them under each campaign (`crate::campaign`).
 const MISSION_MAPS: Collection = Collection {
@@ -56,6 +61,7 @@ impl Kind {
             Kind::Buildings => "Items and buildings",
             Kind::Races => "Races and rules",
             Kind::Assets => "Assets",
+            Kind::Lab => "Combat lab",
         }
     }
 
@@ -70,6 +76,7 @@ impl Kind {
             Kind::Buildings => "Buildings",
             Kind::Races => "Races",
             Kind::Assets => "Assets",
+            Kind::Lab => "Lab",
         }
     }
 
@@ -84,6 +91,7 @@ impl Kind {
             Kind::Buildings => "items and buildings",
             Kind::Races => "races and rules",
             Kind::Assets => "assets",
+            Kind::Lab => "scenarios",
         }
     }
 
@@ -96,6 +104,9 @@ impl Kind {
     pub fn collection_of(document: &str) -> Option<(Kind, &'static Collection)> {
         if crate::campaign::is_mission_document(document) {
             return Some((Kind::Maps, &MISSION_MAPS));
+        }
+        if crate::lab::is_lab(document) {
+            return Some((Kind::Lab, &LABS));
         }
         KINDS.into_iter().find_map(|kind| {
             kind.sections()
@@ -136,6 +147,7 @@ impl Kind {
                 ("Biomes", BIOMES),
                 ("Water", WATER),
             ],
+            Kind::Lab => &[],
         }
     }
 }
@@ -177,6 +189,9 @@ impl Library {
     /// Reads `kind`'s collections from `package`. One collection lists its tree at the
     /// root; several list one folder per section.
     pub fn read(package: &Package, kind: Kind) -> Self {
+        if kind == Kind::Lab {
+            return crate::lab::library(package.root.parent());
+        }
         let sections = kind.sections();
         let mut library = Library::default();
         let mut errors = Vec::new();

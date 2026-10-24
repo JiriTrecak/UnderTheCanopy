@@ -15,11 +15,13 @@ mod encounter;
 mod forms;
 mod icons;
 mod inspector;
+mod lab;
 mod library;
 mod map;
 mod mcp;
 mod overview;
 mod references;
+mod sandbox;
 mod shell;
 mod sound;
 mod stage;
@@ -326,6 +328,41 @@ impl Editor {
             "json" => Some(tabs::Sheet::Json),
             _ => None,
         });
+    }
+
+    /// Runs lab scenario `document` (`@labs/<id>.lab.json`) on by `ticks` (captures).
+    pub fn lab_run(&mut self, document: &str, ticks: u32) {
+        if let Some(s) = self.shell.lab_session(document) {
+            s.run_ticks(ticks);
+        }
+    }
+
+    /// Turns a lab debug layer on or off (captures; `crate::lab::Session::set_layer`).
+    pub fn lab_layer(&mut self, document: &str, layer: &str, on: bool) {
+        if let Some(s) = self.shell.lab_session(document) {
+            s.set_layer(layer, on);
+        }
+    }
+
+    /// Walks a lab group to cell (`x`, `z`) by hand (captures).
+    pub fn lab_hand_move(&mut self, document: &str, group: &str, x: f32, z: f32) {
+        if let Some(s) = self.shell.lab_session(document) {
+            s.hand_move(group, x, z);
+        }
+    }
+
+    /// Inspects the lab unit held up longest (captures).
+    pub fn lab_inspect_held_up(&mut self, document: &str) {
+        if let Some(s) = self.shell.lab_session(document) {
+            s.inspect_held_up();
+        }
+    }
+
+    /// Points a lab's camera at cell (`x`, `z`) (captures).
+    pub fn lab_look_at(&mut self, document: &str, x: f32, z: f32, distance: f32, pitch: f32) {
+        if let Some(s) = self.shell.lab_session(document) {
+            s.look_at(x, z, distance, pitch);
+        }
     }
 
     /// Opens ability `id` on its stage (captures).

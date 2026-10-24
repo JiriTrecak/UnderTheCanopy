@@ -467,6 +467,25 @@ impl World {
         &self.motion.spatial
     }
 
+    /// Plays movement and the attack approach by `tuning` from now on. Matches always
+    /// play the default; only the combat lab changes it, for its own runs.
+    pub fn set_tuning(&mut self, tuning: crate::movement::tuning::Tuning) {
+        self.motion.spatial.tuning = tuning;
+    }
+
+    /// Records what steering decides each step (the combat lab's debug view); recording
+    /// never changes the run.
+    pub fn set_probe(&mut self, on: bool) {
+        if on != self.motion.probe.is_some() {
+            self.motion.probe = on.then(crate::movement::probe::Probe::default);
+        }
+    }
+
+    /// What steering decided in the last step, when recording.
+    pub fn probe(&self) -> Option<&crate::movement::probe::Probe> {
+        self.motion.probe.as_ref()
+    }
+
     /// The spatial model for path queries, which only warm its caches.
     pub fn spatial_mut(&mut self) -> &mut crate::spatial::Spatial {
         &mut self.motion.spatial

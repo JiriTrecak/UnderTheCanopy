@@ -27,6 +27,8 @@ pub enum Shortcut {
     /// Zero-based hero slot.
     Hero(usize),
     IdleWorker,
+    /// Every own army unit and hero.
+    Army,
     NextSubgroup,
     PreviousSubgroup,
     GameMenu,
@@ -69,6 +71,7 @@ impl Shortcut {
             "camera.alerts" => Alerts,
             "camera.nextHall" => NextHall,
             "selection.idleWorker" | "selection.idleWorkerAlt" => IdleWorker,
+            "selection.army" => Army,
             "selection.nextSubgroup" => NextSubgroup,
             "selection.previousSubgroup" => PreviousSubgroup,
             "interface.gameMenu" => GameMenu,

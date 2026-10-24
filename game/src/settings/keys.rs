@@ -294,10 +294,11 @@ pub fn catalog() -> Vec<Entry> {
             format!("heroes.select{n}"),
             "Heroes",
             tr!("keys.heroes.select", number = n),
-            &format!("F{n}"),
+            &format!("F{}", n + 1),
         );
     }
     for (id, key) in [
+        ("selection.army", "F1"),
         ("selection.idleWorker", "F8"),
         ("selection.idleWorkerAlt", "Backquote"),
         ("selection.nextSubgroup", "Tab"),

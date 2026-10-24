@@ -80,7 +80,7 @@
   "hud.site-workers": "{workers} workers · {recommended} recommended",
   "hud.site-workers-remaining": "{workers} · {amount} remaining",
   "hud.supply": "Supply",
-  "hud.supply-tip": "{used} used by living units. {reserved} reserved for queued units.\n{available} available; maximum {limit}.\nCompleted halls and mounds provide supply. Started training finishes even if capacity is lost; waiting units need enough supply to start.",
+  "hud.supply-tip": "{used} used by living units. {reserved} held by units in training and heroes awaiting revival; queued units take supply when they start.\n{available} available; maximum {limit}.\nCompleted halls and mounds provide supply. Started training finishes even if capacity is lost.",
   "hud.task-no-power": "{name} · no power",
   "hud.task-progress": "{name} · {percent}%",
   "hud.task-waiting": "{name} · waiting",

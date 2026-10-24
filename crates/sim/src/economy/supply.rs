@@ -21,8 +21,11 @@ use std::collections::{BTreeMap, BTreeSet};
 pub struct Supply {
     /// Supply of living units.
     pub used: u32,
-    /// Supply of queued units and heroes being revived.
+    /// Supply of units in training and of heroes queued for revival. Units queued behind
+    /// them take none until they start.
     pub reserved: u32,
+    /// Supply of queued units that have not started training.
+    pub waiting: u32,
     /// Supply of units in training.
     pub training: u32,
     pub committed: u32,
@@ -81,8 +84,13 @@ pub fn colony(state: &State, catalog: &Catalog, index: &super::Index, owner: Own
             s.provided += d.supply_provided.unwrap_or(0);
         }
         if let Some(p) = &e.production {
+            let active = p.active.as_ref().and_then(|a| a.queue);
             for q in &p.queue {
-                s.reserved += batch_cost(catalog, q.definition);
+                if Some(q.id) == active {
+                    s.reserved += batch_cost(catalog, q.definition);
+                } else {
+                    s.waiting += batch_cost(catalog, q.definition);
+                }
                 s.queued_units += batch(catalog, q.definition);
             }
             if let Some(a) = &p.active {
@@ -115,7 +123,8 @@ pub fn colony(state: &State, catalog: &Catalog, index: &super::Index, owner: Own
     s
 }
 
-/// Why a unit costing `cost` cannot be queued now (old `supplyAdmission`).
+/// Why a unit costing `cost` cannot be queued now (old `supplyAdmission`). A unit queued
+/// behind other work takes no supply yet, so its caller passes a `cost` of 0.
 pub fn admission(supply: &Supply, cost: u32, hint: Option<&str>) -> Option<String> {
     if supply.units + supply.queued_units >= supply.unit_limit {
         return Some("message.unit-limit-reached".into());

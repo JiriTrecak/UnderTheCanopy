@@ -1,0 +1,238 @@
+{
+  "name": "A ring round a standing target",
+  "description": "Thirty Raiders attack one Hollow Stag (a big body) standing still: how fast the ring forms, how many get to bite at once, and whether it closes.",
+  "size": 128,
+  "duration": 1200,
+  "units": [
+    {
+      "definition": "unit.ants.warrior",
+      "owner": "player.1",
+      "x": 20.0,
+      "y": 56.0,
+      "group": "raiders"
+    },
+    {
+      "definition": "unit.ants.warrior",
+      "owner": "player.1",
+      "x": 24.0,
+      "y": 56.0,
+      "group": "raiders"
+    },
+    {
+      "definition": "unit.ants.warrior",
+      "owner": "player.1",
+      "x": 28.0,
+      "y": 56.0,
+      "group": "raiders"
+    },
+    {
+      "definition": "unit.ants.warrior",
+      "owner": "player.1",
+      "x": 32.0,
+      "y": 56.0,
+      "group": "raiders"
+    },
+    {
+      "definition": "unit.ants.warrior",
+      "owner": "player.1",
+      "x": 36.0,
+      "y": 56.0,
+      "group": "raiders"
+    },
+    {
+      "definition": "unit.ants.warrior",
+      "owner": "player.1",
+      "x": 40.0,
+      "y": 56.0,
+      "group": "raiders"
+    },
+    {
+      "definition": "unit.ants.warrior",
+      "owner": "player.1",
+      "x": 20.0,
+      "y": 60.0,
+      "group": "raiders"
+    },
+    {
+      "definition": "unit.ants.warrior",
+      "owner": "player.1",
+      "x": 24.0,
+      "y": 60.0,
+      "group": "raiders"
+    },
+    {
+      "definition": "unit.ants.warrior",
+      "owner": "player.1",
+      "x": 28.0,
+      "y": 60.0,
+      "group": "raiders"
+    },
+    {
+      "definition": "unit.ants.warrior",
+      "owner": "player.1",
+      "x": 32.0,
+      "y": 60.0,
+      "group": "raiders"
+    },
+    {
+      "definition": "unit.ants.warrior",
+      "owner": "player.1",
+      "x": 36.0,
+      "y": 60.0,
+      "group": "raiders"
+    },
+    {
+      "definition": "unit.ants.warrior",
+      "owner": "player.1",
+      "x": 40.0,
+      "y": 60.0,
+      "group": "raiders"
+    },
+    {
+      "definition": "unit.ants.warrior",
+      "owner": "player.1",
+      "x": 20.0,
+      "y": 64.0,
+      "group": "raiders"
+    },
+    {
+      "definition": "unit.ants.warrior",
+      "owner": "player.1",
+      "x": 24.0,
+      "y": 64.0,
+      "group": "raiders"
+    },
+    {
+      "definition": "unit.ants.warrior",
+      "owner": "player.1",
+      "x": 28.0,
+      "y": 64.0,
+      "group": "raiders"
+    },
+    {
+      "definition": "unit.ants.warrior",
+      "owner": "player.1",
+      "x": 32.0,
+      "y": 64.0,
+      "group": "raiders"
+    },
+    {
+      "definition": "unit.ants.warrior",
+      "owner": "player.1",
+      "x": 36.0,
+      "y": 64.0,
+      "group": "raiders"
+    },
+    {
+      "definition": "unit.ants.warrior",
+      "owner": "player.1",
+      "x": 40.0,
+      "y": 64.0,
+      "group": "raiders"
+    },
+    {
+      "definition": "unit.ants.warrior",
+      "owner": "player.1",
+      "x": 20.0,
+      "y": 68.0,
+      "group": "raiders"
+    },
+    {
+      "definition": "unit.ants.warrior",
+      "owner": "player.1",
+      "x": 24.0,
+      "y": 68.0,
+      "group": "raiders"
+    },
+    {
+      "definition": "unit.ants.warrior",
+      "owner": "player.1",
+      "x": 28.0,
+      "y": 68.0,
+      "group": "raiders"
+    },
+    {
+      "definition": "unit.ants.warrior",
+      "owner": "player.1",
+      "x": 32.0,
+      "y": 68.0,
+      "group": "raiders"
+    },
+    {
+      "definition": "unit.ants.warrior",
+      "owner": "player.1",
+      "x": 36.0,
+      "y": 68.0,
+      "group": "raiders"
+    },
+    {
+      "definition": "unit.ants.warrior",
+      "owner": "player.1",
+      "x": 40.0,
+      "y": 68.0,
+      "group": "raiders"
+    },
+    {
+      "definition": "unit.ants.warrior",
+      "owner": "player.1",
+      "x": 20.0,
+      "y": 72.0,
+      "group": "raiders"
+    },
+    {
+      "definition": "unit.ants.warrior",
+      "owner": "player.1",
+      "x": 24.0,
+      "y": 72.0,
+      "group": "raiders"
+    },
+    {
+      "definition": "unit.ants.warrior",
+      "owner": "player.1",
+      "x": 28.0,
+      "y": 72.0,
+      "group": "raiders"
+    },
+    {
+      "definition": "unit.ants.warrior",
+      "owner": "player.1",
+      "x": 32.0,
+      "y": 72.0,
+      "group": "raiders"
+    },
+    {
+      "definition": "unit.ants.warrior",
+      "owner": "player.1",
+      "x": 36.0,
+      "y": 72.0,
+      "group": "raiders"
+    },
+    {
+      "definition": "unit.ants.warrior",
+      "owner": "player.1",
+      "x": 40.0,
+      "y": 72.0,
+      "group": "raiders"
+    },
+    {
+      "definition": "unit.neutral.hollow-stag",
+      "owner": "player.2",
+      "x": 56.0,
+      "y": 64.0,
+      "group": "target"
+    }
+  ],
+  "orders": [
+    {
+      "tick": 0,
+      "group": "raiders",
+      "order": "attack",
+      "target": "target"
+    },
+    {
+      "tick": 0,
+      "group": "target",
+      "order": "hold"
+    }
+  ]
+}

@@ -323,6 +323,7 @@ fn join_camp(entity: &mut crate::entity::Entity, camp: Option<&str>) {
         u.camp = Some(crate::camps::Member {
             id: camp.to_string(),
             returning: false,
+            alarm: None,
         });
     }
 }

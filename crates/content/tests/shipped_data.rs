@@ -41,3 +41,20 @@ fn packaged_content_loads_without_asset_files() {
     );
     Content::load_packaged(&root).unwrap_or_else(|errors| panic!("{errors}"));
 }
+
+#[test]
+fn the_repository_combat_lab_scenarios_are_valid() {
+    // Development files beside the package (docs/editor.md, The Combat Lab): each reads and
+    // passes its rules against the shipped content.
+    let content = Content::load(data()).unwrap_or_else(|errors| panic!("{errors}"));
+    for (id, path) in canopy_content::lab::library(data()) {
+        let lab = canopy_content::lab::read(&path).unwrap_or_else(|e| panic!("{e}"));
+        let problems = lab.problems(&content);
+        assert!(problems.is_empty(), "{id}: {problems:?}");
+        assert_eq!(
+            canopy_content::lab::to_text(&lab),
+            std::fs::read_to_string(&path).unwrap(),
+            "{id} is in the file format"
+        );
+    }
+}

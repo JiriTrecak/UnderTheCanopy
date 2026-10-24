@@ -435,6 +435,39 @@ pub fn keep_world(map: &UtcMap, both: bool) -> World {
     World::new(keep_content(), map, setup(both)).unwrap_or_else(|e| panic!("{e}"))
 }
 
+/// An archer that outranges every other fixture unit, in [`longbow_content`].
+pub const LONGBOW: &str = "unit.test.longbow";
+
+/// [`content`] with a [`LONGBOW`] (18 cells of range, as far as the shipped archers) and
+/// soldiers that see 30 cells, as shipped units do.
+pub fn longbow_content() -> Arc<Content> {
+    static CONTENT: OnceLock<Arc<Content>> = OnceLock::new();
+    CONTENT
+        .get_or_init(|| {
+            let mut game = game();
+            let definitions = game["definitions"].as_array_mut().expect("definitions");
+            let mut longbow = definitions
+                .iter()
+                .find(|d| d["id"] == ARCHER)
+                .expect("archer")
+                .clone();
+            longbow["id"] = json!(LONGBOW);
+            longbow["name"] = json!(LONGBOW);
+            longbow["vision"] = json!(30);
+            longbow["behaviors"]["combat"]["range"] = json!(18);
+            longbow["behaviors"]["combat"]["aggroRange"] = json!(22);
+            definitions.push(longbow);
+            // Soldiers see as far as shipped units do, past the longbow's reach.
+            let soldier = definitions
+                .iter_mut()
+                .find(|d| d["id"] == SOLDIER)
+                .expect("soldier");
+            soldier["vision"] = json!(30);
+            load(game, "sim-ai-longbow")
+        })
+        .clone()
+}
+
 /// [`skirmish`] on ground closed (forest floor: never walked or built on) everywhere
 /// `open` leaves out.
 pub fn closed_skirmish(extra: Vec<Value>, open: impl Fn(i32, i32) -> bool) -> UtcMap {

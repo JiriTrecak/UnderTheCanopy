@@ -353,11 +353,35 @@ pub const BEHAVIOR_NAMES: [&str; 12] = [
     "revival",
 ];
 
+#[skip_serializing_none]
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize, schemars::JsonSchema)]
 #[serde(rename_all = "camelCase", deny_unknown_fields)]
 pub struct Dimensions {
+    /// The unit's body class (D102): the rules' `bodySizes` give its radius and formation
+    /// spacing, filled in on load. Units that never move (towers' guns) give their own.
+    pub size: Option<BodySize>,
     pub radius: f64,
     pub height: f64,
+    pub formation_spacing: f64,
+}
+
+/// The four body classes units come in (D102), small to huge.
+#[derive(
+    Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Serialize, Deserialize, schemars::JsonSchema,
+)]
+#[serde(rename_all = "camelCase")]
+pub enum BodySize {
+    Small,
+    Medium,
+    Large,
+    Huge,
+}
+
+/// A body class's size, in cells.
+#[derive(Debug, Clone, Copy, PartialEq, Serialize, Deserialize, schemars::JsonSchema)]
+#[serde(rename_all = "camelCase", deny_unknown_fields)]
+pub struct BodySizeRule {
+    pub radius: f64,
     pub formation_spacing: f64,
 }
 
@@ -1014,6 +1038,9 @@ fn default_race() -> String {
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize, schemars::JsonSchema)]
 #[serde(rename_all = "camelCase", deny_unknown_fields)]
 pub struct Rules {
+    /// The body classes' sizes (D102).
+    #[serde(default)]
+    pub body_sizes: BTreeMap<BodySize, BodySizeRule>,
     pub armor_types: BTreeMap<Id, ArmorType>,
     pub max_units: u32,
     pub max_supply: u32,

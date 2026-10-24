@@ -355,6 +355,52 @@ fn read_source(
             errors,
         );
     }
+    // A unit names its body class (D102); the rules give the class's radius and spacing.
+    let sizes = rules
+        .get("bodySizes")
+        .and_then(Value::as_object)
+        .cloned()
+        .unwrap_or_default();
+    for element in &mut definitions {
+        let Some(dims) = element
+            .value
+            .get_mut("dimensions")
+            .and_then(Value::as_object_mut)
+        else {
+            continue;
+        };
+        let Some(size) = dims.get("size").and_then(Value::as_str).map(str::to_string) else {
+            continue;
+        };
+        if dims.contains_key("radius") || dims.contains_key("formationSpacing") {
+            errors.push(Error::new(
+                &element.file,
+                "dimensions",
+                format!(
+                    "{}: a body class gives the radius and spacing; remove them",
+                    element.id
+                ),
+            ));
+            continue;
+        }
+        match sizes.get(&size).and_then(Value::as_object) {
+            Some(class) => {
+                for key in ["radius", "formationSpacing"] {
+                    if let Some(v) = class.get(key) {
+                        dims.insert(key.into(), v.clone());
+                    }
+                }
+            }
+            None => errors.push(Error::new(
+                &element.file,
+                "dimensions",
+                format!(
+                    "{}: no body class `{size}` in the rules' bodySizes",
+                    element.id
+                ),
+            )),
+        }
+    }
     Source {
         behavior_sets: elements(&BEHAVIORS, packages, files, errors),
         definitions,

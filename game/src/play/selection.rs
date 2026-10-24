@@ -22,6 +22,7 @@ pub struct Candidate {
     /// Own, alive, player-controlled and not inside anything.
     pub controlled: bool,
     pub unit: bool,
+    pub building: bool,
     pub hero: bool,
     pub army: bool,
     pub worker: bool,
@@ -124,8 +125,9 @@ fn dedup(ids: Vec<u32>) -> Vec<u32> {
     ids.into_iter().filter(|id| seen.insert(*id)).collect()
 }
 
-/// Box selection (old `areaSelection`): own controlled units only; if any hero or army
-/// unit is inside, only those; otherwise workers. Observers get every unit in the box.
+/// Box selection (old `areaSelection`): own controlled units first; if any hero or army
+/// unit is inside, only those; otherwise workers; with no own unit inside, own buildings.
+/// Observers get every unit in the box.
 pub fn area(inside: &[Candidate], observer: bool) -> Vec<u32> {
     if observer {
         return inside.iter().filter(|c| c.unit).map(|c| c.id).collect();
@@ -136,8 +138,14 @@ pub fn area(inside: &[Candidate], observer: bool) -> Vec<u32> {
             .filter(|c| c.hero || c.army)
             .map(|c| c.id)
             .collect()
-    } else {
+    } else if own.iter().any(|c| c.worker) {
         own.iter().filter(|c| c.worker).map(|c| c.id).collect()
+    } else {
+        inside
+            .iter()
+            .filter(|c| c.building && c.controlled)
+            .map(|c| c.id)
+            .collect()
     }
 }
 
@@ -216,7 +224,8 @@ mod tests {
             id,
             rank,
             controlled: true,
-            unit: true,
+            unit: rank > 0,
+            building: rank == 0,
             hero: rank == 3,
             army: rank == 2,
             worker: rank == 1,
@@ -241,7 +250,7 @@ mod tests {
     }
 
     #[test]
-    fn box_selection_prefers_the_army_then_workers() {
+    fn box_selection_prefers_the_army_then_workers_then_buildings() {
         let mut enemy = c(9, 2, 1);
         enemy.controlled = false;
         let mixed = [c(1, 1, 5), c(2, 2, 6), c(3, 3, 7), enemy];
@@ -249,6 +258,10 @@ mod tests {
         let workers = [c(1, 1, 5), c(4, 1, 5), enemy];
         assert_eq!(area(&workers, false), [1, 4]);
         assert!(area(&[enemy], false).is_empty());
+        // Buildings only when no own unit is inside.
+        let base = [c(6, 0, 2), c(7, 0, 3), enemy];
+        assert_eq!(area(&base, false), [6, 7]);
+        assert_eq!(area(&[c(6, 0, 2), c(1, 1, 5)], false), [1]);
         assert_eq!(area(&mixed, true), [1, 2, 3, 9]);
     }
 

@@ -468,7 +468,7 @@ The editor writes documents back in place (docs/editor.md), so a parsed object m
 Warcraft III maps carry margins outside their camera bounds: terrain, cliffs, water and trees that frame the playable area. Jiri wants the game to support that rather than crop it away. A map may name a **playable area** (`playable` in `map.json`: `x`, `z`, `width`, `height` in cells; the whole map when absent):
 
 - **The simulation** treats every cell outside it as unwalkable, so nothing walks or builds there (building placement already needs walkable ground); trees there are still resources (Jiri: trees are resources, not decoration), so those at its edge are cut from inside, as in Warcraft III; starts must stand at least 8 cells inside it.
-- **The camera** keeps the view's ground footprint inside it (`RtsCamera::bounds`); the **minimap** and the map picker's **preview** frame its square.
+- **The camera** keeps its focus, the ground point at the view's centre, inside it (`RtsCamera::bounds`), so every corner can be centred as in Warcraft III (since 2026-10-24, UND-17; it kept the whole footprint inside before); the **minimap** and the map picker's **preview** frame its square.
 - **The editor** outlines it in the map view; the Warcraft importer sets it from the map's margins and fills the dry, level border with forest.
 
 Map sizes 480, 800 and 960 join the list (Warcraft's 96, 160 and 192-tile maps at 5 cells a tile; any multiple of the renderer's 32-cell chunks works).
@@ -661,7 +661,7 @@ Choices made while building the race from [beetles](beetles.md):
 - **Towers fight through their own crew** (`garrison.crew`) instead of a building weapon: the Hornwatch's gunner and the Arc Tower's coil are units standing in the lookout, so towers reuse unit combat, research and effects; the Hornwatch gunner (24 damage, ground and air) outclasses an ant tower's archer.
 - **The Warden's pane stops missiles and shells from the front**, not spells: it counters archers, bolts and bombardiers, never magic.
 - **Lock Shields roots** the Shieldbearer (a mode, as the spec says); the computer lowers it again once no enemy is near.
-- **The Elder Bastion needs an Engine Yard**; the Juggernaut is one at a time (`maxOwned`).
+- **The Elder Bastion needs an Engine Yard**; the Juggernaut was one at a time (`maxOwned`) until 2026-10-24, when the limit was dropped for both ultimates (UND-12).
 - **The Hornbreaker keeps his kit** with numbers raised: Steadfast also gives 1/2/3 armour, Horn Rush stuns 1/1.5/2 s.
 - **Balance**: beetle troops are slow (speed 10, ants 12), cost 2–3 supply and more amber, and are about 2.3× an ant soldier's health; tier 2 and the machines cost Substance. Measured with `ai_duels` on Echo Isles and Amberleaf Crossing (6 seeds, both seats): beetles beat ants 13 of 24 (ants 9, 2 at the hour cap); beetles as player 1 won 12 of 12 and as player 2 1 of 12, a seat bias the mixed matchups show and the ant mirror much less. The computer's macro (placement in the network, research pacing, wells) changed for this; see the commit notes.
 
@@ -1044,3 +1044,54 @@ Jiri wants campaign maps "expansive, with neutrals, lots of interesting points, 
 - **Generation (ElevenLabs), authoring only:** never in the shipped game. Sound effects and loops, music (instrumental by default), designed voices and spoken lines. Each audio asset keeps a `generation.json` (provider, model, prompt, settings, the text and voice for a line, the take chosen), like the icons. Takes are requested in batches, auditioned, and one is picked into the asset folder; the same steps are tools (a script and editor MCP tools) and, later, the editor's Sounds library with playback.
 - **The API key** is read from `ELEVENLABS_API_KEY` or `~/.config/under-the-canopy/elevenlabs-key` (beside the updater key, mode 0600), never the repository, never printed or logged, and redacted from errors.
 - **Built (2026-10-23, no sounds generated yet):** the format and its checks (`canopy_content::sounds`; bindings on definitions, races, `rules/sounds.json`, biomes, maps and campaign steps), the engine (`SoundBank`, held loops, one answer or line at a time, voice and ambience and dialogue categories, a voice bus and volume setting, streaming MP3 and Ogg, zoom and crowd), the game's hooks (`game/src/play/sounds.rs`, `canopy_scene::sounds`, the menus) and the authoring tools (`tools/sound/elevenlabs.py`, the editor's `sound_events`, `generate_sound`, `pick_sound`, `keep_voice`; skill `canopy-sounds`). Starting values, to be tuned by ear once sounds exist: a unit is annoyed by the fourth quick selection, "under attack" is said at most every 20 s and only off screen, the ground loses up to 35% at the furthest zoom, the world's voices are turned down together above a summed gain of 3, and a spoken line ducks the world to 0.6 and the music to 0.5. Deferred: water emitters and the editor's Sounds library.
+
+## D98. Camps answer together; the AI answers what outranges it (2026-10-24, Jiri, UND-27: "if you aggro one enemy … they all aggro immediately"; the mechanism is Claude's)
+
+A camp member saw only within its camp's aggro range (8 cells on most maps) while player archers shoot from 18, so a creep shot from range stood still and its campmates never joined. Now:
+
+- **A camp is called as one** (`camps::provoke`): a member struck by a player's unit, by weapon or spell, or one that finds an enemy in its aggro range, alarms every member not walking home (`Member::alarm`). An alarmed member sees its alarm's source wherever it stands and attacks it at once when it has nothing else to fight; the alarm ends when the source dies or can no longer be fought, or when the leash sends the member home. A passive camp never starts a fight, but once struck it answers as a whole too (Jiri: "that is desired"); a lone neutral outside any camp answers only its striker (`camps::answer`).
+- **Computer players' soldiers** count an enemy as near when it is within 14 cells or within its own weapon range plus 6, and answer an enemy whose weapon reaches them even outside their operation's pursuit radius (`ai::tactics::reactions`), so a longer-ranged attacker cannot pick an army off one unit at a time.
+- Camp aggro ranges themselves are map data and stay as authored.
+
+## D99. The Combat Lab (2026-10-24, Jiri: "a combat lab, which of course serves as a movement lab as well … an editor on the same level as the asset editor, campaign editor, the map editor"; the design is Claude's, reviewed with captures)
+
+Before movement is redesigned (D15 left flow fields "for later"), its behaviour has to be seen and measured. The lab is that bench (docs/editor.md, "The Combat Lab"):
+
+- **Scenarios are development files** in `labs/` beside the base package, never in it: cooking ships every JSON document of `base/`, and the package's identity covers them. The editor's document store mounts other folders under a prefix (`@labs/…`) that the content check never reads, so they keep the one undo history.
+- **It runs the real simulation**, never a copy: a scenario becomes a flat sandbox map (`canopy_sim::lab::map`), its closed cells the map's `blocked` grid, its players all at the keyboard.
+- **The movement probe** is how the lab sees inside steering. It is off in games; on, it records each unit's step (vectors, headings tried, outcome) into scratch that is never saved and never read back by the simulation, so determinism is untouched (a test runs a scenario with and without it and compares fingerprints).
+- **The lab is its own editor**; it shares only the generic stage pieces with the ability stage (`crate::sandbox`: scene versions, the zinc ground).
+
+## D100. Movement: StarCraft II's soft bodies (2026-10-24, Jiri: "starcraft is generally total staple … the jank of warcraft is already way behind us … let's replicate sc2"; the rules are Claude's, from D99's research, to tune in the Combat Lab — review: felt)
+
+Units stop being walls to their own side. D51 added StarCraft-style steering on top of the old game's hard bodies; a crowd of idle allies still stopped a walker dead, because a shove had to land on free ground and so never passed on (the Combat Lab's *One through a hundred*). Now:
+
+- **Who is solid to whom.** Steering's body test counts only bodies the unit may not push: enemies and neutral creatures, and *planted* allies — holding position, swinging or standing at a target, casting, building, stunned or rooted, or unable to walk. Allies walking or idle are never walls.
+- **One push pass after everyone has moved** (`movement::push`), over every pair of ground (and, apart, air) bodies that overlap, in fixed order with every pair read from the same positions (Jacobi), a few rounds a tick, so a shove travels through a crowd:
+  - a moving unit pushes an idle ally out of its way (the ally takes the whole overlap); two idle allies part evenly; two allies on the move part by half the overlap a tick, so a squeeze may overlap for a moment and flows instead of jamming;
+  - a planted unit is never moved; whatever overlaps it gives way;
+  - between sides nothing is pushed: a unit that walked into an enemy is put back, two moving foes part evenly. Body blocking, surrounds and walling a gap stay as in StarCraft II (and Warcraft III).
+  - Pushes never cross terrain or buildings (a pushed body slides along them or stays).
+- **Pushed units stay where they are pushed**, as in StarCraft II; drifting back to their spot is a lab option to try.
+- **Arrival** keeps D51's rule: a unit near its goal stops on touching an ally already standing there, so groups gather as a ball.
+- **Units plan routes round terrain only.** The old waiting, negotiation and detours stay only as a fallback for units held up by solid bodies.
+- Integer milli-cells and fixed order throughout: every seat moves identically. The change is a gameplay change (D37's bit-identical rule does not hold across it).
+
+## D101. Melee approach and the movement tuning (2026-10-24, Jiri: "keep L3 implemented but only enable that behavior in lab as toggle … a few toggles to the pathing and its constants"; measured in the Combat Lab)
+
+- **Planted means fighting.** A unit stands planted (a wall to its own side, never pushed; D100) while it holds position, swings, casts, builds, is stunned or rooted, or stands with its target *in reach*. One waiting out of reach — a second row behind the fight — gives way like any idle ally. Counting every unit with a target as planted made the swarm into a base jam on its own waiting units (held up 8,593 unit-seconds, the longest 70 s; after: 930, the longest 9 s; 163 of 200 got in instead of 1).
+- **Three melee approaches**, chosen by the tuning (`movement::tuning::Approach`):
+  - **Spots** (the old game's search for a free cell in reach): the game's, for now — on the new bodies it measures best (a standing target: 9 in reach at once, 67 course flips; the swarm: 930 unit-seconds held up).
+  - **Direct** (StarCraft II's: walk at the target, stop in reach): 8 in reach, 330 flips; the swarm 4,469 unit-seconds.
+  - **Ring fill** (the level-2 proposal: attackers of one target share fixed spots round it, one already in reach keeps its spot, one on its way keeps the spot it heads to, the rest take the free spot nearest their side, those bound round the flank walk an arc outside the ring, those beyond the ring wait a row out; goals sit half a body inside touching so units close until the target's body stops them): 7 in reach, 2,831 flips — it jitters, so it stays a lab mode until it measures better.
+  - **Leading a fleeing target** (level 3: fast melee units aim where a target running away will be and close in front): built into Ring fill, a lab switch only, never on in matches.
+- **The tuning** (`movement::tuning::Tuning`) holds every movement constant: steering gap, arrival distance, look-ahead, the settle, negotiate and replan delays, push rounds, the most a body is pushed a tick, the room kept once apart, how hard allies squeeze, whether shoved allies step aside, the approach, ring spacing and leading. Matches always play `Tuning::default()`; the lab's panel changes them for its own runs (`World::set_tuning`), marking what differs from the game's, and `just lab --approach spots|direct|ring --lead` runs scenarios with them.
+
+## D102. Four body sizes (2026-10-24, Jiri: "I'd do four distinct sizes. Hero should go into large"; "Raiders, ie. zerglings, should be really small")
+
+Units came in ten collision radii from 0.8 to 3.0 that matched neither each other nor their models (a Juggernaut's body a third of its model, beetle infantry bodies wider than theirs). StarCraft II's sizes fall into a few steps (Zergling and Marine, Stalker, Ultralisk, Thor); ours now come in four:
+
+- **The classes** (`rules.bodySizes`, radius and formation spacing in cells): Small 1.25 / 2.75, Medium 1.5 / 3.25, Large 2.5 / 5.25, Huge 3.5 / 7.25. Medium is a little under what its models suggest (1.75) so it still walks a one-block lane (Jiri agreed). A unit that moves names its class in `dimensions.size`; the loader fills in the radius and spacing, and a unit naming a class may not give its own. Units that never move (towers' guns) keep their own radius.
+- **Who is which**: measured from each model's footprint from above at its drawn scale (`cargo run -p canopy-scene --example unit_sizes`): a body about 60% of the model's mean width and depth (legs and weapons reach past the hull), snapped to the nearest class; every hero is Large; the Raider is Small, the ants' Zergling, made in numbers.
+- **What fits through**: a body passes a gap about a cell wider than itself — Small 3 cells, Medium 4, Large 6, Huge 8 (the lab's measure). Maps are built of 4-cell blocks: a one-block lane passes Small and Medium units; Large ones (every hero) and Huge ones need two blocks.
+- The Combat Lab's Bodies layer draws every body by its class; *Every body* lines up every unit that moves to check them against their models.

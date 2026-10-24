@@ -12,6 +12,7 @@ pub mod error;
 pub mod game;
 pub mod id;
 pub mod items;
+pub mod lab;
 pub mod map;
 pub mod package;
 pub mod placement;

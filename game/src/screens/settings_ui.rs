@@ -138,12 +138,12 @@ impl SettingsUi {
         widgets::checked(ui, "settings/graphics/contact", g.contact_shadows);
         widgets::checked(ui, "settings/graphics/bloom", g.bloom);
         widgets::checked(ui, "settings/graphics/vsync", g.vsync);
-        widgets::options(
-            ui,
-            "settings/graphics/window",
-            &[tr!("settings.window"), tr!("settings.fullscreen")],
-            usize::from(g.window == WindowMode::Fullscreen),
-        );
+        let modes: Vec<String> = WindowMode::ALL
+            .iter()
+            .map(|m| crate::text::tr(m.label()))
+            .collect();
+        let mode = WindowMode::ALL.iter().position(|m| *m == g.window);
+        widgets::options(ui, "settings/graphics/window", &modes, mode.unwrap_or(0));
         let a = &settings.audio;
         for (bus, value) in [
             (None, a.master),
@@ -366,11 +366,7 @@ impl SettingsUi {
             }
             "settings.window" => {
                 if let Some(i) = selected(&action.kind) {
-                    settings.graphics.window = if i == 1 {
-                        WindowMode::Fullscreen
-                    } else {
-                        WindowMode::Windowed
-                    };
+                    settings.graphics.window = WindowMode::ALL.get(i).copied().unwrap_or_default();
                     c.window = true;
                 }
             }

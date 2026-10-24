@@ -50,6 +50,8 @@ pub enum Icon {
     // Campaigns: the rail's banner, the Tech view's tree.
     Campaign,
     Tech,
+    // The combat lab: a flask.
+    Lab,
 }
 
 /// One stroke of an icon: an open or closed polyline in grid units.
@@ -400,6 +402,21 @@ fn parts(icon: Icon) -> Vec<Part> {
                 [19.0, 13.0],
                 [5.0, 13.0],
             ]),
+        ],
+        // A flask: the combat lab.
+        Icon::Lab => vec![
+            Open(vec![[9.0, 3.0], [15.0, 3.0]]),
+            Closed(vec![
+                [10.0, 3.0],
+                [10.0, 9.0],
+                [4.5, 19.0],
+                [5.5, 21.0],
+                [18.5, 21.0],
+                [19.5, 19.0],
+                [14.0, 9.0],
+                [14.0, 3.0],
+            ]),
+            Open(vec![[7.0, 15.0], [17.0, 15.0]]),
         ],
         // A hall over three branches: a tech tree.
         Icon::Tech => vec![

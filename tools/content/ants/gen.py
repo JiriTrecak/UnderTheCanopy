@@ -747,7 +747,7 @@ def write_units(builds):
     unit('units/ants/reaver-queen.json', name='Reaver Queen',
          description='Mutated: the colony\'s ultimate monster, one at a time. Devours enemies whole, Rampages through their lines, and Molts to heal; nearby ants attack faster in her presence. Ravenous: she starves without prey, Gardeners cannot heal her, and she is too big for the tunnels. Requires the Queen\'s Chamber; uses 8 supply.',
          body_=body(2800, 5, 'heavy'), combat=weapon(55, 'melee', 1.5, 60, 24, 16, 14), speed=9,
-         creation=train(550, 250, 60), supply=8, level=5, requires=[T3], max_owned=1, underground=False,
+         creation=train(550, 250, 60), supply=8, level=5, requires=[T3], underground=False,
          abilities=caster(200, 1.0, [binding('devour', 'ability.ants.devour', 1, 'Q', 1, interval=20),
                                      binding('rampage', 'ability.ants.rampage', 1, 'W', 2, interval=40),
                                      binding('molt', 'ability.ants.molt', 1, 'E', 3, preference='wounded-ally', interval=40),

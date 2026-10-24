@@ -468,7 +468,7 @@ pub enum Targeting {
         actors: Vec<u32>,
     },
     Rally {
-        actor: u32,
+        actors: Vec<u32>,
     },
     /// Cast at a unit or a point.
     Cast {
@@ -573,10 +573,17 @@ pub fn complete(
                 .unwrap_or_default(),
             false,
         ),
-        Targeting::Rally { actor } => (
-            rally(k, *actor, visible, ground).into_iter().collect(),
-            false,
-        ),
+        Targeting::Rally { actors } => {
+            let mut out: Vec<(Action, Option<Marker>)> = actors
+                .iter()
+                .filter_map(|&a| rally(k, a, visible, ground))
+                .collect();
+            // One marker for the group.
+            for (_, marker) in out.iter_mut().skip(1) {
+                *marker = None;
+            }
+            (out, false)
+        }
         Targeting::Cast {
             actor,
             binding,

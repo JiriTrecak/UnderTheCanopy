@@ -208,7 +208,7 @@ pub fn resolve(ctx: &mut Ctx, state: &mut State) -> Outcome {
                     && b.hp.is_some()
                     && senses.weapon_eligible(ea, b)
                     && senses.perceives(state, ea, b)
-                    && (forced(ea) || senses.hostile(ea, b))
+                    && (forced(ea) || senses.hostile(ea, b) || crate::camps::alarmed_by(ea, b.id))
             }
             _ => false,
         };

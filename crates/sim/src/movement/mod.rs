@@ -14,9 +14,12 @@ pub mod facing;
 pub mod formation;
 pub mod idle;
 pub mod local_path;
+pub mod probe;
+pub mod push;
 pub mod separation;
 pub mod steer;
 pub mod traffic;
+pub mod tuning;
 
 use crate::{
     catalog::Catalog,
@@ -137,6 +140,8 @@ pub struct Motion {
     air: CellSet,
     claims: CellSet,
     local: LocalScratch,
+    /// What steering decided in the last step, when the lab asks ([`probe`]).
+    pub probe: Option<probe::Probe>,
 }
 
 impl Motion {
@@ -158,6 +163,7 @@ impl Motion {
             air: CellSet::new(n),
             claims: CellSet::new(n),
             local: LocalScratch::default(),
+            probe: None,
         }
     }
 
@@ -189,6 +195,10 @@ impl Motion {
     /// Step 5 movement (old `GameContext.move`): advances every unit along its route.
     pub fn move_units(&mut self, state: &mut State) {
         let _span = tracing::trace_span!("movement").entered();
+        if let Some(p) = self.probe.as_mut() {
+            p.tick = state.tick;
+            p.units.clear();
+        }
         self.spatial.sync_bodies(state);
         self.collect_active(state);
         let n = self.spatial.node_count() as usize;
@@ -218,9 +228,15 @@ impl Motion {
             .map(|e| e.id)
             .collect();
         let mut requests: Option<BTreeMap<EntityId, Request>> = None;
+        // Where each stood before moving: a push must keep the whole tick's way clear.
+        let start: BTreeMap<EntityId, crate::entity::Milli> = live
+            .iter()
+            .filter_map(|&id| Some((id, state.entities.get(id)?.position)))
+            .collect();
         for id in live {
             self.move_unit(state, id, &mut requests);
         }
+        self.push_apart(state, &start);
     }
 
     fn move_unit(
@@ -364,6 +380,15 @@ impl Motion {
             ((speed * 1000.0 * f64::from(pace) * f64::from(charge)) / 40_000_000.0).floor() as i64;
         if e.unit.as_ref().is_some_and(|u| u.detour.is_some()) {
             self.move_detour(state, id, budget, step);
+            if let Some(p) = self.probe.as_mut() {
+                p.units.insert(
+                    id,
+                    probe::Trace {
+                        outcome: probe::Outcome::Detour,
+                        ..probe::Trace::default()
+                    },
+                );
+            }
         } else {
             self.steer(state, id, budget, step, requests);
         }

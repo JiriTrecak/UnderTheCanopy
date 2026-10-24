@@ -885,7 +885,17 @@ def unit(name, title, description, body, combat, speed, creation, supply, dims, 
         d['maxOwned'] = max_owned
     if nature:
         d['unitNature'] = nature
-    d['dimensions'] = {'radius': dims[0], 'height': dims[1], 'formationSpacing': dims[2]}
+    # A unit that moves names its body class (D102, rules' bodySizes): the class already in
+    # its file is kept; units that never move keep their own radius.
+    current = {}
+    path = os.path.join(BASE, 'units', 'beetles', ('heroes/' if name in HEROES else '') + name + '.json')
+    if os.path.exists(path):
+        with open(path) as f:
+            current = json.load(f).get('dimensions', {})
+    if speed is not None and current.get('size'):
+        d['dimensions'] = {'size': current['size'], 'height': dims[1]}
+    else:
+        d['dimensions'] = {'radius': dims[0], 'height': dims[1], 'formationSpacing': dims[2]}
     d['modelScale'] = scale
     if presentation:
         d['presentation'] = presentation
@@ -1023,12 +1033,11 @@ def write_units(W, fx_):
                                        {'effect': 'effect.beetles.steamwing-exhaust', 'state': 'run', 'socket': 'socket_exhaust_b'}]}, vision=36))
 
     put(unit('juggernaut', 'Juggernaut',
-             'Ultimate walking fortress: six legs, a violet furnace window, two cannons and a crew. Fires Broadside; Furnace Plating turns aside 30% of spell damage. One at a time. Requires an Elder Bastion; uses 8 supply.',
+             'Ultimate walking fortress: six legs, a violet furnace window, two cannons and a crew. Fires Broadside; Furnace Plating turns aside 30% of spell damage. Requires an Elder Bastion; uses 8 supply.',
              body(3000, 6, 'heavy'),
              weapon(62, 'siege', 22, 96, 26, 20, 18, 0.75,
                     shell={'flightTicks': 30, 'radius': 2.8, 'slowPermille': 0, 'slowTicks': 0}),
              7, train(600, 150, 60), 8, (1.6, 6.5, 4.0), 0.95, level=4, requires=[T3], nature='mechanical',
-             max_owned=1,
              abilities=caster(160, 0.8, [
                  binding('broadside', 'ability.beetles.broadside', 1, 'Q', 1, interval=40),
                  binding('furnace-plating', 'ability.beetles.furnace-plating', 1, 'W', 2)]),

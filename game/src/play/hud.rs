@@ -92,6 +92,9 @@ struct Nodes {
     idle: NodeId,
     idle_icon: NodeId,
     idle_count: NodeId,
+    army: NodeId,
+    army_icon: NodeId,
+    army_count: NodeId,
     observer: NodeId,
     observer_columns: NodeId,
     observer_rows: NodeId,
@@ -136,9 +139,12 @@ impl Nodes {
             resources: find(ui, "hud/dock/actions/resources")?,
             chat_log: find(ui, "hud/chat/log")?,
             chat_input: find(ui, "hud/chat/input")?,
-            idle: find(ui, "hud/dock/idle")?,
-            idle_icon: find(ui, "hud/dock/idle/icon")?,
-            idle_count: find(ui, "hud/dock/idle/count")?,
+            idle: find(ui, "hud/dock/picks/idle")?,
+            idle_icon: find(ui, "hud/dock/picks/idle/icon")?,
+            idle_count: find(ui, "hud/dock/picks/idle/count")?,
+            army: find(ui, "hud/dock/picks/army")?,
+            army_icon: find(ui, "hud/dock/picks/army/icon")?,
+            army_count: find(ui, "hud/dock/picks/army/count")?,
             observer: find(ui, "hud/observer")?,
             observer_columns: find(ui, "hud/observer/columns")?,
             observer_rows: find(ui, "hud/observer/rows")?,
@@ -292,6 +298,7 @@ impl Hud {
         self.selection(ui, &n, play, &k);
         self.card(ui, &n, play, &k);
         self.groups(ui, &n, play);
+        self.army(ui, &n, play, &k);
         self.idle(ui, &n, play, &k);
         self.chat(ui, &n, play);
         self.observer(ui, &n, play, &k);
@@ -300,6 +307,31 @@ impl Hud {
             ui.set_image(n.minimap, Some(key));
         }
         self.nodes = Some(n);
+    }
+
+    /// The army button left of the idle worker button: the leading unit's icon and the
+    /// army's size; players always see it, dimmed while they have no army.
+    fn army(&mut self, ui: &mut Ui, n: &Nodes, play: &Play, k: &Knowledge) {
+        ui.set_visible(n.army, !play.observer());
+        let army = play.army();
+        ui.set_enabled(n.army, !army.is_empty());
+        let icon = match army.first().and_then(|&id| k.entity(id)) {
+            Some(first) => k.def(first).icon.as_str(),
+            None => k
+                .content
+                .actions
+                .actions
+                .get("attack")
+                .map_or("", |a| a.icon.as_str()),
+        };
+        let key = self.image(ui, k, icon);
+        ui.set_image(n.army_icon, key);
+        let count = if army.is_empty() {
+            String::new()
+        } else {
+            army.len().to_string()
+        };
+        ui.set_text(n.army_count, &count);
     }
 
     /// The idle worker button above the minimap: a worker's icon and how many idle.
@@ -1684,6 +1716,7 @@ impl Hud {
                 }
                 ("menu", ActionKind::Click { .. }) => events.push(Event::OpenMenu),
                 ("idle", ActionKind::Click { .. }) => play.next_idle_worker(),
+                ("army", ActionKind::Click { .. }) => play.select_army(),
                 ("debug", ActionKind::Click { .. }) => events.push(Event::ToggleDebug),
                 (_, ActionKind::Submitted(text)) => {
                     play.say(text);

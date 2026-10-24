@@ -43,6 +43,7 @@
   "keys.page-up": "PgUp",
   "keys.placement.rotateClockwise": "Rotate building clockwise",
   "keys.placement.rotateCounterclockwise": "Rotate building counterclockwise",
+  "keys.selection.army": "Select the whole army",
   "keys.selection.idleWorker": "Next idle worker",
   "keys.selection.idleWorkerAlt": "Next idle worker (alternate)",
   "keys.selection.nextSubgroup": "Next subgroup",

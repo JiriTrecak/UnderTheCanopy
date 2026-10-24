@@ -184,6 +184,10 @@ impl<'a> Senses<'a> {
             return false;
         }
         let Owner::Player(slot) = a.owner else {
+            // A camp member alarmed by `b` sees it anywhere (`camps::provoke`).
+            if crate::camps::alarmed_by(a, b.id) {
+                return true;
+            }
             let radius = self
                 .camps
                 .of(a)

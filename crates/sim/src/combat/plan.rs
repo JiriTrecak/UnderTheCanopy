@@ -205,7 +205,9 @@ fn plan_unit(
                 u.retry_at = tick;
             }
             release_combat(u);
-            u.camp.as_mut().expect("camp").returning = true;
+            let member = u.camp.as_mut().expect("camp");
+            member.returning = true;
+            member.alarm = None;
             u.order = None;
             if distance <= 1.0 {
                 u.camp.as_mut().expect("camp").returning = false;
@@ -337,7 +339,7 @@ fn plan_unit(
                 || !senses.weapon_eligible(e, t)
                 || too_close(senses, spatial, e, t)
                 || !senses.perceives(state, e, t)
-                || (!forced && !senses.hostile(e, t))
+                || (!forced && !senses.hostile(e, t) && !camps::alarmed_by(e, t.id))
         }
     };
     if invalid {
@@ -373,6 +375,30 @@ fn plan_unit(
         spatial.update_body(state.entities.get(id).expect("unit"));
         return;
     }
+    // An alarmed camp member turns on what alarmed its camp at once (`camps::provoke`).
+    if target.is_none() && weapon.is_some() && !holding {
+        let e = state.entities.get(id).expect("unit");
+        if let Some(a) = e
+            .unit
+            .as_ref()
+            .and_then(|u| u.camp.as_ref())
+            .and_then(|c| c.alarm)
+        {
+            let fit = state.entities.get(a).is_some_and(|t| {
+                alive(t)
+                    && t.unit.as_ref().is_some_and(|u| {
+                        u.contained.is_none() && u.garrison.is_none() && u.release.is_none()
+                    })
+                    && senses.weapon_eligible(e, t)
+                    && senses.perceives(state, e, t)
+            });
+            if fit {
+                target = Some(a);
+            } else if let Some(c) = unit_mut(state, id).camp.as_mut() {
+                c.alarm = None;
+            }
+        }
+    }
     if target.is_none()
         && let Some(w) = weapon
         && (staggered
@@ -388,6 +414,10 @@ fn plan_unit(
         target = closest(
             senses, spatial, state, targets, candidates, id, range, holding,
         );
+        // A camp member that finds an enemy calls its whole camp.
+        if let Some(t) = target {
+            camps::provoke(senses, state, id, t);
+        }
     }
     if let (Some(t), Some(w)) = (target, weapon) {
         {

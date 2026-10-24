@@ -12,5 +12,23 @@
       "effect": "effect.items.loot-glint",
       "state": "always"
     }
-  ]
+  ],
+  "bodySizes": {
+    "small": {
+      "radius": 1.25,
+      "formationSpacing": 2.75
+    },
+    "medium": {
+      "radius": 1.5,
+      "formationSpacing": 3.25
+    },
+    "large": {
+      "radius": 2.5,
+      "formationSpacing": 5.25
+    },
+    "huge": {
+      "radius": 3.5,
+      "formationSpacing": 7.25
+    }
+  }
 }

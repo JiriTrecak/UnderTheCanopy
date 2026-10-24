@@ -1,0 +1,1319 @@
+{
+  "name": "A hundred through a choke",
+  "description": "A hundred Shieldbearers squeeze through an eight-cell gap in a wall: throughput, stalls and the queue at the mouth.",
+  "size": 192,
+  "duration": 2400,
+  "closed": [
+    {
+      "y": 0,
+      "x": 94,
+      "length": 4
+    },
+    {
+      "y": 1,
+      "x": 94,
+      "length": 4
+    },
+    {
+      "y": 2,
+      "x": 94,
+      "length": 4
+    },
+    {
+      "y": 3,
+      "x": 94,
+      "length": 4
+    },
+    {
+      "y": 4,
+      "x": 94,
+      "length": 4
+    },
+    {
+      "y": 5,
+      "x": 94,
+      "length": 4
+    },
+    {
+      "y": 6,
+      "x": 94,
+      "length": 4
+    },
+    {
+      "y": 7,
+      "x": 94,
+      "length": 4
+    },
+    {
+      "y": 8,
+      "x": 94,
+      "length": 4
+    },
+    {
+      "y": 9,
+      "x": 94,
+      "length": 4
+    },
+    {
+      "y": 10,
+      "x": 94,
+      "length": 4
+    },
+    {
+      "y": 11,
+      "x": 94,
+      "length": 4
+    },
+    {
+      "y": 12,
+      "x": 94,
+      "length": 4
+    },
+    {
+      "y": 13,
+      "x": 94,
+      "length": 4
+    },
+    {
+      "y": 14,
+      "x": 94,
+      "length": 4
+    },
+    {
+      "y": 15,
+      "x": 94,
+      "length": 4
+    },
+    {
+      "y": 16,
+      "x": 94,
+      "length": 4
+    },
+    {
+      "y": 17,
+      "x": 94,
+      "length": 4
+    },
+    {
+      "y": 18,
+      "x": 94,
+      "length": 4
+    },
+    {
+      "y": 19,
+      "x": 94,
+      "length": 4
+    },
+    {
+      "y": 20,
+      "x": 94,
+      "length": 4
+    },
+    {
+      "y": 21,
+      "x": 94,
+      "length": 4
+    },
+    {
+      "y": 22,
+      "x": 94,
+      "length": 4
+    },
+    {
+      "y": 23,
+      "x": 94,
+      "length": 4
+    },
+    {
+      "y": 24,
+      "x": 94,
+      "length": 4
+    },
+    {
+      "y": 25,
+      "x": 94,
+      "length": 4
+    },
+    {
+      "y": 26,
+      "x": 94,
+      "length": 4
+    },
+    {
+      "y": 27,
+      "x": 94,
+      "length": 4
+    },
+    {
+      "y": 28,
+      "x": 94,
+      "length": 4
+    },
+    {
+      "y": 29,
+      "x": 94,
+      "length": 4
+    },
+    {
+      "y": 30,
+      "x": 94,
+      "length": 4
+    },
+    {
+      "y": 31,
+      "x": 94,
+      "length": 4
+    },
+    {
+      "y": 32,
+      "x": 94,
+      "length": 4
+    },
+    {
+      "y": 33,
+      "x": 94,
+      "length": 4
+    },
+    {
+      "y": 34,
+      "x": 94,
+      "length": 4
+    },
+    {
+      "y": 35,
+      "x": 94,
+      "length": 4
+    },
+    {
+      "y": 36,
+      "x": 94,
+      "length": 4
+    },
+    {
+      "y": 37,
+      "x": 94,
+      "length": 4
+    },
+    {
+      "y": 38,
+      "x": 94,
+      "length": 4
+    },
+    {
+      "y": 39,
+      "x": 94,
+      "length": 4
+    },
+    {
+      "y": 40,
+      "x": 94,
+      "length": 4
+    },
+    {
+      "y": 41,
+      "x": 94,
+      "length": 4
+    },
+    {
+      "y": 42,
+      "x": 94,
+      "length": 4
+    },
+    {
+      "y": 43,
+      "x": 94,
+      "length": 4
+    },
+    {
+      "y": 44,
+      "x": 94,
+      "length": 4
+    },
+    {
+      "y": 45,
+      "x": 94,
+      "length": 4
+    },
+    {
+      "y": 46,
+      "x": 94,
+      "length": 4
+    },
+    {
+      "y": 47,
+      "x": 94,
+      "length": 4
+    },
+    {
+      "y": 48,
+      "x": 94,
+      "length": 4
+    },
+    {
+      "y": 49,
+      "x": 94,
+      "length": 4
+    },
+    {
+      "y": 50,
+      "x": 94,
+      "length": 4
+    },
+    {
+      "y": 51,
+      "x": 94,
+      "length": 4
+    },
+    {
+      "y": 52,
+      "x": 94,
+      "length": 4
+    },
+    {
+      "y": 53,
+      "x": 94,
+      "length": 4
+    },
+    {
+      "y": 54,
+      "x": 94,
+      "length": 4
+    },
+    {
+      "y": 55,
+      "x": 94,
+      "length": 4
+    },
+    {
+      "y": 56,
+      "x": 94,
+      "length": 4
+    },
+    {
+      "y": 57,
+      "x": 94,
+      "length": 4
+    },
+    {
+      "y": 58,
+      "x": 94,
+      "length": 4
+    },
+    {
+      "y": 59,
+      "x": 94,
+      "length": 4
+    },
+    {
+      "y": 68,
+      "x": 94,
+      "length": 4
+    },
+    {
+      "y": 69,
+      "x": 94,
+      "length": 4
+    },
+    {
+      "y": 70,
+      "x": 94,
+      "length": 4
+    },
+    {
+      "y": 71,
+      "x": 94,
+      "length": 4
+    },
+    {
+      "y": 72,
+      "x": 94,
+      "length": 4
+    },
+    {
+      "y": 73,
+      "x": 94,
+      "length": 4
+    },
+    {
+      "y": 74,
+      "x": 94,
+      "length": 4
+    },
+    {
+      "y": 75,
+      "x": 94,
+      "length": 4
+    },
+    {
+      "y": 76,
+      "x": 94,
+      "length": 4
+    },
+    {
+      "y": 77,
+      "x": 94,
+      "length": 4
+    },
+    {
+      "y": 78,
+      "x": 94,
+      "length": 4
+    },
+    {
+      "y": 79,
+      "x": 94,
+      "length": 4
+    },
+    {
+      "y": 80,
+      "x": 94,
+      "length": 4
+    },
+    {
+      "y": 81,
+      "x": 94,
+      "length": 4
+    },
+    {
+      "y": 82,
+      "x": 94,
+      "length": 4
+    },
+    {
+      "y": 83,
+      "x": 94,
+      "length": 4
+    },
+    {
+      "y": 84,
+      "x": 94,
+      "length": 4
+    },
+    {
+      "y": 85,
+      "x": 94,
+      "length": 4
+    },
+    {
+      "y": 86,
+      "x": 94,
+      "length": 4
+    },
+    {
+      "y": 87,
+      "x": 94,
+      "length": 4
+    },
+    {
+      "y": 88,
+      "x": 94,
+      "length": 4
+    },
+    {
+      "y": 89,
+      "x": 94,
+      "length": 4
+    },
+    {
+      "y": 90,
+      "x": 94,
+      "length": 4
+    },
+    {
+      "y": 91,
+      "x": 94,
+      "length": 4
+    },
+    {
+      "y": 92,
+      "x": 94,
+      "length": 4
+    },
+    {
+      "y": 93,
+      "x": 94,
+      "length": 4
+    },
+    {
+      "y": 94,
+      "x": 94,
+      "length": 4
+    },
+    {
+      "y": 95,
+      "x": 94,
+      "length": 4
+    },
+    {
+      "y": 96,
+      "x": 94,
+      "length": 4
+    },
+    {
+      "y": 97,
+      "x": 94,
+      "length": 4
+    },
+    {
+      "y": 98,
+      "x": 94,
+      "length": 4
+    },
+    {
+      "y": 99,
+      "x": 94,
+      "length": 4
+    },
+    {
+      "y": 100,
+      "x": 94,
+      "length": 4
+    },
+    {
+      "y": 101,
+      "x": 94,
+      "length": 4
+    },
+    {
+      "y": 102,
+      "x": 94,
+      "length": 4
+    },
+    {
+      "y": 103,
+      "x": 94,
+      "length": 4
+    },
+    {
+      "y": 104,
+      "x": 94,
+      "length": 4
+    },
+    {
+      "y": 105,
+      "x": 94,
+      "length": 4
+    },
+    {
+      "y": 106,
+      "x": 94,
+      "length": 4
+    },
+    {
+      "y": 107,
+      "x": 94,
+      "length": 4
+    },
+    {
+      "y": 108,
+      "x": 94,
+      "length": 4
+    },
+    {
+      "y": 109,
+      "x": 94,
+      "length": 4
+    },
+    {
+      "y": 110,
+      "x": 94,
+      "length": 4
+    },
+    {
+      "y": 111,
+      "x": 94,
+      "length": 4
+    },
+    {
+      "y": 112,
+      "x": 94,
+      "length": 4
+    },
+    {
+      "y": 113,
+      "x": 94,
+      "length": 4
+    },
+    {
+      "y": 114,
+      "x": 94,
+      "length": 4
+    },
+    {
+      "y": 115,
+      "x": 94,
+      "length": 4
+    },
+    {
+      "y": 116,
+      "x": 94,
+      "length": 4
+    },
+    {
+      "y": 117,
+      "x": 94,
+      "length": 4
+    },
+    {
+      "y": 118,
+      "x": 94,
+      "length": 4
+    },
+    {
+      "y": 119,
+      "x": 94,
+      "length": 4
+    },
+    {
+      "y": 120,
+      "x": 94,
+      "length": 4
+    },
+    {
+      "y": 121,
+      "x": 94,
+      "length": 4
+    },
+    {
+      "y": 122,
+      "x": 94,
+      "length": 4
+    },
+    {
+      "y": 123,
+      "x": 94,
+      "length": 4
+    },
+    {
+      "y": 124,
+      "x": 94,
+      "length": 4
+    },
+    {
+      "y": 125,
+      "x": 94,
+      "length": 4
+    },
+    {
+      "y": 126,
+      "x": 94,
+      "length": 4
+    },
+    {
+      "y": 127,
+      "x": 94,
+      "length": 4
+    }
+  ],
+  "units": [
+    {
+      "definition": "unit.beetles.shieldbearer",
+      "owner": "player.1",
+      "x": 22.0,
+      "y": 46.0,
+      "group": "army"
+    },
+    {
+      "definition": "unit.beetles.shieldbearer",
+      "owner": "player.1",
+      "x": 26.0,
+      "y": 46.0,
+      "group": "army"
+    },
+    {
+      "definition": "unit.beetles.shieldbearer",
+      "owner": "player.1",
+      "x": 30.0,
+      "y": 46.0,
+      "group": "army"
+    },
+    {
+      "definition": "unit.beetles.shieldbearer",
+      "owner": "player.1",
+      "x": 34.0,
+      "y": 46.0,
+      "group": "army"
+    },
+    {
+      "definition": "unit.beetles.shieldbearer",
+      "owner": "player.1",
+      "x": 38.0,
+      "y": 46.0,
+      "group": "army"
+    },
+    {
+      "definition": "unit.beetles.shieldbearer",
+      "owner": "player.1",
+      "x": 42.0,
+      "y": 46.0,
+      "group": "army"
+    },
+    {
+      "definition": "unit.beetles.shieldbearer",
+      "owner": "player.1",
+      "x": 46.0,
+      "y": 46.0,
+      "group": "army"
+    },
+    {
+      "definition": "unit.beetles.shieldbearer",
+      "owner": "player.1",
+      "x": 50.0,
+      "y": 46.0,
+      "group": "army"
+    },
+    {
+      "definition": "unit.beetles.shieldbearer",
+      "owner": "player.1",
+      "x": 54.0,
+      "y": 46.0,
+      "group": "army"
+    },
+    {
+      "definition": "unit.beetles.shieldbearer",
+      "owner": "player.1",
+      "x": 58.0,
+      "y": 46.0,
+      "group": "army"
+    },
+    {
+      "definition": "unit.beetles.shieldbearer",
+      "owner": "player.1",
+      "x": 22.0,
+      "y": 50.0,
+      "group": "army"
+    },
+    {
+      "definition": "unit.beetles.shieldbearer",
+      "owner": "player.1",
+      "x": 26.0,
+      "y": 50.0,
+      "group": "army"
+    },
+    {
+      "definition": "unit.beetles.shieldbearer",
+      "owner": "player.1",
+      "x": 30.0,
+      "y": 50.0,
+      "group": "army"
+    },
+    {
+      "definition": "unit.beetles.shieldbearer",
+      "owner": "player.1",
+      "x": 34.0,
+      "y": 50.0,
+      "group": "army"
+    },
+    {
+      "definition": "unit.beetles.shieldbearer",
+      "owner": "player.1",
+      "x": 38.0,
+      "y": 50.0,
+      "group": "army"
+    },
+    {
+      "definition": "unit.beetles.shieldbearer",
+      "owner": "player.1",
+      "x": 42.0,
+      "y": 50.0,
+      "group": "army"
+    },
+    {
+      "definition": "unit.beetles.shieldbearer",
+      "owner": "player.1",
+      "x": 46.0,
+      "y": 50.0,
+      "group": "army"
+    },
+    {
+      "definition": "unit.beetles.shieldbearer",
+      "owner": "player.1",
+      "x": 50.0,
+      "y": 50.0,
+      "group": "army"
+    },
+    {
+      "definition": "unit.beetles.shieldbearer",
+      "owner": "player.1",
+      "x": 54.0,
+      "y": 50.0,
+      "group": "army"
+    },
+    {
+      "definition": "unit.beetles.shieldbearer",
+      "owner": "player.1",
+      "x": 58.0,
+      "y": 50.0,
+      "group": "army"
+    },
+    {
+      "definition": "unit.beetles.shieldbearer",
+      "owner": "player.1",
+      "x": 22.0,
+      "y": 54.0,
+      "group": "army"
+    },
+    {
+      "definition": "unit.beetles.shieldbearer",
+      "owner": "player.1",
+      "x": 26.0,
+      "y": 54.0,
+      "group": "army"
+    },
+    {
+      "definition": "unit.beetles.shieldbearer",
+      "owner": "player.1",
+      "x": 30.0,
+      "y": 54.0,
+      "group": "army"
+    },
+    {
+      "definition": "unit.beetles.shieldbearer",
+      "owner": "player.1",
+      "x": 34.0,
+      "y": 54.0,
+      "group": "army"
+    },
+    {
+      "definition": "unit.beetles.shieldbearer",
+      "owner": "player.1",
+      "x": 38.0,
+      "y": 54.0,
+      "group": "army"
+    },
+    {
+      "definition": "unit.beetles.shieldbearer",
+      "owner": "player.1",
+      "x": 42.0,
+      "y": 54.0,
+      "group": "army"
+    },
+    {
+      "definition": "unit.beetles.shieldbearer",
+      "owner": "player.1",
+      "x": 46.0,
+      "y": 54.0,
+      "group": "army"
+    },
+    {
+      "definition": "unit.beetles.shieldbearer",
+      "owner": "player.1",
+      "x": 50.0,
+      "y": 54.0,
+      "group": "army"
+    },
+    {
+      "definition": "unit.beetles.shieldbearer",
+      "owner": "player.1",
+      "x": 54.0,
+      "y": 54.0,
+      "group": "army"
+    },
+    {
+      "definition": "unit.beetles.shieldbearer",
+      "owner": "player.1",
+      "x": 58.0,
+      "y": 54.0,
+      "group": "army"
+    },
+    {
+      "definition": "unit.beetles.shieldbearer",
+      "owner": "player.1",
+      "x": 22.0,
+      "y": 58.0,
+      "group": "army"
+    },
+    {
+      "definition": "unit.beetles.shieldbearer",
+      "owner": "player.1",
+      "x": 26.0,
+      "y": 58.0,
+      "group": "army"
+    },
+    {
+      "definition": "unit.beetles.shieldbearer",
+      "owner": "player.1",
+      "x": 30.0,
+      "y": 58.0,
+      "group": "army"
+    },
+    {
+      "definition": "unit.beetles.shieldbearer",
+      "owner": "player.1",
+      "x": 34.0,
+      "y": 58.0,
+      "group": "army"
+    },
+    {
+      "definition": "unit.beetles.shieldbearer",
+      "owner": "player.1",
+      "x": 38.0,
+      "y": 58.0,
+      "group": "army"
+    },
+    {
+      "definition": "unit.beetles.shieldbearer",
+      "owner": "player.1",
+      "x": 42.0,
+      "y": 58.0,
+      "group": "army"
+    },
+    {
+      "definition": "unit.beetles.shieldbearer",
+      "owner": "player.1",
+      "x": 46.0,
+      "y": 58.0,
+      "group": "army"
+    },
+    {
+      "definition": "unit.beetles.shieldbearer",
+      "owner": "player.1",
+      "x": 50.0,
+      "y": 58.0,
+      "group": "army"
+    },
+    {
+      "definition": "unit.beetles.shieldbearer",
+      "owner": "player.1",
+      "x": 54.0,
+      "y": 58.0,
+      "group": "army"
+    },
+    {
+      "definition": "unit.beetles.shieldbearer",
+      "owner": "player.1",
+      "x": 58.0,
+      "y": 58.0,
+      "group": "army"
+    },
+    {
+      "definition": "unit.beetles.shieldbearer",
+      "owner": "player.1",
+      "x": 22.0,
+      "y": 62.0,
+      "group": "army"
+    },
+    {
+      "definition": "unit.beetles.shieldbearer",
+      "owner": "player.1",
+      "x": 26.0,
+      "y": 62.0,
+      "group": "army"
+    },
+    {
+      "definition": "unit.beetles.shieldbearer",
+      "owner": "player.1",
+      "x": 30.0,
+      "y": 62.0,
+      "group": "army"
+    },
+    {
+      "definition": "unit.beetles.shieldbearer",
+      "owner": "player.1",
+      "x": 34.0,
+      "y": 62.0,
+      "group": "army"
+    },
+    {
+      "definition": "unit.beetles.shieldbearer",
+      "owner": "player.1",
+      "x": 38.0,
+      "y": 62.0,
+      "group": "army"
+    },
+    {
+      "definition": "unit.beetles.shieldbearer",
+      "owner": "player.1",
+      "x": 42.0,
+      "y": 62.0,
+      "group": "army"
+    },
+    {
+      "definition": "unit.beetles.shieldbearer",
+      "owner": "player.1",
+      "x": 46.0,
+      "y": 62.0,
+      "group": "army"
+    },
+    {
+      "definition": "unit.beetles.shieldbearer",
+      "owner": "player.1",
+      "x": 50.0,
+      "y": 62.0,
+      "group": "army"
+    },
+    {
+      "definition": "unit.beetles.shieldbearer",
+      "owner": "player.1",
+      "x": 54.0,
+      "y": 62.0,
+      "group": "army"
+    },
+    {
+      "definition": "unit.beetles.shieldbearer",
+      "owner": "player.1",
+      "x": 58.0,
+      "y": 62.0,
+      "group": "army"
+    },
+    {
+      "definition": "unit.beetles.shieldbearer",
+      "owner": "player.1",
+      "x": 22.0,
+      "y": 66.0,
+      "group": "army"
+    },
+    {
+      "definition": "unit.beetles.shieldbearer",
+      "owner": "player.1",
+      "x": 26.0,
+      "y": 66.0,
+      "group": "army"
+    },
+    {
+      "definition": "unit.beetles.shieldbearer",
+      "owner": "player.1",
+      "x": 30.0,
+      "y": 66.0,
+      "group": "army"
+    },
+    {
+      "definition": "unit.beetles.shieldbearer",
+      "owner": "player.1",
+      "x": 34.0,
+      "y": 66.0,
+      "group": "army"
+    },
+    {
+      "definition": "unit.beetles.shieldbearer",
+      "owner": "player.1",
+      "x": 38.0,
+      "y": 66.0,
+      "group": "army"
+    },
+    {
+      "definition": "unit.beetles.shieldbearer",
+      "owner": "player.1",
+      "x": 42.0,
+      "y": 66.0,
+      "group": "army"
+    },
+    {
+      "definition": "unit.beetles.shieldbearer",
+      "owner": "player.1",
+      "x": 46.0,
+      "y": 66.0,
+      "group": "army"
+    },
+    {
+      "definition": "unit.beetles.shieldbearer",
+      "owner": "player.1",
+      "x": 50.0,
+      "y": 66.0,
+      "group": "army"
+    },
+    {
+      "definition": "unit.beetles.shieldbearer",
+      "owner": "player.1",
+      "x": 54.0,
+      "y": 66.0,
+      "group": "army"
+    },
+    {
+      "definition": "unit.beetles.shieldbearer",
+      "owner": "player.1",
+      "x": 58.0,
+      "y": 66.0,
+      "group": "army"
+    },
+    {
+      "definition": "unit.beetles.shieldbearer",
+      "owner": "player.1",
+      "x": 22.0,
+      "y": 70.0,
+      "group": "army"
+    },
+    {
+      "definition": "unit.beetles.shieldbearer",
+      "owner": "player.1",
+      "x": 26.0,
+      "y": 70.0,
+      "group": "army"
+    },
+    {
+      "definition": "unit.beetles.shieldbearer",
+      "owner": "player.1",
+      "x": 30.0,
+      "y": 70.0,
+      "group": "army"
+    },
+    {
+      "definition": "unit.beetles.shieldbearer",
+      "owner": "player.1",
+      "x": 34.0,
+      "y": 70.0,
+      "group": "army"
+    },
+    {
+      "definition": "unit.beetles.shieldbearer",
+      "owner": "player.1",
+      "x": 38.0,
+      "y": 70.0,
+      "group": "army"
+    },
+    {
+      "definition": "unit.beetles.shieldbearer",
+      "owner": "player.1",
+      "x": 42.0,
+      "y": 70.0,
+      "group": "army"
+    },
+    {
+      "definition": "unit.beetles.shieldbearer",
+      "owner": "player.1",
+      "x": 46.0,
+      "y": 70.0,
+      "group": "army"
+    },
+    {
+      "definition": "unit.beetles.shieldbearer",
+      "owner": "player.1",
+      "x": 50.0,
+      "y": 70.0,
+      "group": "army"
+    },
+    {
+      "definition": "unit.beetles.shieldbearer",
+      "owner": "player.1",
+      "x": 54.0,
+      "y": 70.0,
+      "group": "army"
+    },
+    {
+      "definition": "unit.beetles.shieldbearer",
+      "owner": "player.1",
+      "x": 58.0,
+      "y": 70.0,
+      "group": "army"
+    },
+    {
+      "definition": "unit.beetles.shieldbearer",
+      "owner": "player.1",
+      "x": 22.0,
+      "y": 74.0,
+      "group": "army"
+    },
+    {
+      "definition": "unit.beetles.shieldbearer",
+      "owner": "player.1",
+      "x": 26.0,
+      "y": 74.0,
+      "group": "army"
+    },
+    {
+      "definition": "unit.beetles.shieldbearer",
+      "owner": "player.1",
+      "x": 30.0,
+      "y": 74.0,
+      "group": "army"
+    },
+    {
+      "definition": "unit.beetles.shieldbearer",
+      "owner": "player.1",
+      "x": 34.0,
+      "y": 74.0,
+      "group": "army"
+    },
+    {
+      "definition": "unit.beetles.shieldbearer",
+      "owner": "player.1",
+      "x": 38.0,
+      "y": 74.0,
+      "group": "army"
+    },
+    {
+      "definition": "unit.beetles.shieldbearer",
+      "owner": "player.1",
+      "x": 42.0,
+      "y": 74.0,
+      "group": "army"
+    },
+    {
+      "definition": "unit.beetles.shieldbearer",
+      "owner": "player.1",
+      "x": 46.0,
+      "y": 74.0,
+      "group": "army"
+    },
+    {
+      "definition": "unit.beetles.shieldbearer",
+      "owner": "player.1",
+      "x": 50.0,
+      "y": 74.0,
+      "group": "army"
+    },
+    {
+      "definition": "unit.beetles.shieldbearer",
+      "owner": "player.1",
+      "x": 54.0,
+      "y": 74.0,
+      "group": "army"
+    },
+    {
+      "definition": "unit.beetles.shieldbearer",
+      "owner": "player.1",
+      "x": 58.0,
+      "y": 74.0,
+      "group": "army"
+    },
+    {
+      "definition": "unit.beetles.shieldbearer",
+      "owner": "player.1",
+      "x": 22.0,
+      "y": 78.0,
+      "group": "army"
+    },
+    {
+      "definition": "unit.beetles.shieldbearer",
+      "owner": "player.1",
+      "x": 26.0,
+      "y": 78.0,
+      "group": "army"
+    },
+    {
+      "definition": "unit.beetles.shieldbearer",
+      "owner": "player.1",
+      "x": 30.0,
+      "y": 78.0,
+      "group": "army"
+    },
+    {
+      "definition": "unit.beetles.shieldbearer",
+      "owner": "player.1",
+      "x": 34.0,
+      "y": 78.0,
+      "group": "army"
+    },
+    {
+      "definition": "unit.beetles.shieldbearer",
+      "owner": "player.1",
+      "x": 38.0,
+      "y": 78.0,
+      "group": "army"
+    },
+    {
+      "definition": "unit.beetles.shieldbearer",
+      "owner": "player.1",
+      "x": 42.0,
+      "y": 78.0,
+      "group": "army"
+    },
+    {
+      "definition": "unit.beetles.shieldbearer",
+      "owner": "player.1",
+      "x": 46.0,
+      "y": 78.0,
+      "group": "army"
+    },
+    {
+      "definition": "unit.beetles.shieldbearer",
+      "owner": "player.1",
+      "x": 50.0,
+      "y": 78.0,
+      "group": "army"
+    },
+    {
+      "definition": "unit.beetles.shieldbearer",
+      "owner": "player.1",
+      "x": 54.0,
+      "y": 78.0,
+      "group": "army"
+    },
+    {
+      "definition": "unit.beetles.shieldbearer",
+      "owner": "player.1",
+      "x": 58.0,
+      "y": 78.0,
+      "group": "army"
+    },
+    {
+      "definition": "unit.beetles.shieldbearer",
+      "owner": "player.1",
+      "x": 22.0,
+      "y": 82.0,
+      "group": "army"
+    },
+    {
+      "definition": "unit.beetles.shieldbearer",
+      "owner": "player.1",
+      "x": 26.0,
+      "y": 82.0,
+      "group": "army"
+    },
+    {
+      "definition": "unit.beetles.shieldbearer",
+      "owner": "player.1",
+      "x": 30.0,
+      "y": 82.0,
+      "group": "army"
+    },
+    {
+      "definition": "unit.beetles.shieldbearer",
+      "owner": "player.1",
+      "x": 34.0,
+      "y": 82.0,
+      "group": "army"
+    },
+    {
+      "definition": "unit.beetles.shieldbearer",
+      "owner": "player.1",
+      "x": 38.0,
+      "y": 82.0,
+      "group": "army"
+    },
+    {
+      "definition": "unit.beetles.shieldbearer",
+      "owner": "player.1",
+      "x": 42.0,
+      "y": 82.0,
+      "group": "army"
+    },
+    {
+      "definition": "unit.beetles.shieldbearer",
+      "owner": "player.1",
+      "x": 46.0,
+      "y": 82.0,
+      "group": "army"
+    },
+    {
+      "definition": "unit.beetles.shieldbearer",
+      "owner": "player.1",
+      "x": 50.0,
+      "y": 82.0,
+      "group": "army"
+    },
+    {
+      "definition": "unit.beetles.shieldbearer",
+      "owner": "player.1",
+      "x": 54.0,
+      "y": 82.0,
+      "group": "army"
+    },
+    {
+      "definition": "unit.beetles.shieldbearer",
+      "owner": "player.1",
+      "x": 58.0,
+      "y": 82.0,
+      "group": "army"
+    }
+  ],
+  "orders": [
+    {
+      "tick": 0,
+      "group": "army",
+      "order": "move",
+      "x": 160.0,
+      "y": 64.0
+    }
+  ]
+}

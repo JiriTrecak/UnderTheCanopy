@@ -32,7 +32,7 @@ use crate::{
     data::{BootStage, GameData},
     paths::Paths,
     saves::{self, MatchIdentity, NewSave, SaveLibrary, SaveMeta},
-    settings::{Chord, Settings, WindowMode, keys},
+    settings::{Chord, Settings, keys},
     sim::Ready,
     world::MatchRequest,
 };
@@ -2662,12 +2662,7 @@ impl Game {
         if changed.window
             && let Some(window) = ctx.window
         {
-            let fullscreen = g.window == WindowMode::Fullscreen;
-            if fullscreen != window.fullscreen().is_some() {
-                window.set_fullscreen(
-                    fullscreen.then_some(winit::window::Fullscreen::Borderless(None)),
-                );
-            }
+            window.set_fullscreen(crate::app::fullscreen(g.window, window.current_monitor()));
         }
         if changed.audio {
             self.audio.apply_settings(self.settings.audio);

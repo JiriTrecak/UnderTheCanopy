@@ -136,11 +136,9 @@
   ],
   "level": 5,
   "supplyCost": 8,
-  "maxOwned": 1,
   "dimensions": {
-    "radius": 2,
-    "height": 6.4,
-    "formationSpacing": 4.4
+    "size": "huge",
+    "height": 6.4
   },
   "modelScale": 2.4,
   "presentation": {

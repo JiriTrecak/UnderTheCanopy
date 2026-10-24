@@ -257,6 +257,8 @@ pub struct Play {
     pub quiet_facts: bool,
     hero_press: Option<(usize, Duration)>,
     idle_cursor: usize,
+    /// Queued work sent to each building since the view of this tick (`spread`).
+    pending: (u32, BTreeMap<u32, u32>),
     dropoff_cursor: usize,
     alerts: Vec<Alert>,
     alert_cursor: usize,
@@ -321,6 +323,7 @@ impl Play {
             quiet_facts: false,
             hero_press: None,
             idle_cursor: 0,
+            pending: (0, BTreeMap::new()),
             dropoff_cursor: 0,
             alerts: Vec::new(),
             alert_cursor: 0,
@@ -487,6 +490,7 @@ impl Play {
         }
         self.layout = card::layout(&self.entries, self.page);
         self.page = self.layout.page;
+        card::grid_keys(&mut self.entries, &self.layout);
         let source = match &self.mode {
             Mode::Idle => None,
             Mode::Target { source, .. } | Mode::Place { source, .. } => Some(source.clone()),
@@ -1002,6 +1006,7 @@ impl Play {
             rank: know::rank(d),
             controlled: k.controlled(e),
             unit: d.kind == Kind::Unit,
+            building: d.kind == Kind::Building,
             hero: d.is_hero(),
             army: d.selection_class == Some(canopy_content::game::SelectionClass::Army),
             worker: d.behaviors.work.is_some(),
@@ -1074,9 +1079,12 @@ impl Play {
         if !self.observer() && self.know.view.mission.is_some() {
             self.send(vec![(Action::Clicked { actor: t.id }, None)]);
         }
-        let own_unit = k
-            .entity(t.id)
-            .is_some_and(|e| k.controlled(e) && k.is_unit(e));
+        // Own units and own buildings gather into a selection; anything else is
+        // selected alone.
+        let groupable = |e: &canopy_sim::view::EntityView| {
+            k.controlled(e) && (k.is_unit(e) || k.def(e).kind == Kind::Building)
+        };
+        let own = k.entity(t.id).is_some_and(groupable);
         if self.observer() {
             let mut ids = if shift {
                 self.selection.ids().to_vec()
@@ -1088,14 +1096,14 @@ impl Play {
             self.select(ids, None);
             return;
         }
-        if own_unit && (self.mods.command() || double) {
-            // Every own unit of the type on screen.
+        if own && (self.mods.command() || double) {
+            // Every own unit or building of the type on screen.
             let screen = self.screen;
             let mut ids: Vec<u32> = k
                 .view
                 .entities
                 .iter()
-                .filter(|e| e.definition() == t.definition && k.controlled(e) && k.is_unit(e))
+                .filter(|e| e.definition() == t.definition && groupable(e))
                 .filter(|e| {
                     let [x, z] = k.position(e);
                     screen.is_some_and(|s| s.on_screen(Vec3::new(x, 1.0, z)))
@@ -1110,16 +1118,13 @@ impl Play {
             self.select(ids, None);
             return;
         }
-        if own_unit && shift {
+        if own && shift {
             let mut ids: Vec<u32> = self
                 .selection
                 .ids()
                 .iter()
                 .copied()
-                .filter(|&id| {
-                    k.entity(id)
-                        .is_some_and(|e| k.controlled(e) && k.is_unit(e))
-                })
+                .filter(|&id| k.entity(id).is_some_and(groupable))
                 .collect();
             if ids.contains(&t.id) {
                 ids.retain(|&x| x != t.id);
@@ -1141,7 +1146,11 @@ impl Play {
             .view
             .entities
             .iter()
-            .filter(|e| !e.remembered && k.is_unit(e) && k.selectable(e))
+            .filter(|e| {
+                !e.remembered
+                    && (k.is_unit(e) || k.def(e).kind == Kind::Building)
+                    && k.selectable(e)
+            })
             .filter(|e| {
                 let [x, z] = k.position(e);
                 let y = self
@@ -1395,6 +1404,7 @@ impl Play {
             }
             Shortcut::Hero(index) => self.hero_key(index),
             Shortcut::IdleWorker => self.next_idle_worker(),
+            Shortcut::Army => self.select_army(),
             Shortcut::NextHall => self.next_dropoff(),
             Shortcut::NextSubgroup | Shortcut::PreviousSubgroup => {
                 let cands: Vec<Candidate> = self
@@ -1517,7 +1527,7 @@ impl Play {
             .is_some_and(|e| self.know.selectable(e))
     }
 
-    /// F1–F3 and hero buttons: select; a second press within 350 ms centres.
+    /// F2–F4 and hero buttons: select; a second press within 350 ms centres.
     pub fn hero_key(&mut self, index: usize) {
         let Some(&id) = self.heroes().get(index) else {
             return;
@@ -1571,6 +1581,29 @@ impl Play {
         self.look_at(&[id]);
     }
 
+    /// Own army units and heroes that can be selected, in selection order.
+    pub fn army(&self) -> Vec<u32> {
+        let k = &self.know;
+        let mut ids: Vec<u32> = k
+            .view
+            .entities
+            .iter()
+            .filter(|e| k.controlled(e) && k.is_unit(e) && k.selectable(e))
+            .filter(|e| know::rank(k.def(e)) >= 2)
+            .map(|e| e.id().0)
+            .collect();
+        ids.sort_by_key(|&id| std::cmp::Reverse(k.rank_of(id)));
+        ids
+    }
+
+    /// Selects the whole army (F1, the army button).
+    pub fn select_army(&mut self) {
+        let army = self.army();
+        if !army.is_empty() {
+            self.select(army, None);
+        }
+    }
+
     fn dropoffs(&self) -> Vec<u32> {
         let k = &self.know;
         k.view
@@ -1618,6 +1651,52 @@ impl Play {
 
     // --- Commands -----------------------------------------------------------------
 
+    /// A building command for a group of one type (`actors`, `card::building_group`):
+    /// queued work goes to the building with the shortest queue, counting what was sent
+    /// since the last view, so repeated presses alternate; pause, cancel and cancelling an
+    /// upgrade go to each building they apply to.
+    fn spread(&mut self, action: Action, actors: &[u32]) -> Vec<Action> {
+        if actors.len() < 2 {
+            return vec![action];
+        }
+        let k = &self.know;
+        match &action {
+            Action::Produce { .. }
+            | Action::Research { .. }
+            | Action::Revive { .. }
+            | Action::Upgrade { .. } => {
+                if self.pending.0 != k.view.tick {
+                    self.pending = (k.view.tick, BTreeMap::new());
+                }
+                let Some(id) = card::next_in_queue(k, actors, &self.pending.1) else {
+                    return vec![action];
+                };
+                // An upgrade holds the building: further presses go elsewhere.
+                let weight = if matches!(action, Action::Upgrade { .. }) {
+                    u32::MAX / 2
+                } else {
+                    1
+                };
+                *self.pending.1.entry(id).or_default() += weight;
+                vec![card::with_actor(&action, id)]
+            }
+            Action::Pause { .. } | Action::Cancel { queue: None, .. } => actors
+                .iter()
+                .map(|&id| card::with_actor(&action, id))
+                .collect(),
+            Action::CancelUpgrade { .. } => actors
+                .iter()
+                .filter(|&&id| {
+                    k.entity(id)
+                        .and_then(|e| e.private.as_ref())
+                        .is_some_and(|p| p.economy.upgrade.is_some())
+                })
+                .map(|&id| card::with_actor(&action, id))
+                .collect(),
+            _ => vec![action],
+        }
+    }
+
     /// Presses the command `id` of the current card (button or hotkey).
     pub fn activate_id(&mut self, id: &str, queue: bool) {
         let Some(c) = self
@@ -1662,7 +1741,8 @@ impl Play {
                     *append = Some(true);
                 }
                 let learned = matches!(action, Action::LearnAbility { .. });
-                self.send(vec![(action, None)]);
+                let actions = self.spread(action, &c.actors);
+                self.send(actions.into_iter().map(|a| (a, None)).collect());
                 if learned {
                     // The old HUD returns to the root card once learning is accepted.
                     self.menu = None;

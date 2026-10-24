@@ -23,6 +23,8 @@ pub enum View {
     Stage,
     /// A campaign's steps and settings (`crate::campaign::view`).
     Campaign,
+    /// A combat lab scenario (`crate::lab`).
+    Lab,
     /// The form, for documents with no view of their own.
     Form,
 }
@@ -40,6 +42,8 @@ fn views(document: &str) -> &'static [(View, &'static str)] {
         &[(View::Map, "Map")]
     } else if crate::campaign::root_of(document).is_some() {
         &[(View::Campaign, "Campaign")]
+    } else if crate::lab::is_lab(document) {
+        &[(View::Lab, "Lab")]
     } else if is_ability(document) {
         &[(View::Overview, "Overview"), (View::Stage, "Stage")]
     } else if crate::overview::has(document) {
@@ -173,6 +177,9 @@ pub struct Viewer<'a> {
     pub campaigns: &'a mut crate::campaign::view::Shared,
     pub campaign_maps: &'a std::collections::BTreeMap<String, Vec<String>>,
     pub version: &'a str,
+    /// The lab's open scenarios by document, and its viewport's size this frame.
+    pub labs: &'a mut std::collections::HashMap<String, crate::lab::Session>,
+    pub lab_size: &'a mut Option<(String, [u32; 2])>,
 }
 
 impl TabViewer for Viewer<'_> {
@@ -322,6 +329,30 @@ impl TabViewer for Viewer<'_> {
                 );
                 if let Some(size) = out.size {
                     *self.encounter_size = Some((tab.document.clone(), size));
+                }
+            }
+            View::Lab => {
+                let session = self
+                    .labs
+                    .entry(tab.document.clone())
+                    .or_insert_with(|| crate::lab::Session::new(&tab.document));
+                let biome = canopy_content::map::BIOMES[0];
+                let look = self.looks.get(biome);
+                if look.is_none() {
+                    self.wanted_looks.push(biome.to_string());
+                }
+                let out = crate::lab::show(
+                    ui,
+                    session,
+                    self.store,
+                    self.edits,
+                    self.content.as_ref(),
+                    self.pack,
+                    look,
+                    self.scene_texture,
+                );
+                if let Some(size) = out.size {
+                    *self.lab_size = Some((tab.document.clone(), size));
                 }
             }
             View::Overview => {

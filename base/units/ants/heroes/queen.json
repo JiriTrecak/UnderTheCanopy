@@ -274,9 +274,8 @@
   "level": 1,
   "supplyCost": 4,
   "dimensions": {
-    "radius": 3,
-    "height": 9.6,
-    "formationSpacing": 6.5
+    "size": "large",
+    "height": 9.6
   },
   "modelScale": 6.0,
   "presentation": {

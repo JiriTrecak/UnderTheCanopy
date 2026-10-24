@@ -300,6 +300,10 @@ pub enum Outside {
 /// The documents of one package, loaded on first use, and the undo history.
 pub struct Store {
     root: PathBuf,
+    /// Folders outside the package whose documents the editor also edits, by the prefix
+    /// their names carry ([`MOUNT`]): the combat lab's scenarios. The content check never
+    /// sees them.
+    mounts: Vec<(String, PathBuf)>,
     documents: BTreeMap<String, Document>,
     grids: BTreeMap<String, GridDoc>,
     /// Documents changed on disk while they had unsaved edits, with the file's version.
@@ -311,6 +315,14 @@ pub struct Store {
     structure: u64,
 }
 
+/// What a mounted document's name starts with (`@labs/rush.lab.json`).
+pub const MOUNT: char = '@';
+
+/// Whether `document` lives in a mounted folder rather than the package.
+pub fn mounted(document: &str) -> bool {
+    document.starts_with(MOUNT)
+}
+
 /// The one file format: 2-space JSON in the document's key order, with a final newline.
 pub fn format(value: &Value) -> String {
     let mut text = serde_json::to_string_pretty(value).expect("JSON values serialize");
@@ -318,11 +330,22 @@ pub fn format(value: &Value) -> String {
     text
 }
 
+/// [`Store::file`] for borrows that hold the documents.
+fn mounted_file(root: &Path, mounts: &[(String, PathBuf)], document: &str) -> PathBuf {
+    for (prefix, folder) in mounts {
+        if let Some(rest) = document.strip_prefix(prefix.as_str()) {
+            return folder.join(rest);
+        }
+    }
+    root.join(document)
+}
+
 impl Store {
     /// The documents below `root` (a package's folder).
     pub fn new(root: &Path) -> Self {
         Self {
             root: root.to_path_buf(),
+            mounts: Vec::new(),
             documents: BTreeMap::new(),
             grids: BTreeMap::new(),
             conflicts: BTreeMap::new(),
@@ -333,9 +356,20 @@ impl Store {
         }
     }
 
+    /// Edits the documents of `folder` too, named `@<name>/…` (`mount("labs", …)`).
+    pub fn mount(&mut self, name: &str, folder: &Path) {
+        self.mounts
+            .push((format!("{MOUNT}{name}/"), folder.to_path_buf()));
+    }
+
+    /// Where `document` lives on disk: in the package, or in a mounted folder.
+    pub fn file(&self, document: &str) -> PathBuf {
+        mounted_file(&self.root, &self.mounts, document)
+    }
+
     fn load(&mut self, document: &str) -> Result<&mut Document, Error> {
         if !self.documents.contains_key(document) {
-            let path = self.root.join(document);
+            let path = self.file(document);
             let value = if path.is_file() {
                 let text = std::fs::read_to_string(&path).map_err(|e| Error::Read {
                     document: document.into(),
@@ -431,7 +465,7 @@ impl Store {
     }
 
     fn read_grid(&self, path: &str) -> Result<Option<GridData>, Error> {
-        let file = self.root.join(path);
+        let file = self.file(path);
         if !file.is_file() {
             return Ok(None);
         }
@@ -485,7 +519,7 @@ impl Store {
         canopy_content::package::Overlay(
             self.documents
                 .iter()
-                .filter(|(_, d)| d.dirty())
+                .filter(|(path, d)| d.dirty() && !mounted(path))
                 .map(|(path, d)| {
                     (
                         path.clone(),
@@ -502,7 +536,7 @@ impl Store {
         let documents = self
             .documents
             .iter()
-            .filter(|(_, d)| d.dirty())
+            .filter(|(path, d)| d.dirty() && !mounted(path))
             .map(|(path, d)| {
                 (
                     path.clone(),
@@ -671,7 +705,7 @@ impl Store {
         let Some(current) = self.documents.get(document) else {
             return Outside::Unchanged;
         };
-        let file = self.root.join(document);
+        let file = self.file(document);
         let disk = match std::fs::read_to_string(&file) {
             Ok(text) => match serde_json::from_str::<Value>(&text) {
                 Ok(value) => Some(value),
@@ -768,7 +802,7 @@ impl Store {
             if !document.dirty() {
                 continue;
             }
-            let file = self.root.join(path);
+            let file = mounted_file(&self.root, &self.mounts, path);
             let failed = |e: std::io::Error| Error::Write {
                 document: path.clone(),
                 message: e.to_string(),
@@ -800,7 +834,7 @@ impl Store {
             if !grid.dirty() {
                 continue;
             }
-            let file = self.root.join(path);
+            let file = mounted_file(&self.root, &self.mounts, path);
             let failed = |e: std::io::Error| Error::Write {
                 document: path.clone(),
                 message: e.to_string(),
@@ -1176,6 +1210,39 @@ mod tests {
     }
 
     const KNIGHT: &str = "units/knight.json";
+
+    #[test]
+    fn mounted_documents_live_in_their_folder_and_stay_out_of_the_check() {
+        let folder = Folder::new("mounted");
+        let labs = folder.0.join("labs-beside");
+        std::fs::create_dir_all(&labs).unwrap();
+        std::fs::write(labs.join("rush.lab.json"), format(&json!({"name": "Rush"}))).unwrap();
+        let mut store = Store::new(&folder.0);
+        store.mount("labs", &labs);
+        let doc = "@labs/rush.lab.json";
+        assert_eq!(store.get(doc).unwrap().unwrap()["name"], "Rush");
+        store
+            .run(
+                "Rename",
+                here(doc),
+                vec![Command::Set {
+                    document: doc.into(),
+                    pointer: "/name".into(),
+                    value: json!("Swarm"),
+                    at: None,
+                }],
+            )
+            .unwrap();
+        // Its edit is not the package's: the check never sees it.
+        assert!(store.document_overlay().0.is_empty());
+        assert!(store.is_dirty(doc));
+        store.save().unwrap();
+        let text = std::fs::read_to_string(labs.join("rush.lab.json")).unwrap();
+        assert!(text.contains("Swarm"));
+        assert!(!folder.0.join("@labs").exists());
+        // Undo comes back to it like any document.
+        assert_eq!(store.undo().map(|c| c.document), Some(doc.to_string()));
+    }
 
     #[test]
     fn a_deleted_asset_takes_its_files_and_empty_folder_on_save() {

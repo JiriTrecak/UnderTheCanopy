@@ -37,6 +37,11 @@ pub struct Member {
     /// Walking home after straying past the leash.
     #[serde(default, skip_serializing_if = "std::ops::Not::not")]
     pub returning: bool,
+    /// The player's unit that struck or was found by the camp ([`provoke`]): the member
+    /// sees it wherever it stands and fights it when it has nothing else to fight, until
+    /// it dies or the leash sends the member home.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub alarm: Option<EntityId>,
 }
 
 /// A map camp in simulation form.
@@ -122,6 +127,7 @@ pub fn enlist(state: &mut State, camps: &Camps, id: EntityId, camp: Option<&str>
         u.camp = Some(Member {
             id,
             returning: false,
+            alarm: None,
         });
     }
 }
@@ -341,6 +347,57 @@ pub fn answer(
         },
         false,
     );
+}
+
+/// A camp member struck by a player's unit, or one that found one in its aggro range,
+/// calls its whole camp (Warcraft III's creeps answer together): every member not walking
+/// home is alarmed by `source` ([`Member::alarm`]), a passive camp's too. A member already alarmed by `source`
+/// stops the call, so a fight rings its camp once.
+pub fn provoke(
+    senses: &crate::combat::Senses,
+    state: &mut State,
+    member: EntityId,
+    source: EntityId,
+) {
+    let (Some(m), Some(s)) = (state.entities.get(member), state.entities.get(source)) else {
+        return;
+    };
+    let Some(camp) = m.unit.as_ref().and_then(|u| u.camp.as_ref()) else {
+        return;
+    };
+    if camp.alarm == Some(source)
+        || !matches!(s.owner, Owner::Player(_))
+        || s.hp.is_none_or(|hp| hp == 0)
+        || s.unit.is_none()
+    {
+        return;
+    }
+    let Some(camp) = senses.camps.get(&camp.id) else {
+        return;
+    };
+    let id = camp.id.as_str();
+    for e in state.entities.iter_mut() {
+        if e.hp.is_none_or(|hp| hp == 0) {
+            continue;
+        }
+        if let Some(c) = e
+            .unit
+            .as_mut()
+            .and_then(|u| u.camp.as_mut())
+            .filter(|c| c.id == id && !c.returning)
+        {
+            c.alarm = Some(source);
+        }
+    }
+}
+
+/// Whether `e` is a camp member alarmed by `source`: it sees and fights `source` even when
+/// its camp is passive.
+pub fn alarmed_by(e: &Entity, source: EntityId) -> bool {
+    e.unit
+        .as_ref()
+        .and_then(|u| u.camp.as_ref())
+        .is_some_and(|c| c.alarm == Some(source))
 }
 
 /// Whether a neutral unit at `eye` sees `target` within `radius` cells over the terrain.

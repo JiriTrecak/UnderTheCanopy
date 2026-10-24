@@ -1,0 +1,474 @@
+{
+  "name": "Round a U-shaped wall",
+  "description": "Thirty Raiders whose straight way runs into a U-shaped wall open away from the goal: the route round, and units caught in the cup.",
+  "size": 128,
+  "duration": 1200,
+  "closed": [
+    {
+      "y": 40,
+      "x": 60,
+      "length": 41
+    },
+    {
+      "y": 41,
+      "x": 60,
+      "length": 41
+    },
+    {
+      "y": 42,
+      "x": 60,
+      "length": 41
+    },
+    {
+      "y": 43,
+      "x": 60,
+      "length": 41
+    },
+    {
+      "y": 44,
+      "x": 60,
+      "length": 4
+    },
+    {
+      "y": 45,
+      "x": 60,
+      "length": 4
+    },
+    {
+      "y": 46,
+      "x": 60,
+      "length": 4
+    },
+    {
+      "y": 47,
+      "x": 60,
+      "length": 4
+    },
+    {
+      "y": 48,
+      "x": 60,
+      "length": 4
+    },
+    {
+      "y": 49,
+      "x": 60,
+      "length": 4
+    },
+    {
+      "y": 50,
+      "x": 60,
+      "length": 4
+    },
+    {
+      "y": 51,
+      "x": 60,
+      "length": 4
+    },
+    {
+      "y": 52,
+      "x": 60,
+      "length": 4
+    },
+    {
+      "y": 53,
+      "x": 60,
+      "length": 4
+    },
+    {
+      "y": 54,
+      "x": 60,
+      "length": 4
+    },
+    {
+      "y": 55,
+      "x": 60,
+      "length": 4
+    },
+    {
+      "y": 56,
+      "x": 60,
+      "length": 4
+    },
+    {
+      "y": 57,
+      "x": 60,
+      "length": 4
+    },
+    {
+      "y": 58,
+      "x": 60,
+      "length": 4
+    },
+    {
+      "y": 59,
+      "x": 60,
+      "length": 4
+    },
+    {
+      "y": 60,
+      "x": 60,
+      "length": 4
+    },
+    {
+      "y": 61,
+      "x": 60,
+      "length": 4
+    },
+    {
+      "y": 62,
+      "x": 60,
+      "length": 4
+    },
+    {
+      "y": 63,
+      "x": 60,
+      "length": 4
+    },
+    {
+      "y": 64,
+      "x": 60,
+      "length": 4
+    },
+    {
+      "y": 65,
+      "x": 60,
+      "length": 4
+    },
+    {
+      "y": 66,
+      "x": 60,
+      "length": 4
+    },
+    {
+      "y": 67,
+      "x": 60,
+      "length": 4
+    },
+    {
+      "y": 68,
+      "x": 60,
+      "length": 4
+    },
+    {
+      "y": 69,
+      "x": 60,
+      "length": 4
+    },
+    {
+      "y": 70,
+      "x": 60,
+      "length": 4
+    },
+    {
+      "y": 71,
+      "x": 60,
+      "length": 4
+    },
+    {
+      "y": 72,
+      "x": 60,
+      "length": 4
+    },
+    {
+      "y": 73,
+      "x": 60,
+      "length": 4
+    },
+    {
+      "y": 74,
+      "x": 60,
+      "length": 4
+    },
+    {
+      "y": 75,
+      "x": 60,
+      "length": 4
+    },
+    {
+      "y": 76,
+      "x": 60,
+      "length": 4
+    },
+    {
+      "y": 77,
+      "x": 60,
+      "length": 4
+    },
+    {
+      "y": 78,
+      "x": 60,
+      "length": 4
+    },
+    {
+      "y": 79,
+      "x": 60,
+      "length": 4
+    },
+    {
+      "y": 80,
+      "x": 60,
+      "length": 4
+    },
+    {
+      "y": 81,
+      "x": 60,
+      "length": 4
+    },
+    {
+      "y": 82,
+      "x": 60,
+      "length": 4
+    },
+    {
+      "y": 83,
+      "x": 60,
+      "length": 4
+    },
+    {
+      "y": 84,
+      "x": 60,
+      "length": 4
+    },
+    {
+      "y": 85,
+      "x": 60,
+      "length": 41
+    },
+    {
+      "y": 86,
+      "x": 60,
+      "length": 41
+    },
+    {
+      "y": 87,
+      "x": 60,
+      "length": 41
+    },
+    {
+      "y": 88,
+      "x": 60,
+      "length": 41
+    }
+  ],
+  "units": [
+    {
+      "definition": "unit.ants.warrior",
+      "owner": "player.1",
+      "x": 77.0,
+      "y": 54.0,
+      "group": "army"
+    },
+    {
+      "definition": "unit.ants.warrior",
+      "owner": "player.1",
+      "x": 81.0,
+      "y": 54.0,
+      "group": "army"
+    },
+    {
+      "definition": "unit.ants.warrior",
+      "owner": "player.1",
+      "x": 85.0,
+      "y": 54.0,
+      "group": "army"
+    },
+    {
+      "definition": "unit.ants.warrior",
+      "owner": "player.1",
+      "x": 89.0,
+      "y": 54.0,
+      "group": "army"
+    },
+    {
+      "definition": "unit.ants.warrior",
+      "owner": "player.1",
+      "x": 93.0,
+      "y": 54.0,
+      "group": "army"
+    },
+    {
+      "definition": "unit.ants.warrior",
+      "owner": "player.1",
+      "x": 77.0,
+      "y": 58.0,
+      "group": "army"
+    },
+    {
+      "definition": "unit.ants.warrior",
+      "owner": "player.1",
+      "x": 81.0,
+      "y": 58.0,
+      "group": "army"
+    },
+    {
+      "definition": "unit.ants.warrior",
+      "owner": "player.1",
+      "x": 85.0,
+      "y": 58.0,
+      "group": "army"
+    },
+    {
+      "definition": "unit.ants.warrior",
+      "owner": "player.1",
+      "x": 89.0,
+      "y": 58.0,
+      "group": "army"
+    },
+    {
+      "definition": "unit.ants.warrior",
+      "owner": "player.1",
+      "x": 93.0,
+      "y": 58.0,
+      "group": "army"
+    },
+    {
+      "definition": "unit.ants.warrior",
+      "owner": "player.1",
+      "x": 77.0,
+      "y": 62.0,
+      "group": "army"
+    },
+    {
+      "definition": "unit.ants.warrior",
+      "owner": "player.1",
+      "x": 81.0,
+      "y": 62.0,
+      "group": "army"
+    },
+    {
+      "definition": "unit.ants.warrior",
+      "owner": "player.1",
+      "x": 85.0,
+      "y": 62.0,
+      "group": "army"
+    },
+    {
+      "definition": "unit.ants.warrior",
+      "owner": "player.1",
+      "x": 89.0,
+      "y": 62.0,
+      "group": "army"
+    },
+    {
+      "definition": "unit.ants.warrior",
+      "owner": "player.1",
+      "x": 93.0,
+      "y": 62.0,
+      "group": "army"
+    },
+    {
+      "definition": "unit.ants.warrior",
+      "owner": "player.1",
+      "x": 77.0,
+      "y": 66.0,
+      "group": "army"
+    },
+    {
+      "definition": "unit.ants.warrior",
+      "owner": "player.1",
+      "x": 81.0,
+      "y": 66.0,
+      "group": "army"
+    },
+    {
+      "definition": "unit.ants.warrior",
+      "owner": "player.1",
+      "x": 85.0,
+      "y": 66.0,
+      "group": "army"
+    },
+    {
+      "definition": "unit.ants.warrior",
+      "owner": "player.1",
+      "x": 89.0,
+      "y": 66.0,
+      "group": "army"
+    },
+    {
+      "definition": "unit.ants.warrior",
+      "owner": "player.1",
+      "x": 93.0,
+      "y": 66.0,
+      "group": "army"
+    },
+    {
+      "definition": "unit.ants.warrior",
+      "owner": "player.1",
+      "x": 77.0,
+      "y": 70.0,
+      "group": "army"
+    },
+    {
+      "definition": "unit.ants.warrior",
+      "owner": "player.1",
+      "x": 81.0,
+      "y": 70.0,
+      "group": "army"
+    },
+    {
+      "definition": "unit.ants.warrior",
+      "owner": "player.1",
+      "x": 85.0,
+      "y": 70.0,
+      "group": "army"
+    },
+    {
+      "definition": "unit.ants.warrior",
+      "owner": "player.1",
+      "x": 89.0,
+      "y": 70.0,
+      "group": "army"
+    },
+    {
+      "definition": "unit.ants.warrior",
+      "owner": "player.1",
+      "x": 93.0,
+      "y": 70.0,
+      "group": "army"
+    },
+    {
+      "definition": "unit.ants.warrior",
+      "owner": "player.1",
+      "x": 77.0,
+      "y": 74.0,
+      "group": "army"
+    },
+    {
+      "definition": "unit.ants.warrior",
+      "owner": "player.1",
+      "x": 81.0,
+      "y": 74.0,
+      "group": "army"
+    },
+    {
+      "definition": "unit.ants.warrior",
+      "owner": "player.1",
+      "x": 85.0,
+      "y": 74.0,
+      "group": "army"
+    },
+    {
+      "definition": "unit.ants.warrior",
+      "owner": "player.1",
+      "x": 89.0,
+      "y": 74.0,
+      "group": "army"
+    },
+    {
+      "definition": "unit.ants.warrior",
+      "owner": "player.1",
+      "x": 93.0,
+      "y": 74.0,
+      "group": "army"
+    }
+  ],
+  "orders": [
+    {
+      "tick": 0,
+      "group": "army",
+      "order": "move",
+      "x": 20.0,
+      "y": 64.0
+    }
+  ]
+}

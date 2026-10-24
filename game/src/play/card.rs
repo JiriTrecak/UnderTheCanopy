@@ -410,6 +410,69 @@ fn hero_admission(k: &Knowledge, d: &Definition) -> Option<String> {
     })
 }
 
+/// The selected buildings that act with the focus: own buildings of its type, all built or
+/// all under construction, in selection order. Empty unless the focus is such a building.
+pub fn building_group(k: &Knowledge, selection: &[u32]) -> Vec<u32> {
+    let Some(focus) = selection.first().and_then(|&id| k.entity(id)) else {
+        return Vec::new();
+    };
+    if k.def(focus).kind != Kind::Building || !k.controlled(focus) {
+        return Vec::new();
+    }
+    let building = focus.public.construction.is_some();
+    selection
+        .iter()
+        .filter_map(|&id| k.entity(id))
+        .filter(|e| {
+            e.definition() == focus.definition()
+                && k.controlled(e)
+                && e.public.construction.is_some() == building
+        })
+        .map(|e| e.id().0)
+        .collect()
+}
+
+/// Of `group`, the building queued work goes to: one not upgrading, then the shortest
+/// queue counting the `pending` orders sent to it since the last view, then the first.
+pub fn next_in_queue(k: &Knowledge, group: &[u32], pending: &BTreeMap<u32, u32>) -> Option<u32> {
+    group.iter().copied().min_by_key(|&id| {
+        let work = k
+            .entity(id)
+            .and_then(|e| e.private.as_ref())
+            .map(|p| &*p.economy);
+        let queued = work.map_or(0, |w| {
+            canopy_sim::economy::lane::items(
+                w.production.as_ref(),
+                w.research.as_ref(),
+                w.revival.as_ref(),
+            )
+            .len()
+        });
+        let upgrading = work.is_some_and(|w| w.upgrade.is_some());
+        (
+            upgrading,
+            queued as u32 + pending.get(&id).copied().unwrap_or(0),
+        )
+    })
+}
+
+/// `action` given to `actor` instead, for the building commands a group shares.
+pub fn with_actor(action: &Action, actor: u32) -> Action {
+    let mut a = action.clone();
+    match &mut a {
+        Action::Produce { actor: x, .. }
+        | Action::Research { actor: x, .. }
+        | Action::Revive { actor: x, .. }
+        | Action::Upgrade { actor: x }
+        | Action::CancelUpgrade { actor: x }
+        | Action::Unload { actor: x }
+        | Action::Pause { actor: x, .. }
+        | Action::Cancel { actor: x, .. } => *x = actor,
+        _ => {}
+    }
+    a
+}
+
 /// Every command the selection offers (old `commandCard`), unsorted.
 pub fn commands(k: &Knowledge, selection: &[u32]) -> Vec<Command> {
     let Some(focus) = selection.first().and_then(|&id| k.entity(id)) else {
@@ -424,6 +487,12 @@ pub fn commands(k: &Knowledge, selection: &[u32]) -> Vec<Command> {
     }
     let done = fulfilled_buildings(k);
     let mut out = Vec::new();
+    // Several buildings of one type act as a group: the card shows the one queued work
+    // would go to, and its commands carry the whole group (`Play::spread`).
+    let group = building_group(k, selection);
+    let focus = next_in_queue(k, &group, &BTreeMap::new())
+        .and_then(|id| k.entity(id))
+        .unwrap_or(focus);
     let fid = focus.id().0;
     let d = k.def(focus);
     let private = focus.private.as_ref();
@@ -446,8 +515,10 @@ pub fn commands(k: &Knowledge, selection: &[u32]) -> Vec<Command> {
                     "card.cancel-construction",
                     percent = k.content.rules.construction_refund_permille / 10
                 );
-                c.actors = vec![fid];
                 out.push(c);
+            }
+            for c in &mut out {
+                c.actors = group.clone();
             }
             return finish(out, ended);
         }
@@ -665,6 +736,15 @@ pub fn commands(k: &Knowledge, selection: &[u32]) -> Vec<Command> {
         if let Some(policy) = &d.behaviors.production {
             let production = work.and_then(|w| w.production.as_ref());
             let queued = production.map_or(0, |p| p.queue.len());
+            // Only training takes supply: behind other work a unit waits for it.
+            let behind = work.is_some_and(|w| {
+                !canopy_sim::economy::lane::items(
+                    w.production.as_ref(),
+                    w.research.as_ref(),
+                    w.revival.as_ref(),
+                )
+                .is_empty()
+            });
             let mut units = false;
             for output in &policy.outputs {
                 let Some(od) = k.content.definition(output.as_str()) else {
@@ -699,23 +779,32 @@ pub fn commands(k: &Knowledge, selection: &[u32]) -> Vec<Command> {
                             .is_some_and(|cap| queued >= cap as usize)
                             .then(|| tr!("card.queue-full"))
                     })
-                    .or_else(|| supply_admission(k, od.supply_cost.unwrap_or(0)))
+                    .or_else(|| {
+                        supply_admission(
+                            k,
+                            if behind {
+                                0
+                            } else {
+                                od.supply_cost.unwrap_or(0)
+                            },
+                        )
+                    })
                     .or_else(|| {
                         let items = od.creation.as_ref().map_or(&[][..], |c| c.items());
                         (!affordable(k, items)).then(|| tr!("card.insufficient-resources"))
                     });
-                c.actors = vec![fid];
                 out.push(c);
             }
             if units
-                && let Some(mut c) = add(
+                && let Some(c) = add(
                     k,
                     "rally",
                     None,
-                    Activate::Target(Targeting::Rally { actor: fid }),
+                    Activate::Target(Targeting::Rally {
+                        actors: group.clone(),
+                    }),
                 )
             {
-                c.actors = vec![fid];
                 out.push(c);
             }
             if let Some(p) = production
@@ -737,6 +826,9 @@ pub fn commands(k: &Knowledge, selection: &[u32]) -> Vec<Command> {
                 }
                 out.push(c);
             }
+        }
+        for c in &mut out {
+            c.actors = group.clone();
         }
         return finish(out, ended);
     }
@@ -1306,6 +1398,34 @@ pub struct Layout {
     pub pages: usize,
 }
 
+/// The grid keys of the card's cells, row by row (the left hand's Q W E R, A S D F,
+/// Z X C V).
+pub const GRID: [&str; SLOTS] = [
+    "KeyQ", "KeyW", "KeyE", "KeyR", "KeyA", "KeyS", "KeyD", "KeyF", "KeyZ", "KeyX", "KeyC", "KeyV",
+];
+
+/// Gives each laid-out cell without a key of its own (a build menu's buildings, a
+/// building's training and research) its cell's grid key (UND-19). A key another visible
+/// command holds stays with that command.
+pub fn grid_keys(entries: &mut [Command], layout: &Layout) {
+    let taken: Vec<Chord> = layout
+        .slots
+        .iter()
+        .flatten()
+        .chain(&layout.banners)
+        .filter_map(|&i| entries[i].chord.clone())
+        .collect();
+    for (slot, i) in layout.slots.iter().enumerate() {
+        let Some(c) = i.and_then(|i| entries.get_mut(i)) else {
+            continue;
+        };
+        let chord = Chord::key(GRID[slot]);
+        if c.chord.is_none() && !c.passive && !taken.contains(&chord) {
+            c.chord = Some(chord);
+        }
+    }
+}
+
 pub fn layout(entries: &[Command], page: usize) -> Layout {
     let back = entries.iter().position(|c| c.id == "back");
     let banners: Vec<usize> = (0..entries.len())
@@ -1415,6 +1535,41 @@ pub fn shortcut<'a>(
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn cells_without_a_key_take_their_grid_key_unless_another_command_holds_it() {
+        let icon = Id::new("asset.icon").unwrap();
+        let entry = |id: &str, key: Option<&str>| {
+            let mut c = Command::new(id, id, "", &icon, 0, Activate::Menu(None));
+            c.chord = key.map(Chord::key);
+            c
+        };
+        // A submenu: Back, three buildings without keys, one already holding W.
+        let mut entries = vec![
+            entry("back", Some("Escape")),
+            entry("build:a", None),
+            entry("build:b", None),
+            entry("build:c", Some("KeyW")),
+            entry("build:d", None),
+        ];
+        let mut layout = Layout::default();
+        layout.slots[0] = Some(1);
+        layout.slots[1] = Some(2);
+        layout.slots[2] = Some(3);
+        layout.slots[3] = Some(4);
+        layout.slots[BACK_SLOT] = Some(0);
+        grid_keys(&mut entries, &layout);
+        let keys: Vec<Option<String>> = entries
+            .iter()
+            .map(|c| c.chord.as_ref().map(|k| k.code.clone()))
+            .collect();
+        let key = |k: &str| Some(k.to_string());
+        assert_eq!(
+            keys,
+            [key("Escape"), key("KeyQ"), None, key("KeyW"), key("KeyR")],
+            "the second cell's W stays with the command that holds it"
+        );
+    }
 
     #[test]
     fn a_research_chain_shows_one_level_at_a_time() {

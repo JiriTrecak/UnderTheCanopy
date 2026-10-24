@@ -211,6 +211,8 @@ pub struct Spatial {
     terrain: Arc<Terrain>,
     size: u32,
     pub profiles: Profiles,
+    /// The constants movement and the attack approach play by (the lab may change them).
+    pub tuning: crate::movement::tuning::Tuning,
     /// Per node: walkable terrain (or deck) not covered by a building or resource.
     walk: Vec<bool>,
     occupancy: Occupancy,
@@ -286,6 +288,7 @@ impl Spatial {
             Sectors::new(size, &topo)
         };
         let mut this = Self {
+            tuning: Default::default(),
             clearance: (!layered).then(|| Clearance::new(size, |c| walk[c as usize])),
             terrain,
             size,

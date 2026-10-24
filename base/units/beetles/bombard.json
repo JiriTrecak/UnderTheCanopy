@@ -57,9 +57,8 @@
   "supplyCost": 3,
   "unitNature": "mechanical",
   "dimensions": {
-    "radius": 1.6,
-    "height": 4.9,
-    "formationSpacing": 3.6
+    "size": "large",
+    "height": 4.9
   },
   "modelScale": 0.98,
   "presentation": {

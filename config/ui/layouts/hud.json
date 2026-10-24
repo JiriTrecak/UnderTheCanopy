@@ -17,11 +17,25 @@
         "children": [
           { "id": "groups", "class": "control-groups", "repeat": "group-button", "count": 10 },
           {
-            "id": "idle", "kind": "button", "class": "idle-workers", "action": "idle", "visible": false,
-            "tooltip": { "title": "@ui.hud.idle-workers", "hotkey": "F8", "body": "@ui.hud.idle-workers.tip" },
+            "id": "picks",
+            "class": "dock-picks",
             "children": [
-              { "id": "icon", "kind": "image", "class": "idle-icon" },
-              { "id": "count", "kind": "label", "class": "idle-count" }
+              {
+                "id": "army", "kind": "button", "class": "idle-workers", "action": "army", "visible": false,
+                "tooltip": { "title": "@ui.hud.army", "hotkey": "F1", "body": "@ui.hud.army.tip" },
+                "children": [
+                  { "id": "icon", "kind": "image", "class": "idle-icon" },
+                  { "id": "count", "kind": "label", "class": "idle-count" }
+                ]
+              },
+              {
+                "id": "idle", "kind": "button", "class": "idle-workers", "action": "idle", "visible": false,
+                "tooltip": { "title": "@ui.hud.idle-workers", "hotkey": "F8", "body": "@ui.hud.idle-workers.tip" },
+                "children": [
+                  { "id": "icon", "kind": "image", "class": "idle-icon" },
+                  { "id": "count", "kind": "label", "class": "idle-count" }
+                ]
+              }
             ]
           },
           {

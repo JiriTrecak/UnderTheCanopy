@@ -47,7 +47,7 @@ The definitions keep their old ids (Building models below).
 | Fungus Garden | 2 | One-off upgrades | See Research |
 | Scent Hall | 2 | Pheromone castes | Herald, Gardener |
 | Deep Gallery | 2 | Specialised castes | Honeypot, Alate, Bullet Ant (tier 3) |
-| Queen's Cradle | 3 | The ultimate | Reaver Queen (one at a time) |
+| Queen's Cradle | 3 | The ultimate | Reaver Queen |
 | Acid Spire | 1 | Tower: a Needler spits from its mouth at ground and air (20 damage) | Upgrade to Venom Spire (tier 3) |
 | Venom Spire | 3 | Upgraded tower: 26 spell damage, each hit lowers armor by 2 | |
 | Royal Chamber | 1 | Heroes: trains and revives them | The Queen, Royal Alchemist, General |
@@ -68,7 +68,7 @@ Numbers are per unit; costs are amber/substance, time in seconds.
 | Bullet Ant | 3 | 200/75, 3 | Elite duellist | *Giant Killer*: +15 damage against heroes and level-3+ units. *Agony*: 40 damage and a 1 s stun, then 30% slower and 25% more damage taken for 6 s (Venom Glands: 10 s) |
 | Herald | 2 | 160/40, 2 | Pheromone caster | *Trail*: a 12 s trail where allies move 35% faster. *Alarm*: allies within 9 deal 35% more damage and attack 15% faster for 6 s. *Panic* (Pheromone Mastery): enemies in an area can't attack or cast for 3 s and move slower |
 | Gardener | 2 | 150/40, 2 | Healer | *Fungus Circle*: a 10 s ring healing allies 15 a second (never the Reaver Queen). *Spore Cloud* (Pheromone Mastery): enemies in it attack 40% and move 20% slower |
-| Reaver Queen | 3 | 550/250, 8, one at a time | Ultimate (2800 hp) | **Mutated.** *Ravenous*: loses 10 hp a second, out of reach of the Gardeners. *Devour*: swallows a non-hero enemy, heals 300 and digests it. *Rampage*: charges an enemy, 90 damage and a stun around it. *Molt*: heals 35% and runs faster, with less armor. *Royal Presence* (aura): ants nearby attack 15% faster. No tunnels |
+| Reaver Queen | 3 | 550/250, 8 | Ultimate (2800 hp) | **Mutated.** *Ravenous*: loses 10 hp a second, out of reach of the Gardeners. *Devour*: swallows a non-hero enemy, heals 300 and digests it. *Rampage*: charges an enemy, 90 damage and a stun around it. *Molt*: heals 35% and runs faster, with less armor. *Royal Presence* (aura): ants nearby attack 15% faster. No tunnels |
 
 Mutation is never something the player manages: a unit is mutated or not, and its drawbacks come with it.
 

@@ -209,6 +209,8 @@ pub struct Shell {
     confirm_save: bool,
     /// Files changed on disk.
     watch: Option<Watch>,
+    /// The lab's scenario folder ([`crate::lab`]).
+    lab_watch: Option<Watch>,
     /// Every element id (pickers) and every element by id, and the store's structure
     /// count the libraries match.
     ids: Vec<String>,
@@ -269,6 +271,8 @@ pub struct Shell {
     /// Abilities' stages by document, the looks their grounds asked for, and the
     /// encounter to draw this frame.
     encounters: HashMap<String, crate::encounter::Session>,
+    /// The lab's open scenarios, by document.
+    labs: HashMap<String, crate::lab::Session>,
     wanted_looks: Vec<String>,
     pub encounter: Option<crate::stage::EncounterShot>,
     /// Test in game, asked for this frame.
@@ -292,9 +296,19 @@ impl Shell {
         user: Option<std::path::PathBuf>,
         data: Option<std::path::PathBuf>,
     ) -> Self {
-        let store = package.as_ref().ok().map(|p| Store::new(&p.root));
+        let mut store = package.as_ref().ok().map(|p| Store::new(&p.root));
         let checker = package.as_ref().ok().cloned().map(Checker::new);
         let watch = package.as_ref().ok().and_then(|p| Watch::new(&p.root));
+        // The combat lab's scenarios live beside the package, never in it (never shipped).
+        let labs = data
+            .as_ref()
+            .map(|d| d.join(canopy_content::lab::LABS_FOLDER));
+        let lab_watch = labs
+            .as_ref()
+            .and_then(|l| Watch::mounted(l, crate::lab::PREFIX));
+        if let (Some(store), Some(labs)) = (store.as_mut(), labs.as_ref()) {
+            store.mount(crate::lab::MOUNT_NAME, labs);
+        }
         let token = serve::token(user.as_deref());
         let autostart = serve::autostart(user.as_deref());
         Self {
@@ -326,10 +340,12 @@ impl Shell {
             scene: None,
             scene_generated: None,
             encounters: HashMap::new(),
+            labs: HashMap::new(),
             wanted_looks: Vec::new(),
             encounter: None,
             user,
             watch,
+            lab_watch,
             ids: Vec::new(),
             index: Default::default(),
             back: Vec::new(),
@@ -444,7 +460,11 @@ impl Shell {
         };
         // The Maps editor's own panel (the map's settings, or what is selected) stands in
         // for the properties.
-        let request = if !panels.properties || kind == Kind::Maps || kind == Kind::Campaigns {
+        let request = if !panels.properties
+            || kind == Kind::Maps
+            || kind == Kind::Campaigns
+            || kind == Kind::Lab
+        {
             None
         } else {
             inspector::show(
@@ -485,8 +505,8 @@ impl Shell {
         let mut generated_size = None;
         let mut preview: Option<String> = None;
         let content = self.checker.as_ref().and_then(|c| c.content().cloned());
-        // The ability stages' grounds: the pack, and the looks they asked for.
-        if kind == Kind::Abilities {
+        // The ability stages' and the lab's grounds: the pack, and the looks they asked for.
+        if kind == Kind::Abilities || kind == Kind::Lab {
             let resources = self
                 .resources
                 .get_or_insert_with(|| Resources::open(self.data.as_deref()));
@@ -509,6 +529,7 @@ impl Shell {
             _ => (None, &self.no_looks),
         };
         let mut encounter_size = None;
+        let mut lab_size = None;
         tabs::documents(
             ui,
             kind,
@@ -533,6 +554,8 @@ impl Shell {
                 preview: &mut preview,
                 root: Some(package.root.clone()),
                 encounters: &mut self.encounters,
+                labs: &mut self.labs,
+                lab_size: &mut lab_size,
                 pack,
                 looks,
                 wanted_looks: &mut self.wanted_looks,
@@ -545,6 +568,11 @@ impl Shell {
         );
         if let Some((document, size)) = encounter_size
             && let Some(session) = self.encounters.get(&document)
+        {
+            self.encounter = session.shot(size);
+        }
+        if let Some((document, size)) = lab_size
+            && let Some(session) = self.labs.get(&document)
         {
             self.encounter = session.shot(size);
         }
@@ -1065,7 +1093,8 @@ impl Shell {
             }
         }
         let mut index = std::collections::BTreeMap::new();
-        for workspace in self.workspaces.values() {
+        // Lab scenarios are no content: they stay out of the id pickers.
+        for (_, workspace) in self.workspaces.iter().filter(|(k, _)| **k != Kind::Lab) {
             let mut elements = Vec::new();
             workspace
                 .library
@@ -1185,6 +1214,11 @@ impl Shell {
         });
     }
 
+    /// The lab session of `document`, once its tab has shown (captures).
+    pub(crate) fn lab_session(&mut self, document: &str) -> Option<&mut crate::lab::Session> {
+        self.labs.get_mut(document)
+    }
+
     pub(crate) fn reveal_document(&mut self, document: &str) {
         if let Some(editor) = Kind::of_document(document) {
             self.reveal(&Context {
@@ -1195,11 +1229,46 @@ impl Shell {
         }
     }
 
+    /// Writes a new lab scenario (two groups facing each other) beside the package and
+    /// opens it.
+    fn new_lab(&mut self) {
+        let (Some(data), Some(content)) = (
+            self.data.clone(),
+            self.checker.as_ref().and_then(|c| c.content().cloned()),
+        ) else {
+            self.say(
+                "The lab needs the game's data and a passing check.".into(),
+                true,
+            );
+            return;
+        };
+        let name = "New scenario";
+        let id = crate::lab::new_id(&data, name);
+        let lab = crate::lab::starter(name, &content);
+        let path = data
+            .join(canopy_content::lab::LABS_FOLDER)
+            .join(format!("{id}{}", canopy_content::lab::EXTENSION));
+        match canopy_content::lab::write(&path, &lab) {
+            Ok(()) => {
+                self.structure = None;
+                if let Ok(package) = self.package.clone() {
+                    self.refresh_libraries(&package);
+                }
+                self.reveal_document(&crate::lab::document(&id));
+            }
+            Err(error) => self.say(error, true),
+        }
+    }
+
     /// Opens the dialog that creates an element in `kind`'s first collection of files,
     /// next to the open one.
     fn start_create(&mut self, kind: Kind) {
         if kind == Kind::Campaigns {
             self.start_new_campaign();
+            return;
+        }
+        if kind == Kind::Lab {
+            self.new_lab();
             return;
         }
         if kind == Kind::Maps {
@@ -1808,9 +1877,12 @@ impl Shell {
     /// Takes in files changed on disk: documents reload or become conflicts, and the
     /// libraries that list them are read again.
     fn follow_disk(&mut self) {
-        let Some(changed) = self.watch.as_ref().map(Watch::changed) else {
+        let Some(mut changed) = self.watch.as_ref().map(Watch::changed) else {
             return;
         };
+        if let Some(labs) = &self.lab_watch {
+            changed.extend(labs.changed());
+        }
         if changed.is_empty() {
             return;
         }
@@ -2501,6 +2573,7 @@ impl Shell {
                         let icon = match kind {
                             Kind::Maps => Icon::Map,
                             Kind::Campaigns => Icon::Campaign,
+                            Kind::Lab => Icon::Lab,
                             Kind::Units => Icon::Units,
                             Kind::Abilities => Icon::Abilities,
                             Kind::Effects => Icon::Effects,
@@ -2972,6 +3045,7 @@ fn library_panel(
                 ui.with_layout(Layout::right_to_left(Align::Center), |ui| {
                     let can = kind == Kind::Maps
                         || kind == Kind::Campaigns
+                        || kind == Kind::Lab
                         || kind
                             .sections()
                             .iter()
@@ -2980,6 +3054,8 @@ fn library_panel(
                         "New map".to_string()
                     } else if kind == Kind::Campaigns {
                         "New campaign".to_string()
+                    } else if kind == Kind::Lab {
+                        "New scenario".to_string()
                     } else if can {
                         format!("New in {}", kind.name())
                     } else {

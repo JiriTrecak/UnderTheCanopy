@@ -108,8 +108,25 @@ impl GraphicsPreset {
 pub enum WindowMode {
     #[default]
     Windowed,
-    /// Borderless fullscreen on the window's monitor.
-    Fullscreen,
+    /// A borderless window covering the monitor at the desktop's own resolution.
+    #[serde(alias = "fullscreen")]
+    Borderless,
+    /// The game takes the monitor over in its own video mode (the desktop's size at its
+    /// highest refresh rate).
+    Exclusive,
+}
+
+impl WindowMode {
+    pub const ALL: [Self; 3] = [Self::Windowed, Self::Borderless, Self::Exclusive];
+
+    /// The settings screen's text key.
+    pub fn label(self) -> &'static str {
+        match self {
+            Self::Windowed => "settings.windowed",
+            Self::Borderless => "settings.borderless",
+            Self::Exclusive => "settings.exclusive",
+        }
+    }
 }
 
 /// The old "Game resolution" choices: the scene renders at most this size (the
@@ -440,7 +457,7 @@ mod tests {
         settings.graphics.render_scale = 0.75;
         settings.graphics.resolution = Some([1920, 1080]);
         settings.graphics.haze = Haze::High;
-        settings.graphics.window = WindowMode::Fullscreen;
+        settings.graphics.window = WindowMode::Exclusive;
         settings.audio.music = 0.2;
         settings.hud.scale = 80;
         settings.multiplayer.server = Some("http://127.0.0.1:8787".into());

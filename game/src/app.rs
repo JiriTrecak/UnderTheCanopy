@@ -36,6 +36,7 @@ use winit::{
     dpi::LogicalSize,
     event::WindowEvent,
     event_loop::ActiveEventLoop,
+    monitor::MonitorHandle,
     window::{Fullscreen, Window, WindowId},
 };
 
@@ -127,9 +128,16 @@ impl App {
             .with_title(tr!("app.title"))
             .with_inner_size(LogicalSize::new(1600, 900))
             .with_min_inner_size(LogicalSize::new(1024, 600));
-        if settings.graphics.window == WindowMode::Fullscreen {
-            attributes = attributes.with_fullscreen(Some(Fullscreen::Borderless(None)));
+        #[cfg(target_os = "macos")]
+        {
+            // Borderless fullscreen hides the menu bar and the Dock too.
+            use winit::platform::macos::WindowAttributesExtMacOS;
+            attributes = attributes.with_borderless_game(true);
         }
+        attributes = attributes.with_fullscreen(fullscreen(
+            settings.graphics.window,
+            event_loop.primary_monitor(),
+        ));
         let window = Arc::new(event_loop.create_window(attributes)?);
         // `--no-vsync` (measuring) wins over the setting.
         let vsync = self.options.vsync && settings.graphics.vsync;
@@ -449,6 +457,28 @@ impl ApplicationHandler for App {
 }
 
 /// What the editor gets from the game: the base package and the interface fonts.
+/// The fullscreen state for `mode` on `monitor`. Exclusive fullscreen keeps the desktop's
+/// size at its highest refresh rate; without a matching video mode it falls back to
+/// borderless.
+pub fn fullscreen(mode: WindowMode, monitor: Option<MonitorHandle>) -> Option<Fullscreen> {
+    match mode {
+        WindowMode::Windowed => None,
+        WindowMode::Borderless => Some(Fullscreen::Borderless(monitor)),
+        WindowMode::Exclusive => {
+            let video = monitor.as_ref().and_then(|m| {
+                let size = m.size();
+                m.video_modes()
+                    .filter(|v| v.size() == size)
+                    .max_by_key(|v| (v.refresh_rate_millihertz(), v.bit_depth()))
+            });
+            Some(match video {
+                Some(v) => Fullscreen::Exclusive(v),
+                None => Fullscreen::Borderless(monitor),
+            })
+        }
+    }
+}
+
 pub fn editor_setup(paths: &Paths) -> canopy_editor::Setup {
     canopy_editor::Setup {
         data: paths.data.clone(),

@@ -1,13 +1,18 @@
-//! Steering locomotion (docs/decisions.md D51), in the manner of StarCraft II: a unit
+//! Steering locomotion (docs/decisions.md D51, D100), in the manner of StarCraft II: a unit
 //! moves the moment it has a route, turning as it goes, towards the farthest waypoint it
-//! can see. Nearby bodies push it apart a little so groups keep their spacing; when the
-//! straight step is blocked it swerves (right side first, so units passing each other
-//! agree on a side) or pushes an idle ally out of the way. Near its goal a unit that bumps
+//! can see. Nearby bodies push it apart a little so groups keep their spacing. Only foes
+//! and planted allies are walls to it (allies on the move or idle are walked into, and
+//! `push` parts them); when one is in the straight step it swerves (right side first, so
+//! units passing each other agree on a side). Near its goal a unit that bumps
 //! into allies already standing there stops beside them instead of fighting for the spot,
 //! and a unit stuck for a second asks for a new route around the bodies in its way. All
 //! in integer milli-cells, so every seat moves identically.
 
-use super::{Motion, alive, place, ready, scale};
+use super::{
+    Motion, alive, place,
+    probe::{Outcome, Trace, Verdict, note},
+    ready, scale,
+};
 use crate::{
     entity::EntityId,
     spatial::{Body, Fixed, geometry::length_ceil},
@@ -28,25 +33,6 @@ const SWERVE: [(i64, i64); 9] = [
     (0, -4096),
 ];
 
-/// How far ahead, in ticks of travel, a unit starts easing around bodies in its path.
-const LOOK_TICKS: i64 = 10;
-
-/// Room kept between bodies beyond touching, milli-cells.
-const GAP: i64 = 100;
-
-/// Within this of its goal, plus three of its radii, a unit blocked by allies standing
-/// there has arrived: bigger bodies stop further out.
-const ARRIVE: i64 = 3000;
-
-/// Ticks without moving before a unit beside its goal settles, and before a unit far from
-/// it asks for a route around the bodies in its way.
-const SETTLE_TICKS: u32 = 8;
-/// Ticks held up by bodies before a unit negotiates its way past them: an ally steps
-/// into a pocket, or it detours (the old traffic resolution, for doorways and gaps too
-/// narrow to swerve through).
-const NEGOTIATE_TICKS: u32 = 12;
-const REROUTE_TICKS: u32 = 40;
-
 fn rotate((x, y): (i64, i64), (c, s): (i64, i64)) -> (i64, i64) {
     (
         (x * c - y * s).div_euclid(4096),
@@ -63,6 +49,22 @@ impl Motion {
         budget: i64,
         step: f64,
         requests: &mut Option<std::collections::BTreeMap<EntityId, super::traffic::Request>>,
+    ) {
+        let mut trace = self.probe.is_some().then(Trace::default);
+        self.steer_traced(state, id, budget, step, requests, &mut trace);
+        if let (Some(p), Some(t)) = (self.probe.as_mut(), trace) {
+            p.units.insert(id, t);
+        }
+    }
+
+    fn steer_traced(
+        &mut self,
+        state: &mut State,
+        id: EntityId,
+        budget: i64,
+        step: f64,
+        requests: &mut Option<std::collections::BTreeMap<EntityId, super::traffic::Request>>,
+        trace: &mut Option<Trace>,
     ) {
         let tick = state.tick;
         let e = state.entities.get(id).expect("unit");
@@ -95,6 +97,10 @@ impl Motion {
             return;
         };
         let target = self.spatial.point(next);
+        note(trace, |t| {
+            t.waypoint = Some((target.x, target.y));
+            t.stalled = tick.saturating_sub(since);
+        });
         let (dx, dy) = (
             i64::from(target.x - current.x),
             i64::from(target.y - current.y),
@@ -102,7 +108,7 @@ impl Motion {
         let distance = length_ceil(dx, dy);
         let last = route.len() == 1 && group_move;
         let radius = i64::from(body.radius_milli());
-        let arrive = ARRIVE + 3 * radius;
+        let arrive = self.spatial.tuning.arrive + 3 * radius;
         // Near the goal but off its own spot, touching an ally already standing there:
         // arrived with the group. On its spot's doorstep it finishes the step instead.
         if last
@@ -119,15 +125,21 @@ impl Motion {
             u.goal = None;
             u.route.clear();
             u.segment = None;
+            note(trace, |t| t.outcome = Outcome::Settled);
             return;
         }
         let reach = budget.min(distance);
         let mut velocity = (scale(dx, reach, distance), scale(dy, reach, distance));
+        note(trace, |t| t.desired = velocity);
         // Keep a little room from neighbours and sidestep bodies ahead early, except on
         // the final step onto the goal.
-        if reach < distance && !(last && distance <= 2 * radius + GAP) {
+        if reach < distance && !(last && distance <= 2 * radius + self.spatial.tuning.gap) {
             let (sx, sy) = self.separation(state, id, current, &body);
             let (ax, ay) = self.avoidance(state, id, current, velocity, budget, &body);
+            note(trace, |t| {
+                t.separation = (sx / 2, sy / 2);
+                t.avoidance = (ax, ay);
+            });
             if sx != 0 || sy != 0 || ax != 0 || ay != 0 {
                 let (vx, vy) = (velocity.0 + sx / 2 + ax, velocity.1 + sy / 2 + ay);
                 let l = length_ceil(vx, vy);
@@ -138,6 +150,7 @@ impl Motion {
                 };
             }
         }
+        note(trace, |t| t.velocity = velocity);
         // Terrain across the straight way to the waypoint (a building placed since the route
         // was planned): plan again rather than slide along it.
         let straight = Fixed::on(
@@ -167,6 +180,7 @@ impl Motion {
                 if let Some(u) = e.unit.as_mut() {
                     u.retry_at = tick + 20;
                 }
+                note(trace, |t| t.outcome = Outcome::Rerouted);
                 return;
             }
         }
@@ -188,25 +202,22 @@ impl Motion {
             };
             self.spatial.adopt_surface(current, &mut proposed, target);
             if !self.spatial.clear_segment(current, proposed, None, &body) {
+                note(trace, |t| t.tried.push(((cx, cy), Verdict::Terrain)));
                 continue;
             }
             let mut blockers = Vec::new();
-            // Jammed against allies coming the other way (two files meeting in a gap): slip
-            // past them, as StarCraft II's squishy crowds do; separation spreads everyone
-            // again once through. Enemies, idle units and buildings stay solid.
-            let jammed = tick.saturating_sub(since) >= NEGOTIATE_TICKS;
-            let motion = (cx, cy);
-            let counts = |b: &crate::spatial::BodyRecord| {
-                !(b.has_route && self.oncoming_ally(state, b.id, owner, motion))
-            };
+            // Only foes and planted allies are walls (D100): allies walking or idle are
+            // walked into, and the push pass parts them.
+            let counts = |b: &crate::spatial::BodyRecord| self.solid_to(state, owner, b.id);
             if self.spatial.unit_segment_clear(
                 current,
                 proposed,
                 Some(id),
                 None,
-                jammed.then_some(&counts as &dyn Fn(&crate::spatial::BodyRecord) -> bool),
+                Some(&counts as &dyn Fn(&crate::spatial::BodyRecord) -> bool),
                 Some(&mut blockers),
             ) {
+                note(trace, |t| t.tried.push(((cx, cy), Verdict::Clear)));
                 moved = Some(proposed);
                 break;
             }
@@ -220,23 +231,11 @@ impl Motion {
                 // within its own radius of the spot and blocked at all: stop here rather
                 // than circle round them.
                 if last && ((beside_allies && distance <= arrive) || distance <= radius) {
-                    break;
-                }
-                let jammed = tick.saturating_sub(since) >= NEGOTIATE_TICKS;
-                if self.push(state, id, (current, proposed), budget, &blockers, jammed)
-                    && self.spatial.unit_segment_clear(
-                        current,
-                        proposed,
-                        Some(id),
-                        None,
-                        None,
-                        None,
-                    )
-                {
-                    moved = Some(proposed);
+                    note(trace, |t| t.tried.push(((cx, cy), Verdict::Bodies)));
                     break;
                 }
             }
+            note(trace, |t| t.tried.push(((cx, cy), Verdict::Bodies)));
         }
         let e = state.entities.get_mut(id).expect("unit");
         if let Some(proposed) = moved {
@@ -252,6 +251,7 @@ impl Motion {
             if super::facing::turn_difference(current_heading, wanted).abs() > 90.0 {
                 super::facing::turn_toward(&mut e.rotation, from, to, step);
                 self.write_route(state, id, route);
+                note(trace, |t| t.outcome = Outcome::Turned);
                 return;
             }
             super::facing::turn_toward(&mut e.rotation, from, to, step);
@@ -274,18 +274,21 @@ impl Motion {
         }
         // Blocked. Beside a goal the group already holds, stop there.
         let stalled = tick.saturating_sub(since);
+        note(trace, |t| t.outcome = Outcome::Blocked);
         if last
             && distance <= arrive
-            && (beside_allies || distance <= radius || stalled >= SETTLE_TICKS)
+            && (beside_allies || distance <= radius || stalled >= self.spatial.tuning.settle_ticks)
         {
             let u = e.unit.as_mut().expect("unit");
             u.settled = true;
             u.goal = None;
             u.route.clear();
             u.segment = None;
+            note(trace, |t| t.outcome = Outcome::Settled);
             return;
         }
-        if (NEGOTIATE_TICKS..REROUTE_TICKS).contains(&stalled)
+        if (self.spatial.tuning.negotiate_ticks..self.spatial.tuning.reroute_ticks)
+            .contains(&stalled)
             && tick
                 >= state
                     .entities
@@ -305,10 +308,11 @@ impl Motion {
                 current.deck,
             );
             self.recover(state, id, current, straight, requests);
+            note(trace, |t| t.outcome = Outcome::Recovering);
             return;
         }
         let e = state.entities.get_mut(id).expect("unit");
-        if stalled >= REROUTE_TICKS {
+        if stalled >= self.spatial.tuning.reroute_ticks {
             let goal = e.unit.as_ref().and_then(|u| u.goal);
             if let Some(goal) = goal {
                 let destination = self.spatial.spot(goal);
@@ -319,6 +323,7 @@ impl Motion {
                     u.last_moved_tick = Some(tick);
                 }
             }
+            note(trace, |t| t.outcome = Outcome::Replanned);
             return;
         }
         self.write_route(state, id, route);
@@ -331,11 +336,11 @@ impl Motion {
         }
     }
 
-    /// How neighbours closer than touching plus [`GAP`] push this unit apart, milli-cells:
+    /// How neighbours closer than touching plus the tuning's gap push this unit apart, milli-cells:
     /// each by its overlap, half as hard for allies on the move.
     fn separation(&self, state: &State, id: EntityId, at: Fixed, body: &Body) -> (i64, i64) {
         let radius = i64::from(body.radius_milli());
-        let reach = radius + i64::from(self.spatial.profiles.max_radius) + GAP;
+        let reach = radius + i64::from(self.spatial.profiles.max_radius) + self.spatial.tuning.gap;
         let (x, y) = (i64::from(at.x), i64::from(at.y));
         let owner = state.entities.get(id).map(|e| e.owner);
         let mut push = (0i64, 0i64);
@@ -347,7 +352,7 @@ impl Motion {
                 }
                 let (ox, oy) = (x - i64::from(b.x), y - i64::from(b.y));
                 let d = length_ceil(ox, oy);
-                let room = radius + i64::from(b.radius) + GAP;
+                let room = radius + i64::from(b.radius) + self.spatial.tuning.gap;
                 if d == 0 || d >= room {
                     return true;
                 }
@@ -365,7 +370,7 @@ impl Motion {
         push
     }
 
-    /// A sideways nudge away from bodies in the path ahead (about [`LOOK_TICKS`] of
+    /// A sideways nudge away from bodies in the path ahead (about the tuning's look-ahead of
     /// travel), so units ease around each other before touching. A body dead ahead is
     /// passed on the mover's preferred side: two units meeting head on prefer opposite
     /// sides and slip past. Idle allies are walked through (they get pushed) and nudge
@@ -384,8 +389,8 @@ impl Motion {
             return (0, 0);
         }
         let radius = i64::from(body.radius_milli());
-        let look = budget * LOOK_TICKS + radius;
-        let reach = look + i64::from(self.spatial.profiles.max_radius) + GAP;
+        let look = budget * self.spatial.tuning.look_ticks + radius;
+        let reach = look + i64::from(self.spatial.profiles.max_radius) + self.spatial.tuning.gap;
         let (x, y) = (i64::from(at.x), i64::from(at.y));
         let Some(owner) = state.entities.get(id).map(|e| e.owner) else {
             return (0, 0);
@@ -402,7 +407,7 @@ impl Motion {
                 }
                 let (rx, ry) = (i64::from(b.x) - x, i64::from(b.y) - y);
                 let along = (rx * velocity.0 + ry * velocity.1) / speed;
-                let clearance = radius + i64::from(b.radius) + GAP;
+                let clearance = radius + i64::from(b.radius) + self.spatial.tuning.gap;
                 if along <= 0 || along > look + i64::from(b.radius) {
                     return true;
                 }
@@ -442,7 +447,7 @@ impl Motion {
     }
 
     /// Whether an ally of `owner` that has stopped (no route, not fighting) touches the
-    /// unit at `at`, give or take [`GAP`].
+    /// unit at `at`, give or take the tuning's gap.
     fn touching_standing_ally(
         &self,
         state: &State,
@@ -452,7 +457,8 @@ impl Motion {
         owner: canopy_content::placement::Owner,
     ) -> bool {
         let radius = i64::from(body.radius_milli());
-        let reach = radius + i64::from(self.spatial.profiles.max_radius) + 2 * GAP;
+        let reach =
+            radius + i64::from(self.spatial.profiles.max_radius) + 2 * self.spatial.tuning.gap;
         let (x, y) = (i64::from(at.x), i64::from(at.y));
         let mut touching = false;
         self.spatial
@@ -462,7 +468,7 @@ impl Motion {
                     return true;
                 }
                 let d = length_ceil(i64::from(b.x) - x, i64::from(b.y) - y);
-                if d < radius + i64::from(b.radius) + 2 * GAP
+                if d < radius + i64::from(b.radius) + 2 * self.spatial.tuning.gap
                     && self.standing_ally(state, b.id, owner)
                 {
                     touching = true;
@@ -471,24 +477,6 @@ impl Motion {
                 true
             });
         touching
-    }
-
-    /// Whether `other` is an ally of `owner` on the move against `motion` (head on).
-    fn oncoming_ally(
-        &self,
-        state: &State,
-        other: EntityId,
-        owner: canopy_content::placement::Owner,
-        motion: (i64, i64),
-    ) -> bool {
-        let allied = state
-            .entities
-            .get(other)
-            .is_some_and(|b| self.teams.allied(b.owner, owner) && alive(b));
-        allied
-            && self
-                .heading_of(state, other)
-                .is_some_and(|(hx, hy)| hx * motion.0 + hy * motion.1 < 0)
     }
 
     /// Where a unit is heading: towards its next waypoint (milli-cells), if it has one.
@@ -549,88 +537,5 @@ impl Motion {
                 && !crate::abilities::statuses::stunned(&self.catalog, b)
                 && !crate::abilities::statuses::rooted(&self.catalog, b)
         })
-    }
-
-    /// Shoves pushable allies out of the segment `from → to`: each steps away from the
-    /// mover's new position by what it overlaps, at most the mover's own step. Returns
-    /// whether any moved.
-    fn push(
-        &mut self,
-        state: &mut State,
-        id: EntityId,
-        (from, to): (Fixed, Fixed),
-        budget: i64,
-        blockers: &[EntityId],
-        jammed: bool,
-    ) -> bool {
-        let Some(owner) = state.entities.get(id).map(|e| e.owner) else {
-            return false;
-        };
-        let mover_radius = state
-            .entities
-            .get(id)
-            .map_or(0, |e| i64::from(self.spatial.body_of(e).radius_milli()));
-        let (mx, my) = (i64::from(to.x - from.x), i64::from(to.y - from.y));
-        let mut any = false;
-        for &other in blockers {
-            // Idle allies step aside any way; a jammed mover also shoves an ally coming the
-            // other way, sideways only, so the two files shuffle into lanes.
-            let oncoming = jammed
-                && self.oncoming_ally(
-                    state,
-                    other,
-                    owner,
-                    (i64::from(to.x - from.x), i64::from(to.y - from.y)),
-                );
-            if !oncoming && !self.pushable(state, other, owner) {
-                continue;
-            }
-            let b = state.entities.get(other).expect("blocker");
-            let body = self.spatial.body_of(b);
-            let at = Fixed::on(b.position.x, b.position.y, self.spatial.deck_of(b));
-            let (ox, oy) = (i64::from(at.x - to.x), i64::from(at.y - to.y));
-            let d = length_ceil(ox, oy);
-            let room = mover_radius + i64::from(body.radius_milli()) + GAP;
-            let amount = (room - d).clamp(0, budget.max(1));
-            if amount == 0 {
-                continue;
-            }
-            // Out of the mover's way: to the side it already leans to (the right when dead
-            // ahead), else the other side, else straight on ahead of the mover.
-            let along = length_ceil(mx, my).max(1);
-            let side = (-my, mx);
-            let lean = ox * side.0 + oy * side.1;
-            let first = if lean >= 0 { 1 } else { -1 };
-            let directions = [
-                (first * side.0, first * side.1),
-                (-first * side.0, -first * side.1),
-                (mx, my),
-            ];
-            let tried = if oncoming {
-                &directions[..2]
-            } else {
-                &directions[..]
-            };
-            let shoved = tried.iter().find_map(|&(fx, fy)| {
-                let shoved = Fixed::on(
-                    at.x + scale(fx, amount, along) as i32,
-                    at.y + scale(fy, amount, along) as i32,
-                    at.deck,
-                );
-                (self.spatial.clear_segment(at, shoved, None, &body)
-                    && self
-                        .spatial
-                        .unit_segment_clear(at, shoved, Some(other), None, None, None))
-                .then_some(shoved)
-            });
-            let Some(shoved) = shoved else {
-                continue;
-            };
-            let b = state.entities.get_mut(other).expect("blocker");
-            place(&self.spatial, b, shoved);
-            self.spatial.update_body(b);
-            any = true;
-        }
-        any
     }
 }

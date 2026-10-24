@@ -4,25 +4,12 @@ use crate::options::CameraSpec;
 use canopy_render::{
     RtsCamera,
     camera::{self, CameraView},
-    terrain::TerrainDesc,
 };
 use canopy_scene::MapScene;
 use glam::Vec3;
 
 /// The spectator may zoom out further than a player (the game stops at 1.25).
 pub const SPECTATOR_MAX_ZOOM: f32 = 6.0;
-
-/// Lowest water surface, or 0: the plane the camera keeps its footprint on (old
-/// `clamp`, `min(0, waterLevel)`).
-pub fn clamp_floor(terrain: &TerrainDesc) -> f32 {
-    terrain
-        .water
-        .iter()
-        .zip(&terrain.heights)
-        .filter(|(w, h)| w > h)
-        .map(|(w, _)| *w)
-        .fold(0.0, f32::min)
-}
 
 /// The camera a view starts with: the requested pose, or the first player's start at
 /// the game's default zoom.
@@ -40,11 +27,10 @@ pub fn initial(spec: Option<CameraSpec>, scene: &MapScene) -> RtsCamera {
     camera
 }
 
-/// Clamps the camera like the old game every frame, then derives the view.
+/// Keeps the camera's focus on the playable area every frame, then derives the view.
 pub fn frame(camera: &mut RtsCamera, aspect: f32, scene: &MapScene) -> CameraView {
-    let terrain = scene.terrain();
-    camera.clamp(aspect, clamp_floor(terrain));
-    camera.view(aspect, terrain)
+    camera.clamp();
+    camera.view(aspect, scene.terrain())
 }
 
 /// Middle-drag panning (old `panPersp`, "grab-pan from the center ray"): how far the

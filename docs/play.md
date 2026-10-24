@@ -32,20 +32,23 @@ Default keys follow the content (`base/rules/commands.json`: actions, categories
 
 | Input | Does | Parity |
 |---|---|---|
-| Left click | Selects the entity under the cursor (unit capsule ≥ 28 px wide, nearest wins; else the building, item or resource whose footprint holds the ground point, or the standing tree the camera ray enters, whichever the ray meets first). Ground clears (Shift keeps). Enemies, neutrals and buildings select alone. | as old (trees: D45) |
-| Shift + click | Toggles an own unit in the selection. | as old |
-| Ctrl + click, double click (350 ms, 6 px) | Every own unit of that type on screen (Shift adds). | as old |
-| Left drag (≥ 5 px) | Box: own controlled units; heroes and army first, else workers; observers get every unit. Shift adds. | as old |
+| Left click | Selects the entity under the cursor (unit capsule ≥ 28 px wide, nearest wins; else the building, item or resource whose footprint holds the ground point, or the standing tree the camera ray enters, whichever the ray meets first). Ground clears (Shift keeps). Enemies and neutrals select alone. | as old (trees: D45) |
+| Shift + click | Toggles an own unit or building in the selection. | buildings new (UND-25) |
+| Ctrl + click, double click (350 ms, 6 px) | Every own unit or building of that type on screen (Shift adds). | buildings new (UND-25) |
+| Left drag (≥ 5 px) | Box: own controlled units; heroes and army first, else workers, else own buildings; observers get every unit. Shift adds. | buildings new (UND-25) |
+| Several buildings of one type | Act as a group: train, research, revive and upgrade go to the one with the shortest queue, so repeated presses alternate; rally, pause and cancel go to each. The card shows the building the next press goes to. | new (UND-25) |
+| F1, the army button | Selects every own army unit and hero (left of the idle worker button). | new (UND-11) |
 | Hover | The same pick; units, buildings and mines show a faint ring. A tree shows the neutral hover ring around its crown when a selected unit could gather it (D45). | tree ring new |
 | Right click (on press) | Smart order, first rule that applies: resume an own construction site (builders) → enter an own lookout → follow an own unit → gather a resource (harvesters) → pick up an item (first unit with an inventory) → army attacks an enemy or a neutral creature, or breaks a crate or rubble (a forced attack: nothing attacks those by itself) → move. Producers alone: rally (right-click the producer clears it). An enemy in a lookout is attacked through the tower. Any mode: cancels it. | allies are not attacked by right-click (old did; D36) |
 | Shift + order | Appends (`append: true`); Shift keeps placing buildings. | as old |
-| M / A / S / H / P | Move, attack (target: forced attack; ground: attack-move), stop, hold, patrol. Reachable from any submenu. | as old |
+| M / A / S / H / P | Move, attack (target: forced attack; ground: attack-move), stop, hold, patrol. Reachable from any submenu whose cells do not use the key. | as old |
 | B / V / K | Build, advanced build, the hero's Abilities menu (slot 8, with a count of skill points that can be spent now). | as old |
 | Q W E R … | Spell hotkeys from the content bindings. | as old |
+| Grid keys | A cell without a key of its own (a build menu's buildings, a building's training and research, rally, pause) takes its cell's key, row by row Q W E R / A S D F / Z X C V, unless another visible command holds that key. A grid key on the card wins over the basic orders below it, so inside a build menu A builds the fifth cell. | new (UND-19) |
 | Escape | Cancels the mode, else Back, else opens the game menu. | old: F10 only for the menu (D36) |
 | R / Shift+R | Rotates the placement a quarter turn / three quarters. | as old |
 | Ctrl+1…0 (or Cmd), Shift+1…0, 1…0 | Assign, add to, recall a control group; a second recall within 350 ms centres the camera. | Cmd also assigns on macOS (D36) |
-| F1–F3 | Select hero n; a second press within 350 ms centres it. | as old |
+| F2–F4 | Select hero n; a second press within 350 ms centres it. | old: F1–F3; F1 selects the army (UND-11) |
 | F8, ` | Next idle worker (selects and centres). | as old |
 | Backspace | Centres on the next drop-off building. | as old |
 | Space | Cycles the last 8 alerts (own damage, completion, births; merged within 120 ticks and 10 cells). | as old |

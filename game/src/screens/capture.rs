@@ -311,6 +311,7 @@ pub fn run(
             "multiplayer" => multiplayer(&mut rig)?,
             "editor" => editor(&mut rig, &paths)?,
             "blocks" => blocks(&mut rig, &paths)?,
+            "lab" => lab(&mut rig, &paths)?,
             "neutrals" => neutrals(&mut rig, &paths)?,
             "cameras" => cameras(&mut rig, &paths)?,
             "editor-campaigns" => editor_campaigns(&mut rig, &paths)?,
@@ -351,7 +352,7 @@ pub fn run(
                 feedback_match(&mut rig)?;
             }
             other => anyhow::bail!(
-                "unknown capture group {other} (releases, multiplayer, editor, blocks, neutrals, cameras, settings, feedback, replays, campaign, editor-campaigns)"
+                "unknown capture group {other} (releases, multiplayer, editor, blocks, lab, neutrals, cameras, settings, feedback, replays, campaign, editor-campaigns)"
             ),
         }
         let _ = std::fs::remove_dir_all(&user);
@@ -598,6 +599,120 @@ fn cameras(rig: &mut Rig, paths: &Paths) -> Result<()> {
     editor.show_camera("over-tiv", true, [86.0, 112.0], 120.0);
     settle(&mut editor, rig, 40);
     shoot(&mut editor, rig, "editor-cameras-look-through")?;
+    Ok(())
+}
+
+/// The combat lab (docs/editor.md): prepared scenarios at their start, mid-run with the
+/// debug layers, and the unit held up longest inspected.
+fn lab(rig: &mut Rig, paths: &Paths) -> Result<()> {
+    use canopy_editor::{Editor, Kind};
+    let format = CAPTURE_FORMAT.remove_srgb_suffix();
+    let mut editor = Editor::headless(&rig.gpu, format, crate::app::editor_setup(paths));
+    let settle = |editor: &mut Editor, rig: &mut Rig, n: usize| {
+        for _ in 0..n {
+            editor.run_headless(rig.size, rig.scale, &rig.gpu);
+            std::thread::sleep(Duration::from_millis(25));
+        }
+    };
+    let shoot = |editor: &mut Editor, rig: &mut Rig, name: &str| -> Result<()> {
+        let mut encoder = rig
+            .gpu
+            .device
+            .create_command_encoder(&wgpu::CommandEncoderDescriptor::default());
+        editor.paint(&mut encoder, &rig.target.ui_view);
+        rig.gpu.queue.submit([encoder.finish()]);
+        rig.save(name)
+    };
+    editor.select(Kind::Lab);
+    settle(&mut editor, rig, 20);
+    /// A scenario, the ticks run, the camera's cell, distance and pitch, the layers on.
+    type LabShot<'a> = (&'a str, u32, f32, f32, f32, f32, &'a [&'a str]);
+    let shots: [LabShot; 7] = [
+        ("body-sizes", 1, 88.0, 70.0, 150.0, 1.5, &["bodies"]),
+        (
+            "ring-still",
+            160,
+            56.0,
+            64.0,
+            40.0,
+            1.45,
+            &["routes", "states", "tried"],
+        ),
+        ("choke-100", 0, 96.0, 64.0, 150.0, 1.15, &[]),
+        (
+            "choke-100",
+            360,
+            96.0,
+            64.0,
+            70.0,
+            1.2,
+            &["routes", "vectors", "states"],
+        ),
+        (
+            "crossing",
+            300,
+            96.0,
+            96.0,
+            90.0,
+            1.2,
+            &["routes", "vectors", "states", "tried"],
+        ),
+        (
+            "swarm-base",
+            900,
+            150.0,
+            110.0,
+            110.0,
+            1.1,
+            &["routes", "states", "sectors"],
+        ),
+        (
+            "u-trap",
+            120,
+            64.0,
+            64.0,
+            80.0,
+            1.25,
+            &["routes", "vectors", "detours", "states"],
+        ),
+    ];
+    for (id, ticks, x, z, distance, pitch, layers) in shots {
+        let document = format!("@labs/{id}.lab.json");
+        editor.open_document(&document);
+        settle(&mut editor, rig, 40);
+        for layer in [
+            "routes", "vectors", "tried", "states", "detours", "sectors", "orders", "bodies",
+        ] {
+            editor.lab_layer(&document, layer, ticks == 0 || layers.contains(&layer));
+        }
+        if ticks > 0 {
+            editor.lab_layer(&document, "orders", true);
+        }
+        editor.lab_run(&document, ticks);
+        editor.lab_look_at(&document, x, z, distance, pitch);
+        if ticks > 0 {
+            editor.lab_inspect_held_up(&document);
+        }
+        settle(&mut editor, rig, 12);
+        shoot(&mut editor, rig, &format!("lab-{id}-{ticks}"))?;
+    }
+    // A Raider walked by hand through a hundred idle allies.
+    let document = "@labs/through-a-hundred.lab.json";
+    editor.open_document(document);
+    settle(&mut editor, rig, 40);
+    for layer in ["routes", "vectors", "tried", "states", "detours"] {
+        editor.lab_layer(document, layer, true);
+    }
+    editor.lab_layer(document, "sectors", false);
+    editor.lab_hand_move(document, "walker", 112.0, 64.0);
+    editor.lab_look_at(document, 64.0, 64.0, 75.0, 1.25);
+    let mut ran = 0;
+    for ticks in [60, 160] {
+        editor.lab_run(document, ticks - ran);
+        ran = ticks;
+        settle(&mut editor, rig, 10);
+        shoot(&mut editor, rig, &format!("lab-through-a-hundred-{ticks}"))?;
+    }
     Ok(())
 }
 

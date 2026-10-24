@@ -1,0 +1,344 @@
+{
+  "name": "Every body",
+  "description": "Every unit that moves, ten to a row, to check each collision body (the Bodies layer) against its model from above.",
+  "size": 192,
+  "duration": 200,
+  "units": [
+    {
+      "definition": "unit.ants.archer",
+      "owner": "player.1",
+      "x": 16.0,
+      "y": 16.0
+    },
+    {
+      "definition": "unit.ants.banneret",
+      "owner": "player.1",
+      "x": 32.0,
+      "y": 16.0
+    },
+    {
+      "definition": "unit.ants.bombardier",
+      "owner": "player.1",
+      "x": 48.0,
+      "y": 16.0
+    },
+    {
+      "definition": "unit.ants.burster",
+      "owner": "player.1",
+      "x": 64.0,
+      "y": 16.0
+    },
+    {
+      "definition": "unit.ants.civilian",
+      "owner": "player.1",
+      "x": 80.0,
+      "y": 16.0
+    },
+    {
+      "definition": "unit.ants.nectarist",
+      "owner": "player.1",
+      "x": 96.0,
+      "y": 16.0
+    },
+    {
+      "definition": "unit.ants.queensguard",
+      "owner": "player.1",
+      "x": 112.0,
+      "y": 16.0
+    },
+    {
+      "definition": "unit.ants.reaver-queen",
+      "owner": "player.1",
+      "x": 128.0,
+      "y": 16.0
+    },
+    {
+      "definition": "unit.ants.settler",
+      "owner": "player.1",
+      "x": 144.0,
+      "y": 16.0
+    },
+    {
+      "definition": "unit.ants.thornblade",
+      "owner": "player.1",
+      "x": 160.0,
+      "y": 16.0
+    },
+    {
+      "definition": "unit.ants.warrior",
+      "owner": "player.1",
+      "x": 16.0,
+      "y": 32.0
+    },
+    {
+      "definition": "unit.ants.winglancer",
+      "owner": "player.1",
+      "x": 32.0,
+      "y": 32.0
+    },
+    {
+      "definition": "unit.ants.youngling",
+      "owner": "player.1",
+      "x": 48.0,
+      "y": 32.0
+    },
+    {
+      "definition": "unit.ants.marshal",
+      "owner": "player.1",
+      "x": 64.0,
+      "y": 32.0
+    },
+    {
+      "definition": "unit.ants.queen",
+      "owner": "player.1",
+      "x": 80.0,
+      "y": 32.0
+    },
+    {
+      "definition": "unit.ants.royal-alchemist",
+      "owner": "player.1",
+      "x": 96.0,
+      "y": 32.0
+    },
+    {
+      "definition": "unit.beetles.arcwright",
+      "owner": "player.1",
+      "x": 112.0,
+      "y": 32.0
+    },
+    {
+      "definition": "unit.beetles.bolter",
+      "owner": "player.1",
+      "x": 128.0,
+      "y": 32.0
+    },
+    {
+      "definition": "unit.beetles.bombard",
+      "owner": "player.1",
+      "x": 144.0,
+      "y": 32.0
+    },
+    {
+      "definition": "unit.beetles.breacher",
+      "owner": "player.1",
+      "x": 160.0,
+      "y": 32.0
+    },
+    {
+      "definition": "unit.beetles.juggernaut",
+      "owner": "player.1",
+      "x": 16.0,
+      "y": 48.0
+    },
+    {
+      "definition": "unit.beetles.mender",
+      "owner": "player.1",
+      "x": 32.0,
+      "y": 48.0
+    },
+    {
+      "definition": "unit.beetles.shieldbearer",
+      "owner": "player.1",
+      "x": 48.0,
+      "y": 48.0
+    },
+    {
+      "definition": "unit.beetles.steamwing",
+      "owner": "player.1",
+      "x": 64.0,
+      "y": 48.0
+    },
+    {
+      "definition": "unit.beetles.supply-cart",
+      "owner": "player.1",
+      "x": 80.0,
+      "y": 48.0
+    },
+    {
+      "definition": "unit.beetles.warden",
+      "owner": "player.1",
+      "x": 96.0,
+      "y": 48.0
+    },
+    {
+      "definition": "unit.beetles.worker",
+      "owner": "player.1",
+      "x": 112.0,
+      "y": 48.0
+    },
+    {
+      "definition": "unit.beetles.coilkeeper",
+      "owner": "player.1",
+      "x": 128.0,
+      "y": 48.0
+    },
+    {
+      "definition": "unit.beetles.forgemaster",
+      "owner": "player.1",
+      "x": 144.0,
+      "y": 48.0
+    },
+    {
+      "definition": "unit.beetles.hornbreaker",
+      "owner": "player.1",
+      "x": 160.0,
+      "y": 48.0
+    },
+    {
+      "definition": "unit.neutral.barkguard",
+      "owner": "player.1",
+      "x": 16.0,
+      "y": 64.0
+    },
+    {
+      "definition": "unit.neutral.bloom-witch",
+      "owner": "player.1",
+      "x": 32.0,
+      "y": 64.0
+    },
+    {
+      "definition": "unit.neutral.briar-hulk",
+      "owner": "player.1",
+      "x": 48.0,
+      "y": 64.0
+    },
+    {
+      "definition": "unit.neutral.capling",
+      "owner": "player.1",
+      "x": 64.0,
+      "y": 64.0
+    },
+    {
+      "definition": "unit.neutral.corrupted-rootbeast",
+      "owner": "player.1",
+      "x": 80.0,
+      "y": 64.0
+    },
+    {
+      "definition": "unit.neutral.dew-sprite",
+      "owner": "player.1",
+      "x": 96.0,
+      "y": 64.0
+    },
+    {
+      "definition": "unit.neutral.hollow-stag",
+      "owner": "player.1",
+      "x": 112.0,
+      "y": 64.0
+    },
+    {
+      "definition": "unit.neutral.hornet-guard",
+      "owner": "player.1",
+      "x": 128.0,
+      "y": 64.0
+    },
+    {
+      "definition": "unit.neutral.needle-wasp",
+      "owner": "player.1",
+      "x": 144.0,
+      "y": 64.0
+    },
+    {
+      "definition": "unit.neutral.nest-mother",
+      "owner": "player.1",
+      "x": 160.0,
+      "y": 64.0
+    },
+    {
+      "definition": "unit.neutral.old-root",
+      "owner": "player.1",
+      "x": 16.0,
+      "y": 80.0
+    },
+    {
+      "definition": "unit.neutral.puddle-wisp",
+      "owner": "player.1",
+      "x": 32.0,
+      "y": 80.0
+    },
+    {
+      "definition": "unit.neutral.puffcap",
+      "owner": "player.1",
+      "x": 48.0,
+      "y": 80.0
+    },
+    {
+      "definition": "unit.neutral.root-seer",
+      "owner": "player.1",
+      "x": 64.0,
+      "y": 80.0
+    },
+    {
+      "definition": "unit.neutral.rootling",
+      "owner": "player.1",
+      "x": 80.0,
+      "y": 80.0
+    },
+    {
+      "definition": "unit.neutral.rotwood-ancient",
+      "owner": "player.1",
+      "x": 96.0,
+      "y": 80.0
+    },
+    {
+      "definition": "unit.neutral.seedcaster",
+      "owner": "player.1",
+      "x": 112.0,
+      "y": 80.0
+    },
+    {
+      "definition": "unit.neutral.spitter",
+      "owner": "player.1",
+      "x": 128.0,
+      "y": 80.0
+    },
+    {
+      "definition": "unit.neutral.tadpole-spirit",
+      "owner": "player.1",
+      "x": 144.0,
+      "y": 80.0
+    },
+    {
+      "definition": "unit.neutral.thorn-slinger",
+      "owner": "player.1",
+      "x": 160.0,
+      "y": 80.0
+    },
+    {
+      "definition": "unit.neutral.tree-frog",
+      "owner": "player.1",
+      "x": 16.0,
+      "y": 96.0
+    },
+    {
+      "definition": "unit.neutral.twigcaster",
+      "owner": "player.1",
+      "x": 32.0,
+      "y": 96.0
+    },
+    {
+      "definition": "unit.neutral.violet-sporeling",
+      "owner": "player.1",
+      "x": 48.0,
+      "y": 96.0
+    },
+    {
+      "definition": "unit.neutral.webling",
+      "owner": "player.1",
+      "x": 64.0,
+      "y": 96.0
+    },
+    {
+      "definition": "unit.neutral.willow-wisp",
+      "owner": "player.1",
+      "x": 80.0,
+      "y": 96.0
+    },
+    {
+      "definition": "unit.neutral.young-toad",
+      "owner": "player.1",
+      "x": 96.0,
+      "y": 96.0
+    }
+  ]
+}

@@ -626,7 +626,14 @@ pub fn produce(ctx: &mut Ctx, b: EntityId, definition: &str) -> Result<(), Strin
     }
     let colony = supply::colony(ctx.state, ctx.catalog, ctx.index, owner);
     let hint = ctx.tables.hints.get(&owner).map(String::as_str);
-    if let Some(reason) = supply::admission(&colony, supply::batch_cost(ctx.catalog, def), hint) {
+    // Only training takes supply: a unit queued behind other work waits for it.
+    let e = ctx.state.entities.get(b).expect("workplace");
+    let cost = if super::lane::head(e).is_some() {
+        0
+    } else {
+        supply::batch_cost(ctx.catalog, def)
+    };
+    if let Some(reason) = supply::admission(&colony, cost, hint) {
         return Err(reason);
     }
     if !enqueue(ctx, b, def) {

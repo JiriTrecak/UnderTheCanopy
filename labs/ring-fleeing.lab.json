@@ -1,0 +1,240 @@
+{
+  "name": "A ring round a fleeing target",
+  "description": "Thirty Raiders attack a Shieldbearer that walks away from them: do they catch it from behind, or overtake and close in front (the lab's lead switch)?",
+  "size": 192,
+  "duration": 1200,
+  "units": [
+    {
+      "definition": "unit.ants.warrior",
+      "owner": "player.1",
+      "x": 20.0,
+      "y": 88.0,
+      "group": "raiders"
+    },
+    {
+      "definition": "unit.ants.warrior",
+      "owner": "player.1",
+      "x": 24.0,
+      "y": 88.0,
+      "group": "raiders"
+    },
+    {
+      "definition": "unit.ants.warrior",
+      "owner": "player.1",
+      "x": 28.0,
+      "y": 88.0,
+      "group": "raiders"
+    },
+    {
+      "definition": "unit.ants.warrior",
+      "owner": "player.1",
+      "x": 32.0,
+      "y": 88.0,
+      "group": "raiders"
+    },
+    {
+      "definition": "unit.ants.warrior",
+      "owner": "player.1",
+      "x": 36.0,
+      "y": 88.0,
+      "group": "raiders"
+    },
+    {
+      "definition": "unit.ants.warrior",
+      "owner": "player.1",
+      "x": 40.0,
+      "y": 88.0,
+      "group": "raiders"
+    },
+    {
+      "definition": "unit.ants.warrior",
+      "owner": "player.1",
+      "x": 20.0,
+      "y": 92.0,
+      "group": "raiders"
+    },
+    {
+      "definition": "unit.ants.warrior",
+      "owner": "player.1",
+      "x": 24.0,
+      "y": 92.0,
+      "group": "raiders"
+    },
+    {
+      "definition": "unit.ants.warrior",
+      "owner": "player.1",
+      "x": 28.0,
+      "y": 92.0,
+      "group": "raiders"
+    },
+    {
+      "definition": "unit.ants.warrior",
+      "owner": "player.1",
+      "x": 32.0,
+      "y": 92.0,
+      "group": "raiders"
+    },
+    {
+      "definition": "unit.ants.warrior",
+      "owner": "player.1",
+      "x": 36.0,
+      "y": 92.0,
+      "group": "raiders"
+    },
+    {
+      "definition": "unit.ants.warrior",
+      "owner": "player.1",
+      "x": 40.0,
+      "y": 92.0,
+      "group": "raiders"
+    },
+    {
+      "definition": "unit.ants.warrior",
+      "owner": "player.1",
+      "x": 20.0,
+      "y": 96.0,
+      "group": "raiders"
+    },
+    {
+      "definition": "unit.ants.warrior",
+      "owner": "player.1",
+      "x": 24.0,
+      "y": 96.0,
+      "group": "raiders"
+    },
+    {
+      "definition": "unit.ants.warrior",
+      "owner": "player.1",
+      "x": 28.0,
+      "y": 96.0,
+      "group": "raiders"
+    },
+    {
+      "definition": "unit.ants.warrior",
+      "owner": "player.1",
+      "x": 32.0,
+      "y": 96.0,
+      "group": "raiders"
+    },
+    {
+      "definition": "unit.ants.warrior",
+      "owner": "player.1",
+      "x": 36.0,
+      "y": 96.0,
+      "group": "raiders"
+    },
+    {
+      "definition": "unit.ants.warrior",
+      "owner": "player.1",
+      "x": 40.0,
+      "y": 96.0,
+      "group": "raiders"
+    },
+    {
+      "definition": "unit.ants.warrior",
+      "owner": "player.1",
+      "x": 20.0,
+      "y": 100.0,
+      "group": "raiders"
+    },
+    {
+      "definition": "unit.ants.warrior",
+      "owner": "player.1",
+      "x": 24.0,
+      "y": 100.0,
+      "group": "raiders"
+    },
+    {
+      "definition": "unit.ants.warrior",
+      "owner": "player.1",
+      "x": 28.0,
+      "y": 100.0,
+      "group": "raiders"
+    },
+    {
+      "definition": "unit.ants.warrior",
+      "owner": "player.1",
+      "x": 32.0,
+      "y": 100.0,
+      "group": "raiders"
+    },
+    {
+      "definition": "unit.ants.warrior",
+      "owner": "player.1",
+      "x": 36.0,
+      "y": 100.0,
+      "group": "raiders"
+    },
+    {
+      "definition": "unit.ants.warrior",
+      "owner": "player.1",
+      "x": 40.0,
+      "y": 100.0,
+      "group": "raiders"
+    },
+    {
+      "definition": "unit.ants.warrior",
+      "owner": "player.1",
+      "x": 20.0,
+      "y": 104.0,
+      "group": "raiders"
+    },
+    {
+      "definition": "unit.ants.warrior",
+      "owner": "player.1",
+      "x": 24.0,
+      "y": 104.0,
+      "group": "raiders"
+    },
+    {
+      "definition": "unit.ants.warrior",
+      "owner": "player.1",
+      "x": 28.0,
+      "y": 104.0,
+      "group": "raiders"
+    },
+    {
+      "definition": "unit.ants.warrior",
+      "owner": "player.1",
+      "x": 32.0,
+      "y": 104.0,
+      "group": "raiders"
+    },
+    {
+      "definition": "unit.ants.warrior",
+      "owner": "player.1",
+      "x": 36.0,
+      "y": 104.0,
+      "group": "raiders"
+    },
+    {
+      "definition": "unit.ants.warrior",
+      "owner": "player.1",
+      "x": 40.0,
+      "y": 104.0,
+      "group": "raiders"
+    },
+    {
+      "definition": "unit.beetles.shieldbearer",
+      "owner": "player.2",
+      "x": 70.0,
+      "y": 96.0,
+      "group": "target"
+    }
+  ],
+  "orders": [
+    {
+      "tick": 0,
+      "group": "raiders",
+      "order": "attack",
+      "target": "target"
+    },
+    {
+      "tick": 0,
+      "group": "target",
+      "order": "move",
+      "x": 180.0,
+      "y": 96.0
+    }
+  ]
+}

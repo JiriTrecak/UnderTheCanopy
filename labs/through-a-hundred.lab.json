@@ -1,0 +1,750 @@
+{
+  "name": "One through a hundred",
+  "description": "A hundred idle Shieldbearers stand packed in the middle; a Raider waits west of them and five more south-west. Select one (click), right-click past the block and watch what the hundred do.",
+  "size": 128,
+  "duration": 4800,
+  "units": [
+    {
+      "definition": "unit.beetles.shieldbearer",
+      "owner": "player.1",
+      "x": 46.0,
+      "y": 46.0,
+      "group": "block"
+    },
+    {
+      "definition": "unit.beetles.shieldbearer",
+      "owner": "player.1",
+      "x": 50.0,
+      "y": 46.0,
+      "group": "block"
+    },
+    {
+      "definition": "unit.beetles.shieldbearer",
+      "owner": "player.1",
+      "x": 54.0,
+      "y": 46.0,
+      "group": "block"
+    },
+    {
+      "definition": "unit.beetles.shieldbearer",
+      "owner": "player.1",
+      "x": 58.0,
+      "y": 46.0,
+      "group": "block"
+    },
+    {
+      "definition": "unit.beetles.shieldbearer",
+      "owner": "player.1",
+      "x": 62.0,
+      "y": 46.0,
+      "group": "block"
+    },
+    {
+      "definition": "unit.beetles.shieldbearer",
+      "owner": "player.1",
+      "x": 66.0,
+      "y": 46.0,
+      "group": "block"
+    },
+    {
+      "definition": "unit.beetles.shieldbearer",
+      "owner": "player.1",
+      "x": 70.0,
+      "y": 46.0,
+      "group": "block"
+    },
+    {
+      "definition": "unit.beetles.shieldbearer",
+      "owner": "player.1",
+      "x": 74.0,
+      "y": 46.0,
+      "group": "block"
+    },
+    {
+      "definition": "unit.beetles.shieldbearer",
+      "owner": "player.1",
+      "x": 78.0,
+      "y": 46.0,
+      "group": "block"
+    },
+    {
+      "definition": "unit.beetles.shieldbearer",
+      "owner": "player.1",
+      "x": 82.0,
+      "y": 46.0,
+      "group": "block"
+    },
+    {
+      "definition": "unit.beetles.shieldbearer",
+      "owner": "player.1",
+      "x": 46.0,
+      "y": 50.0,
+      "group": "block"
+    },
+    {
+      "definition": "unit.beetles.shieldbearer",
+      "owner": "player.1",
+      "x": 50.0,
+      "y": 50.0,
+      "group": "block"
+    },
+    {
+      "definition": "unit.beetles.shieldbearer",
+      "owner": "player.1",
+      "x": 54.0,
+      "y": 50.0,
+      "group": "block"
+    },
+    {
+      "definition": "unit.beetles.shieldbearer",
+      "owner": "player.1",
+      "x": 58.0,
+      "y": 50.0,
+      "group": "block"
+    },
+    {
+      "definition": "unit.beetles.shieldbearer",
+      "owner": "player.1",
+      "x": 62.0,
+      "y": 50.0,
+      "group": "block"
+    },
+    {
+      "definition": "unit.beetles.shieldbearer",
+      "owner": "player.1",
+      "x": 66.0,
+      "y": 50.0,
+      "group": "block"
+    },
+    {
+      "definition": "unit.beetles.shieldbearer",
+      "owner": "player.1",
+      "x": 70.0,
+      "y": 50.0,
+      "group": "block"
+    },
+    {
+      "definition": "unit.beetles.shieldbearer",
+      "owner": "player.1",
+      "x": 74.0,
+      "y": 50.0,
+      "group": "block"
+    },
+    {
+      "definition": "unit.beetles.shieldbearer",
+      "owner": "player.1",
+      "x": 78.0,
+      "y": 50.0,
+      "group": "block"
+    },
+    {
+      "definition": "unit.beetles.shieldbearer",
+      "owner": "player.1",
+      "x": 82.0,
+      "y": 50.0,
+      "group": "block"
+    },
+    {
+      "definition": "unit.beetles.shieldbearer",
+      "owner": "player.1",
+      "x": 46.0,
+      "y": 54.0,
+      "group": "block"
+    },
+    {
+      "definition": "unit.beetles.shieldbearer",
+      "owner": "player.1",
+      "x": 50.0,
+      "y": 54.0,
+      "group": "block"
+    },
+    {
+      "definition": "unit.beetles.shieldbearer",
+      "owner": "player.1",
+      "x": 54.0,
+      "y": 54.0,
+      "group": "block"
+    },
+    {
+      "definition": "unit.beetles.shieldbearer",
+      "owner": "player.1",
+      "x": 58.0,
+      "y": 54.0,
+      "group": "block"
+    },
+    {
+      "definition": "unit.beetles.shieldbearer",
+      "owner": "player.1",
+      "x": 62.0,
+      "y": 54.0,
+      "group": "block"
+    },
+    {
+      "definition": "unit.beetles.shieldbearer",
+      "owner": "player.1",
+      "x": 66.0,
+      "y": 54.0,
+      "group": "block"
+    },
+    {
+      "definition": "unit.beetles.shieldbearer",
+      "owner": "player.1",
+      "x": 70.0,
+      "y": 54.0,
+      "group": "block"
+    },
+    {
+      "definition": "unit.beetles.shieldbearer",
+      "owner": "player.1",
+      "x": 74.0,
+      "y": 54.0,
+      "group": "block"
+    },
+    {
+      "definition": "unit.beetles.shieldbearer",
+      "owner": "player.1",
+      "x": 78.0,
+      "y": 54.0,
+      "group": "block"
+    },
+    {
+      "definition": "unit.beetles.shieldbearer",
+      "owner": "player.1",
+      "x": 82.0,
+      "y": 54.0,
+      "group": "block"
+    },
+    {
+      "definition": "unit.beetles.shieldbearer",
+      "owner": "player.1",
+      "x": 46.0,
+      "y": 58.0,
+      "group": "block"
+    },
+    {
+      "definition": "unit.beetles.shieldbearer",
+      "owner": "player.1",
+      "x": 50.0,
+      "y": 58.0,
+      "group": "block"
+    },
+    {
+      "definition": "unit.beetles.shieldbearer",
+      "owner": "player.1",
+      "x": 54.0,
+      "y": 58.0,
+      "group": "block"
+    },
+    {
+      "definition": "unit.beetles.shieldbearer",
+      "owner": "player.1",
+      "x": 58.0,
+      "y": 58.0,
+      "group": "block"
+    },
+    {
+      "definition": "unit.beetles.shieldbearer",
+      "owner": "player.1",
+      "x": 62.0,
+      "y": 58.0,
+      "group": "block"
+    },
+    {
+      "definition": "unit.beetles.shieldbearer",
+      "owner": "player.1",
+      "x": 66.0,
+      "y": 58.0,
+      "group": "block"
+    },
+    {
+      "definition": "unit.beetles.shieldbearer",
+      "owner": "player.1",
+      "x": 70.0,
+      "y": 58.0,
+      "group": "block"
+    },
+    {
+      "definition": "unit.beetles.shieldbearer",
+      "owner": "player.1",
+      "x": 74.0,
+      "y": 58.0,
+      "group": "block"
+    },
+    {
+      "definition": "unit.beetles.shieldbearer",
+      "owner": "player.1",
+      "x": 78.0,
+      "y": 58.0,
+      "group": "block"
+    },
+    {
+      "definition": "unit.beetles.shieldbearer",
+      "owner": "player.1",
+      "x": 82.0,
+      "y": 58.0,
+      "group": "block"
+    },
+    {
+      "definition": "unit.beetles.shieldbearer",
+      "owner": "player.1",
+      "x": 46.0,
+      "y": 62.0,
+      "group": "block"
+    },
+    {
+      "definition": "unit.beetles.shieldbearer",
+      "owner": "player.1",
+      "x": 50.0,
+      "y": 62.0,
+      "group": "block"
+    },
+    {
+      "definition": "unit.beetles.shieldbearer",
+      "owner": "player.1",
+      "x": 54.0,
+      "y": 62.0,
+      "group": "block"
+    },
+    {
+      "definition": "unit.beetles.shieldbearer",
+      "owner": "player.1",
+      "x": 58.0,
+      "y": 62.0,
+      "group": "block"
+    },
+    {
+      "definition": "unit.beetles.shieldbearer",
+      "owner": "player.1",
+      "x": 62.0,
+      "y": 62.0,
+      "group": "block"
+    },
+    {
+      "definition": "unit.beetles.shieldbearer",
+      "owner": "player.1",
+      "x": 66.0,
+      "y": 62.0,
+      "group": "block"
+    },
+    {
+      "definition": "unit.beetles.shieldbearer",
+      "owner": "player.1",
+      "x": 70.0,
+      "y": 62.0,
+      "group": "block"
+    },
+    {
+      "definition": "unit.beetles.shieldbearer",
+      "owner": "player.1",
+      "x": 74.0,
+      "y": 62.0,
+      "group": "block"
+    },
+    {
+      "definition": "unit.beetles.shieldbearer",
+      "owner": "player.1",
+      "x": 78.0,
+      "y": 62.0,
+      "group": "block"
+    },
+    {
+      "definition": "unit.beetles.shieldbearer",
+      "owner": "player.1",
+      "x": 82.0,
+      "y": 62.0,
+      "group": "block"
+    },
+    {
+      "definition": "unit.beetles.shieldbearer",
+      "owner": "player.1",
+      "x": 46.0,
+      "y": 66.0,
+      "group": "block"
+    },
+    {
+      "definition": "unit.beetles.shieldbearer",
+      "owner": "player.1",
+      "x": 50.0,
+      "y": 66.0,
+      "group": "block"
+    },
+    {
+      "definition": "unit.beetles.shieldbearer",
+      "owner": "player.1",
+      "x": 54.0,
+      "y": 66.0,
+      "group": "block"
+    },
+    {
+      "definition": "unit.beetles.shieldbearer",
+      "owner": "player.1",
+      "x": 58.0,
+      "y": 66.0,
+      "group": "block"
+    },
+    {
+      "definition": "unit.beetles.shieldbearer",
+      "owner": "player.1",
+      "x": 62.0,
+      "y": 66.0,
+      "group": "block"
+    },
+    {
+      "definition": "unit.beetles.shieldbearer",
+      "owner": "player.1",
+      "x": 66.0,
+      "y": 66.0,
+      "group": "block"
+    },
+    {
+      "definition": "unit.beetles.shieldbearer",
+      "owner": "player.1",
+      "x": 70.0,
+      "y": 66.0,
+      "group": "block"
+    },
+    {
+      "definition": "unit.beetles.shieldbearer",
+      "owner": "player.1",
+      "x": 74.0,
+      "y": 66.0,
+      "group": "block"
+    },
+    {
+      "definition": "unit.beetles.shieldbearer",
+      "owner": "player.1",
+      "x": 78.0,
+      "y": 66.0,
+      "group": "block"
+    },
+    {
+      "definition": "unit.beetles.shieldbearer",
+      "owner": "player.1",
+      "x": 82.0,
+      "y": 66.0,
+      "group": "block"
+    },
+    {
+      "definition": "unit.beetles.shieldbearer",
+      "owner": "player.1",
+      "x": 46.0,
+      "y": 70.0,
+      "group": "block"
+    },
+    {
+      "definition": "unit.beetles.shieldbearer",
+      "owner": "player.1",
+      "x": 50.0,
+      "y": 70.0,
+      "group": "block"
+    },
+    {
+      "definition": "unit.beetles.shieldbearer",
+      "owner": "player.1",
+      "x": 54.0,
+      "y": 70.0,
+      "group": "block"
+    },
+    {
+      "definition": "unit.beetles.shieldbearer",
+      "owner": "player.1",
+      "x": 58.0,
+      "y": 70.0,
+      "group": "block"
+    },
+    {
+      "definition": "unit.beetles.shieldbearer",
+      "owner": "player.1",
+      "x": 62.0,
+      "y": 70.0,
+      "group": "block"
+    },
+    {
+      "definition": "unit.beetles.shieldbearer",
+      "owner": "player.1",
+      "x": 66.0,
+      "y": 70.0,
+      "group": "block"
+    },
+    {
+      "definition": "unit.beetles.shieldbearer",
+      "owner": "player.1",
+      "x": 70.0,
+      "y": 70.0,
+      "group": "block"
+    },
+    {
+      "definition": "unit.beetles.shieldbearer",
+      "owner": "player.1",
+      "x": 74.0,
+      "y": 70.0,
+      "group": "block"
+    },
+    {
+      "definition": "unit.beetles.shieldbearer",
+      "owner": "player.1",
+      "x": 78.0,
+      "y": 70.0,
+      "group": "block"
+    },
+    {
+      "definition": "unit.beetles.shieldbearer",
+      "owner": "player.1",
+      "x": 82.0,
+      "y": 70.0,
+      "group": "block"
+    },
+    {
+      "definition": "unit.beetles.shieldbearer",
+      "owner": "player.1",
+      "x": 46.0,
+      "y": 74.0,
+      "group": "block"
+    },
+    {
+      "definition": "unit.beetles.shieldbearer",
+      "owner": "player.1",
+      "x": 50.0,
+      "y": 74.0,
+      "group": "block"
+    },
+    {
+      "definition": "unit.beetles.shieldbearer",
+      "owner": "player.1",
+      "x": 54.0,
+      "y": 74.0,
+      "group": "block"
+    },
+    {
+      "definition": "unit.beetles.shieldbearer",
+      "owner": "player.1",
+      "x": 58.0,
+      "y": 74.0,
+      "group": "block"
+    },
+    {
+      "definition": "unit.beetles.shieldbearer",
+      "owner": "player.1",
+      "x": 62.0,
+      "y": 74.0,
+      "group": "block"
+    },
+    {
+      "definition": "unit.beetles.shieldbearer",
+      "owner": "player.1",
+      "x": 66.0,
+      "y": 74.0,
+      "group": "block"
+    },
+    {
+      "definition": "unit.beetles.shieldbearer",
+      "owner": "player.1",
+      "x": 70.0,
+      "y": 74.0,
+      "group": "block"
+    },
+    {
+      "definition": "unit.beetles.shieldbearer",
+      "owner": "player.1",
+      "x": 74.0,
+      "y": 74.0,
+      "group": "block"
+    },
+    {
+      "definition": "unit.beetles.shieldbearer",
+      "owner": "player.1",
+      "x": 78.0,
+      "y": 74.0,
+      "group": "block"
+    },
+    {
+      "definition": "unit.beetles.shieldbearer",
+      "owner": "player.1",
+      "x": 82.0,
+      "y": 74.0,
+      "group": "block"
+    },
+    {
+      "definition": "unit.beetles.shieldbearer",
+      "owner": "player.1",
+      "x": 46.0,
+      "y": 78.0,
+      "group": "block"
+    },
+    {
+      "definition": "unit.beetles.shieldbearer",
+      "owner": "player.1",
+      "x": 50.0,
+      "y": 78.0,
+      "group": "block"
+    },
+    {
+      "definition": "unit.beetles.shieldbearer",
+      "owner": "player.1",
+      "x": 54.0,
+      "y": 78.0,
+      "group": "block"
+    },
+    {
+      "definition": "unit.beetles.shieldbearer",
+      "owner": "player.1",
+      "x": 58.0,
+      "y": 78.0,
+      "group": "block"
+    },
+    {
+      "definition": "unit.beetles.shieldbearer",
+      "owner": "player.1",
+      "x": 62.0,
+      "y": 78.0,
+      "group": "block"
+    },
+    {
+      "definition": "unit.beetles.shieldbearer",
+      "owner": "player.1",
+      "x": 66.0,
+      "y": 78.0,
+      "group": "block"
+    },
+    {
+      "definition": "unit.beetles.shieldbearer",
+      "owner": "player.1",
+      "x": 70.0,
+      "y": 78.0,
+      "group": "block"
+    },
+    {
+      "definition": "unit.beetles.shieldbearer",
+      "owner": "player.1",
+      "x": 74.0,
+      "y": 78.0,
+      "group": "block"
+    },
+    {
+      "definition": "unit.beetles.shieldbearer",
+      "owner": "player.1",
+      "x": 78.0,
+      "y": 78.0,
+      "group": "block"
+    },
+    {
+      "definition": "unit.beetles.shieldbearer",
+      "owner": "player.1",
+      "x": 82.0,
+      "y": 78.0,
+      "group": "block"
+    },
+    {
+      "definition": "unit.beetles.shieldbearer",
+      "owner": "player.1",
+      "x": 46.0,
+      "y": 82.0,
+      "group": "block"
+    },
+    {
+      "definition": "unit.beetles.shieldbearer",
+      "owner": "player.1",
+      "x": 50.0,
+      "y": 82.0,
+      "group": "block"
+    },
+    {
+      "definition": "unit.beetles.shieldbearer",
+      "owner": "player.1",
+      "x": 54.0,
+      "y": 82.0,
+      "group": "block"
+    },
+    {
+      "definition": "unit.beetles.shieldbearer",
+      "owner": "player.1",
+      "x": 58.0,
+      "y": 82.0,
+      "group": "block"
+    },
+    {
+      "definition": "unit.beetles.shieldbearer",
+      "owner": "player.1",
+      "x": 62.0,
+      "y": 82.0,
+      "group": "block"
+    },
+    {
+      "definition": "unit.beetles.shieldbearer",
+      "owner": "player.1",
+      "x": 66.0,
+      "y": 82.0,
+      "group": "block"
+    },
+    {
+      "definition": "unit.beetles.shieldbearer",
+      "owner": "player.1",
+      "x": 70.0,
+      "y": 82.0,
+      "group": "block"
+    },
+    {
+      "definition": "unit.beetles.shieldbearer",
+      "owner": "player.1",
+      "x": 74.0,
+      "y": 82.0,
+      "group": "block"
+    },
+    {
+      "definition": "unit.beetles.shieldbearer",
+      "owner": "player.1",
+      "x": 78.0,
+      "y": 82.0,
+      "group": "block"
+    },
+    {
+      "definition": "unit.beetles.shieldbearer",
+      "owner": "player.1",
+      "x": 82.0,
+      "y": 82.0,
+      "group": "block"
+    },
+    {
+      "definition": "unit.ants.warrior",
+      "owner": "player.1",
+      "x": 16.0,
+      "y": 64.0,
+      "group": "walker"
+    },
+    {
+      "definition": "unit.ants.warrior",
+      "owner": "player.1",
+      "x": 8.0,
+      "y": 100.0,
+      "group": "walkers"
+    },
+    {
+      "definition": "unit.ants.warrior",
+      "owner": "player.1",
+      "x": 12.0,
+      "y": 100.0,
+      "group": "walkers"
+    },
+    {
+      "definition": "unit.ants.warrior",
+      "owner": "player.1",
+      "x": 16.0,
+      "y": 100.0,
+      "group": "walkers"
+    },
+    {
+      "definition": "unit.ants.warrior",
+      "owner": "player.1",
+      "x": 20.0,
+      "y": 100.0,
+      "group": "walkers"
+    },
+    {
+      "definition": "unit.ants.warrior",
+      "owner": "player.1",
+      "x": 24.0,
+      "y": 100.0,
+      "group": "walkers"
+    }
+  ]
+}

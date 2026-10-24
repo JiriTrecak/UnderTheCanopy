@@ -8,6 +8,8 @@ use std::sync::mpsc;
 
 pub struct Watch {
     root: PathBuf,
+    /// Put before the names of what changed (a mounted folder's `@labs/`).
+    prefix: String,
     rx: mpsc::Receiver<notify::Result<notify::Event>>,
     /// Kept alive: dropping it stops the watch.
     _watcher: RecommendedWatcher,
@@ -16,6 +18,17 @@ pub struct Watch {
 impl Watch {
     /// Watches the package folder `root`; `None` (logged) when the system refuses.
     pub fn new(root: &Path) -> Option<Self> {
+        Self::named(root, "")
+    }
+
+    /// Watches a mounted folder, naming what changes as the store does (`@labs/…`). A
+    /// folder that does not exist yet is made.
+    pub fn mounted(folder: &Path, prefix: &str) -> Option<Self> {
+        let _ = std::fs::create_dir_all(folder);
+        Self::named(folder, prefix)
+    }
+
+    fn named(root: &Path, prefix: &str) -> Option<Self> {
         let root = root.canonicalize().unwrap_or_else(|_| root.to_path_buf());
         let (tx, rx) = mpsc::channel();
         let started = notify::recommended_watcher(move |event| {
@@ -28,6 +41,7 @@ impl Watch {
         match started {
             Ok(watcher) => Some(Self {
                 root,
+                prefix: prefix.to_string(),
                 rx,
                 _watcher: watcher,
             }),
@@ -67,7 +81,7 @@ impl Watch {
                     .components()
                     .map(|c| c.as_os_str().to_string_lossy().into_owned())
                     .collect();
-                out.insert(parts.join("/"));
+                out.insert(format!("{}{}", self.prefix, parts.join("/")));
             }
         }
         out

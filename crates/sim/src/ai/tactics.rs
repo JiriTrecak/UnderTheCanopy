@@ -248,11 +248,15 @@ pub fn reactions(b: &mut Beat) {
         let Some(combat) = combat_of(soldier) else {
             continue;
         };
+        // Enemies close by, and any whose weapon reaches this fighter or its neighbours: a
+        // longer-ranged attacker must not pick the army off one at a time.
         let local: Vec<&Known> = f
             .hostiles
             .iter()
             .map(|&i| f.at(i))
-            .filter(|e| combat_of(e).is_some() && dist(e.p, soldier.p) < 14.0)
+            .filter(|e| {
+                combat_of(e).is_some_and(|c| dist(e.p, soldier.p) < 14f64.max(c.range + 6.0))
+            })
             .collect();
         let health = f64::from(soldier.hp.unwrap_or(0)) / f64::from(f.max_hp(soldier));
         let memory = b.s.damage.get(&soldier.id).copied();
@@ -277,7 +281,8 @@ pub fn reactions(b: &mut Beat) {
         if local.is_empty() {
             continue;
         }
-        // Fight near the assigned operation; never chase bait across the map.
+        // Fight near the assigned operation; never chase bait across the map, but always
+        // answer an enemy whose weapon reaches this fighter.
         let center =
             b.s.mission
                 .as_ref()
@@ -291,7 +296,11 @@ pub fn reactions(b: &mut Beat) {
         };
         let target = local
             .iter()
-            .filter(|e| dist(e.p, center) <= pursuit || dist(e.p, f.home) < 20.0)
+            .filter(|e| {
+                dist(e.p, center) <= pursuit
+                    || dist(e.p, f.home) < 20.0
+                    || combat_of(e).is_some_and(|c| dist(e.p, soldier.p) <= c.range + 2.0)
+            })
             .min_by(|a, b| score(a).total_cmp(&score(b)).then(a.id.cmp(&b.id)));
         let Some(target) = target else {
             continue;

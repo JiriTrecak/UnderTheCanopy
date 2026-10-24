@@ -1,7 +1,8 @@
 {
   "settings.bad-server": "Not a server address: {error}",
   "settings.defaults-restored": "Default shortcuts restored.",
-  "settings.fullscreen": "Fullscreen",
+  "settings.borderless": "Borderless fullscreen",
+  "settings.exclusive": "Exclusive fullscreen",
   "settings.hud-compact": "Compact · centered",
   "settings.hud-spread": "Spread · screen edges",
   "settings.key-conflict": "Already used by {name}. Clear that binding first.",
@@ -20,5 +21,5 @@
   "settings.shared-key": "(shared key)",
   "settings.shortcut-saved": "Shortcut saved.",
   "settings.unbound": "Unbound",
-  "settings.window": "Window"
+  "settings.windowed": "Windowed"
 }

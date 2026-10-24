@@ -69,9 +69,9 @@ fn a_cleared_camp_pays_its_loot_pool_once() {
     assert_eq!(
         items(&world),
         [
-            ("item.charm".to_string(), 102, 99),
-            ("item.trinket".to_string(), 102, 97),
-            ("item.trinket".to_string(), 100, 99),
+            ("item.charm".to_string(), 100, 99),
+            ("item.trinket".to_string(), 100, 97),
+            ("item.trinket".to_string(), 98, 99),
         ]
     );
     assert_ne!(world.state().random, seed);
@@ -189,4 +189,120 @@ fn passive_camps_fight_only_when_attacked_by_force() {
         0
     );
     assert_eq!(world.state().cleared_camps, ["camp.calm"]);
+}
+
+fn target_of(world: &World, placement: &str) -> Option<u32> {
+    entity(world, placement)
+        .unit
+        .as_ref()
+        .and_then(|u| u.target)
+        .map(|t| t.0)
+}
+
+#[test]
+fn a_camp_shot_from_beyond_its_aggro_range_answers_together() {
+    // The bowman reaches 10 cells, the camp sees 8: the struck member and the one
+    // behind it both turn on the shooter.
+    let camps = vec![camp(
+        "camp.test",
+        &["c1", "c2"],
+        (103.0, 100.0),
+        8,
+        24,
+        json!({}),
+    )];
+    let map = map_with(
+        vec![
+            placed("b", "unit.bowman", 91.0, 100.0, 1),
+            placed("c1", "unit.critter", 100.0, 100.0, 0),
+            placed("c2", "unit.critter", 106.0, 100.0, 0),
+        ],
+        camps,
+        flat(),
+    );
+    let mut world = World::new(content(), &map, setup(false)).unwrap();
+    let (b, c1) = (id(&world, "b"), id(&world, "c1"));
+    command(
+        &mut world,
+        1,
+        json!({"type": "attack", "actors": [b], "target": c1}),
+    );
+    run_until(&mut world, 200, |w| hp(w, "c1") < 80);
+    run(&mut world, 5);
+    assert_eq!(target_of(&world, "c1"), Some(b));
+    assert_eq!(target_of(&world, "c2"), Some(b));
+    run_until(&mut world, 400, |w| hp(w, "b") < 70);
+    assert!(hp(&world, "b") < 70, "the camp reaches the shooter");
+}
+
+#[test]
+fn a_member_that_finds_an_enemy_calls_its_whole_camp() {
+    // The swordsman comes within reach of the first member only; the far one joins.
+    let camps = vec![camp(
+        "camp.test",
+        &["c1", "c2"],
+        (106.0, 100.0),
+        8,
+        24,
+        json!({}),
+    )];
+    let map = map_with(
+        vec![
+            placed("s", "unit.swordsman", 80.0, 100.0, 1),
+            placed("c1", "unit.critter", 100.0, 100.0, 0),
+            placed("c2", "unit.critter", 112.0, 100.0, 0),
+        ],
+        camps,
+        flat(),
+    );
+    let mut world = World::new(content(), &map, setup(false)).unwrap();
+    let s = id(&world, "s");
+    command(
+        &mut world,
+        1,
+        json!({"type": "move", "actors": [s], "destination": {"x": 93, "y": 100}}),
+    );
+    run_until(&mut world, 300, |w| target_of(w, "c1").is_some());
+    run(&mut world, 3);
+    assert_eq!(target_of(&world, "c1"), Some(s));
+    assert_eq!(
+        target_of(&world, "c2"),
+        Some(s),
+        "twenty cells away, it joins"
+    );
+}
+
+#[test]
+fn a_passive_camp_struck_by_force_answers_as_a_whole() {
+    let camps = vec![camp(
+        "camp.calm",
+        &["c1", "c2"],
+        (103.0, 100.0),
+        8,
+        24,
+        json!({"aggression": "passive"}),
+    )];
+    let map = map_with(
+        vec![
+            placed("h", "unit.hero", 97.0, 100.0, 1),
+            placed("c1", "unit.critter", 100.0, 100.0, 0),
+            placed("c2", "unit.critter", 112.0, 100.0, 0),
+        ],
+        camps,
+        flat(),
+    );
+    let mut world = World::new(content(), &map, setup(false)).unwrap();
+    run(&mut world, 100);
+    assert_eq!(target_of(&world, "c2"), None, "passive until struck");
+    let (h, c1) = (id(&world, "h"), id(&world, "c1"));
+    command(
+        &mut world,
+        1,
+        json!({"type": "attack", "actors": [h], "target": c1, "force": true}),
+    );
+    run_until(&mut world, 200, |w| hp(w, "c1") < 80);
+    run(&mut world, 5);
+    assert_eq!(target_of(&world, "c2"), Some(h), "the far member joins");
+    run_until(&mut world, 300, |w| hp(w, "h") < 190);
+    assert!(hp(&world, "h") < 190, "the camp fights back");
 }

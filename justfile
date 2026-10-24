@@ -35,6 +35,10 @@ bench-render *args: cook
 profile *args: cook
     cargo run -p canopy --profile profiling --features profile -- --data "{{justfile_directory()}}" --no-vsync {{args}}
 
+# Run combat lab scenarios headless and print what they measured: `just lab` (all of labs/), `just lab choke-100 crossing`, `--json` (docs/editor.md, The Combat Lab)
+lab *args:
+    cargo run -q --release -p canopy-sim --example lab -- --data "{{justfile_directory()}}" {{args}}
+
 # Simulation cost of a real match per tick and per step: `just bench-sim` (a crowd battle of 50 a player on frozen-dream), or e.g. `just bench-sim --map frozen-dream --ai 2 --ticks 4000`
 bench-sim *args="--map frozen-dream --crowd 50 --ticks 1600":
     cargo run -q --release -p canopy-sim --example match_bench -- --data "{{justfile_directory()}}" {{args}}

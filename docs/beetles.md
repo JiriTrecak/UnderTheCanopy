@@ -50,7 +50,7 @@ Cut in review: Call to Arms, Deep Taps (breaks the economy), the Rootworks as a 
 | `unit.beetles.warden` | Warden | Alembic | 2 | A directional field shield: ranged attacks can't pass it from the front | Barrier projector: a curved violet pane on two prongs | `unit-warden-projector-1` |
 | `unit.beetles.bombard` | Bombard | Engine Yard | 2 | Siege: long-range splash, weak up close (minimum range) | Six-legged mortar crawler with a crewman | `unit-bombard-1` |
 | `unit.beetles.steamwing` | Steamwing | Engine Yard | 2 | Flyer: scout, anti-air, harassment | Boiler wing rig; a substance beam under its chin fires violet bolts | `unit-steamwing-1` |
-| `unit.beetles.juggernaut` | Juggernaut | Engine Yard | 3 | Ultimate walking fortress, one at a time | Six-legged walker, violet furnace window, two cannons, crew | `unit-juggernaut-1` |
+| `unit.beetles.juggernaut` | Juggernaut | Engine Yard | 3 | Ultimate walking fortress | Six-legged walker, violet furnace window, two cannons, crew | `unit-juggernaut-1` |
 | `unit.beetles.hornbreaker` | Hornbreaker | Ancestor Shrine | hero | Warlord, melee | Hercules horn, great hammer | `unit-hornbreaker-2` |
 | `unit.beetles.forgemaster` | Forgemaster | Ancestor Shrine | hero | Engineer | Smokestack helm, forge apron, back arm rig with a folded turret | `unit-forgemaster-1` |
 | `unit.beetles.coilkeeper` | Coilkeeper | Ancestor Shrine | hero | Substance savant | Coil halo, lantern-staff | `unit-coilkeeper-1` |
