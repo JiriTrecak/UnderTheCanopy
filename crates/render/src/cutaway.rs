@@ -30,6 +30,8 @@ pub struct CutawayMask {
     written: (usize, usize),
     /// Some unit covers the screen this frame.
     pub active: bool,
+    /// What the mask was last made from: the same camera and units make the same mask.
+    made_from: Option<([glam::Mat4; 3], Vec<CutawaySubject>)>,
 }
 
 impl Default for CutawayMask {
@@ -39,6 +41,7 @@ impl Default for CutawayMask {
             next: vec![[0.0; 2]; WIDTH * HEIGHT],
             written: (0, 0),
             active: false,
+            made_from: None,
         }
     }
 }
@@ -51,6 +54,17 @@ impl CutawayMask {
         camera: &CameraView,
         subjects: &[CutawaySubject],
     ) -> Option<(usize, usize)> {
+        let matrices = [camera.view_projection, camera.view, camera.projection];
+        if let Some((made, units)) = &mut self.made_from {
+            if *made == matrices && units.as_slice() == subjects {
+                return None;
+            }
+            *made = matrices;
+            units.clear();
+            units.extend_from_slice(subjects);
+        } else {
+            self.made_from = Some((matrices, subjects.to_vec()));
+        }
         let previous = self.written;
         self.next[previous.0 * WIDTH..previous.1 * WIDTH].fill([0.0; 2]);
         let (mut lo, mut hi, mut count) = (HEIGHT, 0, 0);

@@ -184,6 +184,8 @@ pub struct Game {
     boot_error: Option<String>,
     dev: Option<DevStart>,
     skirmish: Skirmish,
+    /// The match's draw list: the UI's with the match's decorations (kept between frames).
+    decorated: canopy_ui::DrawList,
     mp: Multiplayer,
     loading: Option<Loading>,
     pub playing: Option<Playing>,
@@ -321,6 +323,7 @@ impl Game {
             boot_error: None,
             dev,
             skirmish: Skirmish::default(),
+            decorated: canopy_ui::DrawList::default(),
             mp: Multiplayer::default(),
             loading: None,
             playing: None,
@@ -460,6 +463,28 @@ impl Game {
     /// Whether the game is ready for the menus (data loaded).
     pub fn booted(&self) -> bool {
         self.data.is_some()
+    }
+
+    /// Starts a skirmish on battlefield `map` (its index in the list) with the human in
+    /// the first seat and computers in the rest, as the skirmish screen would: for
+    /// benchmarks of the match as the window plays it. False before boot.
+    pub fn start_benchmark_skirmish(&mut self, map: usize) -> bool {
+        let Some(data) = self.data.clone() else {
+            return false;
+        };
+        self.apply(Intent::Open(Screen::Skirmish));
+        self.skirmish.choose_map(&data, map);
+        self.skirmish.set_human(0, true);
+        for slot in &mut self.skirmish.slots {
+            slot.team = None;
+        }
+        self.start_skirmish();
+        true
+    }
+
+    /// Whether a match is on screen.
+    pub fn in_match(&self) -> bool {
+        self.flow.in_match()
     }
 
     // --- Input ---------------------------------------------------------------------
@@ -1554,9 +1579,9 @@ impl Game {
         self.host.flush(gpu, layer);
         match (&self.playing, self.flow.in_match()) {
             (Some(playing), true) => {
-                let mut list = self.host.ui.frame(time).clone();
-                playing.decorate(&mut list);
-                layer.submit(gpu, &list);
+                self.decorated.clone_from(self.host.ui.frame(time));
+                playing.decorate(&mut self.decorated);
+                layer.submit(gpu, &self.decorated);
             }
             _ => layer.submit(gpu, self.host.ui.frame(time)),
         }
@@ -2781,7 +2806,7 @@ impl Game {
         }
         let data = self.data.clone();
         let gpu = ctx.gpu;
-        let t = (Instant::now() - self.started).as_secs_f32();
+        let t = held_clock().unwrap_or_else(|| (Instant::now() - self.started).as_secs_f32());
         match &screen {
             Screen::Boot => self.show_boot(),
             Screen::MainMenu => {
@@ -3103,7 +3128,7 @@ impl Game {
         ctx: &mut Ctx<'_>,
         output: &wgpu::TextureView,
         ui_view: &wgpu::TextureView,
-    ) -> Option<canopy_render::FrameReport> {
+    ) -> Option<&canopy_render::FrameReport> {
         if let (Some(playing), true) = (&mut self.playing, self.flow.in_match()) {
             let mut host = Host {
                 window: ctx.window,
@@ -3132,6 +3157,13 @@ impl Game {
         ctx.gpu.queue.submit([encoder.finish()]);
         None
     }
+}
+
+/// `CANOPY_MENU_TIME=<seconds>` holds the screens' animation clock there, so captures of
+/// animated screens can be compared pixel for pixel.
+fn held_clock() -> Option<f32> {
+    static HELD: std::sync::OnceLock<Option<f32>> = std::sync::OnceLock::new();
+    *HELD.get_or_init(|| std::env::var("CANOPY_MENU_TIME").ok()?.parse().ok())
 }
 
 /// What the match follows of the settings.

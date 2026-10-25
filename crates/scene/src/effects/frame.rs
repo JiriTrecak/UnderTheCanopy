@@ -373,8 +373,23 @@ fn beam(cue: &CueView, l: &EffectLayer, age: f32, opacity: f32, out: &mut Effect
     }
 }
 
+/// A cue's phase from its seed: `(seed · 0.7) mod 2π`. Computed as `x − n·2π` with one
+/// fused multiply-add for the right quotient `n`, which is exact (the remainder is
+/// representable, as `fmod`'s always is), so it equals `rem_euclid` bit for bit without
+/// `fmod`'s long division of numbers up to 3·10⁹.
 fn phase(seed: u32) -> f32 {
-    (f64::from(seed) * 0.7).rem_euclid(std::f64::consts::TAU) as f32
+    let x = f64::from(seed) * 0.7;
+    let tau = std::f64::consts::TAU;
+    let mut n = (x / tau).floor();
+    let mut r = (-n).mul_add(tau, x);
+    if r < 0.0 {
+        n -= 1.0;
+        r = (-n).mul_add(tau, x);
+    } else if r >= tau {
+        n += 1.0;
+        r = (-n).mul_add(tau, x);
+    }
+    r as f32
 }
 
 fn v4(v: Vec3, w: f32) -> [f32; 4] {
@@ -413,8 +428,12 @@ pub struct EffectEvaluator {
     pushed: usize,
     /// Flame parts: drawn after every bucket, so smoke never dims the fire under it.
     flames: Vec<u32>,
-    /// Scratch: damage effects by distance to the eye.
+    /// Scratch: damage effects by distance to the eye, the dust and fires drawn, and a
+    /// blade's visible points.
     nearest: Vec<(f32, u32)>,
+    dust: Vec<HitDust>,
+    fires: Vec<Fire>,
+    blade: Vec<super::BladeSample>,
     /// Curve blocks of every layer that has one, and each layer's block and flags.
     curves: Vec<[f32; 4]>,
     layer_curves: Vec<Vec<(u32, u32)>>,
@@ -488,6 +507,9 @@ impl EffectEvaluator {
             pushed: 0,
             flames: Vec::new(),
             nearest: Vec::new(),
+            dust: Vec::new(),
+            fires: Vec::new(),
+            blade: Vec::new(),
             curves,
             layer_curves,
             strips: BTreeMap::new(),
@@ -553,9 +575,15 @@ impl EffectEvaluator {
             while j < older.len() && older[j].id < cue.id {
                 j += 1;
             }
-            let previous = older.get(j).filter(|p| p.id == cue.id);
-            let cue = blend_cue(previous, cue, t);
-            self.cue(&table, &cue, tick, eye, out, models);
+            let blended;
+            let cue = match older.get(j).filter(|p| p.id == cue.id) {
+                Some(previous) => {
+                    blended = blend_cue(Some(previous), cue, t);
+                    &blended
+                }
+                None => cue,
+            };
+            self.cue(&table, cue, tick, eye, out, models);
         }
         for spark in &b.sparks {
             let age = tick - spark.tick;
@@ -575,13 +603,17 @@ impl EffectEvaluator {
             };
             self.push(out, e, 8, Geometry::Quad, Blend::Additive, None, eye);
         }
+        let mut visible = std::mem::take(&mut self.blade);
         for (_, points) in &b.blades {
-            let visible: Vec<_> = points
-                .iter()
-                .filter(|p| tick >= p.tick && tick - p.tick < BLADE_TICKS)
-                .collect();
+            visible.clear();
+            visible.extend(
+                points
+                    .iter()
+                    .filter(|p| tick >= p.tick && tick - p.tick < BLADE_TICKS)
+                    .copied(),
+            );
             for pair in visible.windows(2) {
-                let (p, q) = (pair[0], pair[1]);
+                let (p, q) = (&pair[0], &pair[1]);
                 let fade = |age: f64| (1.0 - age / BLADE_TICKS).max(0.0) as f32;
                 let (fa, fb) = (fade(tick - p.tick), fade(tick - q.tick));
                 if out.ribbons.len() < MAX_RIBBONS {
@@ -599,6 +631,7 @@ impl EffectEvaluator {
                 }
             }
         }
+        self.blade = visible;
         self.damage(b, tick, eye, out);
         // Buckets become contiguous draws.
         for (&(geometry, blend, texture), parts) in &mut self.buckets {
@@ -606,8 +639,9 @@ impl EffectEvaluator {
                 continue;
             }
             if blend == Blend::Normal {
-                // Farthest first.
-                parts.sort_by(|x, y| y.0.total_cmp(&x.0));
+                // Farthest first; parts were pushed in ascending order, so ties keep it
+                // (a stable sort without its scratch allocation).
+                parts.sort_unstable_by(|x, y| y.0.total_cmp(&x.0).then(x.1.cmp(&y.1)));
             }
             let first = out.parts.len() as u32;
             let room = MAX_PARTS.saturating_sub(out.parts.len());
@@ -693,7 +727,8 @@ impl EffectEvaluator {
         let mut room = DAMAGE_PARTS.min(MAX_PARTS.saturating_sub(self.pushed));
         let distance = |p: Vec3| eye.map_or(0.0, |eye| eye.distance_squared(p));
         // Dust first: a burst lasts half a second, fires stay.
-        let dust: Vec<HitDust> = {
+        let mut dust = std::mem::take(&mut self.dust);
+        {
             let nearest = &mut self.nearest;
             nearest.clear();
             nearest.extend(b.hit_dust.iter().enumerate().filter_map(|(i, d)| {
@@ -703,12 +738,10 @@ impl EffectEvaluator {
                     .then(|| (distance(d.position), i as u32))
             }));
             keep_nearest(nearest, DRAWN_HIT_DUST);
-            nearest
-                .iter()
-                .map(|&(_, i)| b.hit_dust[i as usize])
-                .collect()
-        };
-        for d in dust {
+            dust.clear();
+            dust.extend(nearest.iter().map(|&(_, i)| b.hit_dust[i as usize]));
+        }
+        for &d in &dust {
             if room < HIT_DUST_PARTS as usize {
                 break;
             }
@@ -736,7 +769,9 @@ impl EffectEvaluator {
         }
         // Every burning building's first flame before any building's second, the nearest
         // first within each rank: when more burn than are drawn, each still shows its damage.
-        let fires: Vec<Fire> = {
+        self.dust = dust;
+        let mut fires = std::mem::take(&mut self.fires);
+        {
             let nearest = &mut self.nearest;
             nearest.clear();
             nearest.extend(
@@ -753,11 +788,12 @@ impl EffectEvaluator {
                     .then(x.1.cmp(&y.1))
             });
             nearest.truncate(DRAWN_FIRES);
-            nearest.iter().map(|&(_, i)| b.fires[i as usize]).collect()
-        };
+            fires.clear();
+            fires.extend(nearest.iter().map(|&(_, i)| b.fires[i as usize]));
+        }
         let time = (tick_seconds(tick) % FIRE_CLOCK) as f32;
         let mut light: Option<Fire> = None;
-        for f in fires {
+        for &f in &fires {
             if room < (FLAME_PARTS + SMOKE_PARTS) as usize {
                 break;
             }
@@ -804,6 +840,7 @@ impl EffectEvaluator {
                 light = Some(f);
             }
         }
+        self.fires = fires;
         if let Some(f) = light
             && out.lights.len() < MAX_EFFECT_LIGHTS
         {
@@ -1589,6 +1626,40 @@ impl EffectEvaluator {
                 quad.color = v4(Vec3::from_array(trail.color), 0.0);
                 quad.look = [trail.opacity, 0.0, 0.0, 0.0];
                 out.ribbons.push(quad);
+            }
+        }
+    }
+}
+
+#[cfg(test)]
+mod phase_tests {
+    /// The fused remainder is `rem_euclid` exactly, across the seed range and next to
+    /// multiples of 2π most of all.
+    #[test]
+    fn phase_is_the_exact_remainder() {
+        let reference =
+            |seed: u32| (f64::from(seed) * 0.7).rem_euclid(std::f64::consts::TAU) as f32;
+        let check = |s: u32| {
+            assert_eq!(
+                super::phase(s).to_bits(),
+                reference(s).to_bits(),
+                "seed {s}"
+            );
+        };
+        let mut seed = 0u32;
+        while let Some(next) = seed.checked_add(4093 + (seed >> 12)) {
+            check(seed);
+            check(seed.wrapping_add(1));
+            seed = next;
+        }
+        check(u32::MAX);
+        for k in 1..200_000u64 {
+            // Seeds whose product lands next to k·2π.
+            let s = ((k as f64 * std::f64::consts::TAU) / 0.7).round() as u64;
+            for s in [s.saturating_sub(1), s, s + 1] {
+                if let Ok(s) = u32::try_from(s) {
+                    check(s);
+                }
             }
         }
     }

@@ -106,8 +106,51 @@ impl UiLayer {
         clear: Option<wgpu::Color>,
     ) -> u32 {
         self.target = None;
-        let load = clear.map_or(wgpu::LoadOp::Load, wgpu::LoadOp::Clear);
+        let load = match clear {
+            Some(clear) => wgpu::LoadOp::Clear(self.take_backdrop().unwrap_or(clear)),
+            None => wgpu::LoadOp::Load,
+        };
         self.record(encoder, view, load, None)
+    }
+
+    /// A screen drawn alone often starts with an opaque solid box over the whole target:
+    /// it then becomes the clear colour and is not drawn (the same pixels: inside its
+    /// edges the box covers whole with alpha 1, and the target's unorm channels hold its
+    /// sRGB bytes either way). Returns that colour, having dropped the box from the list.
+    fn take_backdrop(&mut self) -> Option<wgpu::Color> {
+        use canopy_ui::QuadKind;
+        if !self.pending {
+            return None;
+        }
+        let q = self.list.quads.first()?;
+        let batch = self.list.batches.first_mut()?;
+        let [w, h] = self.list.viewport;
+        let solid = q.kind() == QuadKind::Shape as u32
+            && q.color[3] == 255
+            && q.radius <= 0.0
+            && q.border <= 0.0
+            && q.shade == 1.0
+            && q.flags & !0xff == 0;
+        let whole = q.rect[0] <= 0.0
+            && q.rect[1] <= 0.0
+            && q.rect[2] >= w as f32
+            && q.rect[3] >= h as f32
+            && batch
+                .scissor
+                .is_none_or(|[x, y, sw, sh]| x == 0 && y == 0 && sw >= w && sh >= h)
+            && batch.quads.start == 0
+            && batch.quads.end > 0;
+        if !solid || !whole {
+            return None;
+        }
+        batch.quads.start = 1;
+        let c = |v: u8| f64::from(v) / 255.0;
+        Some(wgpu::Color {
+            r: c(q.color[0]),
+            g: c(q.color[1]),
+            b: c(q.color[2]),
+            a: 1.0,
+        })
     }
 
     /// Records the UI over `output` (or the target set for this frame) and forgets the

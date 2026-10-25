@@ -2,7 +2,8 @@
 
 use crate::config::Kind;
 use crate::draw::{
-    FLAG_GRAYSCALE, FLAG_LINEAR_TEXELS, FLAG_PREMULTIPLIED, Painter, Quad, QuadKind,
+    FLAG_GRAYSCALE, FLAG_LINEAR_TEXELS, FLAG_OPAQUE_TEXELS, FLAG_PREMULTIPLIED, Painter, Quad,
+    QuadKind,
 };
 use crate::geom::{Color, Rect};
 use crate::input::InputState;
@@ -41,7 +42,7 @@ impl Hit {
 
 /// Inherited CSS effects: `opacity` and `filter`.
 #[derive(Debug, Clone, Copy)]
-struct Fx {
+pub(crate) struct Fx {
     opacity: f32,
     brightness: f32,
     grayscale: bool,
@@ -71,7 +72,8 @@ impl Fx {
     }
 }
 
-enum Deferred {
+#[derive(Clone, Copy)]
+pub(crate) enum Deferred {
     Node(i32, usize, Fx),
     Popup(usize, Fx),
 }
@@ -146,6 +148,7 @@ impl Ui {
             input,
             time,
             viewport,
+            deferred: scratch,
             ..
         } = self;
         draw.clear(*viewport);
@@ -166,20 +169,24 @@ impl Ui {
             hits,
             p: Painter::new(draw),
         };
-        let mut deferred = Vec::new();
-        ctx.node(root, 0, Fx::default(), &mut deferred);
+        // Layers above the tree's own paint, lowest first, each in the order it was met
+        // (the lists are kept between frames).
+        let (deferred, now) = scratch;
+        deferred.clear();
+        ctx.node(root, 0, Fx::default(), deferred);
         while !deferred.is_empty() {
             let layer = deferred.iter().map(Deferred::layer).min().unwrap_or(0);
-            let (now, later): (Vec<_>, Vec<_>) =
-                deferred.into_iter().partition(|d| d.layer() == layer);
-            deferred = later;
-            for d in now {
+            now.clear();
+            now.extend(deferred.iter().filter(|d| d.layer() == layer).copied());
+            deferred.retain(|d| d.layer() != layer);
+            for d in now.drain(..) {
                 match d {
-                    Deferred::Node(l, n, fx) => ctx.node(n, l, fx, &mut deferred),
+                    Deferred::Node(l, n, fx) => ctx.node(n, l, fx, deferred),
                     Deferred::Popup(n, fx) => ctx.popup(n, fx),
                 }
             }
         }
+        ctx.p.list.hide_occluded();
     }
 }
 
@@ -536,6 +543,9 @@ impl Ctx<'_, '_> {
         if desc.srgb_view {
             q.flags |= FLAG_LINEAR_TEXELS;
         }
+        if desc.opaque {
+            q.flags |= FLAG_OPAQUE_TEXELS;
+        }
         if fx.grayscale {
             q.flags |= FLAG_GRAYSCALE;
         }
@@ -584,6 +594,9 @@ impl Ctx<'_, '_> {
                 }
                 if desc.srgb_view {
                     q.flags |= FLAG_LINEAR_TEXELS;
+                }
+                if desc.opaque {
+                    q.flags |= FLAG_OPAQUE_TEXELS;
                 }
                 if fx.grayscale {
                     q.flags |= FLAG_GRAYSCALE;
@@ -737,6 +750,9 @@ impl Ctx<'_, '_> {
             }
             if desc.srgb_view {
                 q.flags |= FLAG_LINEAR_TEXELS;
+            }
+            if desc.opaque {
+                q.flags |= FLAG_OPAQUE_TEXELS;
             }
             if luminosity || fx.grayscale {
                 q.flags |= FLAG_GRAYSCALE;

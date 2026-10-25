@@ -8,6 +8,7 @@
 
 use crate::targets;
 use bytemuck::{Pod, Zeroable};
+use std::sync::Arc;
 
 /// Vertices of each list a frame may draw.
 pub const MAX_GROUND_VERTICES: usize = 1 << 17;
@@ -62,6 +63,9 @@ pub struct OverlayVertex {
 /// The world UI of one frame.
 #[derive(Debug, Clone, Default)]
 pub struct WorldUiFrame {
+    /// Ground triangles drawn before `ground` that seldom change (buildings' contact
+    /// shadows): shared, so a list the GPU already holds is not uploaded again.
+    pub under: Option<Arc<Vec<GroundVertex>>>,
     /// Triangles.
     pub ground: Vec<GroundVertex>,
     /// Triangles.
@@ -75,6 +79,7 @@ pub const MAX_MARK_LIGHTS: usize = 12;
 
 impl WorldUiFrame {
     pub fn clear(&mut self) {
+        self.under = None;
         self.ground.clear();
         self.overlay.clear();
         self.lights.clear();
@@ -113,6 +118,11 @@ pub struct WorldUiGpu {
     ground: wgpu::Buffer,
     overlay: wgpu::Buffer,
     uniform: wgpu::Buffer,
+    /// The `under` list at the start of the ground buffer, and its vertex count.
+    under: Option<Arc<Vec<GroundVertex>>>,
+    under_count: usize,
+    /// The overlay uniform last written.
+    written_uniform: Option<[f32; 4]>,
     ground_count: u32,
     overlay_count: u32,
     glyphs: wgpu::TextureView,
@@ -316,6 +326,9 @@ impl WorldUiGpu {
             ground,
             overlay,
             uniform,
+            under: None,
+            under_count: 0,
+            written_uniform: None,
             ground_count: 0,
             overlay_count: 0,
             glyphs,
@@ -395,15 +408,36 @@ impl WorldUiGpu {
         output: [u32; 2],
         output_srgb: bool,
     ) {
-        let ground = &frame.ground[..frame.ground.len().min(MAX_GROUND_VERTICES) / 3 * 3];
+        // `under` then `ground` share the ground budget as one list would.
+        let same = match (&frame.under, &self.under) {
+            (Some(a), Some(b)) => Arc::ptr_eq(a, b),
+            (a, b) => a.is_none() && b.is_none(),
+        };
+        if !same {
+            let under = frame
+                .under
+                .as_deref()
+                .map_or(&[][..], |u| &u[..u.len().min(MAX_GROUND_VERTICES) / 3 * 3]);
+            if !under.is_empty() {
+                queue.write_buffer(&self.ground, 0, bytemuck::cast_slice(under));
+            }
+            self.under_count = under.len();
+            self.under = frame.under.clone();
+        }
+        let room = MAX_GROUND_VERTICES - self.under_count;
+        let ground = &frame.ground[..frame.ground.len().min(room) / 3 * 3];
         let overlay = &frame.overlay[..frame.overlay.len().min(MAX_OVERLAY_VERTICES) / 3 * 3];
         if !ground.is_empty() {
-            queue.write_buffer(&self.ground, 0, bytemuck::cast_slice(ground));
+            queue.write_buffer(
+                &self.ground,
+                (self.under_count * std::mem::size_of::<GroundVertex>()) as u64,
+                bytemuck::cast_slice(ground),
+            );
         }
         if !overlay.is_empty() {
             queue.write_buffer(&self.overlay, 0, bytemuck::cast_slice(overlay));
         }
-        self.ground_count = ground.len() as u32;
+        self.ground_count = (self.under_count + ground.len()) as u32;
         self.overlay_count = overlay.len() as u32;
         let uniform = OverlayUniform {
             scale: [
@@ -413,7 +447,10 @@ impl WorldUiGpu {
                 0.0,
             ],
         };
-        queue.write_buffer(&self.uniform, 0, bytemuck::bytes_of(&uniform));
+        if self.written_uniform != Some(uniform.scale) {
+            queue.write_buffer(&self.uniform, 0, bytemuck::bytes_of(&uniform));
+            self.written_uniform = Some(uniform.scale);
+        }
     }
 
     /// Draws the ground list (inside the forward pass).

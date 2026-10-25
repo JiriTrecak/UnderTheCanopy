@@ -70,6 +70,9 @@ pub struct ImageDesc {
     /// The renderer binds this texture through an sRGB view (e.g. the pack's
     /// `Bc7RgbaUnormSrgb`), so samples arrive linear; the pass re-encodes them.
     pub srgb_view: bool,
+    /// Every texel samples with an alpha of exactly 1, so what it covers is not drawn. The
+    /// pack's opaque images are not (BC7 stores alpha 254 in some of their blocks).
+    pub opaque: bool,
 }
 
 impl ImageDesc {
@@ -80,6 +83,7 @@ impl ImageDesc {
             uv: [0.0, 0.0, 1.0, 1.0],
             premultiplied: true,
             srgb_view: false,
+            opaque: false,
         }
     }
 }
@@ -190,6 +194,10 @@ pub struct Ui {
     /// Resolves layout strings written as text library keys on hot reload
     /// ([`UiConfig::localize`]).
     localizer: Option<Box<Lookup>>,
+    /// Builds the paths [`Ui::child`] and [`Ui::find_in`] look up, without allocating.
+    path: std::cell::RefCell<String>,
+    /// The paint's deferred layers, and the layer being painted.
+    deferred: (Vec<paint::Deferred>, Vec<paint::Deferred>),
 }
 
 impl Ui {
@@ -217,6 +225,8 @@ impl Ui {
             stats: Stats::default(),
             tooltips: true,
             localizer: None,
+            path: std::cell::RefCell::new(String::new()),
+            deferred: (Vec::new(), Vec::new()),
         };
         for name in ui.config.images.keys() {
             ui.images.intern(name);

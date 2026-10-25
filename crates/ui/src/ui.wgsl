@@ -108,13 +108,68 @@ fn to_srgb(c: vec3<f32>) -> vec3<f32> {
     return select(hi, lo, c <= vec3(0.0031308));
 }
 
+// An image quad's colour before corners and shade: the texel encoded, premultiplied,
+// greyed and tinted.
+fn image_color(texel: vec4<f32>, in: VOut) -> vec4<f32> {
+    var t = texel;
+    if (in.flags & FLAG_LINEAR_TEXELS) != 0u && t.a > 0.0 {
+        // Straight or premultiplied, encode the colour, not the coverage.
+        let straight = select(t.rgb / t.a, t.rgb, (in.flags & FLAG_PREMULTIPLIED) == 0u);
+        let encoded = to_srgb(straight);
+        t = vec4(select(encoded * t.a, encoded, (in.flags & FLAG_PREMULTIPLIED) == 0u), t.a);
+    }
+    if (in.flags & FLAG_PREMULTIPLIED) == 0u {
+        t = premul(t);
+    }
+    if (in.flags & FLAG_GRAYSCALE) != 0u {
+        t = vec4(vec3(dot(t.rgb, vec3(0.2126, 0.7152, 0.0722))), t.a);
+    }
+    return vec4(t.rgb * in.color.rgb, t.a) * in.color.a;
+}
+
+// A glyph's colour: its coverage, or with `soft` (params.z) its blurred shadow.
+fn glyph_color(in: VOut) -> vec4<f32> {
+    let soft = in.params.z;
+    var a = textureSampleLevel(atlas, samp, in.uv, 0.0).r;
+    if soft > 0.0 {
+        // Blurred shadow: a 5×5 tent over the glyph's padded atlas cell.
+        let texel_size = 1.0 / vec2<f32>(textureDimensions(atlas));
+        let step = texel_size * soft * 0.5;
+        var sum = 0.0;
+        for (var y = -2; y <= 2; y++) {
+            for (var x = -2; x <= 2; x++) {
+                let w = f32(3 - abs(x)) * f32(3 - abs(y));
+                sum += w * textureSampleLevel(atlas, samp, in.uv + vec2(f32(x), f32(y)) * step, 0.0).r;
+            }
+        }
+        a = sum / 81.0;
+    }
+    return premul(in.color) * a;
+}
+
+// Brightness, then the target's encoding.
+fn finish(colour: vec4<f32>, in: VOut) -> vec4<f32> {
+    var out = vec4(min(colour.rgb * in.shade, vec3(colour.a)), colour.a);
+    if g.srgb_target != 0u && out.a > 0.0 {
+        out = vec4(to_linear(out.rgb / out.a) * out.a, out.a);
+    }
+    return out;
+}
+
 @fragment
 fn fs(in: VOut) -> @location(0) vec4<f32> {
-    // Sampled in uniform control flow (mips need derivatives).
+    // Sampled in uniform control flow (mips need derivatives). The glyph atlas has one
+    // level, so glyphs sample it explicitly where they need it.
     let texel = textureSample(image, samp, in.uv);
-    let coverage_sample = textureSample(atlas, samp, in.uv).r;
 
     let kind = in.flags & 0xffu;
+    // Square images (backgrounds, art, icons: most of the pixels) need no distance field.
+    if kind == KIND_IMAGE && in.params.x <= 0.0 {
+        return finish(image_color(texel, in), in);
+    }
+    if kind == KIND_GLYPH {
+        return finish(glyph_color(in), in);
+    }
     let r = in.params.x;
     let border = in.params.y;
     let soft = in.params.z;
@@ -132,40 +187,13 @@ fn fs(in: VOut) -> @location(0) vec4<f32> {
             out = fill * cover(d);
         }
         case KIND_IMAGE: {
-            var t = texel;
-            if (in.flags & FLAG_LINEAR_TEXELS) != 0u && t.a > 0.0 {
-                // Straight or premultiplied, encode the colour, not the coverage.
-                let straight = select(t.rgb / t.a, t.rgb, (in.flags & FLAG_PREMULTIPLIED) == 0u);
-                let encoded = to_srgb(straight);
-                t = vec4(select(encoded * t.a, encoded, (in.flags & FLAG_PREMULTIPLIED) == 0u), t.a);
-            }
-            if (in.flags & FLAG_PREMULTIPLIED) == 0u {
-                t = premul(t);
-            }
-            if (in.flags & FLAG_GRAYSCALE) != 0u {
-                t = vec4(vec3(dot(t.rgb, vec3(0.2126, 0.7152, 0.0722))), t.a);
-            }
-            out = vec4(t.rgb * in.color.rgb, t.a) * in.color.a;
+            out = image_color(texel, in);
             if r > 0.0 {
                 out *= cover(d);
             }
         }
         case KIND_GLYPH: {
-            var a = coverage_sample;
-            if soft > 0.0 {
-                // Blurred shadow: a 5×5 tent over the glyph's padded atlas cell.
-                let texel_size = 1.0 / vec2<f32>(textureDimensions(atlas));
-                let step = texel_size * soft * 0.5;
-                var sum = 0.0;
-                for (var y = -2; y <= 2; y++) {
-                    for (var x = -2; x <= 2; x++) {
-                        let w = f32(3 - abs(x)) * f32(3 - abs(y));
-                        sum += w * textureSampleLevel(atlas, samp, in.uv + vec2(f32(x), f32(y)) * step, 0.0).r;
-                    }
-                }
-                a = sum / 81.0;
-            }
-            out = premul(in.color) * a;
+            out = glyph_color(in);
         }
         case KIND_SHADOW: {
             // The quad is the shadow shape grown by blur + 1; the element sits at -offset.
@@ -205,9 +233,5 @@ fn fs(in: VOut) -> @location(0) vec4<f32> {
         }
         default: {}
     }
-    out = vec4(min(out.rgb * in.shade, vec3(out.a)), out.a);
-    if g.srgb_target != 0u && out.a > 0.0 {
-        out = vec4(to_linear(out.rgb / out.a) * out.a, out.a);
-    }
-    return out;
+    return finish(out, in);
 }
