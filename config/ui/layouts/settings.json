@@ -101,7 +101,7 @@
               {
                 "class": "settings-row",
                 "children": [
-                  { "kind": "label", "class": "settings-label", "text": "@ui.settings.spell-effect-volume" },
+                  { "kind": "label", "class": "settings-label", "text": "@ui.settings.effects-volume" },
                   { "class": "st-inline", "children": [
                     { "id": "effects", "kind": "slider", "class": "slider st-grow", "min": 0, "max": 100, "step": 1, "action": "settings.volume" },
                     { "id": "effects-value", "kind": "label", "class": "st-value" } ] }

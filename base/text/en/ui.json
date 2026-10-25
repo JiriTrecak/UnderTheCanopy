@@ -231,7 +231,6 @@
   "ui.settings.shadows": "Shadows",
   "ui.settings.show-resource-deliveries": "Show resource deliveries",
   "ui.settings.show-tooltips": "Show tooltips",
-  "ui.settings.spell-effect-volume": "Spell effect volume",
   "ui.settings.spread-screen-edges": "Spread · screen edges",
   "ui.settings.the-battlefield-renders-at-most": "The battlefield renders at most at this size; the interface stays at native resolution.",
   "ui.settings.ultra": "Ultra",
@@ -256,5 +255,6 @@
   "ui.skirmish.skirmish": "Skirmish",
   "ui.skirmish.start-skirmish": "Start skirmish →",
   "ui.skirmish.under-the-canopy": "Under the Canopy",
-  "ui.skirmish.victory": "Victory"
+  "ui.skirmish.victory": "Victory",
+  "ui.settings.effects-volume": "Effects volume"
 }

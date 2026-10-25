@@ -1,0 +1,46 @@
+{
+  "items": [
+    {
+      "name": "voice-aurelith",
+      "kind": "voice",
+      "speaker": "speaker.aurelith",
+      "description": "A young queen in her mid-twenties: a clear, warm mezzo-soprano voice with quiet authority, compassionate yet fierce and certain, a hint of pride. Regal but not cold, youthful and alive, never breathy. She speaks English with a soft, neutral accent, close to the microphone in a quiet room, performing a character in a fantasy game.",
+      "text": "Mother Ashka would never let her lights go dark. Then we go and ask them why. Stay close. Whatever did this is still out here. Mother Ashka! It is Aurelith, of the Amber Court. No ant will drink like this again. I swear it."
+    },
+    {
+      "name": "voice-tiv",
+      "kind": "voice",
+      "speaker": "speaker.tiv",
+      "description": "A young male scout of about eighteen: a light, bright tenor voice, quick and eager, loyal and earnest, a little breathless from running, nervous energy he tries to hide in front of his queen. He speaks English with a soft, neutral accent, close to the microphone in a quiet room, performing a character in a fantasy game.",
+      "text": "My Queen! The Hollow's watch-lights went dark three nights ago. We sent scouts. Not one came back. My Queen... my brother Kesh took a patrol north-west, toward the old webs. They never came back. Hornets. Unless you want the whole nest on us, let them be."
+    },
+    {
+      "name": "voice-kesh",
+      "kind": "voice",
+      "speaker": "speaker.kesh",
+      "description": "A male patrol leader in his late twenties, the older brother: a steady, warm baritone with a slight rasp, worn out and hurt but proud, calm under pressure, deeply relieved to be found. He speaks English with a soft, neutral accent, close to the microphone in a quiet room, performing a character in a fantasy game.",
+      "text": "Tiv? Tiv! I knew you'd come. Light... the Queen's light. You found us. We tracked the Hollow's foragers in here, my Queen. The webs were waiting. Take my whistle. It has called us home through worse."
+    },
+    {
+      "name": "voice-nurse-ardi",
+      "kind": "voice",
+      "speaker": "speaker.nurse-ardi",
+      "description": "A middle-aged nurse of a ruined colony, about fifty: a soft, gentle alto voice, kind and motherly, exhausted, frightened and grieving, trembling slightly, speaking quietly as if still afraid to be heard. She speaks English with a soft, neutral accent, close to the microphone in a quiet room, performing a character in a fantasy game.",
+      "text": "Queen Aurelith... you came. We prayed someone would. They drank from the deep pool. Then they stopped sleeping. Mother Ashka drank first, and drank the most. She does not know us now."
+    },
+    {
+      "name": "voice-hollow-raider",
+      "kind": "voice",
+      "speaker": "speaker.hollow-raider",
+      "description": "A battle-scarred male warrior survivor in his thirties: a deep, gruff, low voice, grim and resolute, few words, grief held back by anger and duty. He speaks English with a soft, neutral accent, close to the microphone in a quiet room, performing a character in a fantasy game.",
+      "text": "Let us fight beside you, my Queen. Let us put her to rest. We are all that is left of the Hollow's guard, and we will not run again. Not from her. Not from anything."
+    },
+    {
+      "name": "voice-mother-ashka",
+      "kind": "voice",
+      "speaker": "speaker.mother-ashka",
+      "description": "An ancient matron who was once warm and motherly, now changed and lost in a dream: an old woman's low, cracked voice, rasping and wet, drifting between whispers and sudden loud cries, dazed and haunted, as if hearing a song no one else can hear. Slow, uneven, unsettling but sad rather than evil. She speaks English with a soft, neutral accent, close to the microphone in a quiet room, performing a character in a fantasy game.",
+      "text": "...so loud... the song is so loud... Who calls me? It sang to us... we drank... and it gave, and gave... and gave... Little ones, come closer. Can you hear it? The song is so loud..."
+    }
+  ]
+}
