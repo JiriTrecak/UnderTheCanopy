@@ -35,6 +35,10 @@ const MIX_GLIDE: Duration = Duration::from_millis(60);
 /// A voice further than this from its timeline (seconds) is moved back onto it (the old
 /// game's threshold).
 const DRIFT: f64 = 0.12;
+/// After a seek (or a start partway in) a voice is not re-synchronised for this long: a
+/// stream's position catches up only once its decoder has refilled, and seeking again
+/// every frame meanwhile scratches.
+const SEEK_SETTLE: Duration = Duration::from_millis(500);
 /// A one-shot is not started with less than this left (seconds): the tail would only
 /// click.
 const MIN_REMAINING: f64 = 0.03;
@@ -131,6 +135,8 @@ struct Voice {
     /// The sound reached its end by itself, at this request offset.
     ended: Option<f64>,
     wanted: bool,
+    /// When it was last moved onto its timeline (or started partway in).
+    seeked: Option<std::time::Instant>,
 }
 
 pub(crate) struct Output {
@@ -138,6 +144,8 @@ pub(crate) struct Output {
     buses: Vec<TrackHandle>,
     voices: Vec<Voice>,
     mix: Option<(f32, [f32; 4])>,
+    /// Re-synchronising seeks made (for tests).
+    seeks: u64,
 }
 
 impl Output {
@@ -178,6 +186,7 @@ impl Output {
             buses,
             voices: Vec::new(),
             mix: None,
+            seeks: 0,
         })
     }
 
@@ -240,7 +249,9 @@ impl Output {
                 }
                 match voice.ended {
                     None => {
-                        update(voice, request, clip.duration);
+                        if update(voice, request, clip.duration) {
+                            self.seeks += 1;
+                        }
                         continue;
                     }
                     // The timeline jumped back (a looping parent effect): play it again.
@@ -303,6 +314,7 @@ impl Output {
                     rate: request.rate,
                     ended: None,
                     wanted: true,
+                    seeked: (request.offset > 0.0).then(std::time::Instant::now),
                 }),
                 Err(e) => tracing::debug!("audio: voice not started: {e}"),
             }
@@ -319,7 +331,9 @@ impl Output {
     }
 }
 
-fn update(voice: &mut Voice, request: &Request, duration: f64) {
+/// Follows the request's gain, pan and rate; moves the voice back onto its timeline when it
+/// drifted (and has settled since the last move). Returns whether it seeked.
+fn update(voice: &mut Voice, request: &Request, duration: f64) -> bool {
     let glide = Tween {
         duration: GLIDE,
         ..Tween::default()
@@ -338,6 +352,9 @@ fn update(voice: &mut Voice, request: &Request, duration: f64) {
             .set_playback_rate(PlaybackRate(request.rate), glide);
         voice.rate = request.rate;
     }
+    if voice.seeked.is_some_and(|at| at.elapsed() < SEEK_SETTLE) {
+        return false;
+    }
     let position = voice.handle.position();
     let drift = if request.looping && duration > 0.0 {
         let d = (request.offset - position).rem_euclid(duration);
@@ -345,9 +362,12 @@ fn update(voice: &mut Voice, request: &Request, duration: f64) {
     } else {
         (request.offset - position).abs()
     };
-    if drift > DRIFT {
-        voice.handle.seek_to(request.offset);
+    if drift <= DRIFT {
+        return false;
     }
+    voice.handle.seek_to(request.offset);
+    voice.seeked = Some(std::time::Instant::now());
+    true
 }
 
 /// Linear gain as kira's decibels (−60 dB and below is silence).
@@ -369,6 +389,36 @@ pub(crate) fn panning(pan: f32) -> Panning {
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn a_stream_resumed_partway_is_not_seeked_every_frame() {
+        let limits = Limits::default();
+        let mut output = Output::headless(&limits).unwrap();
+        let mut library = SoundLibrary::new();
+        let tone = library
+            .insert_encoded("tone", include_bytes!("../tests/data/tone.mp3"))
+            .unwrap();
+        // Back from the background: the music resumes 0.3 s into its loop, and frames
+        // come before the stream's decoder has caught up.
+        let mut request = Request {
+            key: 1,
+            sound: tone,
+            category: crate::limits::Category::Music,
+            offset: 0.3,
+            rate: 1.0,
+            gain: 1.0,
+            pan: 0.0,
+            looping: true,
+            priority: 1.0,
+            group: None,
+        };
+        for _ in 0..10 {
+            output.reconcile(std::iter::once(&request), &library);
+            request.offset += 0.016;
+        }
+        assert_eq!(output.playing(), 1);
+        assert_eq!(output.seeks, 0, "seeked while the stream was catching up");
+    }
 
     #[test]
     fn decibels_and_silence() {

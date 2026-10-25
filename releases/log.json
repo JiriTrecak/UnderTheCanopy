@@ -21,7 +21,9 @@
       "The main menu now looks out over an autumn kingdom, with the ant queen on the right and no animated fire effects.",
       "The main-menu logo now wears red autumn oak leaves."
     ],
-    "fixed": [],
+    "fixed": [
+      "Music no longer scratches when the game comes back from the background"
+    ],
     "knownIssues": []
   },
   "releases": [
