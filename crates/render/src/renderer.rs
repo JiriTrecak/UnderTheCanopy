@@ -1213,7 +1213,8 @@ impl Renderer {
         } else {
             &self.cutaway_subjects
         };
-        if let Some(rows) = self.cutaway.update(camera, subjects) {
+        let cutaway_changed = self.cutaway.update(camera, subjects);
+        if let Some(rows) = cutaway_changed {
             crate::cutaway::upload(queue, &self.cutaway_texture, &self.cutaway, rows);
         }
         let uniform = FrameUniform::new(&FrameParams {
@@ -1270,7 +1271,14 @@ impl Renderer {
             self.terrain.as_ref().map_or(f32::MIN, TerrainGpu::lowest),
         );
         if let Some(statics) = &self.statics {
-            statics.prepare(queue, camera.view_projection, shadow_matrix, &casters);
+            statics.prepare(
+                queue,
+                camera.view_projection,
+                shadow_matrix,
+                &casters,
+                self.cutaway.active.then_some(&self.cutaway),
+                cutaway_changed.is_some(),
+            );
         }
         if let Some(actors) = &mut self.actors {
             let subject = self
