@@ -1,41 +1,26 @@
 {
   "items": [
     {
-      "name": "ingame-under-the-canopy",
-      "kind": "music",
-      "prompt": "Slow and spacious, warm and a little mysterious: a wooden flute carries a gentle, singing melody over warm sustained strings and slow harp arpeggios, a French horn answers softly, a low wordless choir swells once, distant soft frame drums mark the pulse. D minor, slow tempo. A 30-second instrumental piece of background music for a fantasy real-time strategy game, played under the gameplay: a real composed piece with a clear melody and harmony, calmer and more spacious than a main theme, made to loop. Live orchestral and acoustic instruments only. No nature sounds, no birds or insects, no ambient soundscape, no drum kit, no synths, no electronic sound, no sung words.",
-      "seconds": 30,
-      "takes": 1,
-      "dir": "base/assets/audio/music/ants/under-the-canopy",
-      "id": "asset.audio.music.ants-under-the-canopy",
-      "title": "Under the canopy",
-      "event": {
-        "id": "sound.music.ants-under-the-canopy",
-        "category": "music",
-        "note": "Under the canopy"
-      }
-    },
-    {
-      "name": "ingame-roots-and-amber",
-      "kind": "music",
-      "prompt": "Gently moving and hopeful, a colony at work: a calm harp and pizzicato string ostinato, a noble horn melody taken up by clarinet and flute, a warm wordless choir pad, light hand drums keeping a soft steady pulse. F major with modal colour, moderate slow tempo. A 30-second instrumental piece of background music for a fantasy real-time strategy game, played under the gameplay: a real composed piece with a clear melody and harmony, calmer and more spacious than a main theme, made to loop. Live orchestral and acoustic instruments only. No nature sounds, no birds or insects, no ambient soundscape, no drum kit, no synths, no electronic sound, no sung words.",
-      "seconds": 30,
-      "takes": 1,
-      "dir": "base/assets/audio/music/ants/roots-and-amber",
-      "id": "asset.audio.music.ants-roots-and-amber",
-      "title": "Roots and amber",
-      "event": {
-        "id": "sound.music.ants-roots-and-amber",
-        "category": "music",
-        "note": "Roots and amber"
-      }
-    },
-    {
       "name": "ingame-before-the-storm",
       "kind": "music",
       "prompt": "Quiet tension before a battle in an ancient forest: low strings holding long dark chords, a soft timpani heartbeat, distant solemn horn calls, fragments of a wooden flute melody, harp glints, the choir rising and falling like breath. C minor, slow tempo, restrained but uneasy. A 30-second instrumental piece of background music for a fantasy real-time strategy game, played under the gameplay: a real composed piece with a clear melody and harmony, calmer and more spacious than a main theme, made to loop. Live orchestral and acoustic instruments only. No nature sounds, no birds or insects, no ambient soundscape, no drum kit, no synths, no electronic sound, no sung words.",
       "seconds": 30,
       "takes": 1,
+      "dir": "base/assets/audio/music/ants/before-the-storm",
+      "id": "asset.audio.music.ants-before-the-storm",
+      "title": "Before the storm",
+      "event": {
+        "id": "sound.music.ants-before-the-storm",
+        "category": "music",
+        "note": "Before the storm"
+      }
+    },
+    {
+      "name": "ingame-before-the-storm-full",
+      "kind": "music",
+      "prompt": "Quiet tension before a battle in an ancient forest: low strings holding long dark chords, a soft timpani heartbeat, distant solemn horn calls, fragments of a wooden flute melody, harp glints, the choir rising and falling like breath. C minor, slow tempo, restrained but uneasy. A two-and-a-half-minute instrumental piece of background music for a fantasy real-time strategy game, played under the gameplay: a real composed piece with a clear melody and harmony, made to loop. It opens quietly with low strings and the timpani heartbeat, the wooden flute states the melody, horns take it up as the strings and choir slowly build, a hushed middle with harp and flute alone, a second darker swell with all the orchestra, then it settles back to the quiet low strings and heartbeat of the opening so the restart is seamless. Live orchestral and acoustic instruments only. No nature sounds, no birds or insects, no ambient soundscape, no drum kit, no synths, no electronic sound, no sung words.",
+      "seconds": 150,
+      "takes": 2,
       "dir": "base/assets/audio/music/ants/before-the-storm",
       "id": "asset.audio.music.ants-before-the-storm",
       "title": "Before the storm",
