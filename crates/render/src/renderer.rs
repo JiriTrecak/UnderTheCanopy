@@ -375,6 +375,10 @@ pub struct Renderer {
     point_lights: u32,
     /// The world's lights; effect lights follow them each frame.
     map_lights: Vec<PointLight>,
+    /// The lights in the light buffer (once written), and the list the next frame's are
+    /// gathered in.
+    uploaded_lights: Option<Vec<PointLight>>,
+    gathered_lights: Vec<PointLight>,
     lights_dirty: bool,
     effects: EffectsGpu,
     effect_frame: EffectFrame,
@@ -412,7 +416,10 @@ pub struct Renderer {
     ripples: Ripples,
     ui: Option<crate::ui::UiLayer>,
     timer: Option<GpuTimer>,
+    /// The device has timestamp queries, and passes are timed with them
+    /// ([`Self::set_pass_timing`]).
     timestamps: bool,
+    pass_timing: bool,
     /// Submit every pass alone and wait for it (benchmarks: per-pass submit-to-idle
     /// times where Apple GPUs' timestamps attribute work to neighbouring passes).
     pub isolate_passes: bool,
@@ -546,6 +553,8 @@ impl Renderer {
             light_buffer,
             point_lights: 0,
             map_lights: Vec::new(),
+            uploaded_lights: None,
+            gathered_lights: Vec::new(),
             lights_dirty: false,
             effects,
             effect_frame: EffectFrame::default(),
@@ -582,6 +591,7 @@ impl Renderer {
             ui: None,
             timer: None,
             timestamps: gpu.features.timestamps,
+            pass_timing: false,
             isolate_passes: false,
             sample_gpu_time: false,
             shadows: true,
@@ -620,11 +630,21 @@ impl Renderer {
         features.minimap = self.minimap.is_some() && !self.baking;
         features.portrait = self.portrait.is_some() && !self.baking;
         self.graph = graph::world_frame(features);
-        self.timer = self
-            .timestamps
+        self.timer = (self.timestamps && self.pass_timing)
             .then(|| GpuTimer::new(&gpu.device, &gpu.queue, self.graph.passes().len()));
         self.post
             .configure(&gpu.device, &self.targets, features, self.quality.haze);
+    }
+
+    /// Times every pass with timestamp queries (`FrameReport::gpu_ms`, a few frames
+    /// late) while on: tools and the debug overlay. Off by default, so a frame records no
+    /// queries, resolves nothing and opens no pass that has nothing to draw.
+    pub fn set_pass_timing(&mut self, gpu: &Gpu, on: bool) {
+        if self.pass_timing != on {
+            self.pass_timing = on;
+            self.timer = (self.timestamps && on)
+                .then(|| GpuTimer::new(&gpu.device, &gpu.queue, self.graph.passes().len()));
+        }
     }
 
     pub fn quality(&self) -> Quality {
@@ -1158,7 +1178,9 @@ impl Renderer {
             },
         );
         if self.lights_dirty {
-            let mut lights = self.map_lights.clone();
+            let mut lights = std::mem::take(&mut self.gathered_lights);
+            lights.clear();
+            lights.extend_from_slice(&self.map_lights);
             lights.extend(
                 self.world_ui_frame
                     .lights
@@ -1173,13 +1195,17 @@ impl Renderer {
                     .take(MAX_EFFECT_LIGHTS)
                     .copied(),
             );
-            queue.write_buffer(
-                &self.light_buffer,
-                0,
-                &frame::light_buffer_contents(&lights),
-            );
+            // The same lights as the buffer holds (heroes standing still) need no upload.
+            if self.uploaded_lights.as_ref() != Some(&lights) {
+                queue.write_buffer(
+                    &self.light_buffer,
+                    0,
+                    &frame::light_buffer_contents(&lights),
+                );
+            }
             self.point_lights = lights.len() as u32;
             self.lights_dirty = false;
+            self.gathered_lights = self.uploaded_lights.replace(lights).unwrap_or_default();
         }
         // The scenery cutaway follows this frame's units (none while baking the minimap).
         let subjects: &[_] = if self.baking {

@@ -214,6 +214,7 @@ pub fn run(options: &Options, paths: &Paths, out: &Path, size: [u32; 2]) -> Resu
 
     let mut renderer = Renderer::new(&gpu, CAPTURE_FORMAT, size, loaded.environment.clone());
     renderer.shadows = options.shadows;
+    renderer.set_pass_timing(&gpu, true);
     renderer.set_quality(&gpu, options.quality);
     let started = std::time::Instant::now();
     renderer.load_world(&gpu, &loaded.pack, &loaded.scene.world)?;
@@ -290,11 +291,19 @@ pub fn run(options: &Options, paths: &Paths, out: &Path, size: [u32; 2]) -> Resu
         1.0,
     );
     // The render thread's cost of a frame of the live scene (interpolation, effects,
-    // world UI), measured on the shown pair.
+    // world UI), measured on the shown pair after one frame that drapes what the world UI
+    // keeps between frames (a steady frame's cost, not the first one's).
     let live_loops: u32 = std::env::var("CANOPY_SHOT_LIVE_LOOPS")
         .ok()
         .and_then(|v| v.parse().ok())
         .unwrap_or(20);
+    live.draw_world_ui(
+        &mut renderer,
+        &gpu,
+        &camera_view,
+        &loaded.scene,
+        options.time,
+    );
     let live_started = std::time::Instant::now();
     for _ in 0..live_loops {
         live.show(
