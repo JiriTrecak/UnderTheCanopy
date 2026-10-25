@@ -9,11 +9,16 @@ use super::{
     geography::{Pt, dist, round},
     navigation::ObservedNavigation,
 };
+use crate::navigation::grid::GridNavigation;
 use crate::{
     catalog::Def,
     entity::Milli,
     navigation::surfaces::clear_layered_sweep,
-    spatial::{Fixed, adjacent::AdjacentSweep, geometry::sweep_pattern},
+    spatial::{
+        Fixed,
+        adjacent::{AdjacentSweep, Planes},
+        geometry::sweep_pattern,
+    },
     terrain::{
         CellBounds, MAX_GROUND_STEP_CM,
         footprint::{
@@ -24,6 +29,7 @@ use crate::{
     },
 };
 use canopy_content::game::{Definition, Kind};
+use std::cell::RefCell;
 
 /// Snaps a cursor to where a definition may stand: the building lattice for buildings,
 /// cell centres otherwise (old `snapPlacement`). `rotation` in degrees.
@@ -216,6 +222,7 @@ fn nearby(f: &Frame, p: Pt, radius: i32) -> Vec<(i32, i32)> {
 /// Whether a worker of the widest ground body could still walk from `approach` to the
 /// doorway with the foundation in place (old `doorReachable`).
 fn door_reachable(f: &Frame, cells: &CellBounds, approach: Pt, door: Pt, outpost: bool) -> bool {
+    let _span = tracing::trace_span!("ai door reach").entered();
     let geo = f.geo;
     let size = geo.size;
     let (radius_cells, height) = f.base_body();
@@ -233,9 +240,28 @@ fn door_reachable(f: &Frame, cells: &CellBounds, approach: Pt, door: Pt, outpost
             && (i32::from(heights[a as usize]) - i32::from(heights[b as usize])).abs()
                 <= MAX_GROUND_STEP_CM
     };
-    let check = |nav: Option<&mut ObservedNavigation>| -> bool {
-        let adjacent = AdjacentSweep::new(radius);
+    // `edges` remembers the foundation-free neighbour steps between knowledge changes.
+    let check = |nav: Option<&ObservedNavigation>,
+                 edges: Option<&RefCell<GridNavigation>>|
+     -> bool {
+        // Compiled once per radius by the navigation; without it (maps with decks) only
+        // the layered sweep below is used.
+        let compiled;
+        let adjacent: &AdjacentSweep = match nav {
+            Some(nav) => nav.compiled_sweep(radius).expect("compiled"),
+            None => {
+                compiled = AdjacentSweep::new(radius);
+                &compiled
+            }
+        };
         let pattern = sweep_pattern(radius);
+        let planes = nav.and_then(|nav| nav.planes(geo));
+        let foundation = (
+            cells.min_x as i32,
+            cells.max_x as i32,
+            cells.min_y as i32,
+            cells.max_y as i32,
+        );
         let point = |c: u32| Fixed::cell((c % size) as i32, (c / size) as i32, None);
         let exact = |a: u32, b: u32, overlay: bool| -> bool {
             match geo.terrain.surfaces() {
@@ -253,13 +279,30 @@ fn door_reachable(f: &Frame, cells: &CellBounds, approach: Pt, door: Pt, outpost
                         None,
                     )
                 }
-                None => adjacent.clear(size, a, b, |x, y| {
-                    base_step(x, y) && !(overlay && proposed(y))
-                }),
+                // The navigation's planes hold the same open cells as `base_step`.
+                None => match planes {
+                    Some(planes) => adjacent.clear_planes(
+                        size,
+                        a,
+                        b,
+                        Planes {
+                            avoid: overlay.then_some(foundation),
+                            ..planes
+                        },
+                        |x, y| base_step(x, y) && !(overlay && proposed(y)),
+                    ),
+                    None => adjacent.clear(size, a, b, |x, y| {
+                        base_step(x, y) && !(overlay && proposed(y))
+                    }),
+                },
             }
         };
+        // The exact test first: with the planes it is the cheaper one.
         let certified = |a: u32, b: u32, overlay: bool| -> bool {
-            if let Some(nav) = nav.as_deref() {
+            if exact(a, b, overlay) {
+                return true;
+            }
+            if let Some(nav) = nav {
                 let (ax, ay) = (f64::from(a % size), f64::from(a / size));
                 let (bx, by) = (f64::from(b % size), f64::from(b / size));
                 let r = f64::from(radius) / 1000.0;
@@ -268,11 +311,9 @@ fn door_reachable(f: &Frame, cells: &CellBounds, approach: Pt, door: Pt, outpost
                     || ax.min(bx) - r > max_x
                     || ay.max(by) + r < min_y
                     || ay.min(by) - r > max_y;
-                if outside && nav.proves_ground_sweep(geo, point(a), point(b), radius) {
-                    return true;
-                }
+                return outside && nav.proves_ground_sweep(geo, point(a), point(b), radius);
             }
-            exact(a, b, overlay)
+            false
         };
         let index = |q: (i32, i32)| q.1 as u32 * size + q.0 as u32;
         let Some(origin) = nearby(f, approach, 8)
@@ -293,19 +334,47 @@ fn door_reachable(f: &Frame, cells: &CellBounds, approach: Pt, door: Pt, outpost
             return false;
         }
         goals.sort_unstable();
+        let _span = tracing::trace_span!("ai door flood").entered();
+        // The planes' closed cells are the known blockers and the water (`base_step`).
+        let closed = |c: u32| match planes {
+            Some(p) => {
+                let (x, y) = ((c % size) as usize, (c / size) as usize);
+                p.closed[y * p.words + x / 32] & (1 << (x % 32)) != 0
+            }
+            None => f.blocked(c) || !f.land(c),
+        };
+        // A step with the foundation in place is the step without it that enters none of
+        // the foundation's cells; the step without it is remembered.
+        let step = |a: u32, b: u32| match (edges, planes) {
+            (Some(edges), Some(_)) => {
+                let open = edges
+                    .borrow_mut()
+                    .cardinal(a, b, &mut |x, y| exact(x, y, false))
+                    && !adjacent.enters(size, a, b, foundation);
+                open || certified(a, b, true)
+            }
+            _ => certified(a, b, true),
+        };
         flood(
             f,
             origin,
             if outpost { 32.0 } else { 60.0 },
             proposed,
-            |a, b| certified(a, b, true),
+            closed,
+            step,
             |c| goals.binary_search(&c).is_ok(),
         )
     };
     if geo.layered() {
-        check(None)
+        check(None, None)
     } else {
-        f.routes(|nav| check(Some(nav)))
+        f.routes(|nav| {
+            nav.sweep(radius);
+            let edges = RefCell::new(nav.take_door_edges(radius));
+            let reached = check(Some(&*nav), Some(&edges));
+            nav.put_door_edges(radius, edges.into_inner());
+            reached
+        })
     }
 }
 
@@ -316,6 +385,7 @@ fn flood(
     origin: (i32, i32),
     radius: f64,
     proposed: impl Fn(u32) -> bool,
+    closed: impl Fn(u32) -> bool,
     step: impl Fn(u32, u32) -> bool,
     goal: impl Fn(u32) -> bool,
 ) -> bool {
@@ -350,8 +420,7 @@ fn flood(
             let index = (ny * size + nx) as u32;
             if seen[local]
                 || proposed(index)
-                || f.blocked(index)
-                || !f.land(index)
+                || closed(index)
                 || (i32::from(heights[index as usize]) - i32::from(heights[from as usize])).abs()
                     > MAX_GROUND_STEP_CM
                 || !step(from, index)

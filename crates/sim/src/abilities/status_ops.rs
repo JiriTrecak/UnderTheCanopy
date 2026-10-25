@@ -350,20 +350,23 @@ fn apply_status(
     } else {
         None
     };
+    if a.aura
+        && outranked(
+            catalog,
+            state.entities.get(t).expect("target"),
+            key,
+            a.rank,
+            a.source,
+        )
+    {
+        return 0;
+    }
     let source_scope = matches!(decl.stacking, Some((_, StackScope::Source)));
     let e = state.entities.get_mut(t).expect("target");
     let existing = e
         .statuses
         .iter()
         .position(|x| x.key == key && (!source_scope || x.source == a.source));
-    if a.aura
-        && let Some(i) = existing
-    {
-        let x = &e.statuses[i];
-        if x.rank > a.rank || (x.rank == a.rank && x.source < a.source) {
-            return 0;
-        }
-    }
     let previous = existing.map(|i| e.statuses.remove(i));
     if e.statuses.len() >= MAX_STATUSES {
         return 0;
@@ -392,6 +395,52 @@ fn apply_status(
     });
     after_status_change(ctx, state, t, !a.aura);
     i64::from(duration)
+}
+
+/// Whether `e` already holds the aura status `key` from a stronger or earlier holder
+/// (higher rank, or the same rank from a lower id): the aura's application then leaves
+/// it as it is.
+fn outranked(
+    catalog: &crate::catalog::Catalog,
+    e: &crate::entity::Entity,
+    key: StatusKey,
+    rank: u8,
+    source: EntityId,
+) -> bool {
+    let decl = catalog.spells.status(key);
+    let source_scope = matches!(decl.stacking, Some((_, StackScope::Source)));
+    e.statuses
+        .iter()
+        .find(|x| x.key == key && (!source_scope || x.source == source))
+        .is_some_and(|x| x.rank > rank || (x.rank == rank && x.source < source))
+}
+
+/// Whether an aura's status operations of `ability` at `rank` from `source` would change
+/// nothing on `target` now: every one names no status of the ability, or finds it held
+/// already from a stronger or earlier holder (see `apply_status`). Such a run of the aura
+/// is skipped.
+pub fn aura_settled(
+    ctx: &Ctx,
+    state: &State,
+    ability: AbilityId,
+    rank: u8,
+    source: EntityId,
+    target: EntityId,
+    operations: &[&canopy_content::abilities::Operation],
+) -> bool {
+    let catalog = ctx.catalog();
+    let Some(e) = state.entities.get(target) else {
+        return true;
+    };
+    operations.iter().all(|op| match op {
+        canopy_content::abilities::Operation::Effect(Effect::Status(s)) => {
+            match catalog.spells.status_named(ability, &s.id) {
+                None => true,
+                Some(key) => outranked(catalog, e, key, rank, source),
+            }
+        }
+        _ => false,
+    })
 }
 
 /// Whether a taunt from the source would be hostile to `t` (old `combat.hostile(caster,e)`).

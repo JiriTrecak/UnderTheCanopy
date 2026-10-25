@@ -22,6 +22,9 @@ pub struct SightCache {
     /// Per owner slot (players 0..8), per entity id: pass number × 2 + answer.
     stamps: RefCell<Vec<u32>>,
     width: Cell<usize>,
+    /// The entity id counter when the pass began, and the ids by owner slot (nobody, then
+    /// players), in id order.
+    owned: RefCell<(u32, Vec<Vec<EntityId>>)>,
 }
 
 impl SightCache {
@@ -35,6 +38,33 @@ impl SightCache {
             self.pass.set(0);
         }
         self.pass.set(self.pass.get() + 1);
+    }
+
+    /// Indexes the pass's entities by owner (planning neither creates units nor changes
+    /// owners; a pass that creates any entity falls back to scanning them all).
+    pub fn index_owners(&self, state: &State) {
+        let mut owned = self.owned.borrow_mut();
+        owned.0 = state.counters.entity;
+        owned.1.iter_mut().for_each(Vec::clear);
+        for e in state.entities.iter() {
+            let slot = owner_slot(e.owner);
+            if owned.1.len() <= slot {
+                owned.1.resize_with(slot + 1, Vec::new);
+            }
+            owned.1[slot].push(e.id);
+        }
+    }
+
+    /// The ids of the entities `owner` had when the pass began, in id order, while no
+    /// entity has been created since.
+    pub fn owned(&self, state: &State, owner: Owner) -> Option<std::cell::Ref<'_, [EntityId]>> {
+        let owned = self.owned.borrow();
+        if owned.0 != state.counters.entity {
+            return None;
+        }
+        Some(std::cell::Ref::map(owned, |o| {
+            o.1.get(owner_slot(owner)).map_or(&[][..], |ids| &ids[..])
+        }))
     }
 
     fn get(&self, owner: u8, id: EntityId) -> Option<bool> {
@@ -69,6 +99,13 @@ pub struct Senses<'a> {
     pub teams: &'a Teams,
     /// Answers cached for a planning pass; `None` outside one.
     pub cache: Option<&'a SightCache>,
+}
+
+fn owner_slot(owner: Owner) -> usize {
+    match owner {
+        Owner::Nobody => 0,
+        Owner::Player(p) => usize::from(p) + 1,
+    }
 }
 
 fn alive(e: &Entity) -> bool {

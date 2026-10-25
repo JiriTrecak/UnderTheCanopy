@@ -61,6 +61,7 @@ impl Spatial {
             self.terrain.heights(),
             &self.adjacent,
             radius,
+            planes(&self.clearance, &self.terrain),
         );
         let cache = self.steps.get(&radius);
         let size = self.size;
@@ -79,6 +80,36 @@ impl Spatial {
             }
             cache.get(a, ((dy + 1) * 3 + dx + 1) as u32, || exact(a, b))
         }
+    }
+
+    /// Computes every neighbour step of the body's grid ahead of play.
+    pub(super) fn warm_grid(&mut self, body: &Body) {
+        let radius = body.radius_milli();
+        self.ensure_navigation(radius);
+        let mut grid = self.grids.remove(&radius).expect("grid navigation");
+        if !grid.warmed() {
+            let table = match (self.adjacent.get(&radius), &self.clearance) {
+                (Some(sweep), Some(clearance)) if radius >= 500 => {
+                    Some(sweep.table(self.size, clearance.closed(), self.terrain.steep_edges()))
+                }
+                _ => None,
+            };
+            let exact = body_step(
+                self.size,
+                &self.walk,
+                self.terrain.heights(),
+                &self.adjacent,
+                radius,
+                planes(&self.clearance, &self.terrain),
+            );
+            let size = self.size;
+            let mut step = |a: u32, b: u32| match &table {
+                Some(t) => t.passes(size, a, b),
+                None => exact(a, b),
+            };
+            grid.warm(&mut step);
+        }
+        self.grids.insert(radius, grid);
     }
 
     fn ensure_navigation(&mut self, radius: i32) {
@@ -138,7 +169,7 @@ impl Spatial {
         let radius = body.radius_milli();
         if !self.layered() {
             self.ensure_navigation(radius);
-            if self.grids[&radius].known_unreachable(start, goal) {
+            if self.grids[&radius].proven_unreachable(start, goal) {
                 return None;
             }
             let chebyshev = (i64::from(start % self.size) - i64::from(goal % self.size))
@@ -229,7 +260,7 @@ impl Spatial {
         let size = self.size;
         let radius = body.radius_milli();
         self.ensure_navigation(radius);
-        if self.grids[&radius].known_unreachable(start, goal) {
+        if self.grids[&radius].proven_unreachable(start, goal) {
             return None;
         }
         let dx = (i64::from(start % size) - i64::from(goal % size)).abs();
@@ -281,22 +312,33 @@ impl Spatial {
             probe_limit,
             remember_origin: true,
         };
-        let route = self.grid_search(radius, start, goal, search);
+        let route = self.grid_search(radius, start, goal, search, false);
         if route.is_some() || corridor.is_none() {
             return route;
         }
-        // Traffic may close every portal of the preferred corridor: search fully.
+        // Traffic may close every portal of the preferred corridor: search fully, once a
+        // flood shows the search can succeed (an unreachable goal is the common case here,
+        // and the flood exhausts it far cheaper than the ordered search).
         self.stats.fallbacks += 1;
         search.corridor = None;
-        self.grid_search(radius, start, goal, search)
+        if !self
+            .grid_search(radius, start, goal, search, true)
+            .is_some()
+        {
+            return None;
+        }
+        self.grid_search(radius, start, goal, search, false)
     }
 
+    /// The grid search for `radius`; with `flood`, only whether it would succeed (an
+    /// empty route for yes).
     fn grid_search(
         &mut self,
         radius: i32,
         start: u32,
         goal: u32,
         search: Search,
+        flood: bool,
     ) -> Option<Vec<u32>> {
         let mut grid = self.grids.remove(&radius).expect("grid navigation");
         let mut scratch = std::mem::take(&mut self.scratch);
@@ -307,6 +349,7 @@ impl Spatial {
                 self.terrain.heights(),
                 &self.adjacent,
                 radius,
+                planes(&self.clearance, &self.terrain),
             );
             let topo = Topo {
                 walk: &self.walk,
@@ -315,14 +358,26 @@ impl Spatial {
                 occupancy: &self.occupancy,
             };
             let sectors = &mut self.sectors;
-            grid.path(
-                &mut scratch,
-                &mut step,
-                |a, b| sectors.connected(&topo, a, b),
-                start,
-                goal,
-                search,
-            )
+            if flood {
+                grid.reaches(
+                    &mut scratch,
+                    &mut step,
+                    |a, b| sectors.connected(&topo, a, b),
+                    start,
+                    goal,
+                    search,
+                )
+                .then(Vec::new)
+            } else {
+                grid.path(
+                    &mut scratch,
+                    &mut step,
+                    |a, b| sectors.connected(&topo, a, b),
+                    start,
+                    goal,
+                    search,
+                )
+            }
         };
         self.stats.searches += 1;
         self.stats.expanded += u64::from(scratch.expanded);
@@ -860,6 +915,21 @@ fn owner_code(owner: canopy_content::placement::Owner) -> u8 {
     }
 }
 
+/// The ground grid's closed and steep cells as bit planes (maps without decks).
+pub(super) fn planes<'a>(
+    clearance: &'a Option<super::clearance::Clearance>,
+    terrain: &'a crate::terrain::Terrain,
+) -> Option<super::adjacent::Planes<'a>> {
+    let steep = terrain.steep_edges();
+    clearance.as_ref().map(|clearance| super::adjacent::Planes {
+        closed: clearance.closed(),
+        steep: steep.any(),
+        words: steep.words_per_row(),
+        avoid: None,
+        rough: Some(clearance.rough()).filter(|r| !r.is_empty()),
+    })
+}
+
 /// The adjacent-cell step rule of a body radius on the ground grid: the compiled sweep
 /// for bodies of half a cell or more, the centre cell otherwise.
 fn body_step<'a>(
@@ -868,6 +938,7 @@ fn body_step<'a>(
     heights: &'a [i16],
     adjacent: &'a std::collections::BTreeMap<i32, super::adjacent::AdjacentSweep>,
     radius: i32,
+    planes: Option<super::adjacent::Planes<'a>>,
 ) -> impl Fn(u32, u32) -> bool + 'a {
     let ground = Ground { walk, heights };
     let compiled = if radius >= 500 {
@@ -875,8 +946,11 @@ fn body_step<'a>(
     } else {
         None
     };
-    move |a, b| match compiled {
-        Some(sweep) => sweep.clear(size, a, b, |p, q| ground.step(p, q)),
-        None => ground.step(a, b),
+    move |a, b| match (compiled, planes) {
+        (Some(sweep), Some(planes)) => {
+            sweep.clear_planes(size, a, b, planes, |p, q| ground.step(p, q))
+        }
+        (Some(sweep), None) => sweep.clear(size, a, b, |p, q| ground.step(p, q)),
+        (None, _) => ground.step(a, b),
     }
 }

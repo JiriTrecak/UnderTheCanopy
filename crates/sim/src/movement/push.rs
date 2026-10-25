@@ -20,6 +20,14 @@ use std::collections::BTreeMap;
 
 /// Buckets of the pair search, milli-cells.
 const BUCKET: i32 = 8_000;
+/// A body in a bucket of the pair search: where it stands this round.
+#[derive(Debug, Clone, Copy)]
+struct Member {
+    x: i64,
+    y: i64,
+    radius: i64,
+    index: u32,
+}
 
 /// How a body takes a push.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
@@ -147,46 +155,95 @@ impl Motion {
         }
         let tuning = self.spatial.tuning;
         let mut moved = vec![(0i64, 0i64); bodies.len()];
+        // Buckets over a grid padded by one bucket round the bodies, each bucket's bodies
+        // side by side with what the pair test reads. Corrections are integer sums, so the
+        // order pairs are met in does not matter.
+        let mut starts: Vec<u32> = Vec::new();
+        let mut members: Vec<Member> = Vec::new();
+        let mut slots: Vec<usize> = vec![0; bodies.len()];
+        let mut cells = vec![(0i32, 0i32); bodies.len()];
+        // Every pair that can overlap is in neighbouring buckets once a bucket is as wide
+        // as the widest reach, so any such width finds the same pairs as `BUCKET`; a crowd
+        // of small bodies then tests far fewer.
+        let widest = 2 * bodies.iter().map(|b| b.radius).max().unwrap_or(0) + tuning.push_room;
+        let side = if widest > i64::from(BUCKET) {
+            BUCKET
+        } else {
+            (widest as i32).max(1000)
+        };
         for _ in 0..tuning.push_rounds {
-            let mut buckets: BTreeMap<(i32, i32, bool), Vec<usize>> = BTreeMap::new();
             let at = |i: usize, moved: &[(i64, i64)]| {
                 (
                     i64::from(bodies[i].at.x) + moved[i].0,
                     i64::from(bodies[i].at.y) + moved[i].1,
                 )
             };
+            let (mut lo, mut hi) = ((i32::MAX, i32::MAX), (i32::MIN, i32::MIN));
+            for (i, cell) in cells.iter_mut().enumerate() {
+                let (x, y) = at(i, &moved);
+                *cell = ((x as i32).div_euclid(side), (y as i32).div_euclid(side));
+                lo = (lo.0.min(cell.0), lo.1.min(cell.1));
+                hi = (hi.0.max(cell.0), hi.1.max(cell.1));
+            }
+            let width = (hi.0 - lo.0 + 3) as usize;
+            let height = (hi.1 - lo.1 + 3) as usize;
+            let bucket = |(bx, by): (i32, i32), air: bool| {
+                ((by - lo.1 + 1) as usize * width + (bx - lo.0 + 1) as usize) * 2 + usize::from(air)
+            };
+            // Counting sort into the buckets.
+            starts.clear();
+            starts.resize(width * height * 2 + 1, 0);
+            for (i, body) in bodies.iter().enumerate() {
+                let b = bucket(cells[i], body.air);
+                slots[i] = b;
+                starts[b + 1] += 1;
+            }
+            for b in 1..starts.len() {
+                starts[b] += starts[b - 1];
+            }
+            members.clear();
+            members.resize(
+                bodies.len(),
+                Member {
+                    x: 0,
+                    y: 0,
+                    radius: 0,
+                    index: 0,
+                },
+            );
+            let mut fill = starts.clone();
             for (i, body) in bodies.iter().enumerate() {
                 let (x, y) = at(i, &moved);
-                buckets
-                    .entry((
-                        (x as i32).div_euclid(BUCKET),
-                        (y as i32).div_euclid(BUCKET),
-                        body.air,
-                    ))
-                    .or_default()
-                    .push(i);
+                let at = &mut fill[slots[i]];
+                members[*at as usize] = Member {
+                    x,
+                    y,
+                    radius: body.radius,
+                    index: i as u32,
+                };
+                *at += 1;
             }
             let mut delta = vec![(0i64, 0i64); bodies.len()];
             let mut any = false;
             for i in 0..bodies.len() {
                 let (ax, ay) = at(i, &moved);
-                let (bx, by) = (
-                    (ax as i32).div_euclid(BUCKET),
-                    (ay as i32).div_euclid(BUCKET),
-                );
+                let (bx, by) = cells[i];
                 for nx in bx - 1..=bx + 1 {
                     for ny in by - 1..=by + 1 {
-                        let Some(list) = buckets.get(&(nx, ny, bodies[i].air)) else {
-                            continue;
-                        };
-                        for &j in list {
-                            if j <= i || bodies[i].at.deck != bodies[j].at.deck {
+                        let b = bucket((nx, ny), bodies[i].air);
+                        let range = starts[b] as usize..starts[b + 1] as usize;
+                        for m in &members[range] {
+                            let j = m.index as usize;
+                            if j <= i {
                                 continue;
                             }
-                            let (cx, cy) = at(j, &moved);
+                            let (cx, cy) = (m.x, m.y);
                             let (mut dx, mut dy) = (ax - cx, ay - cy);
-                            let reach = bodies[i].radius + bodies[j].radius + tuning.push_room;
-                            if dx.abs() >= reach || dy.abs() >= reach {
+                            let reach = bodies[i].radius + m.radius + tuning.push_room;
+                            if dx.abs() >= reach
+                                || dy.abs() >= reach
+                                || bodies[i].at.deck != bodies[j].at.deck
+                            {
                                 continue;
                             }
                             let mut d = length_ceil(dx, dy);

@@ -68,6 +68,7 @@ pub fn plan(
             .refresh(state, senses.catalog, spatial.size());
     }
     scratch.sight.begin(state.counters.entity as usize);
+    scratch.sight.index_owners(state);
     let senses = Senses {
         cache: Some(&scratch.sight),
         ..*senses

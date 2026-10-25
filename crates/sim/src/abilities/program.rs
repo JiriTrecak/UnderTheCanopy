@@ -84,13 +84,24 @@ pub struct Run<'a> {
 pub enum Ops<'a> {
     Program(&'a [Operation]),
     List(Vec<Cow<'a, Operation>>),
+    /// Some operations of a program, in its order.
+    Picked(&'a [&'a Operation]),
 }
 
-impl<'a> Ops<'a> {
-    fn list(self) -> Vec<Cow<'a, Operation>> {
+impl Ops<'_> {
+    fn len(&self) -> usize {
         match self {
-            Ops::Program(ops) => ops.iter().map(Cow::Borrowed).collect(),
-            Ops::List(list) => list,
+            Ops::Program(ops) => ops.len(),
+            Ops::List(list) => list.len(),
+            Ops::Picked(ops) => ops.len(),
+        }
+    }
+
+    fn get(&self, i: usize) -> &Operation {
+        match self {
+            Ops::Program(ops) => &ops[i],
+            Ops::List(list) => list[i].as_ref(),
+            Ops::Picked(ops) => ops[i],
         }
     }
 }
@@ -451,34 +462,58 @@ pub fn run(ctx: &mut Ctx, state: &mut State, mut run: Run) {
         }
         _ => Vec::new(),
     };
-    let operations = std::mem::replace(&mut run.operations, Ops::List(Vec::new())).list();
-    for operation in &operations {
+    let operations = std::mem::replace(&mut run.operations, Ops::List(Vec::new()));
+    // Until the first recipient is reached nothing has changed the world, so a snapshot
+    // taken now equals the ones above: they are reused instead of taken again.
+    let mut pristine = true;
+    let caster_now = |pristine: bool, ctx: &Ctx, state: &State| {
+        if pristine {
+            resource_caster.clone()
+        } else {
+            current(ctx, state, &caster)
+        }
+    };
+    let actor_now = |pristine: bool, ctx: &Ctx, state: &State, id: EntityId| {
+        if pristine && run.aim.id() == Some(id) {
+            resource_target.clone()
+        } else {
+            actor::get(&ctx.senses, state, id)
+        }
+    };
+    for index in 0..operations.len() {
+        let operation = operations.get(index);
+        let single;
+        let arms: Vec<(&Effect, bool)>;
         let (declarations, branch): (
-            Vec<(&Effect, bool)>,
+            &[(&Effect, bool)],
             Option<&canopy_content::abilities::Branch>,
-        ) = match operation.as_ref() {
-            Operation::Effect(e) => (vec![(e, true)], None),
-            Operation::Branch(b) => (
-                b.then
+        ) = match operation {
+            Operation::Effect(e) => {
+                single = [(e, true)];
+                (&single, None)
+            }
+            Operation::Branch(b) => {
+                arms = b
+                    .then
                     .iter()
                     .map(|e| (e, true))
                     .chain(b.otherwise.iter().map(|e| (e, false)))
-                    .collect(),
-                Some(b),
-            ),
+                    .collect();
+                (&arms, Some(b))
+            }
         };
-        let branch_caster = branch.map(|_| current(ctx, state, &caster));
+        let branch_caster = branch.map(|_| caster_now(pristine, ctx, state));
         let mut decisions: Vec<(Option<EntityId>, bool)> = Vec::new();
-        for (effect, arm) in declarations {
-            let operation_caster = current(ctx, state, &caster);
+        for &(effect, arm) in declarations {
+            let operation_caster = caster_now(pristine, ctx, state);
             let operation_aim = match (effect, &run.aim) {
                 (Effect::Teleport(t), Aim::Unit(a)) if t.destination == Anchor::Target => {
-                    match actor::get(&ctx.senses, state, a.id) {
-                        Some(live) => Aim::Unit(Box::new(live)),
-                        None => run.aim.clone(),
+                    match actor_now(pristine, ctx, state, a.id) {
+                        Some(live) => Cow::Owned(Aim::Unit(Box::new(live))),
+                        None => Cow::Borrowed(&run.aim),
                     }
                 }
-                _ => run.aim.clone(),
+                _ => Cow::Borrowed(&run.aim),
             };
             let selector = if effect.query().is_some() || effect.target() == Anchor::Caster {
                 &operation_caster
@@ -501,7 +536,9 @@ pub fn run(ctx: &mut Ctx, state: &mut State, mut run: Run) {
             for target in targets {
                 let live = target
                     .id()
-                    .and_then(|id| actor::get(&ctx.senses, state, id));
+                    .and_then(|id| actor_now(pristine, ctx, state, id));
+                // What follows may change the world.
+                pristine = false;
                 if let Some(b) = branch {
                     let chosen = match decisions.iter().find(|(id, _)| *id == target.id()) {
                         Some((_, d)) => *d,

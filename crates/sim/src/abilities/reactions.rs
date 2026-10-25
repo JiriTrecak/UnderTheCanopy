@@ -111,6 +111,33 @@ fn entries(ctx: &Ctx, state: &State, holder: EntityId) -> Vec<Entry> {
     out
 }
 
+/// Whether any ability [`entries`] would list for `holder` has a trigger for `event`.
+fn answers(ctx: &Ctx, state: &State, holder: EntityId, event: TriggerEvent) -> bool {
+    let Some(e) = state.entities.get(holder) else {
+        return false;
+    };
+    let catalog = ctx.catalog();
+    let has = |ability| {
+        ctx.ability(ability)
+            .triggers
+            .iter()
+            .flatten()
+            .any(|t| t.event == event)
+    };
+    if let (Some(policy), Some(c)) = (catalog.spells.caster(e.definition), &e.caster)
+        && policy.bindings.iter().enumerate().any(|(i, b)| {
+            c.ranks.get(i).copied().unwrap_or(0) != 0
+                && ctx.ability(b.ability).activation == Activation::Passive
+                && has(b.ability)
+        })
+    {
+        return true;
+    }
+    e.statuses
+        .iter()
+        .any(|s| s.expires > state.tick && has(s.key.ability))
+}
+
 fn triggers<'a>(ctx: &Ctx<'a>, entry: &Entry, event: TriggerEvent) -> Vec<(u8, &'a Trigger)> {
     ctx.ability(entry.ability)
         .triggers
@@ -283,7 +310,8 @@ fn intervals(ctx: &mut Ctx, state: &mut State) {
     for holder in holders {
         let e = state.entities.get(holder).expect("holder");
         let owner = e.owner;
-        let list = if actor::alive(e) {
+        // Without an interval trigger the list would bring nothing: its timers go.
+        let list = if actor::alive(e) && answers(ctx, state, holder, TriggerEvent::Interval) {
             entries(ctx, state, holder)
         } else {
             Vec::new()
@@ -558,6 +586,10 @@ fn enqueue(
 
 /// Hit and damage triggers run at once (old `run`).
 fn run(ctx: &mut Ctx, state: &mut State, holder: EntityId, other: EntityId, event: TriggerEvent) {
+    // Most holders have nothing that answers the event: leave before listing entries.
+    if !answers(ctx, state, holder, event) {
+        return;
+    }
     for entry in &entries(ctx, state, holder) {
         for (index, trigger) in triggers(ctx, entry, event) {
             if !qualifies(ctx, state, holder, entry, index, trigger) {

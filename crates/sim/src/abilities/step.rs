@@ -8,7 +8,6 @@ use super::{
 };
 use crate::state::State;
 use canopy_content::abilities::{Activation, Anchor, Operation};
-use std::borrow::Cow;
 
 /// Step 2: the ability lifecycle, cast orders, autocast and taunts.
 pub fn begin(ctx: &mut Ctx, state: &mut State) {
@@ -66,6 +65,19 @@ pub fn resolve(ctx: &mut Ctx, state: &mut State) {
 /// Passive auras (old `auras`): source and query statuses once per holder, then each unit
 /// in radius; every aura status lasts one tick and is rebuilt.
 fn auras(ctx: &mut Ctx, state: &mut State) {
+    // Statuses move nobody: while only they are applied, positions taken once serve every
+    // holder's search.
+    let mut standing = deliveries::Standing::default();
+    let still = |ops: &[&Operation]| {
+        ops.iter().all(|op| match op {
+            Operation::Effect(e) => matches!(e, canopy_content::abilities::Effect::Status(_)),
+            Operation::Branch(b) => b
+                .then
+                .iter()
+                .chain(&b.otherwise)
+                .all(|e| matches!(e, canopy_content::abilities::Effect::Status(_))),
+        })
+    };
     for id in cast::casters(state) {
         let Some(e) = state.entities.get(id) else {
             continue;
@@ -104,14 +116,13 @@ fn auras(ctx: &mut Ctx, state: &mut State) {
             if !h.alive || !h.targetable {
                 break;
             }
-            let once: Vec<Cow<Operation>> = spell
+            let once: Vec<&Operation> = spell
                 .on_release
                 .iter()
                 .filter(|op| match op {
                     Operation::Effect(e) => e.target() == Anchor::Caster || e.query().is_some(),
                     Operation::Branch(_) => false,
                 })
-                .map(Cow::Borrowed)
                 .collect();
             if !once.is_empty() {
                 run(
@@ -121,8 +132,11 @@ fn auras(ctx: &mut Ctx, state: &mut State) {
                     Aim::Unit(Box::new(h.clone())),
                     b.ability,
                     rank,
-                    Ops::List(once),
+                    Ops::Picked(&once),
                 );
+                if !still(&once) {
+                    standing.forget();
+                }
             }
             let per: Vec<&Operation> = spell
                 .on_release
@@ -136,11 +150,42 @@ fn auras(ctx: &mut Ctx, state: &mut State) {
                 continue;
             }
             let center = (h.x(), h.y());
-            for target in deliveries::candidates(ctx, state, &h, spell, center, aura.radius) {
+            let moves = !still(&per);
+            // While only statuses are applied, a run touches its own recipient alone: a
+            // unit the aura has settled already stays settled until its turn, so it is
+            // left out before its snapshot is taken.
+            let settled = |t: crate::entity::EntityId| {
+                !moves && status_ops::aura_settled(ctx, state, b.ability, rank, h.id, t, &per)
+            };
+            // (Checked in debug builds once the holder's runs are done.)
+            let left: Vec<crate::entity::EntityId> = if cfg!(debug_assertions) {
+                state
+                    .entities
+                    .iter()
+                    .map(|e| e.id)
+                    .filter(|&t| settled(t))
+                    .collect()
+            } else {
+                Vec::new()
+            };
+            let near = deliveries::candidates_among(
+                ctx,
+                state,
+                &h,
+                spell,
+                center,
+                aura.radius,
+                standing.of(state),
+                settled,
+            );
+            for target in near {
                 if aura.melee_only && !target.melee {
                     continue;
                 }
-                let ops = Ops::List(per.iter().map(|&op| Cow::Borrowed(op)).collect());
+                // A run that would change nothing is not made.
+                if status_ops::aura_settled(ctx, state, b.ability, rank, h.id, target.id, &per) {
+                    continue;
+                }
                 run(
                     ctx,
                     state,
@@ -148,9 +193,17 @@ fn auras(ctx: &mut Ctx, state: &mut State) {
                     Aim::Unit(Box::new(target)),
                     b.ability,
                     rank,
-                    ops,
+                    Ops::Picked(&per),
                 );
+                if moves {
+                    standing.forget();
+                }
             }
+            debug_assert!(
+                left.iter()
+                    .all(|&t| status_ops::aura_settled(ctx, state, b.ability, rank, h.id, t, &per)),
+                "an aura's run changed another recipient"
+            );
         }
     }
 }

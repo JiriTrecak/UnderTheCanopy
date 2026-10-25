@@ -3,7 +3,8 @@
   "unreleased": {
     "added": [],
     "improved": [
-      "Campaign forest maps render up to twice as fast on the GPU, and every map a little faster, with the same picture"
+      "Campaign forest maps render up to twice as fast on the GPU, and every map a little faster, with the same picture",
+      "Fewer hitches in large battles and while computer players plan their first moves"
     ],
     "fixed": [],
     "knownIssues": []

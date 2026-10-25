@@ -53,6 +53,21 @@ pub fn spell_control_with(catalog: &Catalog, e: &Entity, immune: u8, kind: u8) -
         .any(|s| s.blocked & kind == 0 && flag(decl(catalog, s), kind))
 }
 
+/// Whether any one of the flag control kinds in `kinds` holds ([`spell_control_with`] of
+/// each, in one pass).
+pub fn spell_controls_with(catalog: &Catalog, e: &Entity, immune: u8, kinds: u8) -> bool {
+    let kinds = kinds & !immune;
+    if e.statuses.is_empty() || kinds == 0 {
+        return false;
+    }
+    e.statuses.iter().any(|s| {
+        let d = decl(catalog, s);
+        (0..8)
+            .map(|b| 1u8 << b)
+            .any(|kind| kinds & kind != 0 && s.blocked & kind == 0 && flag(d, kind))
+    })
+}
+
 /// Whether a declaration imposes a flag control kind.
 pub fn flag(d: &StatusDecl, kind: u8) -> bool {
     match kind {
@@ -134,7 +149,13 @@ pub fn spell_modifiers_with(
     let mut groups: Vec<(super::library::StatusKey, Modifiers)> = Vec::new();
     for s in &e.statuses {
         let d = decl(catalog, s);
-        let mut m = d.rank(s.rank).modifiers;
+        let declared = &d.rank(s.rank).modifiers;
+        // No modifier at all: stacks, blocks and per-source merging leave it empty.
+        if declared.present == 0 && !matches!(d.stacking, Some((_, StackScope::Source))) {
+            f(declared);
+            continue;
+        }
+        let mut m = *declared;
         if d.stacking.is_some() {
             m = m.times(s.stacks.unwrap_or(1));
         }
