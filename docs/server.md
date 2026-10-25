@@ -210,7 +210,10 @@ just server-deploy rollback    # back to the previous server
 
 The deploy needs the SSH key at `~/.config/under-the-canopy/matchhost.pem` (or `MATCHHOST_KEY`); never commit it. It copies `server/` to `/home/ubuntu/canopy-matchhost` (the feedback spool, `/home/ubuntu/canopy-matchhost/feedback-spool.jsonl`, and the files waiting in `/var/lib/canopy-matchhost` stay), runs `npm ci --omit=dev` there, installs `deploy/canopy-matchhost.service` and `deploy/nginx.conf`, stops the old `settlers-matchhost` service (the old repository's server, still installed in `/home/ubuntu/settlers-match` for rollback) and starts the new one, then checks health on the host and over HTTPS. Both services bind 127.0.0.1:8787, so only one runs.
 
-Changing the address the game connects to (`crates/net`, D32) needs new game builds; deploying the server alone does not change what released games use.
+- **Its own Node:** the server runs on the newest Node (26.12.1 since 2026-10-25, for its security fixes and `node:sqlite`), which the deploy installs in `/home/ubuntu/canopy-matchhost/node` from nodejs.org after checking its SHA-256 (`node_version`, `node_sha` in `deploy.sh`; raise both to update). The system's Node (20) stays for the host's other service, Understaffed's relay.
+- **The ladder** lives in `/var/lib/canopy-matchhost/ladder` (`LADDER_DATA`), outside what each deploy replaces; Nginx passes `/ladder` to the server: **https://18.134.138.1/ladder**. `LADDER_SEED=<folder> just server-deploy` replaces it with a seeded folder (`npm run seed-ladder`, `npm run ladder-pool`); without it the ladder keeps what it has.
+
+Changing the address the game connects to (`crates/net`, D32) needs new game builds; deploying the server alone does not change what released games use. Since protocol 2 (D107) the deployed server refuses rooms and queues to 0.4.4 and older ("Update Under the Canopy to play online").
 
 ## HTTPS and WSS
 

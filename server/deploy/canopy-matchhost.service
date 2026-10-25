@@ -17,7 +17,13 @@ Environment=FEEDBACK_SPOOL=/home/ubuntu/canopy-matchhost/feedback-spool.jsonl
 Environment=FEEDBACK_MEDIA_DIR=/var/lib/canopy-matchhost/feedback-media
 # LINEAR_API_KEY and LINEAR_TEAM_ID; optional (reports wait without them).
 EnvironmentFile=-/etc/canopy-matchhost/feedback.env
-ExecStart=/home/ubuntu/canopy-matchhost/server/node_modules/.bin/tsx src/index.ts
+# The ladder and the queues (docs/server.md): its database, replays and media, outside the
+# folder each deploy replaces.
+Environment=LADDER_DATA=/var/lib/canopy-matchhost/ladder
+# The server's own Node (the newest; node:sqlite needs 24 or later), installed by
+# deploy.sh beside it; the system's Node stays for the host's other services.
+Environment=PATH=/home/ubuntu/canopy-matchhost/node/bin:/usr/bin:/bin
+ExecStart=/home/ubuntu/canopy-matchhost/node/bin/node --import tsx src/index.ts
 Restart=always
 RestartSec=2
 

@@ -1,6 +1,7 @@
 #!/usr/bin/env bash
 # Deploys server/ to the match host and switches systemd to it
-# (docs/server.md). `deploy.sh rollback` switches back to the previous TypeScript server
+# (docs/server.md). `LADDER_SEED=<folder>` also uploads a seeded ladder folder
+# (`npm run seed-ladder`, then `npm run ladder-pool`) as the host's ladder, replacing it. `deploy.sh rollback` switches back to the previous TypeScript server
 # from the old repository, which stays installed in /home/ubuntu/settlers-match.
 # Refuses while a match is being played unless FORCE=1.
 set -euo pipefail
@@ -41,6 +42,26 @@ if [ "$playing" != 0 ] && [ "${FORCE:-}" != 1 ]; then
   exit 1
 fi
 
+# The server runs on its own Node (the newest, for its security fixes and node:sqlite),
+# installed beside it from nodejs.org and checked against its published SHA-256; the
+# system's Node stays for the host's other services. Raise both lines to update it.
+node_version=v26.12.1
+node_sha=6170b2d474e1c626f43cff3adc118df9fe3b573258a4fc3d850c8dbc6b079bbd
+"${ssh[@]}" "$remote" bash -s -- "$node_version" "$node_sha" <<'REMOTE'
+set -euo pipefail
+version=$1 sha=$2 home=/home/ubuntu/canopy-matchhost/node
+if [ "$("$home/bin/node" --version 2>/dev/null)" != "$version" ]; then
+  tarball=node-$version-linux-x64.tar.xz
+  tmp=$(mktemp -d)
+  curl -fsSL "https://nodejs.org/dist/$version/$tarball" -o "$tmp/$tarball"
+  echo "$sha  $tmp/$tarball" | sha256sum -c -
+  rm -rf "$home" && mkdir -p "$home"
+  tar -xJf "$tmp/$tarball" -C "$home" --strip-components=1
+  rm -rf "$tmp"
+fi
+"$home/bin/node" --version
+REMOTE
+
 "${ssh[@]}" "$remote" "mkdir -p '$dir/server'"
 rsync -az --delete --exclude node_modules -e "$rsync_ssh" \
   "$repo/server/src" "$repo/server/package.json" "$repo/server/package-lock.json" "$repo/server/tsconfig.json" "$repo/server/deploy" \
@@ -49,6 +70,7 @@ rsync -az --delete --exclude node_modules -e "$rsync_ssh" \
 "${ssh[@]}" "$remote" bash -s <<'REMOTE'
 set -euo pipefail
 cd /home/ubuntu/canopy-matchhost/server
+export PATH=/home/ubuntu/canopy-matchhost/node/bin:$PATH
 npm ci --omit=dev --no-audit --no-fund
 sudo cp deploy/canopy-matchhost.service /etc/systemd/system/canopy-matchhost.service
 sudo cp deploy/nginx.conf /etc/nginx/sites-available/canopy-matchhost
@@ -61,6 +83,13 @@ sudo systemctl disable --now settlers-matchhost 2>/dev/null || true
 sudo systemctl enable canopy-matchhost
 sudo systemctl restart canopy-matchhost
 REMOTE
+
+if [ -n "${LADDER_SEED:-}" ]; then
+  [ -s "$LADDER_SEED/ladder.sqlite" ] || { echo "No ladder.sqlite in $LADDER_SEED" >&2; exit 1; }
+  "${ssh[@]}" "$remote" "sudo systemctl stop canopy-matchhost && sudo mkdir -p /var/lib/canopy-matchhost/ladder && sudo chown -R ubuntu: /var/lib/canopy-matchhost/ladder"
+  rsync -az --delete -e "$rsync_ssh" "$LADDER_SEED/" "$remote:/var/lib/canopy-matchhost/ladder/"
+  "${ssh[@]}" "$remote" "sudo systemctl start canopy-matchhost"
+fi
 
 health
 "${ssh[@]}" "$remote" "sudo systemctl is-active canopy-matchhost"
