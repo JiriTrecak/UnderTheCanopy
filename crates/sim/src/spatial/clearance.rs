@@ -11,6 +11,9 @@ pub struct Clearance {
     words: usize,
     /// Cells closed to ground movement (terrain or static occupancy), one bit each.
     closed: Vec<u32>,
+    /// Cells closed or entered across a steep step ([`Clearance::with_steep`]), else empty.
+    rough: Vec<u32>,
+    steep: Vec<u32>,
 }
 
 impl Clearance {
@@ -21,6 +24,8 @@ impl Clearance {
             size,
             words,
             closed: vec![0; words * size],
+            rough: Vec::new(),
+            steep: Vec::new(),
         };
         for cell in 0..(size * size) as u32 {
             this.refresh(cell, walkable(cell));
@@ -28,9 +33,22 @@ impl Clearance {
         this
     }
 
+    /// Also keeps [`Clearance::rough`] for these steep cells (`SteepEdges::any`).
+    pub fn with_steep(mut self, steep: &[u32]) -> Self {
+        self.steep = steep.to_vec();
+        self.rough = self.closed.iter().zip(steep).map(|(c, s)| c | s).collect();
+        self
+    }
+
     /// Closed cells, one bit each, rows of [`SteepEdges::words_per_row`] words.
     pub fn closed(&self) -> &[u32] {
         &self.closed
+    }
+
+    /// Closed cells and cells entered across a steep step, as [`Clearance::closed`]; empty
+    /// without [`Clearance::with_steep`].
+    pub fn rough(&self) -> &[u32] {
+        &self.rough
     }
 
     pub fn refresh(&mut self, cell: u32, walkable: bool) {
@@ -41,6 +59,9 @@ impl Clearance {
             self.closed[word] &= !bit;
         } else {
             self.closed[word] |= bit;
+        }
+        if !self.rough.is_empty() {
+            self.rough[word] = self.closed[word] | self.steep[word];
         }
     }
 

@@ -289,7 +289,9 @@ impl Spatial {
         };
         let mut this = Self {
             tuning: Default::default(),
-            clearance: (!layered).then(|| Clearance::new(size, |c| walk[c as usize])),
+            clearance: (!layered).then(|| {
+                Clearance::new(size, |c| walk[c as usize]).with_steep(terrain.steep_edges().any())
+            }),
             terrain,
             size,
             profiles,

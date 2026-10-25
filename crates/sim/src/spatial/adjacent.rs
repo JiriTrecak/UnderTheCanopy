@@ -62,6 +62,9 @@ pub struct Planes<'a> {
     pub words: usize,
     /// A rectangle of cells `(x0, x1, y0, y1)` closed as well (a proposed foundation).
     pub avoid: Option<(i32, i32, i32, i32)>,
+    /// `closed | steep`, when kept: one test over the entered cells clears open flat
+    /// ground at once.
+    pub rough: Option<&'a [u32]>,
 }
 
 #[derive(Debug, Clone)]
@@ -193,6 +196,20 @@ impl AdjacentSweep {
         let at = |&(ry, x0, x1): &(i32, i32, i32)| {
             ((y + ry) as usize, (x + x0) as usize, (x + x1) as usize)
         };
+        let avoided = |ry: usize, x0: usize, x1: usize| {
+            planes.avoid.is_some_and(|(ax0, ax1, ay0, ay1)| {
+                (ay0..=ay1).contains(&(ry as i32)) && x0 as i32 <= ax1 && x1 as i32 >= ax0
+            })
+        };
+        // Crossed cells are entered cells: nothing rough among the entered decides.
+        if let Some(rough) = planes.rough
+            && p.entered.iter().all(|run| {
+                let (ry, x0, x1) = at(run);
+                !any_bit(rough, planes.words, ry, x0, x1) && !avoided(ry, x0, x1)
+            })
+        {
+            return true;
+        }
         for run in &p.entered {
             let (ry, x0, x1) = at(run);
             if any_bit(planes.closed, planes.words, ry, x0, x1) {
@@ -268,13 +285,14 @@ mod tests {
                 }
             })
             .collect();
-        let clearance = Clearance::new(size, |c| walk[c as usize]);
         let steep = SteepEdges::new(size, &heights);
+        let clearance = Clearance::new(size, |c| walk[c as usize]).with_steep(steep.any());
         let planes = Planes {
             closed: clearance.closed(),
             steep: steep.any(),
             words: steep.words_per_row(),
             avoid: None,
+            rough: None,
         };
         let step = |a: u32, b: u32| {
             walk[b as usize]
@@ -290,10 +308,20 @@ mod tests {
                         continue;
                     }
                     let to = y as u32 * size + x as u32;
+                    let exact = compiled.clear(size, from, to, step);
                     assert_eq!(
                         compiled.clear_planes(size, from, to, planes, step),
-                        compiled.clear(size, from, to, step),
+                        exact,
                         "radius {radius} from {from} to {to}"
+                    );
+                    let rough = Planes {
+                        rough: Some(clearance.rough()),
+                        ..planes
+                    };
+                    assert_eq!(
+                        compiled.clear_planes(size, from, to, rough, step),
+                        exact,
+                        "radius {radius} from {from} to {to}, rough cells"
                     );
                 }
             }

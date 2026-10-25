@@ -896,6 +896,7 @@ pub(super) fn planes<'a>(
         steep: steep.any(),
         words: steep.words_per_row(),
         avoid: None,
+        rough: Some(clearance.rough()).filter(|r| !r.is_empty()),
     })
 }
 

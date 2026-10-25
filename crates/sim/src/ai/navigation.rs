@@ -225,7 +225,9 @@ impl ObservedNavigation {
             .map(|c| geo.land(c) && !blockers.blocked(c))
             .collect();
         let layered = geo.layered();
-        let clearance = (!layered).then(|| Clearance::new(size, |c| walk[c as usize]));
+        let clearance = (!layered).then(|| {
+            Clearance::new(size, |c| walk[c as usize]).with_steep(geo.terrain.steep_edges().any())
+        });
         let sectors = (!layered).then(|| {
             Sectors::new(
                 size,
@@ -332,6 +334,7 @@ impl ObservedNavigation {
             steep: steep.any(),
             words: steep.words_per_row(),
             avoid: None,
+            rough: Some(c.rough()).filter(|r| !r.is_empty()),
         })
     }
 
@@ -611,6 +614,7 @@ impl ObservedNavigation {
             steep: steep.any(),
             words: steep.words_per_row(),
             avoid: None,
+            rough: Some(c.rough()).filter(|r| !r.is_empty()),
         });
         let mut step = |x: u32, y: u32| match planes {
             Some(planes) => adjacent.clear_planes(size, x, y, planes, |u, v| ground.step(u, v)),

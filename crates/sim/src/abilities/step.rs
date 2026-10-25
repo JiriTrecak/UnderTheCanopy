@@ -164,6 +164,10 @@ fn auras(ctx: &mut Ctx, state: &mut State) {
                 if aura.melee_only && !target.melee {
                     continue;
                 }
+                // A run that would change nothing is not made.
+                if status_ops::aura_settled(ctx, state, b.ability, rank, h.id, target.id, &per) {
+                    continue;
+                }
                 run(
                     ctx,
                     state,
