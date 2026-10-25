@@ -70,8 +70,8 @@ pub struct ImageDesc {
     /// The renderer binds this texture through an sRGB view (e.g. the pack's
     /// `Bc7RgbaUnormSrgb`), so samples arrive linear; the pass re-encodes them.
     pub srgb_view: bool,
-    /// Every texel samples with an alpha of exactly 1 (`canopy_assets::Texture::exactly_opaque`):
-    /// what it covers is not drawn.
+    /// Every texel samples with an alpha of exactly 1, so what it covers is not drawn. The
+    /// pack's opaque images are not (BC7 stores alpha 254 in some of their blocks).
     pub opaque: bool,
 }
 

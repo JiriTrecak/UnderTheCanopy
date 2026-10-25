@@ -92,7 +92,6 @@ impl UiLayer {
         // (D26), so every pack image draws with straight alpha.
         desc.premultiplied = false;
         desc.srgb_view = gpu_texture.format().is_srgb();
-        desc.opaque = source.exactly_opaque();
         self.textures.push(gpu_texture);
         self.images.insert(entry.to_owned(), desc);
         Ok(desc)

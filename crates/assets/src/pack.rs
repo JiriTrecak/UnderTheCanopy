@@ -606,29 +606,6 @@ impl Texture<'_> {
 
     /// Mip `level` as uncompressed RGBA8 (or the stored texels when uncompressed): the
     /// fallback for devices without BC texture compression.
-    /// Whether every texel of every level samples with an alpha of exactly 1: an opaque
-    /// texture whose every block or texel holds alpha 255 (the encoder may round an
-    /// opaque image's alpha in some BC7 blocks), or a format without alpha.
-    pub fn exactly_opaque(&self) -> bool {
-        if self.meta.alpha != crate::TextureAlpha::Opaque {
-            return false;
-        }
-        match self.meta.format {
-            crate::TextureFormat::Bc7RgbaUnorm | crate::TextureFormat::Bc7RgbaUnormSrgb => {
-                (0..self.meta.mips.len()).all(|level| {
-                    self.level(level)
-                        .chunks_exact(16)
-                        .all(crate::texture::bc7_block_opaque)
-                })
-            }
-            crate::TextureFormat::R8Unorm => true,
-            crate::TextureFormat::Rgba8Unorm | crate::TextureFormat::Rgba8UnormSrgb => {
-                (0..self.meta.mips.len())
-                    .all(|level| self.level(level).chunks_exact(4).all(|t| t[3] == 255))
-            }
-        }
-    }
-
     pub fn decode_level(&self, level: usize) -> Vec<u8> {
         let (w, h, d) = self.level_extent(level);
         crate::texture::decode(self.meta.format, w, h, d, self.level(level))
