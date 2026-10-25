@@ -6,11 +6,12 @@
 
 pub mod agent;
 pub mod api;
+pub mod openai;
 pub mod prompt;
 pub mod view;
 
 use agent::{Endpoint, Update};
-use api::{Delta, Settings};
+use api::{Delta, Provider, Settings};
 use serde::{Deserialize, Serialize};
 use serde_json::{Value, json};
 use std::path::PathBuf;
@@ -18,10 +19,8 @@ use std::sync::Arc;
 use std::sync::atomic::{AtomicBool, Ordering};
 use std::sync::mpsc;
 
-/// The folder in the user folder that holds the assistant's settings, key and threads.
+/// The folder in the user folder that holds the assistant's settings, keys and threads.
 const FOLDER: &str = "assistant";
-/// The environment variable a key may come from instead.
-const KEY_VARIABLE: &str = "ANTHROPIC_API_KEY";
 
 /// A conversation: its messages in the API's form, as they were sent and answered.
 #[derive(Debug, Clone, Default, Serialize, Deserialize)]
@@ -97,15 +96,16 @@ pub struct Assistant {
     pub composer: String,
     pub running: Option<Running>,
     pub settings: Settings,
-    pub key: Key,
+    /// Each provider's key, in `Provider::ALL`'s order.
+    pub keys: [Key; 2],
     /// The settings panel, the key typed there, and the thread list are open.
     pub settings_open: bool,
     pub key_entry: String,
     pub list_open: bool,
     /// Why the last turn stopped, when it did not finish.
     pub error: Option<String>,
-    /// The Messages endpoint (a local stand-in in tests).
-    url: String,
+    /// An endpoint in place of the provider's (a local stand-in in tests).
+    url: Option<String>,
     /// The prompt (built once: the skills do not change while the editor runs).
     system: Option<String>,
     /// Scroll the conversation to its end on the next frame.
@@ -113,9 +113,11 @@ pub struct Assistant {
 }
 
 #[derive(Debug, Default, Serialize, Deserialize)]
-#[serde(default)]
+#[serde(default, rename_all = "camelCase")]
 struct Stored {
-    model: Option<String>,
+    provider: Option<String>,
+    anthropic_model: Option<String>,
+    openai_model: Option<String>,
     effort: Option<String>,
 }
 
@@ -127,18 +129,24 @@ impl Assistant {
             .and_then(|u| std::fs::read_to_string(u.join(FOLDER).join("settings.json")).ok())
             .and_then(|t| serde_json::from_str::<Stored>(&t).ok())
         {
-            if let Some(model) = stored
-                .model
-                .filter(|m| api::MODELS.iter().any(|x| x.0 == m))
-            {
-                settings.model = model;
+            if let Some(provider) = stored.provider.as_deref().and_then(Provider::parse) {
+                settings.provider = provider;
+            }
+            // Any model id is kept: the providers name new models faster than the list.
+            for (provider, model) in [
+                (Provider::Anthropic, stored.anthropic_model),
+                (Provider::OpenAi, stored.openai_model),
+            ] {
+                if let Some(model) = model.filter(|m| !m.trim().is_empty()) {
+                    settings.set_model(provider, model.trim());
+                }
             }
             if let Some(effort) = stored.effort.filter(|e| api::EFFORTS.contains(&e.as_str())) {
                 settings.effort = effort;
             }
         }
         let mut me = Self {
-            key: Key::Missing,
+            keys: [Key::Missing, Key::Missing],
             user,
             data,
             threads: Vec::new(),
@@ -150,11 +158,11 @@ impl Assistant {
             key_entry: String::new(),
             list_open: false,
             error: None,
-            url: api::URL.to_string(),
+            url: None,
             system: None,
             follow: false,
         };
-        me.key = me.read_key();
+        me.keys = Provider::ALL.map(|p| me.read_key(p));
         me.load_threads();
         me
     }
@@ -169,49 +177,59 @@ impl Assistant {
 
     // --- The key -----------------------------------------------------------------------
 
-    fn read_key(&self) -> Key {
-        if let Ok(key) = std::env::var(KEY_VARIABLE)
+    fn read_key(&self, provider: Provider) -> Key {
+        if let Ok(key) = std::env::var(provider.key_variable())
             && !key.trim().is_empty()
         {
             return Key::Environment(key.trim().to_string());
         }
         self.folder()
-            .and_then(|f| std::fs::read_to_string(f.join("key")).ok())
+            .and_then(|f| std::fs::read_to_string(f.join(provider.key_file())).ok())
             .map(|k| k.trim().to_string())
             .filter(|k| !k.is_empty())
             .map(Key::Stored)
             .unwrap_or(Key::Missing)
     }
 
-    /// Keeps `key` in the user folder, readable by this user only. It is never shown,
-    /// logged or sent anywhere but the API.
-    pub fn store_key(&mut self, key: &str) -> Result<(), String> {
+    /// The key of `provider`.
+    pub fn key(&self, provider: Provider) -> &Key {
+        &self.keys[Provider::ALL
+            .iter()
+            .position(|p| *p == provider)
+            .unwrap_or(0)]
+    }
+
+    /// Keeps `provider`'s `key` in the user folder, readable by this user only. It is
+    /// never shown, logged or sent anywhere but that provider's API.
+    pub fn store_key(&mut self, provider: Provider, key: &str) -> Result<(), String> {
         let folder = self
             .folder()
             .ok_or("There is no user folder to keep it in.")?;
         std::fs::create_dir_all(&folder).map_err(|e| e.to_string())?;
-        let file = folder.join("key");
+        let file = folder.join(provider.key_file());
         std::fs::write(&file, key.trim()).map_err(|e| e.to_string())?;
         #[cfg(unix)]
         {
             use std::os::unix::fs::PermissionsExt;
             let _ = std::fs::set_permissions(&file, std::fs::Permissions::from_mode(0o600));
         }
-        self.key = self.read_key();
+        self.keys = Provider::ALL.map(|p| self.read_key(p));
         Ok(())
     }
 
-    pub fn forget_key(&mut self) {
+    pub fn forget_key(&mut self, provider: Provider) {
         if let Some(folder) = self.folder() {
-            let _ = std::fs::remove_file(folder.join("key"));
+            let _ = std::fs::remove_file(folder.join(provider.key_file()));
         }
-        self.key = self.read_key();
+        self.keys = Provider::ALL.map(|p| self.read_key(p));
     }
 
     pub fn store_settings(&self) {
         let Some(folder) = self.folder() else { return };
         let stored = Stored {
-            model: Some(self.settings.model.clone()),
+            provider: Some(self.settings.provider.id().to_string()),
+            anthropic_model: Some(self.settings.model_of(Provider::Anthropic).to_string()),
+            openai_model: Some(self.settings.model_of(Provider::OpenAi).to_string()),
             effort: Some(self.settings.effort.clone()),
         };
         if std::fs::create_dir_all(&folder).is_ok() {
@@ -319,9 +337,13 @@ impl Assistant {
         if text.is_empty() || self.running.is_some() {
             return;
         }
-        let Some(key) = self.key.value().map(str::to_string) else {
+        let provider = self.settings.provider;
+        let Some(key) = self.key(provider).value().map(str::to_string) else {
             self.settings_open = true;
-            self.error = Some("Add an API key to talk with the assistant.".into());
+            self.error = Some(format!(
+                "Add an {} API key in the settings to talk with the assistant.",
+                provider.label()
+            ));
             return;
         };
         if self.thread.id.is_empty() {
@@ -360,7 +382,10 @@ impl Assistant {
         let stop = Arc::new(AtomicBool::new(false));
         agent::start(
             Endpoint {
-                url: self.url.clone(),
+                url: self
+                    .url
+                    .clone()
+                    .unwrap_or_else(|| provider.url().to_string()),
                 key,
             },
             self.settings.clone(),
@@ -524,25 +549,26 @@ mod tests {
 
     #[test]
     fn a_stored_key_is_private_and_can_be_forgotten() {
-        if std::env::var(KEY_VARIABLE).is_ok() {
+        if std::env::var(Provider::OpenAi.key_variable()).is_ok() {
             return; // The environment's key wins; nothing to test here.
         }
         let user = std::env::temp_dir().join(format!("canopy-key-{}", now_millis()));
         let mut assistant = Assistant::new(Some(user.clone()), None);
-        assert_eq!(assistant.key, Key::Missing);
-        assistant.store_key("  sk-test  ").unwrap();
-        assert_eq!(assistant.key, Key::Stored("sk-test".into()));
+        let p = Provider::OpenAi;
+        assert_eq!(assistant.key(p), &Key::Missing);
+        assistant.store_key(p, "  sk-test  ").unwrap();
+        assert_eq!(assistant.key(p), &Key::Stored("sk-test".into()));
         #[cfg(unix)]
         {
             use std::os::unix::fs::PermissionsExt;
-            let mode = std::fs::metadata(user.join(FOLDER).join("key"))
+            let mode = std::fs::metadata(user.join(FOLDER).join(p.key_file()))
                 .unwrap()
                 .permissions()
                 .mode();
             assert_eq!(mode & 0o077, 0, "only its owner reads it");
         }
-        assistant.forget_key();
-        assert_eq!(assistant.key, Key::Missing);
+        assistant.forget_key(p);
+        assert_eq!(assistant.key(p), &Key::Missing);
         let _ = std::fs::remove_dir_all(user);
     }
 }

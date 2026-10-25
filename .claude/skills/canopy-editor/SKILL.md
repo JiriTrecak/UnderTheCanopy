@@ -131,10 +131,10 @@ Every document also has **Form** (from its schema) and **JSON** (its text) in th
 
 ## The assistant
 
-The sidebar on the right of every editor: Claude, called with the user's API key, working through these same tools (docs/editor.md, The assistant).
+The sidebar on the right of every editor: Claude (Anthropic, the default) or OpenAI's GPT, chosen in its Settings and called with the user's key for that provider, working through these same tools (docs/editor.md, The assistant).
 - **Context:** each message carries what the user is looking at, in an `<editor-context>` block (the editor, the open document, unsaved documents, problems).
 - **Approval:** `save`, `cook`, `import_asset`, `import_starcraft` (with a source), `map_preview` and the sound tools wait for the user's Allow. Everything else runs as undo steps.
-- **Threads** are kept in the user folder's `assistant/threads/`. The model and effort are in the Settings.
+- **Threads** are kept in the user folder's `assistant/threads/`, in one form either provider can carry on. The provider, the model for each, the effort and each provider's key (`ANTHROPIC_API_KEY` / `OPENAI_API_KEY`, or one entered there) are in the Settings.
 
 ## Recipes
 

@@ -132,7 +132,7 @@ async fn run(
             model: message
                 .model
                 .clone()
-                .unwrap_or_else(|| settings.model.clone()),
+                .unwrap_or_else(|| settings.model().to_string()),
             usage: message.usage,
         });
         match message.stop_reason.as_deref() {
@@ -181,17 +181,25 @@ async fn stream(
     updates: &mpsc::Sender<Update>,
     stop: &AtomicBool,
 ) -> Result<Option<Message>, String> {
-    let body = api::body(settings, system, tools, messages);
-    let mut response = client
+    use api::Provider;
+    let provider = settings.provider;
+    let request = client
         .post(&endpoint.url)
-        .header("x-api-key", &endpoint.key)
-        .header("anthropic-version", api::VERSION)
-        .header("anthropic-beta", api::BETAS)
-        .header("content-type", "application/json")
-        .body(body.to_string())
+        .header("content-type", "application/json");
+    let request = match provider {
+        Provider::Anthropic => request
+            .header("x-api-key", &endpoint.key)
+            .header("anthropic-version", api::VERSION)
+            .header("anthropic-beta", api::BETAS)
+            .body(api::body(settings, system, tools, messages).to_string()),
+        Provider::OpenAi => request
+            .bearer_auth(&endpoint.key)
+            .body(super::openai::body(settings, system, tools, messages).to_string()),
+    };
+    let mut response = request
         .send()
         .await
-        .map_err(|e| format!("Cannot reach the Claude API: {e}"))?;
+        .map_err(|e| format!("Cannot reach the {} API: {e}", provider.label()))?;
     let status = response.status();
     if !status.is_success() {
         let text = response.text().await.unwrap_or_default();
@@ -200,14 +208,18 @@ async fn stream(
             .and_then(|v| v["error"]["message"].as_str().map(str::to_string))
             .unwrap_or(text);
         return Err(match status.as_u16() {
-            401 => "The API key was refused (401). Check it in the assistant's settings.".into(),
+            401 => format!(
+                "The {} key was refused (401). Check it in the assistant's settings.",
+                provider.label()
+            ),
             429 => format!("Rate limited (429): {message}"),
             529 => "The API is overloaded (529); try again shortly.".into(),
-            code => format!("The API answered {code}: {message}"),
+            code => format!("The {} API answered {code}: {message}", provider.label()),
         });
     }
     let mut sse = Sse::default();
-    let mut message = Message::default();
+    let mut claude = Message::default();
+    let mut openai = super::openai::Stream::default();
     loop {
         if stop.load(Ordering::Relaxed) {
             return Ok(None);
@@ -220,15 +232,22 @@ async fn stream(
             break;
         };
         for event in sse.push(&chunk) {
-            if let Some(delta) = message.feed(&event)? {
+            let delta = match provider {
+                Provider::Anthropic => claude.feed(&event)?,
+                Provider::OpenAi => openai.feed(&event)?,
+            };
+            if let Some(delta) = delta {
                 let _ = updates.send(Update::Delta(delta));
             }
         }
     }
-    if message.stop_reason.is_none() {
-        return Err("The stream ended before the answer did.".into());
-    }
-    Ok(Some(message))
+    let message = match provider {
+        Provider::Anthropic => Some(claude).filter(|m| m.stop_reason.is_some()),
+        Provider::OpenAi => openai.finish(),
+    };
+    message
+        .map(Some)
+        .ok_or_else(|| "The stream ended before the answer did.".into())
 }
 
 /// Runs one tool call on the editor's thread, asking the user first when it writes files
@@ -482,6 +501,87 @@ mod tests {
                 .unwrap()
                 .iter()
                 .any(|t| t["name"] == "edit")
+        );
+    }
+
+    fn openai_turn(output: Vec<Value>) -> Vec<Value> {
+        let mut events = vec![json!({"type":"response.created","response":{"id":"r"}})];
+        for item in &output {
+            events.push(json!({"type":"response.output_item.added","item":item}));
+            events.push(json!({"type":"response.output_item.done","item":item}));
+        }
+        events.push(json!({"type":"response.completed","response":{
+            "model":"gpt-6-astra","output":output,
+            "usage":{"input_tokens":100,"output_tokens":10,"input_tokens_details":{"cached_tokens":0}}}}));
+        events
+    }
+
+    #[test]
+    fn the_loop_speaks_openai_too_and_sends_its_reasoning_back_with_the_answers() {
+        let reasoning =
+            json!({"type":"reasoning","id":"rs_1","encrypted_content":"opaque","summary":[]});
+        let (url, seen) = fake_api(vec![
+            openai_turn(vec![
+                reasoning.clone(),
+                json!({"type":"function_call","id":"fc_1","call_id":"call_1","name":"status","arguments":"{}"}),
+            ]),
+            openai_turn(vec![
+                json!({"type":"message","role":"assistant","content":[{"type":"output_text","text":"All clean."}]}),
+            ]),
+        ]);
+        let (calls, editor) = mpsc::channel::<Call>();
+        let (updates, view) = mpsc::channel();
+        let settings = Settings {
+            provider: api::Provider::OpenAi,
+            ..Settings::default()
+        };
+        start(
+            Endpoint {
+                url,
+                key: "sk-test".into(),
+            },
+            settings,
+            "system".into(),
+            vec![json!({"role":"user","content":"How is it?"})],
+            calls,
+            updates,
+            Arc::new(AtomicBool::new(false)),
+        );
+        let deadline = std::time::Instant::now() + Duration::from_secs(20);
+        let mut turns = Vec::new();
+        let finished = loop {
+            assert!(std::time::Instant::now() < deadline, "the loop finished");
+            while let Ok(call) = editor.try_recv() {
+                let _ = call.reply.send(Ok(json!({"problems": 0})));
+            }
+            let Ok(update) = view.recv_timeout(Duration::from_millis(20)) else {
+                continue;
+            };
+            match update {
+                Update::Turn(t) => turns.push(t),
+                Update::Finished(outcome) => break outcome,
+                _ => {}
+            }
+        };
+        assert_eq!(finished, None);
+        assert_eq!(turns.len(), 3);
+        assert_eq!(turns[2]["content"][0]["text"], "All clean.");
+        let bodies = seen.lock().unwrap();
+        assert_eq!(bodies[0]["model"], "gpt-6-astra");
+        assert_eq!(bodies[0]["store"], false);
+        assert!(
+            bodies[0]["tools"]
+                .as_array()
+                .unwrap()
+                .iter()
+                .any(|t| t["type"] == "function" && t["name"] == "edit")
+        );
+        let input = bodies[1]["input"].as_array().unwrap();
+        assert!(input.contains(&reasoning), "the reasoning item goes back");
+        assert!(
+            input
+                .iter()
+                .any(|i| i["type"] == "function_call_output" && i["call_id"] == "call_1")
         );
     }
 

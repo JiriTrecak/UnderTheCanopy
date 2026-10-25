@@ -1,4 +1,5 @@
-//! The Claude Messages API over HTTPS (docs/editor.md, The assistant). Rust has no
+//! The assistant's providers and the Claude Messages API over HTTPS (docs/editor.md, The
+//! assistant; OpenAI's Responses API is `super::openai`). Rust has no
 //! official Anthropic SDK, so this speaks the documented wire format: a streamed
 //! `POST /v1/messages` whose server-sent events are folded back into the response's
 //! content blocks. Blocks come back exactly as the API sent them (text, thinking with its
@@ -17,30 +18,150 @@ pub const BETAS: &str = "server-side-fallback-2026-07-01,thinking-display-update
 /// Room for a turn's output (a stream, so no request timeout to fear).
 pub const MAX_TOKENS: u32 = 64_000;
 
-/// The models offered, the default first: id, label, and dollars per million input,
-/// output and cache-read tokens.
-pub const MODELS: [(&str, &str, [f64; 3]); 2] = [
+/// A model offered: id, label, and dollars per million input, output and cache-read
+/// tokens.
+pub type Model = (&'static str, &'static str, [f64; 3]);
+
+/// Anthropic's models, the default first.
+pub const MODELS: [Model; 2] = [
     ("claude-opus-5-5", "Claude Opus 5.5", [4.0, 20.0, 0.20]),
     ("claude-sonnet-5-5", "Claude Sonnet 5.5", [2.0, 10.0, 0.20]),
 ];
 
-/// How hard the model thinks: the API's effort levels.
+/// OpenAI's, the default first (its cache reads at a tenth of the input rate).
+pub const OPENAI_MODELS: [Model; 2] = [
+    ("gpt-6-astra", "GPT-6 Astra", [10.0, 50.0, 1.0]),
+    ("gpt-6.1-sol", "GPT-6.1 Sol", [2.0, 10.0, 0.20]),
+];
+
+/// How hard the model thinks: effort levels both providers take.
 pub const EFFORTS: [&str; 4] = ["low", "medium", "high", "xhigh"];
 
-/// One request's settings.
+/// Who answers: Anthropic's Claude (the default) or OpenAI.
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Default)]
+pub enum Provider {
+    #[default]
+    Anthropic,
+    OpenAi,
+}
+
+impl Provider {
+    pub const ALL: [Self; 2] = [Self::Anthropic, Self::OpenAi];
+
+    pub fn id(self) -> &'static str {
+        match self {
+            Self::Anthropic => "anthropic",
+            Self::OpenAi => "openai",
+        }
+    }
+
+    pub fn parse(id: &str) -> Option<Self> {
+        Self::ALL.into_iter().find(|p| p.id() == id)
+    }
+
+    pub fn label(self) -> &'static str {
+        match self {
+            Self::Anthropic => "Anthropic",
+            Self::OpenAi => "OpenAI",
+        }
+    }
+
+    pub fn models(self) -> &'static [Model] {
+        match self {
+            Self::Anthropic => &MODELS,
+            Self::OpenAi => &OPENAI_MODELS,
+        }
+    }
+
+    pub fn url(self) -> &'static str {
+        match self {
+            Self::Anthropic => URL,
+            Self::OpenAi => super::openai::URL,
+        }
+    }
+
+    /// The environment variable a key may come from.
+    pub fn key_variable(self) -> &'static str {
+        match self {
+            Self::Anthropic => "ANTHROPIC_API_KEY",
+            Self::OpenAi => "OPENAI_API_KEY",
+        }
+    }
+
+    /// The file in the assistant's folder that keeps an entered key.
+    pub fn key_file(self) -> &'static str {
+        match self {
+            Self::Anthropic => "anthropic-key",
+            Self::OpenAi => "openai-key",
+        }
+    }
+
+    fn index(self) -> usize {
+        match self {
+            Self::Anthropic => 0,
+            Self::OpenAi => 1,
+        }
+    }
+}
+
+/// One request's settings: the provider, the model chosen for each provider, the effort.
 #[derive(Debug, Clone, PartialEq)]
 pub struct Settings {
-    pub model: String,
+    pub provider: Provider,
+    pub models: [String; 2],
     pub effort: String,
 }
 
 impl Default for Settings {
     fn default() -> Self {
         Self {
-            model: MODELS[0].0.to_string(),
+            provider: Provider::Anthropic,
+            models: [MODELS[0].0.to_string(), OPENAI_MODELS[0].0.to_string()],
             effort: "high".to_string(),
         }
     }
+}
+
+impl Settings {
+    /// The model the provider answers with.
+    pub fn model(&self) -> &str {
+        &self.models[self.provider.index()]
+    }
+
+    pub fn set_model(&mut self, provider: Provider, model: &str) {
+        self.models[provider.index()] = model.to_string();
+    }
+
+    pub fn model_of(&self, provider: Provider) -> &str {
+        &self.models[provider.index()]
+    }
+
+    /// The chosen model's label (its id when it is not one offered).
+    pub fn model_label(&self) -> String {
+        let id = self.model();
+        self.provider
+            .models()
+            .iter()
+            .find(|m| m.0 == id)
+            .map_or(id.to_string(), |m| m.1.to_string())
+    }
+}
+
+/// A thread's messages as Anthropic takes them: OpenAI's own items stay behind.
+pub fn messages(thread: &[Value]) -> Vec<Value> {
+    thread
+        .iter()
+        .filter_map(|m| {
+            let mut m = m.clone();
+            if let Some(blocks) = m["content"].as_array_mut() {
+                blocks.retain(|b| b["type"] != "openai");
+                if blocks.is_empty() {
+                    return None;
+                }
+            }
+            Some(m)
+        })
+        .collect()
 }
 
 /// The request body: a stream with the stable system prompt and tools first (the cache
@@ -48,12 +169,12 @@ impl Default for Settings {
 /// the latest turn.
 pub fn body(settings: &Settings, system: &str, tools: &[Value], messages: &[Value]) -> Value {
     json!({
-        "model": settings.model,
+        "model": settings.model(),
         "max_tokens": MAX_TOKENS,
         "stream": true,
         "system": [{ "type": "text", "text": system }],
         "tools": tools,
-        "messages": messages,
+        "messages": self::messages(messages),
         "thinking": { "type": "adaptive", "display": "updates" },
         "output_config": { "effort": settings.effort },
         "fallbacks": "default",
@@ -261,7 +382,8 @@ fn append(block: &mut Value, field: &str, text: &str) {
 pub fn cost(model: &str, usage: [u64; 4]) -> f64 {
     let rates = MODELS
         .iter()
-        .find(|(id, _, _)| *id == model)
+        .chain(OPENAI_MODELS.iter())
+        .find(|(id, _, _)| model.starts_with(id))
         .map(|(_, _, r)| *r)
         .unwrap_or(MODELS[0].2);
     // Cache writes (5-minute) cost 1.25 times the input rate.
@@ -352,6 +474,21 @@ mod tests {
             &json!({"type":"error","error":{"type":"overloaded_error","message":"Overloaded"}}),
         );
         assert_eq!(error, Err("Overloaded".into()));
+    }
+
+    #[test]
+    fn a_thread_openai_wrote_part_of_reaches_anthropic_without_its_items() {
+        let thread = [
+            json!({"role":"user","content":"hi"}),
+            json!({"role":"assistant","content":[
+                {"type":"text","text":"Hello."},
+                {"type":"openai","items":[{"type":"reasoning","encrypted_content":"x"}]}
+            ]}),
+            json!({"role":"assistant","content":[{"type":"openai","items":[]}]}),
+        ];
+        let sent = body(&Settings::default(), "s", &[], &thread)["messages"].clone();
+        assert_eq!(sent.as_array().unwrap().len(), 2);
+        assert_eq!(sent[1]["content"], json!([{"type":"text","text":"Hello."}]));
     }
 
     #[test]

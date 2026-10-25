@@ -1142,6 +1142,9 @@ fn editor(rig: &mut Rig, paths: &Paths) -> Result<()> {
     shoot(&mut editor, rig, "editor-assistant-thread")?;
     editor.assistant_thread("Settings", Vec::new(), true);
     shoot(&mut editor, rig, "editor-assistant-settings")?;
+    editor.assistant_provider("openai");
+    shoot(&mut editor, rig, "editor-assistant-settings-openai")?;
+    editor.assistant_provider("anthropic");
     editor.set_assistant(false);
     editor.select(Kind::Races);
     editor.open_first(1);

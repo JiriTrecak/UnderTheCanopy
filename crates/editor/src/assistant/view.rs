@@ -2,7 +2,7 @@
 //! call with its answer), the turn streaming in, a call waiting for approval, the thread
 //! list, the settings, and the composer.
 
-use super::{Assistant, Env, Key, api};
+use super::{Assistant, Env, Key, Provider, api};
 use crate::icons::Icon;
 use crate::theme::*;
 use crate::widgets::{eyebrow, icon_button, primary};
@@ -134,7 +134,7 @@ impl Assistant {
             .corner_radius(10)
             .inner_margin(Margin::same(10))
             .show(ui, |ui| {
-                let hint = match self.key {
+                let hint = match self.key(self.settings.provider) {
                     Key::Missing => "Add an API key in Settings to begin",
                     _ => "Ask about anything in the open package…",
                 };
@@ -155,10 +155,7 @@ impl Assistant {
                     self.send(env);
                 }
                 ui.horizontal(|ui| {
-                    let model = api::MODELS
-                        .iter()
-                        .find(|m| m.0 == self.settings.model)
-                        .map_or("Claude", |m| m.1);
+                    let model = self.settings.model_label();
                     ui.label(
                         RichText::new(format!("{model} · {} effort", self.settings.effort))
                             .color(FAINT)
@@ -309,60 +306,113 @@ impl Assistant {
                 Frame::new()
                     .inner_margin(Margin::symmetric(14, 12))
                     .show(ui, |ui| {
-                        ui.label(eyebrow("Model"));
                         let mut changed = false;
-                        for (id, label, rates) in api::MODELS {
-                            let text = format!("{label}  ·  ${} / ${} per million tokens in / out", rates[0], rates[1]);
-                            if ui.radio(self.settings.model == id, text).clicked() {
-                                self.settings.model = id.to_string();
+                        ui.label(eyebrow("Provider"));
+                        ui.horizontal(|ui| {
+                            for provider in Provider::ALL {
+                                let on = self.settings.provider == provider;
+                                if ui.selectable_label(on, provider.label()).clicked() && !on {
+                                    self.settings.provider = provider;
+                                    self.key_entry.clear();
+                                    changed = true;
+                                }
+                            }
+                        });
+                        ui.label(
+                            RichText::new("Threads keep going on either: switch whenever you like.")
+                                .color(FAINT)
+                                .size(11.0),
+                        );
+                        let provider = self.settings.provider;
+                        ui.add_space(8.0);
+                        ui.label(eyebrow("Model"));
+                        for (id, label, rates) in provider.models() {
+                            let text = format!(
+                                "{label}  ·  ${} / ${} per million tokens in / out",
+                                rates[0], rates[1]
+                            );
+                            if ui.radio(self.settings.model() == *id, text).clicked() {
+                                self.settings.set_model(provider, id);
                                 changed = true;
                             }
                         }
+                        ui.horizontal(|ui| {
+                            ui.label(RichText::new("Model id").color(MUTED).size(11.0));
+                            let mut id = self.settings.model().to_string();
+                            if ui
+                                .add(TextEdit::singleline(&mut id).desired_width(f32::INFINITY))
+                                .on_hover_text("Any model the provider offers, by its id")
+                                .changed()
+                                && !id.trim().is_empty()
+                            {
+                                self.settings.set_model(provider, id.trim());
+                                changed = true;
+                            }
+                        });
                         ui.add_space(8.0);
                         ui.label(eyebrow("Effort"));
                         ui.horizontal(|ui| {
                             for effort in api::EFFORTS {
-                                if ui.selectable_label(self.settings.effort == effort, effort).clicked() {
+                                if ui
+                                    .selectable_label(self.settings.effort == effort, effort)
+                                    .clicked()
+                                {
                                     self.settings.effort = effort.to_string();
                                     changed = true;
                                 }
                             }
                         });
                         ui.label(
-                            RichText::new("Higher effort thinks longer and costs more; high suits most editing.")
-                                .color(FAINT)
-                                .size(11.0),
+                            RichText::new(
+                                "Higher effort thinks longer and costs more; high suits most editing.",
+                            )
+                            .color(FAINT)
+                            .size(11.0),
                         );
                         if changed {
                             self.store_settings();
                         }
                         ui.add_space(12.0);
-                        ui.label(eyebrow("API key"));
-                        match self.key.clone() {
+                        ui.label(eyebrow(&format!("{} API key", provider.label())));
+                        match self.key(provider).clone() {
                             Key::Environment(_) => {
-                                ui.label(RichText::new("From ANTHROPIC_API_KEY in the environment.").color(SOFT));
+                                ui.label(
+                                    RichText::new(format!(
+                                        "From {} in the environment.",
+                                        provider.key_variable()
+                                    ))
+                                    .color(SOFT),
+                                );
                             }
                             Key::Stored(_) => {
-                                ui.label(RichText::new("Kept in your user folder, readable by you only.").color(SOFT));
+                                ui.label(
+                                    RichText::new("Kept in your user folder, readable by you only.")
+                                        .color(SOFT),
+                                );
                                 if ui.button("Remove the key").clicked() {
-                                    self.forget_key();
+                                    self.forget_key(provider);
                                 }
                             }
                             Key::Missing => {
-                                ui.label(
-                                    RichText::new("The assistant calls the Claude API with your key (a Claude Code subscription does not cover it). It stays in your user folder and is sent only to the API.")
-                                        .color(SOFT),
-                                );
+                                let note = match provider {
+                                    Provider::Anthropic => "The assistant calls the Claude API with your key (a Claude Code subscription does not cover it). It stays in your user folder and is sent only to Anthropic.",
+                                    Provider::OpenAi => "The assistant calls OpenAI's API with your key. It stays in your user folder and is sent only to OpenAI.",
+                                };
+                                ui.label(RichText::new(note).color(SOFT));
+                                let hint = match provider {
+                                    Provider::Anthropic => "sk-ant-…",
+                                    Provider::OpenAi => "sk-…",
+                                };
                                 ui.add(
                                     TextEdit::singleline(&mut self.key_entry)
                                         .password(true)
-                                        .hint_text("sk-ant-…")
+                                        .hint_text(hint)
                                         .desired_width(f32::INFINITY),
                                 );
                                 let entered = !self.key_entry.trim().is_empty();
                                 if ui.add_enabled(entered, primary("Keep the key")).clicked() {
                                     let key = std::mem::take(&mut self.key_entry);
-                                    if let Err(error) = self.store_key(&key) {
+                                    if let Err(error) = self.store_key(provider, &key) {
                                         self.error = Some(format!("Cannot keep the key: {error}"));
                                     } else {
                                         self.error = None;
@@ -371,6 +421,21 @@ impl Assistant {
                                 }
                             }
                         }
+                        // The other provider's key, at a glance.
+                        let other = Provider::ALL
+                            .into_iter()
+                            .find(|p| *p != provider)
+                            .unwrap_or(provider);
+                        let state = match self.key(other) {
+                            Key::Environment(_) => "from the environment",
+                            Key::Stored(_) => "kept",
+                            Key::Missing => "not set",
+                        };
+                        ui.label(
+                            RichText::new(format!("{} key: {state}", other.label()))
+                                .color(FAINT)
+                                .size(11.0),
+                        );
                         ui.add_space(12.0);
                         ui.label(eyebrow("Tools and skills"));
                         ui.label(

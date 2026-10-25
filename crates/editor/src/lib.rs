@@ -392,6 +392,12 @@ impl Editor {
 
     /// Shows the assistant with `messages` as its thread (in the API's form) and, when
     /// `settings`, its settings (captures).
+    /// Switches the assistant to provider `id` (`anthropic`, `openai`) for this session
+    /// only (captures).
+    pub fn assistant_provider(&mut self, id: &str) {
+        self.shell.assistant_provider(id);
+    }
+
     pub fn assistant_thread(
         &mut self,
         title: &str,

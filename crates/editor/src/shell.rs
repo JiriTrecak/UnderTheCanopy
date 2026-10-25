@@ -2542,6 +2542,12 @@ impl Shell {
         self.current = kind;
     }
 
+    pub(crate) fn assistant_provider(&mut self, id: &str) {
+        if let Some(provider) = crate::assistant::api::Provider::parse(id) {
+            self.chat.settings.provider = provider;
+        }
+    }
+
     pub(crate) fn assistant_thread(&mut self, title: &str, messages: Vec<Value>, settings: bool) {
         self.assistant = true;
         self.chat.thread = crate::assistant::Thread {
