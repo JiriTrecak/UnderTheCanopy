@@ -126,20 +126,25 @@ pub fn camp(e: &Entity) -> Option<&str> {
 pub fn of(senses: &Senses, state: &State, e: &Entity) -> Actor {
     let catalog = senses.catalog;
     let immune = super::statuses::control_immunities(catalog, e);
-    let stats = Stats::of_with(catalog, e, crate::stats::research(state, e.owner), immune);
-    let d = catalog.get(e.definition);
     let profile = super::forms::weapon_def(catalog, e);
+    let stats = Stats::of_profile(
+        catalog,
+        e,
+        crate::stats::research(state, e.owner),
+        immune,
+        profile,
+    );
+    let d = catalog.get(e.definition);
     let combat = catalog.get(profile).behaviors.combat.as_ref();
     let u = e.unit.as_ref();
     let held =
         u.is_some_and(|u| u.contained.is_some() || u.garrison.is_some() || u.release.is_some());
     let blocked = u.is_some_and(|u| u.taunt.is_some())
-        || super::statuses::spell_control_with(catalog, e, immune, super::library::control::STUN)
-        || super::statuses::spell_control_with(
+        || super::statuses::spell_controls_with(
             catalog,
             e,
             immune,
-            super::library::control::SILENCE,
+            super::library::control::STUN | super::library::control::SILENCE,
         )
         || held
         // Cinematic mode halts the casts of everyone the script does not direct.

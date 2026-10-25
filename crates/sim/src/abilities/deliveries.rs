@@ -13,7 +13,7 @@ use super::{
 };
 use crate::{
     catalog::Catalog,
-    entity::{EntityId, Milli},
+    entity::{Entity, EntityId, Milli},
     spatial::Fixed,
     state::State,
 };
@@ -176,6 +176,39 @@ pub fn launch(ctx: &mut Ctx, state: &mut State, caster: &Actor, p: &Pending) {
     );
 }
 
+/// Where the entities with health stand, in id order, for [`candidates_among`] while
+/// none moves, appears or goes.
+#[derive(Debug, Default)]
+pub struct Standing {
+    /// The entity id counter and count it was taken at, while it holds.
+    taken: Option<(u32, usize)>,
+    at: Vec<(EntityId, Milli)>,
+}
+
+impl Standing {
+    /// The positions, taken again when stale or `forget`-ed.
+    pub fn of(&mut self, state: &State) -> &[(EntityId, Milli)] {
+        let now = (state.counters.entity, state.entities.len());
+        if self.taken != Some(now) {
+            self.at.clear();
+            self.at.extend(
+                state
+                    .entities
+                    .iter()
+                    .filter(|e| e.hp.is_some())
+                    .map(|e| (e.id, e.position)),
+            );
+            self.taken = Some(now);
+        }
+        &self.at
+    }
+
+    /// After something that may have moved an entity.
+    pub fn forget(&mut self) {
+        self.taken = None;
+    }
+}
+
 /// Eligible units around a point by the ability's targeting (old `candidates`), in id
 /// order.
 pub fn candidates(
@@ -186,10 +219,52 @@ pub fn candidates(
     point: (f64, f64),
     radius: f64,
 ) -> Vec<Actor> {
+    candidates_of(
+        ctx,
+        state,
+        caster,
+        spell,
+        point,
+        radius,
+        state.entities.iter(),
+    )
+}
+
+/// [`candidates`] among the entities `standing` holds (current: nothing moved since).
+pub fn candidates_among(
+    ctx: &Ctx,
+    state: &State,
+    caster: &Actor,
+    spell: &Ability,
+    point: (f64, f64),
+    radius: f64,
+    standing: &[(EntityId, Milli)],
+) -> Vec<Actor> {
     let r2 = radius * radius;
-    state
-        .entities
+    let near = standing
         .iter()
+        .filter(|(_, p)| {
+            let (dx, dy) = (
+                f64::from(p.x) / 1000.0 - point.0,
+                f64::from(p.y) / 1000.0 - point.1,
+            );
+            dx * dx + dy * dy <= r2
+        })
+        .filter_map(|&(id, _)| state.entities.get(id));
+    candidates_of(ctx, state, caster, spell, point, radius, near)
+}
+
+fn candidates_of<'s>(
+    ctx: &Ctx,
+    state: &'s State,
+    caster: &Actor,
+    spell: &Ability,
+    point: (f64, f64),
+    radius: f64,
+    entities: impl Iterator<Item = &'s Entity>,
+) -> Vec<Actor> {
+    let r2 = radius * radius;
+    entities
         .filter(|e| e.hp.is_some() && actor::alive(e))
         .filter(|e| {
             let (dx, dy) = (

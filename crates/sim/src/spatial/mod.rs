@@ -995,6 +995,28 @@ impl Spatial {
     /// Whether a body fits at a cell centre (old `unitWalkable`).
     pub fn unit_walkable(&self, spot: Spot, body: &Body) -> bool {
         let p = spot.fixed();
+        // On the ground grid the body's compiled sweep of its own cell answers the same,
+        // read from the bit planes.
+        let radius = body.radius_milli();
+        if !body.air
+            && spot.deck.is_none()
+            && !self.layered()
+            && let (Some(sweep), Some(planes)) = (
+                self.adjacent.get(&radius).filter(|_| radius >= 500),
+                routing::planes(&self.clearance, &self.terrain),
+            )
+            && spot.x >= 0
+            && spot.y >= 0
+            && spot.x < self.size as i32
+            && spot.y < self.size as i32
+        {
+            let ground = Ground {
+                walk: &self.walk,
+                heights: self.terrain.heights(),
+            };
+            let cell = spot.y as u32 * self.size + spot.x as u32;
+            return sweep.clear_planes(self.size, cell, cell, planes, |a, b| ground.step(a, b));
+        }
         self.clear_segment(p, p, None, body)
     }
 

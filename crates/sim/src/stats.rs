@@ -49,10 +49,22 @@ impl Stats {
 
     /// [`Stats::of`] with the entity's control immunities already known.
     pub fn of_with(catalog: &Catalog, e: &Entity, research: &[Id], immune: u8) -> Self {
-        let d = catalog.get(e.definition);
-        let (level, row) = level_row(d, e);
         // A form's combat profile supplies the weapon (old `formDefinition`).
         let profile = crate::abilities::forms::weapon_def(catalog, e);
+        Self::of_profile(catalog, e, research, immune, profile)
+    }
+
+    /// [`Stats::of_with`] with the weapon's profile ([`crate::abilities::forms::weapon_def`])
+    /// already known.
+    pub fn of_profile(
+        catalog: &Catalog,
+        e: &Entity,
+        research: &[Id],
+        immune: u8,
+        profile: crate::catalog::Def,
+    ) -> Self {
+        let d = catalog.get(e.definition);
+        let (level, row) = level_row(d, e);
         let combat = catalog.get(profile).behaviors.combat.as_ref();
         let mut max_hp =
             i64::from(row.map_or(d.body.as_ref().map_or(0, |b| b.max_hp), |l| l.max_hp));

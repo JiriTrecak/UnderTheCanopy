@@ -885,10 +885,8 @@ fn owner_code(owner: canopy_content::placement::Owner) -> u8 {
     }
 }
 
-/// The adjacent-cell step rule of a body radius on the ground grid: the compiled sweep
-/// for bodies of half a cell or more, the centre cell otherwise.
 /// The ground grid's closed and steep cells as bit planes (maps without decks).
-fn planes<'a>(
+pub(super) fn planes<'a>(
     clearance: &'a Option<super::clearance::Clearance>,
     terrain: &'a crate::terrain::Terrain,
 ) -> Option<super::adjacent::Planes<'a>> {
@@ -901,6 +899,8 @@ fn planes<'a>(
     })
 }
 
+/// The adjacent-cell step rule of a body radius on the ground grid: the compiled sweep
+/// for bodies of half a cell or more, the centre cell otherwise.
 fn body_step<'a>(
     size: u32,
     walk: &'a [bool],

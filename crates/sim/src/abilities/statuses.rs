@@ -53,6 +53,21 @@ pub fn spell_control_with(catalog: &Catalog, e: &Entity, immune: u8, kind: u8) -
         .any(|s| s.blocked & kind == 0 && flag(decl(catalog, s), kind))
 }
 
+/// Whether any one of the flag control kinds in `kinds` holds ([`spell_control_with`] of
+/// each, in one pass).
+pub fn spell_controls_with(catalog: &Catalog, e: &Entity, immune: u8, kinds: u8) -> bool {
+    let kinds = kinds & !immune;
+    if e.statuses.is_empty() || kinds == 0 {
+        return false;
+    }
+    e.statuses.iter().any(|s| {
+        let d = decl(catalog, s);
+        (0..8)
+            .map(|b| 1u8 << b)
+            .any(|kind| kinds & kind != 0 && s.blocked & kind == 0 && flag(d, kind))
+    })
+}
+
 /// Whether a declaration imposes a flag control kind.
 pub fn flag(d: &StatusDecl, kind: u8) -> bool {
     match kind {

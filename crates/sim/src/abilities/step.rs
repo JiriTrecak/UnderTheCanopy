@@ -65,6 +65,19 @@ pub fn resolve(ctx: &mut Ctx, state: &mut State) {
 /// Passive auras (old `auras`): source and query statuses once per holder, then each unit
 /// in radius; every aura status lasts one tick and is rebuilt.
 fn auras(ctx: &mut Ctx, state: &mut State) {
+    // Statuses move nobody: while only they are applied, positions taken once serve every
+    // holder's search.
+    let mut standing = deliveries::Standing::default();
+    let still = |ops: &[&Operation]| {
+        ops.iter().all(|op| match op {
+            Operation::Effect(e) => matches!(e, canopy_content::abilities::Effect::Status(_)),
+            Operation::Branch(b) => b
+                .then
+                .iter()
+                .chain(&b.otherwise)
+                .all(|e| matches!(e, canopy_content::abilities::Effect::Status(_))),
+        })
+    };
     for id in cast::casters(state) {
         let Some(e) = state.entities.get(id) else {
             continue;
@@ -121,6 +134,9 @@ fn auras(ctx: &mut Ctx, state: &mut State) {
                     rank,
                     Ops::Picked(&once),
                 );
+                if !still(&once) {
+                    standing.forget();
+                }
             }
             let per: Vec<&Operation> = spell
                 .on_release
@@ -134,7 +150,17 @@ fn auras(ctx: &mut Ctx, state: &mut State) {
                 continue;
             }
             let center = (h.x(), h.y());
-            for target in deliveries::candidates(ctx, state, &h, spell, center, aura.radius) {
+            let near = deliveries::candidates_among(
+                ctx,
+                state,
+                &h,
+                spell,
+                center,
+                aura.radius,
+                standing.of(state),
+            );
+            let moves = !still(&per);
+            for target in near {
                 if aura.melee_only && !target.melee {
                     continue;
                 }
@@ -147,6 +173,9 @@ fn auras(ctx: &mut Ctx, state: &mut State) {
                     rank,
                     Ops::Picked(&per),
                 );
+                if moves {
+                    standing.forget();
+                }
             }
         }
     }
