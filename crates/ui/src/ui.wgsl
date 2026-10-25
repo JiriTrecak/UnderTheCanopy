@@ -110,9 +110,9 @@ fn to_srgb(c: vec3<f32>) -> vec3<f32> {
 
 @fragment
 fn fs(in: VOut) -> @location(0) vec4<f32> {
-    // Sampled in uniform control flow (mips need derivatives).
+    // Sampled in uniform control flow (mips need derivatives). The glyph atlas has one
+    // level, so glyphs sample it explicitly where they need it.
     let texel = textureSample(image, samp, in.uv);
-    let coverage_sample = textureSample(atlas, samp, in.uv).r;
 
     let kind = in.flags & 0xffu;
     let r = in.params.x;
@@ -151,7 +151,7 @@ fn fs(in: VOut) -> @location(0) vec4<f32> {
             }
         }
         case KIND_GLYPH: {
-            var a = coverage_sample;
+            var a = textureSampleLevel(atlas, samp, in.uv, 0.0).r;
             if soft > 0.0 {
                 // Blurred shadow: a 5×5 tent over the glyph's padded atlas cell.
                 let texel_size = 1.0 / vec2<f32>(textureDimensions(atlas));

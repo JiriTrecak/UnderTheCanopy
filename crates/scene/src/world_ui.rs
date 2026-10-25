@@ -15,7 +15,7 @@ use canopy_render::{
 };
 use canopy_sim::teams::Relation;
 use glam::{Vec3, Vec4Swizzles};
-use std::{collections::BTreeMap, path::Path};
+use std::{collections::BTreeMap, fmt::Write as _, path::Path};
 
 /// Which health bars show (old: selected or damaged units, plus held keys for all,
 /// enemies or friends).
@@ -93,6 +93,10 @@ pub struct WorldUiInput {
     pub network: Vec<[f32; 3]>,
     /// Goods arriving in the viewer's stock rise as floating "+N" text (a setting).
     pub deliveries: bool,
+    /// The walking surface's revision: while it stays the same `Some`, the ground under
+    /// buildings has not changed, so their contact shadows are kept from earlier frames
+    /// instead of being draped again. `None` drapes them every frame.
+    pub ground_revision: Option<u64>,
 }
 
 impl Default for WorldUiInput {
@@ -110,6 +114,7 @@ impl Default for WorldUiInput {
             tree: None,
             network: Vec::new(),
             deliveries: true,
+            ground_revision: None,
         }
     }
 }
@@ -194,6 +199,20 @@ const PROFILE: [(f32, f32, f32); 5] = [
 ];
 /// Sectors of a ring (the old ring had 56 segments).
 const SECTORS: usize = 48;
+
+/// Cosine and sine of each sector boundary's angle around a ring (`SECTORS + 1`, the
+/// last one closing the ring at a full turn).
+fn ring() -> &'static [(f32, f32); SECTORS + 1] {
+    static RING: std::sync::LazyLock<[(f32, f32); SECTORS + 1]> = std::sync::LazyLock::new(|| {
+        std::array::from_fn(|s| {
+            // Evaluated by the platform's functions at run time, as the per-ring code
+            // did (the compiler could fold constant angles differently by an ulp).
+            let a = std::hint::black_box(s as f32 / SECTORS as f32 * std::f32::consts::TAU);
+            (a.cos(), a.sin())
+        })
+    });
+    &RING
+}
 
 /// A rasterised glyph in the label atlas.
 #[derive(Debug, Clone, Copy, PartialEq)]
@@ -477,6 +496,12 @@ pub struct WorldUi {
     colors: Vec<[f32; 3]>,
     /// The atlases changed since the renderer last took them.
     pub atlases_dirty: bool,
+    shadows: ContactShadows,
+    /// Lists reused by every frame (a steady frame allocates nothing).
+    chosen: Vec<u32>,
+    targets: Vec<u32>,
+    order: Vec<(f32, usize)>,
+    text: String,
 }
 
 /// The bundled HUD font (`config/ui/fonts`).
@@ -495,6 +520,11 @@ impl WorldUi {
             icons: IconAtlas::new(pack, content),
             colors,
             atlases_dirty: true,
+            shadows: ContactShadows::default(),
+            chosen: Vec::new(),
+            targets: Vec::new(),
+            order: Vec::new(),
+            text: String::new(),
         }
     }
 
@@ -550,8 +580,11 @@ impl WorldUi {
         let _span = tracing::trace_span!("world_ui").entered();
         out.clear();
         self.ensure_font(input.scale);
-        let chosen: std::collections::BTreeSet<u32> = input.selected.iter().copied().collect();
-        let selected = |id: u32| chosen.contains(&id);
+        let mut chosen = std::mem::take(&mut self.chosen);
+        chosen.clear();
+        chosen.extend_from_slice(&input.selected);
+        chosen.sort_unstable();
+        let selected = |id: u32| chosen.binary_search(&id).is_ok();
         let find = |id: u32| {
             bodies
                 .binary_search_by_key(&id, |b| b.id)
@@ -561,14 +594,15 @@ impl WorldUi {
         let at = |b: &Body| position(b.key).unwrap_or(b.position);
         // Buildings are grounded by a soft shadow where their base meets the ground
         // (UND-22: without it a pale base on bright ground reads as floating).
-        for b in bodies
-            .iter()
-            .filter(|b| b.building && !b.item && b.surface == 0)
-        {
-            if let Some(footprint) = b.footprint {
-                contact_shadow(out, footprint, at(b), field);
-            }
-        }
+        self.shadows.update(
+            bodies
+                .iter()
+                .filter(|b| b.building && !b.item && b.surface == 0)
+                .filter_map(|b| Some((b.id, b.footprint?, at(b)))),
+            field,
+            input.ground_revision,
+        );
+        self.shadows.draw(&camera.frustum(), out);
         // The network lies under every other mark.
         if !input.network.is_empty() {
             network(out, &input.network, field);
@@ -594,11 +628,14 @@ impl WorldUi {
             }
         }
         // Attack targets of the selection.
-        let targets: Vec<u32> = bodies
-            .iter()
-            .filter(|b| selected(b.id))
-            .filter_map(|b| b.commanded)
-            .collect();
+        let mut targets = std::mem::take(&mut self.targets);
+        targets.clear();
+        targets.extend(
+            bodies
+                .iter()
+                .filter(|b| selected(b.id))
+                .filter_map(|b| b.commanded),
+        );
         for b in bodies {
             let chosen = selected(b.id);
             let target = targets.contains(&b.id) && !b.remembered;
@@ -683,12 +720,18 @@ impl WorldUi {
             aim(out, a, field, camera, size, input.scale);
         }
         // Bars, badges and labels, farthest first so nearer ones draw on top.
-        let mut order: Vec<(f32, usize)> = bodies
-            .iter()
-            .enumerate()
-            .map(|(i, b)| (camera.eye.distance_squared(at(b)), i))
-            .collect();
-        order.sort_by(|a, b| b.0.total_cmp(&a.0));
+        let mut order = std::mem::take(&mut self.order);
+        order.clear();
+        order.extend(
+            bodies
+                .iter()
+                .enumerate()
+                .map(|(i, b)| (camera.eye.distance_squared(at(b)), i)),
+        );
+        // Equal distances keep the bodies' order (as a stable sort would) without the
+        // stable sort's scratch allocation.
+        order.sort_unstable_by(|a, b| b.0.total_cmp(&a.0).then(a.1.cmp(&b.1)));
+        let mut text = std::mem::take(&mut self.text);
         let s = input.scale;
         for &(_, i) in &order {
             let b = &bodies[i];
@@ -792,7 +835,8 @@ impl WorldUi {
                 && b.hp.is_some_and(|hp| hp > 0)
                 && let Some(anchor) = project(camera, size, p + Vec3::Y * (b.height + 1.4))
             {
-                let text = format!("Workers {workers}/{wanted}");
+                text.clear();
+                let _ = write!(text, "Workers {workers}/{wanted}");
                 let (pad_x, pad_y, border) = (10.0 * s, 4.0 * s, 1.0 * s);
                 let w = (font.width(&text) + 2.0 * (pad_x + border)).round();
                 let h = (font.line + 2.0 * (pad_y + border)).round();
@@ -827,6 +871,10 @@ impl WorldUi {
                 );
             }
         }
+        self.chosen = chosen;
+        self.targets = targets;
+        self.order = order;
+        self.text = text;
     }
 
     /// Deliveries into the viewer's stock over everything else: each "+N" starts where
@@ -909,8 +957,14 @@ const CONTACT_GRID: usize = 14;
 
 /// A building's contact shadow draped on the ground around and under its footprint
 /// (`[width, depth]` metres, centred on `at`): darkest at the footprint's rounded edge,
-/// fading out over its reach (profile 4).
-fn contact_shadow(out: &mut WorldUiFrame, [w, d]: [f32; 2], at: Vec3, field: &dyn WaterField) {
+/// fading out over its reach (profile 4). `grid` is scratch space.
+fn contact_shadow(
+    out: &mut Vec<GroundVertex>,
+    grid: &mut Vec<GroundVertex>,
+    [w, d]: [f32; 2],
+    at: Vec3,
+    field: &dyn WaterField,
+) {
     let reach = (w.min(d) * CONTACT_REACH.0).clamp(CONTACT_REACH.1, CONTACT_REACH.2);
     let (hw, hd) = (w / 2.0, d / 2.0);
     let corner = hw.min(hd) * CONTACT_CORNER;
@@ -932,10 +986,12 @@ fn contact_shadow(out: &mut WorldUiFrame, [w, d]: [f32; 2], at: Vec3, field: &dy
             ring_profile: 4.0,
         }
     };
-    let grid: Vec<GroundVertex> = (0..=n)
-        .flat_map(|j| (0..=n).map(move |i| (i, j)))
-        .map(|(i, j)| vertex(i, j))
-        .collect();
+    grid.clear();
+    grid.extend(
+        (0..=n)
+            .flat_map(|j| (0..=n).map(move |i| (i, j)))
+            .map(|(i, j)| vertex(i, j)),
+    );
     for j in 0..n {
         for i in 0..n {
             let (a, b, c, e) = (
@@ -948,9 +1004,163 @@ fn contact_shadow(out: &mut WorldUiFrame, [w, d]: [f32; 2], at: Vec3, field: &dy
             if [a, b, c, e].iter().all(|v| v.across >= 1.0) {
                 continue;
             }
-            out.ground.extend_from_slice(&[a, b, c, a, c, e]);
+            out.extend_from_slice(&[a, b, c, a, c, e]);
         }
     }
+}
+
+/// One building's contact shadow as last draped: what it was draped for, its
+/// triangles' range in [`ContactShadows::vertices`] and their bounds.
+#[derive(Debug, Clone, Copy)]
+struct ShadowEntry {
+    id: u32,
+    footprint: [f32; 2],
+    at: Vec3,
+    range: (usize, usize),
+    min: Vec3,
+    max: Vec3,
+}
+
+impl ShadowEntry {
+    fn same(&self, id: u32, footprint: [f32; 2], at: Vec3) -> bool {
+        self.id == id && self.footprint == footprint && self.at == at
+    }
+}
+
+/// The buildings' contact shadows, kept between frames: a building's shadow only
+/// changes when it or the ground under it does, so it is draped again only then. Each
+/// frame draws the ones whose bounds the camera sees, in the buildings' order, as the
+/// frame's `under` list, which is only made anew when that set changes (the renderer
+/// uploads it only then).
+#[derive(Debug, Default)]
+struct ContactShadows {
+    ground: Option<u64>,
+    entries: Vec<ShadowEntry>,
+    vertices: Vec<GroundVertex>,
+    next_entries: Vec<ShadowEntry>,
+    next_vertices: Vec<GroundVertex>,
+    grid: Vec<GroundVertex>,
+    /// Counts the times `entries` were made anew.
+    generation: u64,
+    /// The entries in view this frame, and those `drawn` holds (with their generation).
+    visible: Vec<usize>,
+    shown: Vec<usize>,
+    shown_generation: u64,
+    drawn: Option<std::sync::Arc<Vec<GroundVertex>>>,
+}
+
+impl ContactShadows {
+    /// Brings the shadows up to `buildings` (id, footprint, position, in the bodies'
+    /// order, so by id) on `field`, whose revision is `ground` (`None`: drape every one
+    /// again).
+    fn update(
+        &mut self,
+        buildings: impl Iterator<Item = (u32, [f32; 2], Vec3)> + Clone,
+        field: &dyn WaterField,
+        ground: Option<u64>,
+    ) {
+        let kept = ground.is_some() && ground == self.ground;
+        if kept {
+            let mut entries = self.entries.iter();
+            let unchanged = buildings.clone().all(|(id, footprint, at)| {
+                entries.next().is_some_and(|e| e.same(id, footprint, at))
+            }) && entries.next().is_none();
+            if unchanged {
+                return;
+            }
+        }
+        let _span = tracing::trace_span!("contact shadows").entered();
+        self.next_entries.clear();
+        self.next_vertices.clear();
+        for (id, footprint, at) in buildings {
+            let start = self.next_vertices.len();
+            let old = if kept {
+                self.entries
+                    .binary_search_by_key(&id, |e| e.id)
+                    .ok()
+                    .map(|i| self.entries[i])
+                    .filter(|e| e.same(id, footprint, at))
+            } else {
+                None
+            };
+            let (min, max) = match old {
+                Some(e) => {
+                    self.next_vertices
+                        .extend_from_slice(&self.vertices[e.range.0..e.range.1]);
+                    (e.min, e.max)
+                }
+                None => {
+                    contact_shadow(
+                        &mut self.next_vertices,
+                        &mut self.grid,
+                        footprint,
+                        at,
+                        field,
+                    );
+                    self.next_vertices[start..].iter().fold(
+                        (Vec3::splat(f32::MAX), Vec3::splat(f32::MIN)),
+                        |(lo, hi), v| {
+                            let p = Vec3::from(v.position);
+                            (lo.min(p), hi.max(p))
+                        },
+                    )
+                }
+            };
+            self.next_entries.push(ShadowEntry {
+                id,
+                footprint,
+                at,
+                range: (start, self.next_vertices.len()),
+                min,
+                max,
+            });
+        }
+        std::mem::swap(&mut self.entries, &mut self.next_entries);
+        std::mem::swap(&mut self.vertices, &mut self.next_vertices);
+        self.ground = ground;
+        self.generation += 1;
+    }
+
+    /// Sets the frame's `under` list to the shadows inside the camera's `frustum`.
+    fn draw(&mut self, frustum: &[glam::Vec4; 6], out: &mut WorldUiFrame) {
+        self.visible.clear();
+        self.visible.extend(
+            self.entries
+                .iter()
+                .enumerate()
+                .filter(|(_, e)| e.range.0 < e.range.1 && box_in_frustum(frustum, e.min, e.max))
+                .map(|(i, _)| i),
+        );
+        if self.drawn.is_none()
+            || self.shown_generation != self.generation
+            || self.shown != self.visible
+        {
+            let mut list = Vec::with_capacity(
+                self.visible
+                    .iter()
+                    .map(|&i| self.entries[i].range.1 - self.entries[i].range.0)
+                    .sum(),
+            );
+            for &i in &self.visible {
+                let (a, b) = self.entries[i].range;
+                list.extend_from_slice(&self.vertices[a..b]);
+            }
+            self.drawn = Some(std::sync::Arc::new(list));
+            std::mem::swap(&mut self.shown, &mut self.visible);
+            self.shown_generation = self.generation;
+        }
+        out.under = self.drawn.clone().filter(|d| !d.is_empty());
+    }
+}
+
+/// Whether any of the box `min`–`max` may lie inside `frustum` (planes inside where
+/// `n·p + d ≥ 0`): false only when it lies wholly outside one plane.
+fn box_in_frustum(frustum: &[glam::Vec4; 6], min: Vec3, max: Vec3) -> bool {
+    frustum.iter().all(|p| {
+        let n = p.truncate();
+        let far = Vec3::select(n.cmpge(Vec3::ZERO), max, min);
+        n.dot(far) + p.w >= 0.0
+    })
 }
 
 /// A hero's glow: its radius in body radii (kept within metres), its alpha at the
@@ -980,8 +1190,8 @@ fn hero_glow(
     };
     let centre = vertex(at.x, at.z, 0.0);
     let rim = |s: usize| {
-        let a = s as f32 / SECTORS as f32 * std::f32::consts::TAU;
-        vertex(at.x + a.cos() * radius, at.z + a.sin() * radius, 1.0)
+        let (cos, sin) = ring()[s];
+        vertex(at.x + cos * radius, at.z + sin * radius, 1.0)
     };
     for s in 0..SECTORS {
         out.ground.extend_from_slice(&[centre, rim(s), rim(s + 1)]);
@@ -1004,22 +1214,25 @@ fn circle(
     let width = (0.07 + radius * 0.025).min(0.2) * if hover { 0.7 } else { 1.0 };
     let opacity = if hover { 0.5 } else { 1.0 };
     let (inner, outer) = (PROFILE[0].1, PROFILE[PROFILE.len() - 1].1);
-    let corner = |a: f32, across: f32, height: f32| {
+    let ring = ring();
+    let corner = |s: usize, across: f32, height: f32| {
         let radius = radius + width * across;
+        let (cos, sin) = ring[s];
         GroundVertex {
-            position: [at.x + a.cos() * radius, height, at.z + a.sin() * radius],
+            position: [at.x + cos * radius, height, at.z + sin * radius],
             color: [color[0], color[1], color[2], opacity],
             across,
             ring_profile: 1.0,
         }
     };
-    let angle = |s: usize| s as f32 / SECTORS as f32 * std::f32::consts::TAU;
-    let height =
-        |a: f32| field.walk(at.x + a.cos() * radius, at.z + a.sin() * radius, surface) + 0.07;
-    let mut h0 = height(0.0);
+    let height = |s: usize| {
+        let (cos, sin) = ring[s];
+        field.walk(at.x + cos * radius, at.z + sin * radius, surface) + 0.07
+    };
+    let mut h0 = height(0);
     let first = h0;
     for s in 0..SECTORS {
-        let (a0, a1) = (angle(s), angle(s + 1));
+        let (a0, a1) = (s, s + 1);
         let h1 = if s + 1 == SECTORS { first } else { height(a1) };
         let (p, q, r, t) = (
             corner(a0, inner, h0),

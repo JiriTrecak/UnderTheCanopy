@@ -41,8 +41,14 @@ pub struct LiveScene {
     /// Entities with a selection body as the latest frame shows them: id, body (circle
     /// radius, pick height) and interpolated position.
     bodies: Vec<(u32, [f32; 2], glam::Vec3)>,
-    /// Building foundations of the latest frame (D44).
+    /// Building foundations of the latest frame (D44), and of the one before.
     foundations: Vec<canopy_render::terrain::foundations::Foundation>,
+    foundations_before: Vec<canopy_render::terrain::foundations::Foundation>,
+    foundation_index: canopy_scene::live::FoundationIndex,
+    /// The walking surface's revision for the world UI: it changes with the foundations
+    /// and the map's terrain (by its address).
+    ground_revision: u64,
+    ground_terrain: usize,
     /// Deliveries rising in the latest frame, and the (interpolated) tick it shows.
     pops: Vec<canopy_scene::live::Pop>,
     pop_tick: f64,
@@ -207,10 +213,17 @@ impl LiveScene {
                 .ok()
                 .map(|i| instances[i].transform.w_axis.truncate())
         };
+        let terrain = std::ptr::from_ref(scene.terrain()) as usize;
+        if self.ground_terrain != terrain {
+            self.ground_terrain = terrain;
+            self.ground_revision += 1;
+        }
+        self.world_ui_input.ground_revision = Some(self.ground_revision);
         let water = scene.water_field();
         let ground = canopy_scene::live::FoundationGround {
             ground: &water,
             foundations: &self.foundations,
+            index: &self.foundation_index,
         };
         ui.build(
             &self.ui_bodies,
@@ -382,7 +395,12 @@ impl LiveScene {
             Some(a) => f64::from(a.tick) + f64::from(t) * f64::from(b.tick - a.tick),
             None => f64::from(b.tick),
         };
+        std::mem::swap(&mut self.foundations, &mut self.foundations_before);
         canopy_scene::live::foundations(&b.bodies, &mut self.foundations);
+        if self.foundations != self.foundations_before {
+            self.ground_revision += 1;
+            self.foundation_index.build(&self.foundations);
+        }
         renderer.set_foundations(gpu, &self.foundations);
         if let Some(evaluator) = &mut self.effects {
             let tick = match a {

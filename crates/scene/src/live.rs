@@ -334,6 +334,109 @@ pub fn foundations(
 pub struct FoundationGround<'a> {
     pub ground: &'a dyn canopy_render::water::ripples::WaterField,
     pub foundations: &'a [canopy_render::terrain::foundations::Foundation],
+    /// Where each foundation's mound may lie ([`FoundationIndex::build`] of `foundations`).
+    pub index: &'a FoundationIndex,
+}
+
+/// The ground each foundation's mound may cover (`Foundation::bounds`), bucketed in a
+/// coarse grid so a height looks only at the foundations near it.
+#[derive(Debug, Clone, Default)]
+pub struct FoundationIndex {
+    /// Per foundation: `[min x, max x, min z, max z]`.
+    bounds: Vec<[f32; 4]>,
+    /// The grid's corner, its columns and rows of [`FoundationIndex::CELL`] units.
+    origin: [f32; 2],
+    columns: usize,
+    rows: usize,
+    /// Per cell, its range in `items` (foundation indices, ascending).
+    starts: Vec<u32>,
+    items: Vec<u32>,
+}
+
+impl FoundationIndex {
+    /// Units a side of a grid cell.
+    const CELL: f32 = 8.0;
+
+    /// Indexes `foundations` (replacing what was indexed).
+    pub fn build(&mut self, foundations: &[canopy_render::terrain::foundations::Foundation]) {
+        self.bounds.clear();
+        self.bounds.extend(foundations.iter().map(|f| {
+            let (min, max) = f.bounds();
+            [min.x, max.x, min.z, max.z]
+        }));
+        self.starts.clear();
+        self.items.clear();
+        let (mut x0, mut z0, mut x1, mut z1) = (f32::MAX, f32::MAX, f32::MIN, f32::MIN);
+        for b in &self.bounds {
+            x0 = x0.min(b[0]);
+            x1 = x1.max(b[1]);
+            z0 = z0.min(b[2]);
+            z1 = z1.max(b[3]);
+        }
+        if self.bounds.is_empty() || !(x1 >= x0 && z1 >= z0) {
+            (self.columns, self.rows) = (0, 0);
+            return;
+        }
+        self.origin = [x0, z0];
+        self.columns = self.cell(x1, 0) as usize + 1;
+        self.rows = self.cell(z1, 1) as usize + 1;
+        // Counting sort: each foundation into every cell its bounds touch.
+        let cells = self.columns * self.rows;
+        let mut counts = vec![0u32; cells + 1];
+        let origin = self.origin;
+        let span = move |b: &[f32; 4]| {
+            let cell = |v: f32, axis: usize| ((v - origin[axis]) / Self::CELL).floor() as usize;
+            (cell(b[0], 0), cell(b[1], 0), cell(b[2], 1), cell(b[3], 1))
+        };
+        for b in &self.bounds {
+            let (cx0, cx1, cz0, cz1) = span(b);
+            for cz in cz0..=cz1 {
+                for cx in cx0..=cx1 {
+                    counts[cz * self.columns + cx + 1] += 1;
+                }
+            }
+        }
+        for c in 0..cells {
+            counts[c + 1] += counts[c];
+        }
+        self.items.resize(counts[cells] as usize, 0);
+        let mut next = counts.clone();
+        for (i, b) in self.bounds.iter().enumerate() {
+            let (cx0, cx1, cz0, cz1) = span(b);
+            for cz in cz0..=cz1 {
+                for cx in cx0..=cx1 {
+                    let c = cz * self.columns + cx;
+                    self.items[next[c] as usize] = i as u32;
+                    next[c] += 1;
+                }
+            }
+        }
+        self.starts = counts;
+    }
+
+    /// The grid column (`axis` 0) or row (1) of `v`, unclamped.
+    fn cell(&self, v: f32, axis: usize) -> f32 {
+        ((v - self.origin[axis]) / Self::CELL).floor()
+    }
+
+    /// The foundations whose bounds hold `(x, z)`, in ascending order.
+    fn at(&self, x: f32, z: f32) -> impl Iterator<Item = usize> + '_ {
+        let (cx, cz) = (self.cell(x, 0), self.cell(z, 1));
+        let inside = cx >= 0.0 && cz >= 0.0 && cx < self.columns as f32 && cz < self.rows as f32;
+        let range = if inside {
+            let c = cz as usize * self.columns + cx as usize;
+            self.starts[c] as usize..self.starts[c + 1] as usize
+        } else {
+            0..0
+        };
+        self.items[range]
+            .iter()
+            .map(|&i| i as usize)
+            .filter(move |&i| {
+                let b = &self.bounds[i];
+                (b[0]..=b[1]).contains(&x) && (b[2]..=b[3]).contains(&z)
+            })
+    }
 }
 
 impl canopy_render::water::ripples::WaterField for FoundationGround<'_> {
@@ -347,13 +450,9 @@ impl canopy_render::water::ripples::WaterField for FoundationGround<'_> {
             return floor;
         }
         let ground = |x: f32, z: f32| self.ground.walk(x, z, 0);
-        self.foundations
-            .iter()
-            .filter(|f| {
-                let (min, max) = f.bounds();
-                (min.x..=max.x).contains(&x) && (min.z..=max.z).contains(&z)
-            })
-            .filter_map(|f| f.surface(x, z, &ground))
+        self.index
+            .at(x, z)
+            .filter_map(|i| self.foundations[i].surface(x, z, &ground))
             .fold(floor, f32::max)
     }
 }
@@ -2983,6 +3082,62 @@ impl Presenter {
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    /// The bucketed foundation lookup drapes exactly as looking at every foundation.
+    #[test]
+    fn the_foundation_index_finds_what_a_full_scan_does() {
+        use canopy_render::{terrain::foundations::Foundation, water::ripples::WaterField};
+        struct Slope;
+        impl WaterField for Slope {
+            fn water(&self, _: f32, _: f32) -> f32 {
+                f32::NEG_INFINITY
+            }
+            fn walk(&self, x: f32, z: f32, _: u32) -> f32 {
+                (x * 0.05).sin() * 3.0 + z * 0.02
+            }
+        }
+        let foundations: Vec<Foundation> = (0..40)
+            .map(|i| {
+                let f = i as f32;
+                Foundation {
+                    center: [(f * 37.3) % 120.0, (f * 53.9) % 90.0],
+                    half: [1.0 + (f * 0.7) % 4.0, 1.5 + (f * 1.3) % 3.0],
+                    base: 2.0 + (f * 0.37) % 2.0,
+                }
+            })
+            .collect();
+        let mut index = FoundationIndex::default();
+        index.build(&foundations);
+        let indexed = FoundationGround {
+            ground: &Slope,
+            foundations: &foundations,
+            index: &index,
+        };
+        let full = |x: f32, z: f32| {
+            let ground = |x: f32, z: f32| Slope.walk(x, z, 0);
+            foundations
+                .iter()
+                .filter(|f| {
+                    let (min, max) = f.bounds();
+                    (min.x..=max.x).contains(&x) && (min.z..=max.z).contains(&z)
+                })
+                .filter_map(|f| f.surface(x, z, &ground))
+                .fold(Slope.walk(x, z, 0), f32::max)
+        };
+        for i in 0..400 {
+            for j in 0..300 {
+                let (x, z) = (-20.0 + i as f32 * 0.41, -20.0 + j as f32 * 0.43);
+                assert_eq!(indexed.walk(x, z, 0).to_bits(), full(x, z).to_bits());
+            }
+        }
+        index.build(&[]);
+        let empty = FoundationGround {
+            ground: &Slope,
+            foundations: &[],
+            index: &index,
+        };
+        assert_eq!(empty.walk(3.0, 4.0, 0), Slope.walk(3.0, 4.0, 0));
+    }
 
     #[test]
     fn scaffolds_rise_then_retract_after_the_reveal() {

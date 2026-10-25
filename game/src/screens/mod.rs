@@ -2781,7 +2781,7 @@ impl Game {
         }
         let data = self.data.clone();
         let gpu = ctx.gpu;
-        let t = (Instant::now() - self.started).as_secs_f32();
+        let t = held_clock().unwrap_or_else(|| (Instant::now() - self.started).as_secs_f32());
         match &screen {
             Screen::Boot => self.show_boot(),
             Screen::MainMenu => {
@@ -3132,6 +3132,13 @@ impl Game {
         ctx.gpu.queue.submit([encoder.finish()]);
         None
     }
+}
+
+/// `CANOPY_MENU_TIME=<seconds>` holds the screens' animation clock there, so captures of
+/// animated screens can be compared pixel for pixel.
+fn held_clock() -> Option<f32> {
+    static HELD: std::sync::OnceLock<Option<f32>> = std::sync::OnceLock::new();
+    *HELD.get_or_init(|| std::env::var("CANOPY_MENU_TIME").ok()?.parse().ok())
 }
 
 /// What the match follows of the settings.

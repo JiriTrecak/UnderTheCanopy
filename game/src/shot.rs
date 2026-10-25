@@ -291,8 +291,12 @@ pub fn run(options: &Options, paths: &Paths, out: &Path, size: [u32; 2]) -> Resu
     );
     // The render thread's cost of a frame of the live scene (interpolation, effects,
     // world UI), measured on the shown pair.
+    let live_loops: u32 = std::env::var("CANOPY_SHOT_LIVE_LOOPS")
+        .ok()
+        .and_then(|v| v.parse().ok())
+        .unwrap_or(20);
     let live_started = std::time::Instant::now();
-    for _ in 0..20 {
+    for _ in 0..live_loops {
         live.show(
             &mut renderer,
             &gpu,
@@ -309,7 +313,7 @@ pub fn run(options: &Options, paths: &Paths, out: &Path, size: [u32; 2]) -> Resu
             options.time,
         );
     }
-    let live_ms = live_started.elapsed().as_secs_f32() * 1000.0 / 20.0;
+    let live_ms = live_started.elapsed().as_secs_f32() * 1000.0 / live_loops as f32;
     live.show(
         &mut renderer,
         &gpu,

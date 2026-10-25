@@ -322,16 +322,74 @@ fn menu(paths: &Paths, size: [u32; 2], frames: u32) -> Result<Value> {
         // The menu animates with wall time; pace it like a 60 Hz display.
         std::thread::sleep(Duration::from_millis(4));
     }
+    // The UI pass on a busy GPU, as the world scenes' passes are measured: frames back to
+    // back, submit to idle (the fastest fifth) minus the floor of a tiny clear. Paced
+    // frames also pay the GPU's wake-up from idle.
+    let mut alone = Vec::new();
+    for _ in 0..frames.max(3) {
+        let (_, r, w) = frame(&mut game, &mut renderer);
+        alone.push((w - r).as_secs_f32() * 1000.0);
+    }
+    let floor = floor_ms(&gpu, frames.max(20));
     let _ = std::fs::remove_dir_all(&user);
     let median = |v: &mut Vec<f32>| {
         v.sort_by(f32::total_cmp);
         v[v.len() / 2]
     };
     let (u, c, w) = (median(&mut update), median(&mut cpu), median(&mut wall));
+    alone.sort_by(f32::total_cmp);
+    let pass = alone[((alone.len() - 1) as f32 * canopy_render::bench::QUANTILE).round() as usize];
     Ok(serde_json::json!({
-        "menu": { "update_ms": u, "cpu_ms": c, "frame_ms": w, "gpu_ms": (w - c).max(0.0) },
+        "menu": {
+            "update_ms": u, "cpu_ms": c, "frame_ms": w, "gpu_ms": (w - c).max(0.0),
+            "pass_ms": (pass - floor).max(0.0), "floor_ms": floor,
+        },
         "gpu": gpu.name(),
     }))
+}
+
+/// The median submit-to-idle time of a command buffer clearing a tiny target, ms
+/// (`canopy_render::bench`'s floor).
+fn floor_ms(gpu: &Gpu, samples: u32) -> f32 {
+    let tiny = gpu.device.create_texture(&wgpu::TextureDescriptor {
+        label: Some("benchmark floor"),
+        size: wgpu::Extent3d {
+            width: 4,
+            height: 4,
+            depth_or_array_layers: 1,
+        },
+        mip_level_count: 1,
+        sample_count: 1,
+        dimension: wgpu::TextureDimension::D2,
+        format: wgpu::TextureFormat::Rgba8Unorm,
+        usage: wgpu::TextureUsages::RENDER_ATTACHMENT,
+        view_formats: &[],
+    });
+    let tiny = tiny.create_view(&Default::default());
+    let mut floors: Vec<f32> = (0..samples)
+        .map(|_| {
+            let mut encoder = gpu.device.create_command_encoder(&Default::default());
+            drop(encoder.begin_render_pass(&wgpu::RenderPassDescriptor {
+                label: Some("benchmark floor"),
+                color_attachments: &[Some(wgpu::RenderPassColorAttachment {
+                    view: &tiny,
+                    depth_slice: None,
+                    resolve_target: None,
+                    ops: wgpu::Operations {
+                        load: wgpu::LoadOp::Clear(wgpu::Color::BLACK),
+                        store: wgpu::StoreOp::Store,
+                    },
+                })],
+                ..Default::default()
+            }));
+            let start = Instant::now();
+            gpu.queue.submit([encoder.finish()]);
+            let _ = gpu.device.poll(wgpu::PollType::wait_indefinitely());
+            start.elapsed().as_secs_f32() * 1000.0
+        })
+        .collect();
+    floors.sort_by(f32::total_cmp);
+    floors[floors.len() / 2]
 }
 
 fn f(value: &Value, path: &[&str]) -> f64 {
@@ -347,9 +405,10 @@ fn summary(value: &Value) -> String {
     }
     if value.get("menu").is_some() {
         return format!(
-            "frame {:.2} ms (cpu {:.2})",
+            "frame {:.2} ms (cpu {:.2}; UI pass alone {:.3})",
             f(value, &["menu", "frame_ms"]),
-            f(value, &["menu", "cpu_ms"])
+            f(value, &["menu", "cpu_ms"]),
+            f(value, &["menu", "pass_ms"])
         );
     }
     format!(
@@ -394,11 +453,13 @@ fn table(results: &[Result1], extra: &[String], frames: u32) -> String {
         if v.get("menu").is_some() {
             let _ = writeln!(
                 s,
-                "| menu | {size} | | {:.2} | {:.2} | {:.2} | | | | | UI update {:.2} ms |",
+                "| menu | {size} | | {:.2} | {:.2} | {:.2} | | | | | UI update {:.2} ms; ui {:.2} (floor {:.2}) |",
                 f(v, &["menu", "frame_ms"]),
                 f(v, &["menu", "cpu_ms"]),
                 f(v, &["menu", "gpu_ms"]),
                 f(v, &["menu", "update_ms"]),
+                f(v, &["menu", "pass_ms"]),
+                f(v, &["menu", "floor_ms"]),
             );
             continue;
         }
@@ -450,7 +511,7 @@ fn table(results: &[Result1], extra: &[String], frames: u32) -> String {
     }
     let _ = writeln!(
         s,
-        "- `menu`: the main menu (UI only), rendered in process\n- `hud`: the play capture's HUD on frozen-dream (`shot --play --input select:worker`), CPU only"
+        "- `menu`: the main menu (UI only), rendered in process: paced frames (GPU = to idle − CPU, with the GPU's wake-up), and the UI pass back to back minus the floor\n- `hud`: the play capture's HUD on frozen-dream (`shot --play --input select:worker`), CPU only"
     );
     s
 }
