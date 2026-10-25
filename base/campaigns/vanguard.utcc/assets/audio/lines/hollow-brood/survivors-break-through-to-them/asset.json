@@ -1,0 +1,22 @@
+{
+  "id": "asset.audio.line.hollow-brood.survivors-break-through-to-them",
+  "name": "The Hollow Brood: Survivors. Break through to them.",
+  "kind": "audio",
+  "tags": [
+    "line"
+  ],
+  "license": "Generated with ElevenLabs for Under the Canopy (generation.json).",
+  "resources": [
+    {
+      "role": "audio",
+      "index": 1,
+      "format": "mp3"
+    },
+    {
+      "role": "generation",
+      "index": 1,
+      "format": "json"
+    }
+  ],
+  "seconds": 2.4
+}

@@ -220,6 +220,14 @@ def list_takes(scratch):
             print('   ', os.path.join(os.path.dirname(folder), take['file']))
 
 
+def seconds(path):
+    """An audio file's length, to the millisecond."""
+    out = subprocess.run(['ffprobe', '-v', 'error', '-show_entries', 'format=duration', '-of',
+                          'default=noprint_wrappers=1:nokey=1', path],
+                         check=True, capture_output=True, text=True).stdout
+    return round(float(out), 3)
+
+
 def ffmpeg(*args):
     if not shutil.which('ffmpeg'):
         sys.exit('ffmpeg is needed to store effects as WAV')
@@ -254,10 +262,14 @@ def pick(spec, scratch, choices):
         asset_path = os.path.join(folder, 'asset.json')
         asset = json.load(open(asset_path)) if os.path.exists(asset_path) else {
             'id': item['id'], 'name': item.get('title', name), 'kind': 'audio',
-            'tags': item.get('tags', [item['kind']]), 'license': (
+            # A line's `tags` are its voice direction, not the asset's labels.
+            'tags': item.get('tags', [item['kind']]) if item['kind'] != 'line' else ['line'],
+            'license': (
                 'Generated with ElevenLabs for Under the Canopy (generation.json).')}
         asset['resources'] = [{'role': 'audio', 'index': 1, 'format': fmt},
                               {'role': 'generation', 'index': 1, 'format': 'json'}]
+        # Its length: a spoken line stays on screen as long as its voice (D97).
+        asset['seconds'] = seconds(os.path.join(folder, f'audio.{fmt}'))
         json.dump(asset, open(asset_path, 'w'), indent=2, ensure_ascii=False)
         open(asset_path, 'a').write('\n')
         generation = {'provider': 'elevenlabs', 'kind': item['kind'], 'spec': item,

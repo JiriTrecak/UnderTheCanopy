@@ -1,0 +1,22 @@
+{
+  "id": "asset.audio.line.hollow-brood.my-queen-the-hollow-s",
+  "name": "The Hollow Brood: My Queen! The Hollow's watch-lights went dark th",
+  "kind": "audio",
+  "tags": [
+    "line"
+  ],
+  "license": "Generated with ElevenLabs for Under the Canopy (generation.json).",
+  "resources": [
+    {
+      "role": "audio",
+      "index": 1,
+      "format": "mp3"
+    },
+    {
+      "role": "generation",
+      "index": 1,
+      "format": "json"
+    }
+  ],
+  "seconds": 4.16
+}

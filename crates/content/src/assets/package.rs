@@ -61,6 +61,9 @@ pub struct AssetDefinition {
     /// A ground texture's projection, atlas and channels.
     pub terrain: Option<GroundTexture>,
     pub model_class: Option<String>,
+    /// An audio clip's length in seconds (written when it is picked): a spoken line stays
+    /// at least this long (D97).
+    pub seconds: Option<f64>,
     pub license: Option<String>,
 }
 

@@ -1,0 +1,22 @@
+{
+  "id": "asset.audio.line.hollow-brood.mother-ashka-it-is-aurelith",
+  "name": "The Hollow Brood: Mother Ashka! It is Aurelith, of the Amber Court",
+  "kind": "audio",
+  "tags": [
+    "line"
+  ],
+  "license": "Generated with ElevenLabs for Under the Canopy (generation.json).",
+  "resources": [
+    {
+      "role": "audio",
+      "index": 1,
+      "format": "mp3"
+    },
+    {
+      "role": "generation",
+      "index": 1,
+      "format": "json"
+    }
+  ],
+  "seconds": 3.6
+}

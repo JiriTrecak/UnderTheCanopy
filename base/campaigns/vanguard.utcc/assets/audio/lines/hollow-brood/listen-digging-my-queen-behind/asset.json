@@ -1,0 +1,22 @@
+{
+  "id": "asset.audio.line.hollow-brood.listen-digging-my-queen-behind",
+  "name": "The Hollow Brood: Listen! Digging, my Queen. Behind the fallen tun",
+  "kind": "audio",
+  "tags": [
+    "line"
+  ],
+  "license": "Generated with ElevenLabs for Under the Canopy (generation.json).",
+  "resources": [
+    {
+      "role": "audio",
+      "index": 1,
+      "format": "mp3"
+    },
+    {
+      "role": "generation",
+      "index": 1,
+      "format": "json"
+    }
+  ],
+  "seconds": 4.72
+}

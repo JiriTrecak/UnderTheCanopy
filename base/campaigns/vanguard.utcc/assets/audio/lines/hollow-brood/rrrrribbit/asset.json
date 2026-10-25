@@ -1,0 +1,22 @@
+{
+  "id": "asset.audio.line.hollow-brood.rrrrribbit",
+  "name": "The Hollow Brood: Rrrrribbit.",
+  "kind": "audio",
+  "tags": [
+    "effect"
+  ],
+  "license": "Generated with ElevenLabs for Under the Canopy (generation.json).",
+  "resources": [
+    {
+      "role": "audio",
+      "index": 1,
+      "format": "wav"
+    },
+    {
+      "role": "generation",
+      "index": 1,
+      "format": "json"
+    }
+  ],
+  "seconds": 1.48
+}

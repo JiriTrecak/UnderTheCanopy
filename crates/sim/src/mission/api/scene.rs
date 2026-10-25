@@ -78,6 +78,8 @@ const LONGEST: f64 = 600.0;
 /// within [`LINE_SECONDS`].
 const READING_RATE: f64 = 15.0;
 const LINE_SECONDS: (f64, f64) = (2.5, 20.0);
+/// Seconds a voiced line stays after its voice ends.
+const VOICE_TAIL: f64 = 0.4;
 /// Non-looping animations are forgotten this long after they started, ticks.
 const ANIMATION_MEMORY: u32 = 30 * TICKS_PER_SECOND;
 /// A one-shot effect at a point is kept this long past its own length (its particles'
@@ -722,7 +724,8 @@ impl Api<'_> {
         let ticks = match a.get(2) {
             Scalar::Nil => reading_ticks(self.catalog, &line),
             raw => round(number(raw, 0.5, 60.0)? * f64::from(TICKS_PER_SECOND)) as u32,
-        };
+        }
+        .max(voice_ticks(self.catalog, &line));
         let name = match a.get(3) {
             // The speaker's own name, as a text library key.
             Scalar::Nil => format!("{}.name", definition.id),
@@ -783,6 +786,14 @@ fn identifier(raw: &Scalar, max: usize, what: &str) -> Result<String, String> {
 /// How long a line shows when the script gives no time: as long as it reads. A line named
 /// by key reads as long as its source text (D96), so every player computes the same
 /// duration, whatever language they read it in.
+/// How long a voiced line's voice speaks, with a short tail (0 without a voice): no line
+/// ends before its voice does.
+pub(super) fn voice_ticks(catalog: &crate::catalog::Catalog, line: &str) -> u32 {
+    catalog.content.voice_seconds(line).map_or(0, |seconds| {
+        round((seconds.min(LONGEST) + VOICE_TAIL) * f64::from(TICKS_PER_SECOND)) as u32
+    })
+}
+
 pub(super) fn reading_ticks(catalog: &crate::catalog::Catalog, line: &str) -> u32 {
     let source = catalog.content.text.get(line).unwrap_or(line);
     let reading = 1.0 + source.chars().count() as f64 / READING_RATE;

@@ -1,0 +1,22 @@
+{
+  "id": "asset.audio.line.hollow-brood.it-sang-to-us-we",
+  "name": "The Hollow Brood: It sang to us... we drank... and it gave, and gave",
+  "kind": "audio",
+  "tags": [
+    "line"
+  ],
+  "license": "Generated with ElevenLabs for Under the Canopy (generation.json).",
+  "resources": [
+    {
+      "role": "audio",
+      "index": 1,
+      "format": "mp3"
+    },
+    {
+      "role": "generation",
+      "index": 1,
+      "format": "json"
+    }
+  ],
+  "seconds": 7.36
+}

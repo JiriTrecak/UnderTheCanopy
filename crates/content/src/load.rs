@@ -569,6 +569,17 @@ impl Content {
         self.asset_index.get(id).map(|&i| &self.render_assets[i])
     }
 
+    /// How long the voice of text line `key` speaks (its sound event `sound.<key>`, D97):
+    /// the longest of its clips, seconds.
+    pub fn voice_seconds(&self, key: &str) -> Option<f64> {
+        let event = self.sounds.get(&format!("sound.{key}"))?;
+        event
+            .clips
+            .iter()
+            .filter_map(|clip| self.assets.iter().find(|a| a.id == *clip.as_str())?.seconds)
+            .reduce(f64::max)
+    }
+
     /// A published image, including interface assets without a world render binding.
     pub fn image_path(&self, id: &str) -> Option<&str> {
         self.asset(id).and_then(|a| a.image.as_deref()).or_else(|| {

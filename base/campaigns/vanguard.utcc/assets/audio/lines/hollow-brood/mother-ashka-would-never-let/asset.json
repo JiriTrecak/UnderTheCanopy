@@ -1,0 +1,22 @@
+{
+  "id": "asset.audio.line.hollow-brood.mother-ashka-would-never-let",
+  "name": "The Hollow Brood: Mother Ashka would never let her lights go dark.",
+  "kind": "audio",
+  "tags": [
+    "line"
+  ],
+  "license": "Generated with ElevenLabs for Under the Canopy (generation.json).",
+  "resources": [
+    {
+      "role": "audio",
+      "index": 1,
+      "format": "mp3"
+    },
+    {
+      "role": "generation",
+      "index": 1,
+      "format": "json"
+    }
+  ],
+  "seconds": 2.8
+}

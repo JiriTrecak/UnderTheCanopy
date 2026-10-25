@@ -1,0 +1,22 @@
+{
+  "id": "asset.audio.line.hollow-brood.my-queen-my-brother-kesh",
+  "name": "The Hollow Brood: My Queen... my brother Kesh took a patrol north-",
+  "kind": "audio",
+  "tags": [
+    "line"
+  ],
+  "license": "Generated with ElevenLabs for Under the Canopy (generation.json).",
+  "resources": [
+    {
+      "role": "audio",
+      "index": 1,
+      "format": "mp3"
+    },
+    {
+      "role": "generation",
+      "index": 1,
+      "format": "json"
+    }
+  ],
+  "seconds": 7.04
+}

@@ -1,0 +1,32 @@
+{
+  "provider": "elevenlabs",
+  "kind": "effect",
+  "spec": {
+    "name": "hb-rrrrribbit",
+    "line": "line.hollow-brood.rrrrribbit",
+    "dir": "base/campaigns/vanguard.utcc/assets/audio/lines/hollow-brood/rrrrribbit",
+    "id": "asset.audio.line.hollow-brood.rrrrribbit",
+    "title": "The Hollow Brood: Rrrrribbit.",
+    "kind": "effect",
+    "prompt": "A single small tree frog croak, a throaty 'rrribbit', close and clear, natural, no background noise",
+    "seconds": 1.5,
+    "takes": 2,
+    "event": {
+      "id": "sound.line.hollow-brood.rrrrribbit",
+      "category": "dialogue",
+      "file": "base/campaigns/vanguard.utcc/sounds/lines/line.hollow-brood.rrrrribbit.json"
+    }
+  },
+  "takes": [
+    "take-1.mp3",
+    "take-2.mp3"
+  ],
+  "picked": "take-1.mp3",
+  "request": {
+    "text": "A single small tree frog croak, a throaty 'rrribbit', close and clear, natural, no background noise",
+    "model_id": "eleven_text_to_sound_v2",
+    "prompt_influence": 0.3,
+    "duration_seconds": 1.5
+  },
+  "endpoint": "/v1/sound-generation"
+}

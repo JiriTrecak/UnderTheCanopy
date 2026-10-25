@@ -1,0 +1,22 @@
+{
+  "id": "asset.audio.line.hollow-brood.a-beetle-s-husk-and",
+  "name": "The Hollow Brood: A beetle's husk... and their crates. They come t",
+  "kind": "audio",
+  "tags": [
+    "line"
+  ],
+  "license": "Generated with ElevenLabs for Under the Canopy (generation.json).",
+  "resources": [
+    {
+      "role": "audio",
+      "index": 1,
+      "format": "mp3"
+    },
+    {
+      "role": "generation",
+      "index": 1,
+      "format": "json"
+    }
+  ],
+  "seconds": 7.28
+}

@@ -1,0 +1,41 @@
+{
+  "provider": "elevenlabs",
+  "kind": "line",
+  "spec": {
+    "name": "hb-my-queen-my-brother-kesh",
+    "line": "line.hollow-brood.my-queen-my-brother-kesh",
+    "dir": "base/campaigns/vanguard.utcc/assets/audio/lines/hollow-brood/my-queen-my-brother-kesh",
+    "id": "asset.audio.line.hollow-brood.my-queen-my-brother-kesh",
+    "title": "The Hollow Brood: My Queen... my brother Kesh took a patrol north-",
+    "kind": "line",
+    "speaker": "speaker.tiv",
+    "tags": "[worried]",
+    "model": "eleven_v3",
+    "settings": {
+      "stability": 0.5,
+      "speed": 1.0
+    },
+    "takes": 2
+  },
+  "takes": [
+    "take-1.mp3",
+    "take-2.mp3"
+  ],
+  "picked": "take-1.mp3",
+  "request": {
+    "text": "[worried] My Queen... my brother Kesh took a patrol north-west, toward the old webs. They never came back.",
+    "model_id": "eleven_v3",
+    "voice_settings": {
+      "stability": 0.5,
+      "speed": 1.0
+    }
+  },
+  "endpoint": "/v1/text-to-speech/sr1GfzCSw5aPaL6JlqBH",
+  "text": "My Queen... my brother Kesh took a patrol north-west, toward the old webs. They never came back.",
+  "voice": {
+    "description": "A young male scout of about eighteen: a light, bright tenor voice, quick and eager, loyal and earnest, a little breathless from running, nervous energy he tries to hide in front of his queen. He speaks English with a soft, neutral accent, close to the microphone in a quiet room, performing a character in a fantasy game.",
+    "model": "eleven_ttv_v3",
+    "preview": "take-1-2.mp3",
+    "voice_id": "sr1GfzCSw5aPaL6JlqBH"
+  }
+}

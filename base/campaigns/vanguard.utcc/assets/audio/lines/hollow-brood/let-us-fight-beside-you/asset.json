@@ -1,0 +1,22 @@
+{
+  "id": "asset.audio.line.hollow-brood.let-us-fight-beside-you",
+  "name": "The Hollow Brood: Let us fight beside you, my Queen. Let us put he",
+  "kind": "audio",
+  "tags": [
+    "line"
+  ],
+  "license": "Generated with ElevenLabs for Under the Canopy (generation.json).",
+  "resources": [
+    {
+      "role": "audio",
+      "index": 1,
+      "format": "mp3"
+    },
+    {
+      "role": "generation",
+      "index": 1,
+      "format": "json"
+    }
+  ],
+  "seconds": 4.08
+}

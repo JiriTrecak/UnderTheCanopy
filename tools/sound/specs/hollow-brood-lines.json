@@ -1,0 +1,644 @@
+{
+  "items": [
+    {
+      "name": "hb-hollow-caches-my-queen-their",
+      "line": "line.hollow-brood.hollow-caches-my-queen-their",
+      "dir": "base/campaigns/vanguard.utcc/assets/audio/lines/hollow-brood/hollow-caches-my-queen-their",
+      "id": "asset.audio.line.hollow-brood.hollow-caches-my-queen-their",
+      "title": "The Hollow Brood: Hollow caches, my Queen. Their foragers hid what",
+      "kind": "line",
+      "speaker": "speaker.tiv",
+      "tags": "[eager]",
+      "model": "eleven_v3",
+      "settings": {
+        "stability": 0.5,
+        "speed": 1.0
+      },
+      "takes": 2
+    },
+    {
+      "name": "hb-caplings-they-sleep-in-rings",
+      "line": "line.hollow-brood.caplings-they-sleep-in-rings",
+      "dir": "base/campaigns/vanguard.utcc/assets/audio/lines/hollow-brood/caplings-they-sleep-in-rings",
+      "id": "asset.audio.line.hollow-brood.caplings-they-sleep-in-rings",
+      "title": "The Hollow Brood: Caplings. They sleep in rings like that, and wak",
+      "kind": "line",
+      "speaker": "speaker.tiv",
+      "tags": "[hushed]",
+      "model": "eleven_v3",
+      "settings": {
+        "stability": 0.5,
+        "speed": 1.0
+      },
+      "takes": 2
+    },
+    {
+      "name": "hb-my-queen-my-brother-kesh",
+      "line": "line.hollow-brood.my-queen-my-brother-kesh",
+      "dir": "base/campaigns/vanguard.utcc/assets/audio/lines/hollow-brood/my-queen-my-brother-kesh",
+      "id": "asset.audio.line.hollow-brood.my-queen-my-brother-kesh",
+      "title": "The Hollow Brood: My Queen... my brother Kesh took a patrol north-",
+      "kind": "line",
+      "speaker": "speaker.tiv",
+      "tags": "[worried]",
+      "model": "eleven_v3",
+      "settings": {
+        "stability": 0.5,
+        "speed": 1.0
+      },
+      "takes": 2
+    },
+    {
+      "name": "hb-it-shouldn-t-glow-like",
+      "line": "line.hollow-brood.it-shouldn-t-glow-like",
+      "dir": "base/campaigns/vanguard.utcc/assets/audio/lines/hollow-brood/it-shouldn-t-glow-like",
+      "id": "asset.audio.line.hollow-brood.it-shouldn-t-glow-like",
+      "title": "The Hollow Brood: It shouldn't glow like that.",
+      "kind": "line",
+      "speaker": "speaker.aurelith",
+      "tags": "[uneasy]",
+      "model": "eleven_v3",
+      "settings": {
+        "stability": 0.5,
+        "speed": 1.0
+      },
+      "takes": 2
+    },
+    {
+      "name": "hb-those-are-hollow-ants-drinking",
+      "line": "line.hollow-brood.those-are-hollow-ants-drinking",
+      "dir": "base/campaigns/vanguard.utcc/assets/audio/lines/hollow-brood/those-are-hollow-ants-drinking",
+      "id": "asset.audio.line.hollow-brood.those-are-hollow-ants-drinking",
+      "title": "The Hollow Brood: Those are Hollow ants drinking, my Queen. Or the",
+      "kind": "line",
+      "speaker": "speaker.tiv",
+      "tags": "[grim]",
+      "model": "eleven_v3",
+      "settings": {
+        "stability": 0.5,
+        "speed": 1.0
+      },
+      "takes": 2
+    },
+    {
+      "name": "hb-a-sap-spring-rest-here",
+      "line": "line.hollow-brood.a-sap-spring-rest-here",
+      "dir": "base/campaigns/vanguard.utcc/assets/audio/lines/hollow-brood/a-sap-spring-rest-here",
+      "id": "asset.audio.line.hollow-brood.a-sap-spring-rest-here",
+      "title": "The Hollow Brood: A sap spring. Rest here if the road wears on you",
+      "kind": "line",
+      "speaker": "speaker.tiv",
+      "tags": "[relieved]",
+      "model": "eleven_v3",
+      "settings": {
+        "stability": 0.5,
+        "speed": 1.0
+      },
+      "takes": 2
+    },
+    {
+      "name": "hb-a-beetle-s-husk-and",
+      "line": "line.hollow-brood.a-beetle-s-husk-and",
+      "dir": "base/campaigns/vanguard.utcc/assets/audio/lines/hollow-brood/a-beetle-s-husk-and",
+      "id": "asset.audio.line.hollow-brood.a-beetle-s-husk-and",
+      "title": "The Hollow Brood: A beetle's husk... and their crates. They come t",
+      "kind": "line",
+      "speaker": "speaker.aurelith",
+      "tags": "[curious]",
+      "model": "eleven_v3",
+      "settings": {
+        "stability": 0.5,
+        "speed": 1.0
+      },
+      "takes": 2
+    },
+    {
+      "name": "hb-hornets-unless-you-want-the",
+      "line": "line.hollow-brood.hornets-unless-you-want-the",
+      "dir": "base/campaigns/vanguard.utcc/assets/audio/lines/hollow-brood/hornets-unless-you-want-the",
+      "id": "asset.audio.line.hollow-brood.hornets-unless-you-want-the",
+      "title": "The Hollow Brood: Hornets. Unless you want the whole nest on us, m",
+      "kind": "line",
+      "speaker": "speaker.tiv",
+      "tags": "[whispers]",
+      "model": "eleven_v3",
+      "settings": {
+        "stability": 0.5,
+        "speed": 1.0
+      },
+      "takes": 2
+    },
+    {
+      "name": "hb-an-old-broodkeepers-shrine-and",
+      "line": "line.hollow-brood.an-old-broodkeepers-shrine-and",
+      "dir": "base/campaigns/vanguard.utcc/assets/audio/lines/hollow-brood/an-old-broodkeepers-shrine-and",
+      "id": "asset.audio.line.hollow-brood.an-old-broodkeepers-shrine-and",
+      "title": "The Hollow Brood: An old broodkeepers' shrine... and its lantern s",
+      "kind": "line",
+      "speaker": "speaker.aurelith",
+      "tags": "[softly]",
+      "model": "eleven_v3",
+      "settings": {
+        "stability": 0.5,
+        "speed": 1.0
+      },
+      "takes": 2
+    },
+    {
+      "name": "hb-my-queen-the-hollow-s",
+      "line": "line.hollow-brood.my-queen-the-hollow-s",
+      "dir": "base/campaigns/vanguard.utcc/assets/audio/lines/hollow-brood/my-queen-the-hollow-s",
+      "id": "asset.audio.line.hollow-brood.my-queen-the-hollow-s",
+      "title": "The Hollow Brood: My Queen! The Hollow's watch-lights went dark th",
+      "kind": "line",
+      "speaker": "speaker.tiv",
+      "tags": "[out of breath] [urgent]",
+      "model": "eleven_v3",
+      "settings": {
+        "stability": 0.5,
+        "speed": 1.0
+      },
+      "takes": 2
+    },
+    {
+      "name": "hb-we-sent-scouts-not-one",
+      "line": "line.hollow-brood.we-sent-scouts-not-one",
+      "dir": "base/campaigns/vanguard.utcc/assets/audio/lines/hollow-brood/we-sent-scouts-not-one",
+      "id": "asset.audio.line.hollow-brood.we-sent-scouts-not-one",
+      "title": "The Hollow Brood: We sent scouts. Not one came back.",
+      "kind": "line",
+      "speaker": "speaker.tiv",
+      "tags": "[grim]",
+      "model": "eleven_v3",
+      "settings": {
+        "stability": 0.5,
+        "speed": 1.0
+      },
+      "takes": 2
+    },
+    {
+      "name": "hb-mother-ashka-would-never-let",
+      "line": "line.hollow-brood.mother-ashka-would-never-let",
+      "dir": "base/campaigns/vanguard.utcc/assets/audio/lines/hollow-brood/mother-ashka-would-never-let",
+      "id": "asset.audio.line.hollow-brood.mother-ashka-would-never-let",
+      "title": "The Hollow Brood: Mother Ashka would never let her lights go dark.",
+      "kind": "line",
+      "speaker": "speaker.aurelith",
+      "tags": "[firm]",
+      "model": "eleven_v3",
+      "settings": {
+        "stability": 0.5,
+        "speed": 1.0
+      },
+      "takes": 2
+    },
+    {
+      "name": "hb-then-we-go-and-ask",
+      "line": "line.hollow-brood.then-we-go-and-ask",
+      "dir": "base/campaigns/vanguard.utcc/assets/audio/lines/hollow-brood/then-we-go-and-ask",
+      "id": "asset.audio.line.hollow-brood.then-we-go-and-ask",
+      "title": "The Hollow Brood: Then we go and ask them why.",
+      "kind": "line",
+      "speaker": "speaker.aurelith",
+      "tags": "[determined]",
+      "model": "eleven_v3",
+      "settings": {
+        "stability": 0.5,
+        "speed": 1.0
+      },
+      "takes": 2
+    },
+    {
+      "name": "hb-this-was-one-of-ashka",
+      "line": "line.hollow-brood.this-was-one-of-ashka",
+      "dir": "base/campaigns/vanguard.utcc/assets/audio/lines/hollow-brood/this-was-one-of-ashka",
+      "id": "asset.audio.line.hollow-brood.this-was-one-of-ashka",
+      "title": "The Hollow Brood: This was one of Ashka's. Look at its shell.",
+      "kind": "line",
+      "speaker": "speaker.aurelith",
+      "tags": "[troubled]",
+      "model": "eleven_v3",
+      "settings": {
+        "stability": 0.5,
+        "speed": 1.0
+      },
+      "takes": 2
+    },
+    {
+      "name": "hb-split-open-as-if-something",
+      "line": "line.hollow-brood.split-open-as-if-something",
+      "dir": "base/campaigns/vanguard.utcc/assets/audio/lines/hollow-brood/split-open-as-if-something",
+      "id": "asset.audio.line.hollow-brood.split-open-as-if-something",
+      "title": "The Hollow Brood: Split open... as if something grew inside it.",
+      "kind": "line",
+      "speaker": "speaker.tiv",
+      "tags": "[disturbed]",
+      "model": "eleven_v3",
+      "settings": {
+        "stability": 0.5,
+        "speed": 1.0
+      },
+      "takes": 2
+    },
+    {
+      "name": "hb-stay-close-whatever-did-this",
+      "line": "line.hollow-brood.stay-close-whatever-did-this",
+      "dir": "base/campaigns/vanguard.utcc/assets/audio/lines/hollow-brood/stay-close-whatever-did-this",
+      "id": "asset.audio.line.hollow-brood.stay-close-whatever-did-this",
+      "title": "The Hollow Brood: Stay close. Whatever did this is still out here.",
+      "kind": "line",
+      "speaker": "speaker.aurelith",
+      "tags": "[alert]",
+      "model": "eleven_v3",
+      "settings": {
+        "stability": 0.5,
+        "speed": 1.0
+      },
+      "takes": 2
+    },
+    {
+      "name": "hb-tiv-tiv-i-knew-you",
+      "line": "line.hollow-brood.tiv-tiv-i-knew-you",
+      "dir": "base/campaigns/vanguard.utcc/assets/audio/lines/hollow-brood/tiv-tiv-i-knew-you",
+      "id": "asset.audio.line.hollow-brood.tiv-tiv-i-knew-you",
+      "title": "The Hollow Brood: Tiv? Tiv! I knew you'd come.",
+      "kind": "line",
+      "speaker": "speaker.kesh",
+      "tags": "[weak] [relieved]",
+      "model": "eleven_v3",
+      "settings": {
+        "stability": 0.5,
+        "speed": 1.0
+      },
+      "takes": 2
+    },
+    {
+      "name": "hb-hold-still-brother-these-webs",
+      "line": "line.hollow-brood.hold-still-brother-these-webs",
+      "dir": "base/campaigns/vanguard.utcc/assets/audio/lines/hollow-brood/hold-still-brother-these-webs",
+      "id": "asset.audio.line.hollow-brood.hold-still-brother-these-webs",
+      "title": "The Hollow Brood: Hold still, brother. These webs stink.",
+      "kind": "line",
+      "speaker": "speaker.tiv",
+      "tags": "[relieved] [teasing]",
+      "model": "eleven_v3",
+      "settings": {
+        "stability": 0.5,
+        "speed": 1.0
+      },
+      "takes": 2
+    },
+    {
+      "name": "hb-light-the-queen-s-light",
+      "line": "line.hollow-brood.light-the-queen-s-light",
+      "dir": "base/campaigns/vanguard.utcc/assets/audio/lines/hollow-brood/light-the-queen-s-light",
+      "id": "asset.audio.line.hollow-brood.light-the-queen-s-light",
+      "title": "The Hollow Brood: Light... the Queen's light. You found us.",
+      "kind": "line",
+      "speaker": "speaker.kesh",
+      "tags": "[weak] [awed]",
+      "model": "eleven_v3",
+      "settings": {
+        "stability": 0.5,
+        "speed": 1.0
+      },
+      "takes": 2
+    },
+    {
+      "name": "hb-we-tracked-the-hollow-s",
+      "line": "line.hollow-brood.we-tracked-the-hollow-s",
+      "dir": "base/campaigns/vanguard.utcc/assets/audio/lines/hollow-brood/we-tracked-the-hollow-s",
+      "id": "asset.audio.line.hollow-brood.we-tracked-the-hollow-s",
+      "title": "The Hollow Brood: We tracked the Hollow's foragers in here, my Que",
+      "kind": "line",
+      "speaker": "speaker.kesh",
+      "tags": "[tired]",
+      "model": "eleven_v3",
+      "settings": {
+        "stability": 0.5,
+        "speed": 1.0
+      },
+      "takes": 2
+    },
+    {
+      "name": "hb-take-my-whistle-it-has",
+      "line": "line.hollow-brood.take-my-whistle-it-has",
+      "dir": "base/campaigns/vanguard.utcc/assets/audio/lines/hollow-brood/take-my-whistle-it-has",
+      "id": "asset.audio.line.hollow-brood.take-my-whistle-it-has",
+      "title": "The Hollow Brood: Take my whistle. It has called us home through w",
+      "kind": "line",
+      "speaker": "speaker.kesh",
+      "tags": "[warm]",
+      "model": "eleven_v3",
+      "settings": {
+        "stability": 0.5,
+        "speed": 1.0
+      },
+      "takes": 2
+    },
+    {
+      "name": "hb-then-walk-home-with-us",
+      "line": "line.hollow-brood.then-walk-home-with-us",
+      "dir": "base/campaigns/vanguard.utcc/assets/audio/lines/hollow-brood/then-walk-home-with-us",
+      "id": "asset.audio.line.hollow-brood.then-walk-home-with-us",
+      "title": "The Hollow Brood: Then walk home with us, Kesh. We go to the Hollo",
+      "kind": "line",
+      "speaker": "speaker.aurelith",
+      "tags": "[warm]",
+      "model": "eleven_v3",
+      "settings": {
+        "stability": 0.5,
+        "speed": 1.0
+      },
+      "takes": 2
+    },
+    {
+      "name": "hb-the-hollow-its-nest-still",
+      "line": "line.hollow-brood.the-hollow-its-nest-still",
+      "dir": "base/campaigns/vanguard.utcc/assets/audio/lines/hollow-brood/the-hollow-its-nest-still",
+      "id": "asset.audio.line.hollow-brood.the-hollow-its-nest-still",
+      "title": "The Hollow Brood: The Hollow. Its nest still glows...",
+      "kind": "line",
+      "speaker": "speaker.aurelith",
+      "tags": "[quietly]",
+      "model": "eleven_v3",
+      "settings": {
+        "stability": 0.5,
+        "speed": 1.0
+      },
+      "takes": 2
+    },
+    {
+      "name": "hb-but-nothing-down-there-moves",
+      "line": "line.hollow-brood.but-nothing-down-there-moves",
+      "dir": "base/campaigns/vanguard.utcc/assets/audio/lines/hollow-brood/but-nothing-down-there-moves",
+      "id": "asset.audio.line.hollow-brood.but-nothing-down-there-moves",
+      "title": "The Hollow Brood: ...but nothing down there moves the way it shoul",
+      "kind": "line",
+      "speaker": "speaker.aurelith",
+      "tags": "[uneasy]",
+      "model": "eleven_v3",
+      "settings": {
+        "stability": 0.5,
+        "speed": 1.0
+      },
+      "takes": 2
+    },
+    {
+      "name": "hb-listen-digging-my-queen-behind",
+      "line": "line.hollow-brood.listen-digging-my-queen-behind",
+      "dir": "base/campaigns/vanguard.utcc/assets/audio/lines/hollow-brood/listen-digging-my-queen-behind",
+      "id": "asset.audio.line.hollow-brood.listen-digging-my-queen-behind",
+      "title": "The Hollow Brood: Listen! Digging, my Queen. Behind the fallen tun",
+      "kind": "line",
+      "speaker": "speaker.tiv",
+      "tags": "[urgent]",
+      "model": "eleven_v3",
+      "settings": {
+        "stability": 0.5,
+        "speed": 1.0
+      },
+      "takes": 2
+    },
+    {
+      "name": "hb-listen-someone-is-digging-behind",
+      "line": "line.hollow-brood.listen-someone-is-digging-behind",
+      "dir": "base/campaigns/vanguard.utcc/assets/audio/lines/hollow-brood/listen-someone-is-digging-behind",
+      "id": "asset.audio.line.hollow-brood.listen-someone-is-digging-behind",
+      "title": "The Hollow Brood: Listen. Someone is digging behind that fallen tu",
+      "kind": "line",
+      "speaker": "speaker.aurelith",
+      "tags": "[alert]",
+      "model": "eleven_v3",
+      "settings": {
+        "stability": 0.5,
+        "speed": 1.0
+      },
+      "takes": 2
+    },
+    {
+      "name": "hb-survivors-break-through-to-them",
+      "line": "line.hollow-brood.survivors-break-through-to-them",
+      "dir": "base/campaigns/vanguard.utcc/assets/audio/lines/hollow-brood/survivors-break-through-to-them",
+      "id": "asset.audio.line.hollow-brood.survivors-break-through-to-them",
+      "title": "The Hollow Brood: Survivors. Break through to them.",
+      "kind": "line",
+      "speaker": "speaker.aurelith",
+      "tags": "[commanding]",
+      "model": "eleven_v3",
+      "settings": {
+        "stability": 0.5,
+        "speed": 1.0
+      },
+      "takes": 2
+    },
+    {
+      "name": "hb-queen-aurelith-you-came-we",
+      "line": "line.hollow-brood.queen-aurelith-you-came-we",
+      "dir": "base/campaigns/vanguard.utcc/assets/audio/lines/hollow-brood/queen-aurelith-you-came-we",
+      "id": "asset.audio.line.hollow-brood.queen-aurelith-you-came-we",
+      "title": "The Hollow Brood: Queen Aurelith... you came. We prayed someone wo",
+      "kind": "line",
+      "speaker": "speaker.nurse-ardi",
+      "tags": "[frightened] [tearful]",
+      "model": "eleven_v3",
+      "settings": {
+        "stability": 0.5,
+        "speed": 1.0
+      },
+      "takes": 2
+    },
+    {
+      "name": "hb-what-happened-here",
+      "line": "line.hollow-brood.what-happened-here",
+      "dir": "base/campaigns/vanguard.utcc/assets/audio/lines/hollow-brood/what-happened-here",
+      "id": "asset.audio.line.hollow-brood.what-happened-here",
+      "title": "The Hollow Brood: What happened here?",
+      "kind": "line",
+      "speaker": "speaker.aurelith",
+      "tags": "[gently]",
+      "model": "eleven_v3",
+      "settings": {
+        "stability": 0.5,
+        "speed": 1.0
+      },
+      "takes": 2
+    },
+    {
+      "name": "hb-they-drank-from-the-deep",
+      "line": "line.hollow-brood.they-drank-from-the-deep",
+      "dir": "base/campaigns/vanguard.utcc/assets/audio/lines/hollow-brood/they-drank-from-the-deep",
+      "id": "asset.audio.line.hollow-brood.they-drank-from-the-deep",
+      "title": "The Hollow Brood: They drank from the deep pool. Then they stopped",
+      "kind": "line",
+      "speaker": "speaker.nurse-ardi",
+      "tags": "[frightened] [whispers]",
+      "model": "eleven_v3",
+      "settings": {
+        "stability": 0.5,
+        "speed": 1.0
+      },
+      "takes": 2
+    },
+    {
+      "name": "hb-mother-ashka-drank-first-and",
+      "line": "line.hollow-brood.mother-ashka-drank-first-and",
+      "dir": "base/campaigns/vanguard.utcc/assets/audio/lines/hollow-brood/mother-ashka-drank-first-and",
+      "id": "asset.audio.line.hollow-brood.mother-ashka-drank-first-and",
+      "title": "The Hollow Brood: Mother Ashka drank first, and drank the most. Sh",
+      "kind": "line",
+      "speaker": "speaker.nurse-ardi",
+      "tags": "[sorrowful] [trembling]",
+      "model": "eleven_v3",
+      "settings": {
+        "stability": 0.5,
+        "speed": 1.0
+      },
+      "takes": 2
+    },
+    {
+      "name": "hb-let-us-fight-beside-you",
+      "line": "line.hollow-brood.let-us-fight-beside-you",
+      "dir": "base/campaigns/vanguard.utcc/assets/audio/lines/hollow-brood/let-us-fight-beside-you",
+      "id": "asset.audio.line.hollow-brood.let-us-fight-beside-you",
+      "title": "The Hollow Brood: Let us fight beside you, my Queen. Let us put he",
+      "kind": "line",
+      "speaker": "speaker.hollow-raider",
+      "tags": "[grim]",
+      "model": "eleven_v3",
+      "settings": {
+        "stability": 0.5,
+        "speed": 1.0
+      },
+      "takes": 2
+    },
+    {
+      "name": "hb-then-come-all-of-you",
+      "line": "line.hollow-brood.then-come-all-of-you",
+      "dir": "base/campaigns/vanguard.utcc/assets/audio/lines/hollow-brood/then-come-all-of-you",
+      "id": "asset.audio.line.hollow-brood.then-come-all-of-you",
+      "title": "The Hollow Brood: Then come. All of you who can.",
+      "kind": "line",
+      "speaker": "speaker.aurelith",
+      "tags": "[resolute]",
+      "model": "eleven_v3",
+      "settings": {
+        "stability": 0.5,
+        "speed": 1.0
+      },
+      "takes": 2
+    },
+    {
+      "name": "hb-mother-ashka-it-is-aurelith",
+      "line": "line.hollow-brood.mother-ashka-it-is-aurelith",
+      "dir": "base/campaigns/vanguard.utcc/assets/audio/lines/hollow-brood/mother-ashka-it-is-aurelith",
+      "id": "asset.audio.line.hollow-brood.mother-ashka-it-is-aurelith",
+      "title": "The Hollow Brood: Mother Ashka! It is Aurelith, of the Amber Court",
+      "kind": "line",
+      "speaker": "speaker.aurelith",
+      "tags": "[shouting]",
+      "model": "eleven_v3",
+      "settings": {
+        "stability": 0.5,
+        "speed": 1.0
+      },
+      "takes": 2
+    },
+    {
+      "name": "hb-so-loud-the-song-is",
+      "line": "line.hollow-brood.so-loud-the-song-is",
+      "dir": "base/campaigns/vanguard.utcc/assets/audio/lines/hollow-brood/so-loud-the-song-is",
+      "id": "asset.audio.line.hollow-brood.so-loud-the-song-is",
+      "title": "The Hollow Brood: ...so loud... the song is so loud...",
+      "kind": "line",
+      "speaker": "speaker.mother-ashka",
+      "tags": "[dazed] [whispers]",
+      "model": "eleven_v3",
+      "settings": {
+        "stability": 0.5,
+        "speed": 1.0
+      },
+      "takes": 2
+    },
+    {
+      "name": "hb-she-doesn-t-know-you",
+      "line": "line.hollow-brood.she-doesn-t-know-you",
+      "dir": "base/campaigns/vanguard.utcc/assets/audio/lines/hollow-brood/she-doesn-t-know-you",
+      "id": "asset.audio.line.hollow-brood.she-doesn-t-know-you",
+      "title": "The Hollow Brood: She doesn't know you, my Queen.",
+      "kind": "line",
+      "speaker": "speaker.tiv",
+      "tags": "[afraid]",
+      "model": "eleven_v3",
+      "settings": {
+        "stability": 0.5,
+        "speed": 1.0
+      },
+      "takes": 2
+    },
+    {
+      "name": "hb-then-i-will-help-her",
+      "line": "line.hollow-brood.then-i-will-help-her",
+      "dir": "base/campaigns/vanguard.utcc/assets/audio/lines/hollow-brood/then-i-will-help-her",
+      "id": "asset.audio.line.hollow-brood.then-i-will-help-her",
+      "title": "The Hollow Brood: Then I will help her sleep.",
+      "kind": "line",
+      "speaker": "speaker.aurelith",
+      "tags": "[sad] [resolute]",
+      "model": "eleven_v3",
+      "settings": {
+        "stability": 0.5,
+        "speed": 1.0
+      },
+      "takes": 2
+    },
+    {
+      "name": "hb-no-ant-will-drink-like",
+      "line": "line.hollow-brood.no-ant-will-drink-like",
+      "dir": "base/campaigns/vanguard.utcc/assets/audio/lines/hollow-brood/no-ant-will-drink-like",
+      "id": "asset.audio.line.hollow-brood.no-ant-will-drink-like",
+      "title": "The Hollow Brood: No ant will drink like this again. I swear it.",
+      "kind": "line",
+      "speaker": "speaker.aurelith",
+      "tags": "[solemn]",
+      "model": "eleven_v3",
+      "settings": {
+        "stability": 0.5,
+        "speed": 1.0
+      },
+      "takes": 2
+    },
+    {
+      "name": "hb-rrrrribbit",
+      "line": "line.hollow-brood.rrrrribbit",
+      "dir": "base/campaigns/vanguard.utcc/assets/audio/lines/hollow-brood/rrrrribbit",
+      "id": "asset.audio.line.hollow-brood.rrrrribbit",
+      "title": "The Hollow Brood: Rrrrribbit.",
+      "kind": "effect",
+      "prompt": "A single small tree frog croak, a throaty 'rrribbit', close and clear, natural, no background noise",
+      "seconds": 1.5,
+      "takes": 2,
+      "event": {
+        "id": "sound.line.hollow-brood.rrrrribbit",
+        "category": "dialogue",
+        "file": "base/campaigns/vanguard.utcc/sounds/lines/line.hollow-brood.rrrrribbit.json"
+      }
+    },
+    {
+      "name": "hb-it-sang-to-us-we",
+      "line": "line.hollow-brood.it-sang-to-us-we",
+      "dir": "base/campaigns/vanguard.utcc/assets/audio/lines/hollow-brood/it-sang-to-us-we",
+      "id": "asset.audio.line.hollow-brood.it-sang-to-us-we",
+      "title": "The Hollow Brood: It sang to us... we drank... and it gave, and gave",
+      "kind": "line",
+      "speaker": "speaker.mother-ashka",
+      "tags": "[dying] [whispers]",
+      "model": "eleven_v3",
+      "settings": {
+        "stability": 0.5,
+        "speed": 1.0
+      },
+      "takes": 2
+    }
+  ]
+}

@@ -1,0 +1,41 @@
+{
+  "provider": "elevenlabs",
+  "kind": "line",
+  "spec": {
+    "name": "hb-let-us-fight-beside-you",
+    "line": "line.hollow-brood.let-us-fight-beside-you",
+    "dir": "base/campaigns/vanguard.utcc/assets/audio/lines/hollow-brood/let-us-fight-beside-you",
+    "id": "asset.audio.line.hollow-brood.let-us-fight-beside-you",
+    "title": "The Hollow Brood: Let us fight beside you, my Queen. Let us put he",
+    "kind": "line",
+    "speaker": "speaker.hollow-raider",
+    "tags": "[grim]",
+    "model": "eleven_v3",
+    "settings": {
+      "stability": 0.5,
+      "speed": 1.0
+    },
+    "takes": 2
+  },
+  "takes": [
+    "take-1.mp3",
+    "take-2.mp3"
+  ],
+  "picked": "take-1.mp3",
+  "request": {
+    "text": "[grim] Let us fight beside you, my Queen. Let us put her to rest.",
+    "model_id": "eleven_v3",
+    "voice_settings": {
+      "stability": 0.5,
+      "speed": 1.0
+    }
+  },
+  "endpoint": "/v1/text-to-speech/h7WhIMYgIy1LbKeLMIUt",
+  "text": "Let us fight beside you, my Queen. Let us put her to rest.",
+  "voice": {
+    "description": "A battle-scarred male warrior survivor in his thirties: a deep, gruff, low voice, grim and resolute, few words, grief held back by anger and duty. He speaks English with a soft, neutral accent, close to the microphone in a quiet room, performing a character in a fantasy game.",
+    "model": "eleven_ttv_v3",
+    "preview": "take-1-1.mp3",
+    "voice_id": "h7WhIMYgIy1LbKeLMIUt"
+  }
+}

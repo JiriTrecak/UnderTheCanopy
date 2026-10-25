@@ -1,0 +1,41 @@
+{
+  "provider": "elevenlabs",
+  "kind": "line",
+  "spec": {
+    "name": "hb-listen-someone-is-digging-behind",
+    "line": "line.hollow-brood.listen-someone-is-digging-behind",
+    "dir": "base/campaigns/vanguard.utcc/assets/audio/lines/hollow-brood/listen-someone-is-digging-behind",
+    "id": "asset.audio.line.hollow-brood.listen-someone-is-digging-behind",
+    "title": "The Hollow Brood: Listen. Someone is digging behind that fallen tu",
+    "kind": "line",
+    "speaker": "speaker.aurelith",
+    "tags": "[alert]",
+    "model": "eleven_v3",
+    "settings": {
+      "stability": 0.5,
+      "speed": 1.0
+    },
+    "takes": 2
+  },
+  "takes": [
+    "take-1.mp3",
+    "take-2.mp3"
+  ],
+  "picked": "take-1.mp3",
+  "request": {
+    "text": "[alert] Listen. Someone is digging behind that fallen tunnel.",
+    "model_id": "eleven_v3",
+    "voice_settings": {
+      "stability": 0.5,
+      "speed": 1.0
+    }
+  },
+  "endpoint": "/v1/text-to-speech/NHcxEDCucmuyqHzvSxNi",
+  "text": "Listen. Someone is digging behind that fallen tunnel.",
+  "voice": {
+    "description": "A young queen in her mid-twenties: a clear, warm mezzo-soprano voice with quiet authority, compassionate yet fierce and certain, a hint of pride. Regal but not cold, youthful and alive, never breathy. She speaks English with a soft, neutral accent, close to the microphone in a quiet room, performing a character in a fantasy game.",
+    "model": "eleven_ttv_v3",
+    "preview": "take-1-2.mp3",
+    "voice_id": "NHcxEDCucmuyqHzvSxNi"
+  }
+}

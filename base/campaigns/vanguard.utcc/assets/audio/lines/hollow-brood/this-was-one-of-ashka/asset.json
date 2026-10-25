@@ -1,0 +1,22 @@
+{
+  "id": "asset.audio.line.hollow-brood.this-was-one-of-ashka",
+  "name": "The Hollow Brood: This was one of Ashka's. Look at its shell.",
+  "kind": "audio",
+  "tags": [
+    "line"
+  ],
+  "license": "Generated with ElevenLabs for Under the Canopy (generation.json).",
+  "resources": [
+    {
+      "role": "audio",
+      "index": 1,
+      "format": "mp3"
+    },
+    {
+      "role": "generation",
+      "index": 1,
+      "format": "json"
+    }
+  ],
+  "seconds": 3.28
+}

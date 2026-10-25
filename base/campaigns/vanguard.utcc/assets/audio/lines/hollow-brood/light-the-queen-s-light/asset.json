@@ -1,0 +1,22 @@
+{
+  "id": "asset.audio.line.hollow-brood.light-the-queen-s-light",
+  "name": "The Hollow Brood: Light... the Queen's light. You found us.",
+  "kind": "audio",
+  "tags": [
+    "line"
+  ],
+  "license": "Generated with ElevenLabs for Under the Canopy (generation.json).",
+  "resources": [
+    {
+      "role": "audio",
+      "index": 1,
+      "format": "mp3"
+    },
+    {
+      "role": "generation",
+      "index": 1,
+      "format": "json"
+    }
+  ],
+  "seconds": 2.4
+}

@@ -1,0 +1,41 @@
+{
+  "provider": "elevenlabs",
+  "kind": "line",
+  "spec": {
+    "name": "hb-they-drank-from-the-deep",
+    "line": "line.hollow-brood.they-drank-from-the-deep",
+    "dir": "base/campaigns/vanguard.utcc/assets/audio/lines/hollow-brood/they-drank-from-the-deep",
+    "id": "asset.audio.line.hollow-brood.they-drank-from-the-deep",
+    "title": "The Hollow Brood: They drank from the deep pool. Then they stopped",
+    "kind": "line",
+    "speaker": "speaker.nurse-ardi",
+    "tags": "[frightened] [whispers]",
+    "model": "eleven_v3",
+    "settings": {
+      "stability": 0.5,
+      "speed": 1.0
+    },
+    "takes": 2
+  },
+  "takes": [
+    "take-1.mp3",
+    "take-2.mp3"
+  ],
+  "picked": "take-1.mp3",
+  "request": {
+    "text": "[frightened] [whispers] They drank from the deep pool. Then they stopped sleeping.",
+    "model_id": "eleven_v3",
+    "voice_settings": {
+      "stability": 0.5,
+      "speed": 1.0
+    }
+  },
+  "endpoint": "/v1/text-to-speech/uJSffrMFNCyUvbuakehl",
+  "text": "They drank from the deep pool. Then they stopped sleeping.",
+  "voice": {
+    "description": "A middle-aged nurse of a ruined colony, about fifty: a soft, gentle alto voice, kind and motherly, exhausted, frightened and grieving, trembling slightly, speaking quietly as if still afraid to be heard. She speaks English with a soft, neutral accent, close to the microphone in a quiet room, performing a character in a fantasy game.",
+    "model": "eleven_ttv_v3",
+    "preview": "take-1-1.mp3",
+    "voice_id": "uJSffrMFNCyUvbuakehl"
+  }
+}

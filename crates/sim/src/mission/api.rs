@@ -786,7 +786,8 @@ impl<'a> Api<'a> {
             // Nil: as long as the line reads (its source text, D96), as `speak`.
             Scalar::Nil => scene::reading_ticks(self.catalog, &line),
             raw => round(number(raw, 1.0, 60.0)? * f64::from(super::TICKS_PER_SECOND)) as u32,
-        };
+        }
+        .max(scene::voice_ticks(self.catalog, &line));
         let id = self.draft.next_dialogue;
         self.draft.next_dialogue += 1;
         self.draft.dialogue = Some(Dialogue {

@@ -1,0 +1,22 @@
+{
+  "id": "asset.audio.line.hollow-brood.then-walk-home-with-us",
+  "name": "The Hollow Brood: Then walk home with us, Kesh. We go to the Hollo",
+  "kind": "audio",
+  "tags": [
+    "line"
+  ],
+  "license": "Generated with ElevenLabs for Under the Canopy (generation.json).",
+  "resources": [
+    {
+      "role": "audio",
+      "index": 1,
+      "format": "mp3"
+    },
+    {
+      "role": "generation",
+      "index": 1,
+      "format": "json"
+    }
+  ],
+  "seconds": 3.12
+}

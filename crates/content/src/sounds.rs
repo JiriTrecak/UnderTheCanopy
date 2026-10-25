@@ -350,6 +350,23 @@ pub(crate) fn validate(content: &crate::Content, errors: &mut Vec<Error>) {
         for problem in check_event(event, &audio) {
             errors.push(Error::new(file, event.id.as_str(), problem));
         }
+        // A spoken line lasts as long as its voice, so a voice's clips say how long they are.
+        if event.category == Dialogue {
+            for clip in &event.clips {
+                let known = content
+                    .assets
+                    .iter()
+                    .find(|a| a.id == *clip.as_str())
+                    .is_none_or(|a| a.seconds.is_some_and(|s| s > 0.0));
+                if !known {
+                    errors.push(Error::new(
+                        file,
+                        event.id.as_str(),
+                        format!("dialogue clip {clip} needs its length in seconds (`seconds`)"),
+                    ));
+                }
+            }
+        }
     }
     let mut refer = |id: &Id, categories: &[SoundCategory], location: String| {
         let file = content.origin(&location).to_string();
