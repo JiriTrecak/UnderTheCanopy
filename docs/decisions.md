@@ -1135,7 +1135,7 @@ The render thread's live scene, world UI, HUD and menu are optimised under one r
 - **Claude Opus 5.5, adaptive thinking, high effort by default**, Sonnet 5.5 as the cheaper choice; streamed over raw HTTPS (Rust has no official SDK), `fallbacks: "default"` for refusals, progress notes between tool calls, the stable prefix cached, the history append-only.
 - **Ask before writing files or spending money** (save, cook, imports, map previews, ElevenLabs); everything else runs as undoable edits.
 - **The user's key, kept private**: the environment's `ANTHROPIC_API_KEY`, else one kept in the user folder (owner-only); never shown or logged.
-- **OpenAI as the second provider** (Jiri, 2026-10-25): the settings choose Anthropic or OpenAI, each with its own model and key (`OPENAI_API_KEY`); OpenAI through its Responses API (GPT-6 Astra by default). Threads are stored in one form and converted per request, so either provider can carry on any thread; OpenAI's reasoning items travel back encrypted, unstored on its side.
+- **OpenAI as the second provider** (Jiri, 2026-10-25): the settings choose Anthropic or OpenAI, each with its own model and key (`OPENAI_API_KEY`); OpenAI through its Responses API, GPT-6.1 Sol by default (Jiri: "always default to sol, astra is too expensive and not necessary"). Threads are stored in one form and converted per request, so either provider can carry on any thread; OpenAI's reasoning items travel back encrypted, unstored on its side.
 
 ## 2026-10-25 — Neighboring Understaffed relay routes
 

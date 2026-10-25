@@ -28,10 +28,11 @@ pub const MODELS: [Model; 2] = [
     ("claude-sonnet-5-5", "Claude Sonnet 5.5", [2.0, 10.0, 0.20]),
 ];
 
-/// OpenAI's, the default first (its cache reads at a tenth of the input rate).
+/// OpenAI's, the default first (Jiri, 2026-10-25: "always default to sol, astra is too
+/// expensive and not necessary"); cache reads at a tenth of the input rate.
 pub const OPENAI_MODELS: [Model; 2] = [
-    ("gpt-6-astra", "GPT-6 Astra", [10.0, 50.0, 1.0]),
     ("gpt-6.1-sol", "GPT-6.1 Sol", [2.0, 10.0, 0.20]),
+    ("gpt-6-astra", "GPT-6 Astra", [10.0, 50.0, 1.0]),
 ];
 
 /// How hard the model thinks: effort levels both providers take.

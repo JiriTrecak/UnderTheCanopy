@@ -567,7 +567,7 @@ mod tests {
         assert_eq!(turns.len(), 3);
         assert_eq!(turns[2]["content"][0]["text"], "All clean.");
         let bodies = seen.lock().unwrap();
-        assert_eq!(bodies[0]["model"], "gpt-6-astra");
+        assert_eq!(bodies[0]["model"], "gpt-6.1-sol");
         assert_eq!(bodies[0]["store"], false);
         assert!(
             bodies[0]["tools"]
