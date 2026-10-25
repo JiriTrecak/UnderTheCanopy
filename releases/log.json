@@ -2,15 +2,24 @@
   "schemaVersion": 1,
   "unreleased": {
     "added": [],
-    "improved": [
-      "Campaign forest maps render up to twice as fast on the GPU, and every map a little faster, with the same picture",
-      "Fewer hitches in large battles and while computer players plan their first moves",
-      "The main menu draws in about half the GPU time, and a match's interface, health bars and building shadows cost the processor far less each frame, with the same picture"
-    ],
+    "improved": [],
     "fixed": [],
     "knownIssues": []
   },
   "releases": [
+    {
+      "added": [],
+      "improved": [
+        "Campaign forest maps render up to twice as fast on the GPU, and every map a little faster, with the same picture",
+        "Fewer hitches in large battles and while computer players plan their first moves",
+        "The main menu draws in about half the GPU time, and a match's interface, health bars and building shadows cost the processor far less each frame, with the same picture"
+      ],
+      "fixed": [],
+      "knownIssues": [],
+      "version": "0.4.4",
+      "publishedAt": "2026-10-25T04:40:17.667Z",
+      "title": "Faster and smoother"
+    },
     {
       "added": [
         "Unit movement rebuilt in the manner of StarCraft II: your own units part for each other, squeeze through chokes and close round their targets, while enemies and units fighting or holding position still block",

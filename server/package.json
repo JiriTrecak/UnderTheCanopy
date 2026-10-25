@@ -1,6 +1,6 @@
 {
   "name": "canopy-matchhost",
-  "version": "0.4.3",
+  "version": "0.4.4",
   "private": true,
   "type": "module",
   "description": "Under the Canopy match server: lobby and lockstep relay (docs/server.md)",
