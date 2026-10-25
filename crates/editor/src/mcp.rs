@@ -616,7 +616,7 @@ impl Handler {
     }
 
     #[tool(
-        description = "A campaign's steps in order: index, kind, id, title, a mission's map and what its tech makes new and blocks, and the campaign check's problems for it."
+        description = "A campaign's steps in order: index, kind, id, title (a text key) and titleText (its words), a mission's map and what its tech makes new and blocks, and the campaign check's problems for it."
     )]
     async fn campaign_steps(
         &self,
@@ -729,7 +729,7 @@ impl Handler {
     }
 
     #[tool(
-        description = "Sets a mission map's computer players and their campaign AI (behaviour, waves, skirmish limits), replacing its list, one undo step; the map gets its mission section when it has none. Returns what the format check says of them."
+        description = "Sets a mission's computer players and their campaign AI (behaviour, waves, skirmish limits), replacing its list, one undo step; name the mission by its map, or by campaign and step. The map gets its mission section when it has none. Returns what the format check says of them."
     )]
     async fn set_mission_players(
         &self,

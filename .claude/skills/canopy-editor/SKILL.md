@@ -68,7 +68,7 @@ Every document also has **Form** (from its schema) and **JSON** (its text) in th
 - **Campaign text** (D96, skill canopy-campaign) is also by key.
   - Steps' titles are keys such as `campaign.vanguard.prologue.title`, in the campaign's `text/en/campaign.json`.
   - Mission lines are `line.<mission>.<words>`, in the mission map's `text/en/mission.json`.
-  - `campaign_steps` returns the keys. Read the text file for the words.
+  - `campaign_steps` returns each title's key and its words (`titleText`).
 
 ## Maps (blocks, D80)
 
@@ -100,7 +100,7 @@ Every document also has **Form** (from its schema) and **JSON** (its text) in th
 - **Tech:**
   - `set_mission_tech`: `{campaign, step, set: {"unit.x": "new" | "blocked" | "locked" | "available"}}`.
   - `mission_tech_tree`: `{campaign, step}` gives the Tech view as data.
-- **Players:** `set_mission_players` takes `{map, players}`. Note `map`, the mission map's id or package path, not the campaign and step. It replaces the mission's computer players.
+- **Players:** `set_mission_players` takes `{map, players}` (the mission map's id or package path) or `{campaign, step, players}`. It replaces the mission's computer players.
 - **Before a mission is done,** prove it with skill canopy-campaign (autoplay, the mission check). That needs a shell; the editor cannot run it.
 
 ## Trying things

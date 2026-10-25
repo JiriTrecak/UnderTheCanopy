@@ -80,7 +80,11 @@ pub struct SetTech {
 #[derive(Debug, Clone, Deserialize, JsonSchema)]
 pub struct MissionPlayers {
     /// The mission map: its id or its package path (`campaigns/vanguard.utcc/missions/a.utcm`).
-    pub map: String,
+    /// Or name the mission as the other campaign tools do, by `campaign` and `step`.
+    pub map: Option<String>,
+    pub campaign: Option<String>,
+    /// The mission step: its id or its index (with `campaign`).
+    pub step: Option<Value>,
     /// The mission's computer players, replacing its list (docs/campaign.md "Formats"):
     /// `{player, race, team: ally|enemy, vision, ai: {behaviour: passive|base|waves|skirmish,
     /// dormant, rebuild, waves: [{after, every, until, units: [{unit, count}], grow, hero,

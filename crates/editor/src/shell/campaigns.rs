@@ -346,6 +346,20 @@ impl Shell {
             Call::Steps(args) => {
                 let root = self.campaign_root(&args.campaign)?;
                 let value = self.campaign_value(&root)?;
+                // Titles are text keys (D96); their words are in the campaign's text file.
+                let words = self
+                    .store
+                    .as_mut()
+                    .and_then(|s| {
+                        s.get(&format!(
+                            "{root}/text/{}/campaign.json",
+                            crate::text::LANGUAGE
+                        ))
+                        .ok()
+                        .flatten()
+                        .cloned()
+                    })
+                    .unwrap_or(Value::Null);
                 let numbers = campaign::mission_numbers(&value);
                 let steps: Vec<Value> = campaign::steps(&value)
                     .iter()
@@ -357,6 +371,12 @@ impl Shell {
                             "id": campaign::text(s, "id"),
                             "title": campaign::text(s, "title"),
                         });
+                        if let Some(text) = words
+                            .get(campaign::text(s, "title"))
+                            .and_then(Value::as_str)
+                        {
+                            out["titleText"] = json!(text);
+                        }
                         if let Some(n) = numbers[i] {
                             let tech = Tech::at(&value, i);
                             out["mission"] = json!(n);
@@ -599,7 +619,21 @@ impl Shell {
                 Ok(json!({ "halls": tiers, "nodes": nodes, "contradictions": contradictions }))
             }
             Call::Players(args) => {
-                let root = self.map_root_of(&args.map)?;
+                let map = match (&args.map, &args.campaign, &args.step) {
+                    (Some(map), _, _) => map.clone(),
+                    (None, Some(campaign), Some(step)) => {
+                        let root = self.campaign_root(campaign)?;
+                        let value = self.campaign_value(&root)?;
+                        let index = Self::step_index(&value, step)?;
+                        let map = campaign::text(&campaign::steps(&value)[index], "map");
+                        if map.is_empty() {
+                            return Err(format!("Step {index} of {root} is not a mission"));
+                        }
+                        format!("{root}/{}/{map}.utcm", campaign::MISSIONS)
+                    }
+                    _ => return Err("Name the mission: map, or campaign and step".into()),
+                };
+                let root = self.map_root_of(&map)?;
                 let (campaign_root, _) =
                     campaign::mission_of(&root).ok_or("Not a campaign's mission map")?;
                 let campaign_root = campaign_root.to_string();
