@@ -2620,6 +2620,25 @@ impl Shell {
         self.current = kind;
     }
 
+    pub(crate) fn chat_ref(&self) -> &crate::assistant::Assistant {
+        &self.chat
+    }
+
+    pub(crate) fn chat_mut(&mut self) -> &mut crate::assistant::Assistant {
+        &mut self.chat
+    }
+
+    pub(crate) fn assistant_send(&mut self, text: &str) {
+        self.assistant = true;
+        let context = self.assistant_context();
+        let calls = self.calls.0.clone();
+        self.chat.composer = text.to_string();
+        self.chat.send(&crate::assistant::Env {
+            calls: &calls,
+            context,
+        });
+    }
+
     pub(crate) fn assistant_provider(&mut self, id: &str) {
         if let Some(provider) = crate::assistant::api::Provider::parse(id) {
             self.chat.settings.provider = provider;

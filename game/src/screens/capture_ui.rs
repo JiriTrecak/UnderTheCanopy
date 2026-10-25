@@ -1173,3 +1173,189 @@ fn count_in(root: &Path, needle: &str) -> usize {
     }
     n
 }
+
+/// The assistant for real (`--only assistant-live`): turns sent to the provider with the
+/// user's stored key (copied into the capture's user folder, never read here), on a copy
+/// of the base package, each checked for what it should have done.
+pub(super) fn assistant_live(rig: &mut Rig, paths: &Paths) -> Result<()> {
+    let real = crate::paths::Paths::resolve(Some(paths.data.clone()))?;
+    let provider = std::env::var("CANOPY_ASSISTANT_PROVIDER").unwrap_or_else(|_| "openai".into());
+    let key_file = if provider == "openai" {
+        "openai-key"
+    } else {
+        "anthropic-key"
+    };
+    let folder = paths.user.join("assistant");
+    std::fs::create_dir_all(&folder)?;
+    if real.user.join("assistant").join(key_file).exists() {
+        std::fs::copy(
+            real.user.join("assistant").join(key_file),
+            folder.join(key_file),
+        )?;
+    }
+    let scratch = paths.user.join("ui-base");
+    scratch_package(&paths.data.join("base"), &scratch)?;
+    let mut setup = crate::app::editor_setup(paths);
+    setup.base = scratch.clone();
+    let format = CAPTURE_FORMAT.remove_srgb_suffix();
+    let editor = Editor::headless(&rig.gpu, format, setup);
+    let mut ui = Ui::new(rig, editor);
+    ui.editor.assistant_provider(&provider);
+
+    // One turn: send, answer approvals as `allow` says, wait for the end, and print what
+    // happened (the tools called, the text).
+    let turn = |ui: &mut Ui, text: &str, allow: bool| -> Vec<serde_json::Value> {
+        let before = ui.editor.assistant_messages().len();
+        ui.editor.assistant_send(text);
+        let start = Instant::now();
+        let mut asked = Vec::new();
+        while ui.editor.assistant_busy() && start.elapsed() < Duration::from_secs(300) {
+            ui.frames(1);
+            if let Some(tool) = ui.editor.assistant_waiting() {
+                asked.push(tool);
+                ui.editor.assistant_approve(allow);
+            }
+        }
+        let messages = ui.editor.assistant_messages();
+        let new: Vec<serde_json::Value> = messages[before..].to_vec();
+        println!("   » {text}");
+        for m in &new {
+            for b in m["content"].as_array().into_iter().flatten() {
+                match b["type"].as_str() {
+                    Some("tool_use") => println!(
+                        "     tool {} {}",
+                        b["name"],
+                        b["input"].to_string().chars().take(160).collect::<String>()
+                    ),
+                    Some("tool_result") if b["is_error"] == true => println!(
+                        "     error {}",
+                        b["content"]
+                            .to_string()
+                            .chars()
+                            .take(200)
+                            .collect::<String>()
+                    ),
+                    Some("text") if m["role"] == "assistant" => println!(
+                        "     says {}",
+                        b["text"]
+                            .as_str()
+                            .unwrap_or_default()
+                            .replace('\n', " ")
+                            .chars()
+                            .take(400)
+                            .collect::<String>()
+                    ),
+                    _ => {}
+                }
+            }
+        }
+        if !asked.is_empty() {
+            println!(
+                "     asked to approve: {asked:?} ({})",
+                if allow { "allowed" } else { "declined" }
+            );
+        }
+        if let Some(error) = ui.editor.assistant_error() {
+            println!("     stopped: {error}");
+        }
+        new
+    };
+    let tools = |new: &[serde_json::Value]| -> Vec<String> {
+        new.iter()
+            .flat_map(|m| m["content"].as_array().cloned().unwrap_or_default())
+            .filter(|b| b["type"] == "tool_use")
+            .filter_map(|b| b["name"].as_str().map(str::to_string))
+            .collect()
+    };
+
+    ui.flow("an edit");
+    ui.click("Units");
+    ui.settle();
+    ui.type_into("Search units", "Raider");
+    ui.settle();
+    ui.click("Raider");
+    ui.settle();
+    let new = turn(
+        &mut ui,
+        "Make the unit I have open about 10% tougher (its max health), then check the package for problems. Don't save.",
+        false,
+    );
+    let used = tools(&new);
+    ui.check(
+        ui.editor.assistant_error().is_none(),
+        "the turn finishes without an error",
+    );
+    ui.check(
+        used.iter().any(|t| t == "edit"),
+        "it edits through the editor's tools",
+    );
+    ui.check(
+        used.iter().any(|t| t == "problems"),
+        "it checks for problems after editing",
+    );
+    ui.settle();
+    ui.check(
+        unsaved(&ui) > 0,
+        "its edit is an unsaved change in the editor",
+    );
+    ui.check(
+        ui.shows("204") || ui.shows("203") || ui.shows("205"),
+        "the Raider's health went up by about 10%",
+    );
+
+    ui.flow("undo");
+    let new = turn(&mut ui, "Undo that change.", false);
+    ui.settle();
+    ui.check(
+        tools(&new).iter().any(|t| t == "undo"),
+        "it undoes with the editor's undo",
+    );
+    ui.check(unsaved(&ui) == 0, "nothing is left unsaved");
+
+    ui.flow("a map, looked at");
+    let new = turn(
+        &mut ui,
+        "Look at the map frozen-dream from above (use the picture) and tell me how many player starts it has and roughly where they are.",
+        false,
+    );
+    let used = tools(&new);
+    ui.check(
+        used.iter().any(|t| t == "map_picture" || t == "map_info"),
+        "it looks at the map with the map tools",
+    );
+    let said: String = new
+        .iter()
+        .filter(|m| m["role"] == "assistant")
+        .flat_map(|m| m["content"].as_array().cloned().unwrap_or_default())
+        .filter_map(|b| b["text"].as_str().map(str::to_string))
+        .collect();
+    ui.check(
+        said.contains('2') || said.to_lowercase().contains("two"),
+        "it counts the two starts",
+    );
+
+    ui.flow("approval");
+    let file = scratch.join("units/ants/warrior.json");
+    let before = std::fs::read_to_string(&file).unwrap_or_default();
+    let _ = turn(
+        &mut ui,
+        "Set the Raider's vision to 33 and then save the package.",
+        false,
+    );
+    ui.check(
+        std::fs::read_to_string(&file).unwrap_or_default() == before,
+        "a declined save writes nothing",
+    );
+    let _ = turn(&mut ui, "Undo every change you made.", false);
+
+    let (usage, cost) = ui.editor.assistant_usage();
+    println!("   tokens {usage:?}, about ${cost:.3}");
+    println!("{}", ui.summary());
+    let failures = std::mem::take(&mut ui.failures);
+    anyhow::ensure!(
+        failures.is_empty(),
+        "the assistant for real:\n{}",
+        failures.join("\n")
+    );
+    Ok(())
+}

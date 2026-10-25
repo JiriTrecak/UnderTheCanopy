@@ -319,6 +319,8 @@ pub fn run(
             "cameras" => cameras(&mut rig, &paths)?,
             "editor-campaigns" => editor_campaigns(&mut rig, &paths)?,
             "editor-ui" => ui::editor_ui(&mut rig, &paths)?,
+            // Real turns with the user's stored key: costs a few cents; never in a sweep.
+            "assistant-live" => ui::assistant_live(&mut rig, &paths)?,
             "settings" => settings_tabs(&mut rig)?,
             "campaign" => campaigns(&mut rig, &paths)?,
             "replays" => {

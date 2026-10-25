@@ -444,6 +444,45 @@ impl Editor {
 
     /// Shows the assistant with `messages` as its thread (in the API's form) and, when
     /// `settings`, its settings (captures).
+    /// Sends `text` to the assistant as the composer would (live tests).
+    pub fn assistant_send(&mut self, text: &str) {
+        self.shell.assistant_send(text);
+    }
+
+    /// Whether the assistant is at work.
+    pub fn assistant_busy(&self) -> bool {
+        self.shell.chat_ref().busy()
+    }
+
+    /// The tool waiting for the user's approval, if one is.
+    pub fn assistant_waiting(&self) -> Option<String> {
+        self.shell
+            .chat_ref()
+            .running
+            .as_ref()
+            .and_then(|r| r.approval.as_ref())
+            .map(|a| a.name.clone())
+    }
+
+    pub fn assistant_approve(&mut self, allow: bool) {
+        self.shell.chat_mut().approve(allow);
+    }
+
+    /// The thread's messages (the API's form) and why its last turn stopped early.
+    pub fn assistant_messages(&self) -> Vec<serde_json::Value> {
+        self.shell.chat_ref().thread.messages.clone()
+    }
+
+    pub fn assistant_error(&self) -> Option<String> {
+        self.shell.chat_ref().error.clone()
+    }
+
+    /// The thread's token counts and estimated cost.
+    pub fn assistant_usage(&self) -> ([u64; 4], f64) {
+        let thread = &self.shell.chat_ref().thread;
+        (thread.usage, thread.cost)
+    }
+
     /// Switches the assistant to provider `id` (`anthropic`, `openai`) for this session
     /// only (captures).
     pub fn assistant_provider(&mut self, id: &str) {
