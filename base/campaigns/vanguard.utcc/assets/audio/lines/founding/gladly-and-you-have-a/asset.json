@@ -1,0 +1,22 @@
+{
+  "id": "asset.audio.line.founding.gladly-and-you-have-a",
+  "name": "founding: gladly-and-you-have-a",
+  "kind": "audio",
+  "tags": [
+    "line"
+  ],
+  "license": "Generated with ElevenLabs for Under the Canopy (generation.json).",
+  "resources": [
+    {
+      "role": "audio",
+      "index": 1,
+      "format": "mp3"
+    },
+    {
+      "role": "generation",
+      "index": 1,
+      "format": "json"
+    }
+  ],
+  "seconds": 9.68
+}

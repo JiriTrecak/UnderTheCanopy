@@ -1,0 +1,40 @@
+{
+  "provider": "elevenlabs",
+  "kind": "line",
+  "spec": {
+    "name": "keepers-of-glass-2",
+    "kind": "line",
+    "line": "campaign.vanguard.keepers-of-glass.page-2",
+    "speaker": "speaker.narrator",
+    "model": "eleven_v3",
+    "settings": {
+      "stability": 0.0,
+      "speed": 1.08
+    },
+    "takes": 2,
+    "dir": "base/campaigns/vanguard.utcc/assets/audio/narration/keepers-of-glass-page-2",
+    "id": "asset.audio.campaign.vanguard.keepers-of-glass-page-2",
+    "title": "keepers-of-glass, page 2 (narration)"
+  },
+  "takes": [
+    "take-1.mp3",
+    "take-2.mp3"
+  ],
+  "picked": "take-1.mp3",
+  "request": {
+    "text": "Aurelith did not sleep that night. By dawn the glade was arming.\n\nShe sent no envoy and asked no leave of the Spire. She marched east, toward the lanterns of the Glass Road, where her mother's old general still held the last ant camp on the beetles' border.",
+    "model_id": "eleven_v3",
+    "voice_settings": {
+      "stability": 0.0,
+      "speed": 1.08
+    }
+  },
+  "endpoint": "/v1/text-to-speech/Z7cGt9TdS5RsAFzMkteB",
+  "text": "Aurelith did not sleep that night. By dawn the glade was arming.\n\nShe sent no envoy and asked no leave of the Spire. She marched east, toward the lanterns of the Glass Road, where her mother's old general still held the last ant camp on the beetles' border.",
+  "voice": {
+    "description": "A wise elderly woman narrator: deep, rich and velvety, calm and a little solemn, with long pauses and a hint of mystery in her voice. She speaks English with a soft, neutral accent, clearly and unhurried, close to the microphone in a quiet room, as if telling a tale to children by lantern light.",
+    "model": "eleven_ttv_v3",
+    "preview": "take-1-1.mp3",
+    "voice_id": "Z7cGt9TdS5RsAFzMkteB"
+  }
+}

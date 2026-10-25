@@ -1,0 +1,41 @@
+{
+  "provider": "elevenlabs",
+  "kind": "line",
+  "spec": {
+    "name": "fo-look-at-the-pool-they",
+    "line": "line.founding.look-at-the-pool-they",
+    "dir": "base/campaigns/vanguard.utcc/assets/audio/lines/founding/look-at-the-pool-they",
+    "id": "asset.audio.line.founding.look-at-the-pool-they",
+    "title": "founding: look-at-the-pool-they",
+    "kind": "line",
+    "speaker": "speaker.aurelith",
+    "tags": "[grim]",
+    "model": "eleven_v3",
+    "settings": {
+      "stability": 0.5,
+      "speed": 1.0
+    },
+    "takes": 2
+  },
+  "takes": [
+    "take-1.mp3",
+    "take-2.mp3"
+  ],
+  "picked": "take-2.mp3",
+  "request": {
+    "text": "[grim] Look at the pool they drink from. That glow is what took Ashka's brood.",
+    "model_id": "eleven_v3",
+    "voice_settings": {
+      "stability": 0.5,
+      "speed": 1.0
+    }
+  },
+  "endpoint": "/v1/text-to-speech/NHcxEDCucmuyqHzvSxNi",
+  "text": "Look at the pool they drink from. That glow is what took Ashka's brood.",
+  "voice": {
+    "description": "A young queen in her mid-twenties: a clear, warm mezzo-soprano voice with quiet authority, compassionate yet fierce and certain, a hint of pride. Regal but not cold, youthful and alive, never breathy. She speaks English with a soft, neutral accent, close to the microphone in a quiet room, performing a character in a fantasy game.",
+    "model": "eleven_ttv_v3",
+    "preview": "take-1-2.mp3",
+    "voice_id": "NHcxEDCucmuyqHzvSxNi"
+  }
+}

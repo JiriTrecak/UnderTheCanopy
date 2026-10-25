@@ -1,0 +1,41 @@
+{
+  "provider": "elevenlabs",
+  "kind": "line",
+  "spec": {
+    "name": "gl-coilkeeper-vosk-i-know-what",
+    "line": "line.glass-road.coilkeeper-vosk-i-know-what",
+    "dir": "base/campaigns/vanguard.utcc/assets/audio/lines/glass-road/coilkeeper-vosk-i-know-what",
+    "id": "asset.audio.line.glass-road.coilkeeper-vosk-i-know-what",
+    "title": "glass-road: coilkeeper-vosk-i-know-what",
+    "kind": "line",
+    "speaker": "speaker.coilkeeper-vosk",
+    "tags": "[condescending]",
+    "model": "eleven_v3",
+    "settings": {
+      "stability": 0.5,
+      "speed": 1.0
+    },
+    "takes": 2
+  },
+  "takes": [
+    "take-1.mp3",
+    "take-2.mp3"
+  ],
+  "picked": "take-1.mp3",
+  "request": {
+    "text": "[condescending] Coilkeeper Vosk. I know what you are, little queen. Your broods drink the light raw, and it eats them from the inside.",
+    "model_id": "eleven_v3",
+    "voice_settings": {
+      "stability": 0.5,
+      "speed": 1.0
+    }
+  },
+  "endpoint": "/v1/text-to-speech/iUfUrxjSrgCZtd4F4GqD",
+  "text": "Coilkeeper Vosk. I know what you are, little queen. Your broods drink the light raw, and it eats them from the inside.",
+  "voice": {
+    "description": "A beetle savant and keeper of a great machine, about fifty: a cold, clipped, nasal baritone, arrogant and condescending, precise like a clockmaker, contemptuous of outsiders, with a slight metallic dryness. He speaks English with a soft, neutral accent, close to the microphone in a quiet room, performing a character in a fantasy game.",
+    "model": "eleven_ttv_v3",
+    "preview": "take-1-3.mp3",
+    "voice_id": "iUfUrxjSrgCZtd4F4GqD"
+  }
+}

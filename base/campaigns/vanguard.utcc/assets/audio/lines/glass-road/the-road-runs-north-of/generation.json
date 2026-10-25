@@ -1,0 +1,41 @@
+{
+  "provider": "elevenlabs",
+  "kind": "line",
+  "spec": {
+    "name": "gl-the-road-runs-north-of",
+    "line": "line.glass-road.the-road-runs-north-of",
+    "dir": "base/campaigns/vanguard.utcc/assets/audio/lines/glass-road/the-road-runs-north-of",
+    "id": "asset.audio.line.glass-road.the-road-runs-north-of",
+    "title": "glass-road: the-road-runs-north-of",
+    "kind": "line",
+    "speaker": "speaker.oleander",
+    "tags": "[thoughtful]",
+    "model": "eleven_v3",
+    "settings": {
+      "stability": 0.5,
+      "speed": 1.0
+    },
+    "takes": 2
+  },
+  "takes": [
+    "take-1.mp3",
+    "take-2.mp3"
+  ],
+  "picked": "take-2.mp3",
+  "request": {
+    "text": "[thoughtful] The road runs north of the camp. Its outposts will not let us pass quietly.",
+    "model_id": "eleven_v3",
+    "voice_settings": {
+      "stability": 0.5,
+      "speed": 1.0
+    }
+  },
+  "endpoint": "/v1/text-to-speech/G242gp40Yy8PXIDgW0Ln",
+  "text": "The road runs north of the camp. Its outposts will not let us pass quietly.",
+  "voice": {
+    "description": "A royal alchemist, a man in his fifties: a smooth, low, velvety baritone voice, elegant and knowing, warm on the surface with a hint of something secret and poisonous underneath, precise diction, quietly amused, a scholar who always knows more than he says. He speaks English with a soft, neutral accent, close to the microphone in a quiet room, performing a character in a fantasy game.",
+    "model": "eleven_ttv_v3",
+    "preview": "take-1-1.mp3",
+    "voice_id": "G242gp40Yy8PXIDgW0Ln"
+  }
+}

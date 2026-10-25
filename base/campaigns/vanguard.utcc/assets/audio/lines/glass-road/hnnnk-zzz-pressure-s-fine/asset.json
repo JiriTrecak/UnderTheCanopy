@@ -1,0 +1,22 @@
+{
+  "id": "asset.audio.line.glass-road.hnnnk-zzz-pressure-s-fine",
+  "name": "glass-road: hnnnk-zzz-pressure-s-fine",
+  "kind": "audio",
+  "tags": [
+    "line"
+  ],
+  "license": "Generated with ElevenLabs for Under the Canopy (generation.json).",
+  "resources": [
+    {
+      "role": "audio",
+      "index": 1,
+      "format": "mp3"
+    },
+    {
+      "role": "generation",
+      "index": 1,
+      "format": "json"
+    }
+  ],
+  "seconds": 4.96
+}

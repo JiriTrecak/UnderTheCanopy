@@ -21,7 +21,7 @@ The ants' art stays bio-magic (living light, blossoms, never corruption) until t
 ## Characters
 
 - **Queen Aurelith**, the young queen, the protagonist (hero: `unit.ants.queen`). Her name means "golden stone", which is what amber is: the colony's treasure. Compassionate, fierce, certain. Her goal is good; her pride is her flaw. After the fall she is *Aurelith of the Wellspring*.
-- **Oleander**, the Royal Alchemist (hero: `unit.ants.royal-alchemist`), named for the flower that is beautiful and poisonous. She distils substance in her own body and knows more than she says: the Queen's guide and enabler.
+- **Oleander**, the Royal Alchemist (hero: `unit.ants.royal-alchemist`), named for the flower that is beautiful and poisonous. He distils substance in his own body and knows more than he says: the Queen's guide and enabler.
 - **General Korrath**, the army-ant marshal (hero: `unit.ants.marshal`). Served the Queen's mother. Loyal, sceptical, the one who sees what is happening. He survives her, to appear later.
 - **Tiv**, a young scout of Aurelith's guard (a Raider): the player's eyes in the first mission.
 - **Mother Ashka**, the matron of the Hollow Brood, mutated beyond recognition.
@@ -103,12 +103,12 @@ Prologue · Mission Two. Morning in a lush glade: flowers, ferns, mushroom rings
 - **The player**: Aurelith and the survivors (workers and warriors) found the colony in the glade: a Nest from the start, build up.
 - **The feral brood**: its main burrows on a ridge in the north-east beyond a stream, reached up a ramp; a smaller den in the north-west across a ravine, reached over a narrow root bridge. Their waves (Raiders, later Bursters) come from those burrows and stop with them.
 - **Opening scene**: fade in on the column arriving in the glade; Aurelith plants her standard on a mossy rise: "Here. We start again, and we start clean."
-- **Middle scene**: after the second wave, **Oleander** arrives along the west road with two porters: she has studied substance her whole life, and knows of beetles who keep it in glass without being changed. She joins.
+- **Middle scene**: after the second wave, **Oleander** arrives along the west road with two porters: he has studied substance his whole life, and knows of beetles who keep it in glass without being changed. He joins.
 
 Around the glade:
 
 1. **Amber**: two sites in the glade; a third north-east, guarded by Rootbound Guardians (Rootlings, Old Root); a fourth west by the bog pond, guarded by bog toads (Young Toads, Tree Frogs, a Tadpole Spirit).
-2. **The substance spring** at the glade's east edge: a Substance Siphon on it (optional objective). Oleander comments on it when she arrives.
+2. **The substance spring** at the glade's east edge: a Substance Siphon on it (optional objective). Oleander comments on it when he arrives.
 3. **A healing spring** in a fern hollow south of the glade.
 4. **The travelling merchant**, a pill-bug trader with a cart at the south-east crossroads, selling potions and a Mossweave Wraps.
 5. **A mushroom circle** near the glade: early experience.

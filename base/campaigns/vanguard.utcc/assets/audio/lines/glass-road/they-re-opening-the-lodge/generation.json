@@ -1,0 +1,41 @@
+{
+  "provider": "elevenlabs",
+  "kind": "line",
+  "spec": {
+    "name": "gl-they-re-opening-the-lodge",
+    "line": "line.glass-road.they-re-opening-the-lodge",
+    "dir": "base/campaigns/vanguard.utcc/assets/audio/lines/glass-road/they-re-opening-the-lodge",
+    "id": "asset.audio.line.glass-road.they-re-opening-the-lodge",
+    "title": "glass-road: they-re-opening-the-lodge",
+    "kind": "line",
+    "speaker": "speaker.korrath",
+    "tags": "[shouting]",
+    "model": "eleven_v3",
+    "settings": {
+      "stability": 0.5,
+      "speed": 1.0
+    },
+    "takes": 2
+  },
+  "takes": [
+    "take-1.mp3",
+    "take-2.mp3"
+  ],
+  "picked": "take-1.mp3",
+  "request": {
+    "text": "[shouting] They're opening the lodge, Majesty. Here they come.",
+    "model_id": "eleven_v3",
+    "voice_settings": {
+      "stability": 0.5,
+      "speed": 1.0
+    }
+  },
+  "endpoint": "/v1/text-to-speech/b89nqPMRuQk8ptZ2ByN5",
+  "text": "They're opening the lodge, Majesty. Here they come.",
+  "voice": {
+    "description": "An old army general in his sixties: a deep, weathered, gravelly bass voice, gruff and dry, loyal and sceptical, a veteran who has seen too much, speaks in short measured sentences with quiet authority and a hint of dry humour. He speaks English with a soft, neutral accent, close to the microphone in a quiet room, performing a character in a fantasy game.",
+    "model": "eleven_ttv_v3",
+    "preview": "take-1-1.mp3",
+    "voice_id": "b89nqPMRuQk8ptZ2ByN5"
+  }
+}

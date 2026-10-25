@@ -1,0 +1,39 @@
+{
+  "items": [
+    {
+      "name": "voice-oleander",
+      "kind": "voice",
+      "speaker": "speaker.oleander",
+      "description": "A royal alchemist, a man in his fifties: a smooth, low, velvety baritone voice, elegant and knowing, warm on the surface with a hint of something secret and poisonous underneath, precise diction, quietly amused, a scholar who always knows more than he says. He speaks English with a soft, neutral accent, close to the microphone in a quiet room, performing a character in a fantasy game.",
+      "text": "Majesty! Hold your stings. It's only me, and my stills. I had your letter. I've studied substance all my life. Look at it shine. Raw, and so patient. Drawn, not drunk. That is the whole difference, and it is everything."
+    },
+    {
+      "name": "voice-korrath",
+      "kind": "voice",
+      "speaker": "speaker.korrath",
+      "description": "An old army general in his sixties: a deep, weathered, gravelly bass voice, gruff and dry, loyal and sceptical, a veteran who has seen too much, speaks in short measured sentences with quiet authority and a hint of dry humour. He speaks English with a soft, neutral accent, close to the microphone in a quiet room, performing a character in a fantasy game.",
+      "text": "Majesty. Your mother set me to hold the end of this road. I hear her daughter means to walk it. Hornwatch towers. Beetle guns never tire. Bring the whole column, not a handful. Your mother would have called it madness."
+    },
+    {
+      "name": "voice-coilkeeper-vosk",
+      "kind": "voice",
+      "speaker": "speaker.coilkeeper-vosk",
+      "description": "A beetle savant and keeper of a great machine, about fifty: a cold, clipped, nasal baritone, arrogant and condescending, precise like a clockmaker, contemptuous of outsiders, with a slight metallic dryness. He speaks English with a soft, neutral accent, close to the microphone in a quiet room, performing a character in a fantasy game.",
+      "text": "Coilkeeper Vosk. I know what you are, little queen. Your broods drink the light raw, and it eats them from the inside. Glass is not for those who drink. Turn your column around. The next ant on my road goes home in pieces."
+    },
+    {
+      "name": "voice-pill-bug-peddler",
+      "kind": "voice",
+      "speaker": "speaker.pill-bug-peddler",
+      "description": "A cheerful travelling merchant, middle-aged: a round, chirpy, slightly nasal tenor voice, fast-talking and eager to sell, a little cheeky, comic and friendly like a market hawker. He speaks English with a soft, neutral accent, close to the microphone in a quiet room, performing a character in a fantasy game.",
+      "text": "Salves! Flasks! Wraps for cold mornings! Amber only, Majesty. I'm a simple bug. Finest wares this side of the ravine, and cheap at twice the price!"
+    },
+    {
+      "name": "voice-beetle-engineer",
+      "kind": "voice",
+      "speaker": "speaker.beetle-engineer",
+      "description": "A lazy beetle engineer in his thirties caught napping: a thick, slow, mumbling baritone, sleepy and grumpy, becoming flustered and guilty when woken, comic and blue-collar. He speaks English with a soft, neutral accent, close to the microphone in a quiet room, performing a character in a fantasy game.",
+      "text": "Hnnnk... zzz... pressure's fine... zzz... Wha- ants?! I wasn't sleeping! I was listening to the boiler! Fine, fine. Take this, and don't tell the Coilkeeper you saw me."
+    }
+  ]
+}

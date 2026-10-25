@@ -1,0 +1,22 @@
+{
+  "id": "asset.audio.line.glass-road.a-tunnel-this-far-from",
+  "name": "glass-road: a-tunnel-this-far-from",
+  "kind": "audio",
+  "tags": [
+    "line"
+  ],
+  "license": "Generated with ElevenLabs for Under the Canopy (generation.json).",
+  "resources": [
+    {
+      "role": "audio",
+      "index": 1,
+      "format": "mp3"
+    },
+    {
+      "role": "generation",
+      "index": 1,
+      "format": "json"
+    }
+  ],
+  "seconds": 2.8
+}

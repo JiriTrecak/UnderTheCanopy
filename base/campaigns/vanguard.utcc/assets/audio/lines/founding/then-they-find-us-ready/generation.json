@@ -1,0 +1,41 @@
+{
+  "provider": "elevenlabs",
+  "kind": "line",
+  "spec": {
+    "name": "fo-then-they-find-us-ready",
+    "line": "line.founding.then-they-find-us-ready",
+    "dir": "base/campaigns/vanguard.utcc/assets/audio/lines/founding/then-they-find-us-ready",
+    "id": "asset.audio.line.founding.then-they-find-us-ready",
+    "title": "founding: then-they-find-us-ready",
+    "kind": "line",
+    "speaker": "speaker.aurelith",
+    "tags": "[commanding]",
+    "model": "eleven_v3",
+    "settings": {
+      "stability": 0.5,
+      "speed": 1.0
+    },
+    "takes": 2
+  },
+  "takes": [
+    "take-1.mp3",
+    "take-2.mp3"
+  ],
+  "picked": "take-1.mp3",
+  "request": {
+    "text": "[commanding] Then they find us ready. Workers, to the amber. Raise a Brood Mound and a Soldier Burrow.",
+    "model_id": "eleven_v3",
+    "voice_settings": {
+      "stability": 0.5,
+      "speed": 1.0
+    }
+  },
+  "endpoint": "/v1/text-to-speech/NHcxEDCucmuyqHzvSxNi",
+  "text": "Then they find us ready. Workers, to the amber. Raise a Brood Mound and a Soldier Burrow.",
+  "voice": {
+    "description": "A young queen in her mid-twenties: a clear, warm mezzo-soprano voice with quiet authority, compassionate yet fierce and certain, a hint of pride. Regal but not cold, youthful and alive, never breathy. She speaks English with a soft, neutral accent, close to the microphone in a quiet room, performing a character in a fantasy game.",
+    "model": "eleven_ttv_v3",
+    "preview": "take-1-2.mp3",
+    "voice_id": "NHcxEDCucmuyqHzvSxNi"
+  }
+}

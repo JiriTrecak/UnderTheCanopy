@@ -52,11 +52,13 @@
       "pages": [
         {
           "art": "asset.interface.campaign.vanguard.story-hollow-1",
-          "text": "campaign.vanguard.what-the-hollow-sang.page-1"
+          "text": "campaign.vanguard.what-the-hollow-sang.page-1",
+          "narration": "sound.campaign.vanguard.what-the-hollow-sang.page-1"
         },
         {
           "art": "asset.interface.campaign.vanguard.story-hollow-2",
-          "text": "campaign.vanguard.what-the-hollow-sang.page-2"
+          "text": "campaign.vanguard.what-the-hollow-sang.page-2",
+          "narration": "sound.campaign.vanguard.what-the-hollow-sang.page-2"
         }
       ]
     },
@@ -102,11 +104,13 @@
       "pages": [
         {
           "art": "asset.interface.campaign.vanguard.story-glass-1",
-          "text": "campaign.vanguard.keepers-of-glass.page-1"
+          "text": "campaign.vanguard.keepers-of-glass.page-1",
+          "narration": "sound.campaign.vanguard.keepers-of-glass.page-1"
         },
         {
           "art": "asset.interface.campaign.vanguard.story-glass-2",
-          "text": "campaign.vanguard.keepers-of-glass.page-2"
+          "text": "campaign.vanguard.keepers-of-glass.page-2",
+          "narration": "sound.campaign.vanguard.keepers-of-glass.page-2"
         }
       ]
     },

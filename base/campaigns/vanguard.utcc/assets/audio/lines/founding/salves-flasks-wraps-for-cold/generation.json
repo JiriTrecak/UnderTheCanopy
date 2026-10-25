@@ -1,0 +1,41 @@
+{
+  "provider": "elevenlabs",
+  "kind": "line",
+  "spec": {
+    "name": "fo-salves-flasks-wraps-for-cold",
+    "line": "line.founding.salves-flasks-wraps-for-cold",
+    "dir": "base/campaigns/vanguard.utcc/assets/audio/lines/founding/salves-flasks-wraps-for-cold",
+    "id": "asset.audio.line.founding.salves-flasks-wraps-for-cold",
+    "title": "founding: salves-flasks-wraps-for-cold",
+    "kind": "line",
+    "speaker": "speaker.pill-bug-peddler",
+    "tags": "[cheerful] [fast]",
+    "model": "eleven_v3",
+    "settings": {
+      "stability": 0.5,
+      "speed": 1.0
+    },
+    "takes": 2
+  },
+  "takes": [
+    "take-1.mp3",
+    "take-2.mp3"
+  ],
+  "picked": "take-1.mp3",
+  "request": {
+    "text": "[cheerful] [fast] Salves! Flasks! Wraps for cold mornings! Amber only, Majesty. I'm a simple bug.",
+    "model_id": "eleven_v3",
+    "voice_settings": {
+      "stability": 0.5,
+      "speed": 1.0
+    }
+  },
+  "endpoint": "/v1/text-to-speech/Zky6A8T2LTXfXdQ1fIEK",
+  "text": "Salves! Flasks! Wraps for cold mornings! Amber only, Majesty. I'm a simple bug.",
+  "voice": {
+    "description": "A cheerful travelling merchant, middle-aged: a round, chirpy, slightly nasal tenor voice, fast-talking and eager to sell, a little cheeky, comic and friendly like a market hawker. He speaks English with a soft, neutral accent, close to the microphone in a quiet room, performing a character in a fantasy game.",
+    "model": "eleven_ttv_v3",
+    "preview": "take-1-1.mp3",
+    "voice_id": "Zky6A8T2LTXfXdQ1fIEK"
+  }
+}

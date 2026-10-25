@@ -1,0 +1,32 @@
+{
+  "provider": "elevenlabs",
+  "kind": "effect",
+  "spec": {
+    "name": "fo-hhh-hhhh-haa-choo",
+    "line": "line.founding.hhh-hhhh-haa-choo",
+    "dir": "base/campaigns/vanguard.utcc/assets/audio/lines/founding/hhh-hhhh-haa-choo",
+    "id": "asset.audio.line.founding.hhh-hhhh-haa-choo",
+    "title": "founding: hhh-hhhh-haa-choo",
+    "kind": "effect",
+    "prompt": "A tiny insect's comic sneeze: a few little gasping breaths building up, then a big squeaky 'achoo', close, cartoonish, no words",
+    "seconds": 2.5,
+    "takes": 2,
+    "event": {
+      "id": "sound.line.founding.hhh-hhhh-haa-choo",
+      "category": "dialogue",
+      "file": "base/campaigns/vanguard.utcc/sounds/lines/line.founding.hhh-hhhh-haa-choo.json"
+    }
+  },
+  "takes": [
+    "take-1.mp3",
+    "take-2.mp3"
+  ],
+  "picked": "take-2.mp3",
+  "request": {
+    "text": "A tiny insect's comic sneeze: a few little gasping breaths building up, then a big squeaky 'achoo', close, cartoonish, no words",
+    "model_id": "eleven_text_to_sound_v2",
+    "prompt_influence": 0.3,
+    "duration_seconds": 2.5
+  },
+  "endpoint": "/v1/sound-generation"
+}

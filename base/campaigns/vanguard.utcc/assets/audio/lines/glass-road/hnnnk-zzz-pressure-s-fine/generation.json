@@ -1,0 +1,41 @@
+{
+  "provider": "elevenlabs",
+  "kind": "line",
+  "spec": {
+    "name": "gl-hnnnk-zzz-pressure-s-fine",
+    "line": "line.glass-road.hnnnk-zzz-pressure-s-fine",
+    "dir": "base/campaigns/vanguard.utcc/assets/audio/lines/glass-road/hnnnk-zzz-pressure-s-fine",
+    "id": "asset.audio.line.glass-road.hnnnk-zzz-pressure-s-fine",
+    "title": "glass-road: hnnnk-zzz-pressure-s-fine",
+    "kind": "line",
+    "speaker": "speaker.beetle-engineer",
+    "tags": "[snoring] [mumbling]",
+    "model": "eleven_v3",
+    "settings": {
+      "stability": 0.5,
+      "speed": 1.0
+    },
+    "takes": 2
+  },
+  "takes": [
+    "take-1.mp3",
+    "take-2.mp3"
+  ],
+  "picked": "take-1.mp3",
+  "request": {
+    "text": "[snoring] [mumbling] Hnnnk... zzz... pressure's fine... zzz...",
+    "model_id": "eleven_v3",
+    "voice_settings": {
+      "stability": 0.5,
+      "speed": 1.0
+    }
+  },
+  "endpoint": "/v1/text-to-speech/FX7Wz5vnL1uHevcPMtZA",
+  "text": "Hnnnk... zzz... pressure's fine... zzz...",
+  "voice": {
+    "description": "A lazy beetle engineer in his thirties caught napping: a thick, slow, mumbling baritone, sleepy and grumpy, becoming flustered and guilty when woken, comic and blue-collar. He speaks English with a soft, neutral accent, close to the microphone in a quiet room, performing a character in a fantasy game.",
+    "model": "eleven_ttv_v3",
+    "preview": "take-1-1.mp3",
+    "voice_id": "FX7Wz5vnL1uHevcPMtZA"
+  }
+}

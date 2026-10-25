@@ -1,0 +1,41 @@
+{
+  "provider": "elevenlabs",
+  "kind": "line",
+  "spec": {
+    "name": "gl-wha-ants-i-wasn-t",
+    "line": "line.glass-road.wha-ants-i-wasn-t",
+    "dir": "base/campaigns/vanguard.utcc/assets/audio/lines/glass-road/wha-ants-i-wasn-t",
+    "id": "asset.audio.line.glass-road.wha-ants-i-wasn-t",
+    "title": "glass-road: wha-ants-i-wasn-t",
+    "kind": "line",
+    "speaker": "speaker.beetle-engineer",
+    "tags": "[startled] [flustered]",
+    "model": "eleven_v3",
+    "settings": {
+      "stability": 0.5,
+      "speed": 1.0
+    },
+    "takes": 2
+  },
+  "takes": [
+    "take-1.mp3",
+    "take-2.mp3"
+  ],
+  "picked": "take-2.mp3",
+  "request": {
+    "text": "[startled] [flustered] Wha- ants?! I wasn't sleeping! I was listening to the boiler!",
+    "model_id": "eleven_v3",
+    "voice_settings": {
+      "stability": 0.5,
+      "speed": 1.0
+    }
+  },
+  "endpoint": "/v1/text-to-speech/FX7Wz5vnL1uHevcPMtZA",
+  "text": "Wha- ants?! I wasn't sleeping! I was listening to the boiler!",
+  "voice": {
+    "description": "A lazy beetle engineer in his thirties caught napping: a thick, slow, mumbling baritone, sleepy and grumpy, becoming flustered and guilty when woken, comic and blue-collar. He speaks English with a soft, neutral accent, close to the microphone in a quiet room, performing a character in a fantasy game.",
+    "model": "eleven_ttv_v3",
+    "preview": "take-1-1.mp3",
+    "voice_id": "FX7Wz5vnL1uHevcPMtZA"
+  }
+}

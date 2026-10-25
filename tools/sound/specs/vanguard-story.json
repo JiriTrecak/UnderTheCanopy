@@ -65,6 +65,66 @@
       "dir": "base/campaigns/vanguard.utcc/assets/audio/narration/the-broods-page-3",
       "id": "asset.audio.campaign.vanguard.the-broods-page-3",
       "title": "The Broods, page 3 (narration)"
+    },
+    {
+      "name": "what-the-hollow-sang-1",
+      "kind": "line",
+      "line": "campaign.vanguard.what-the-hollow-sang.page-1",
+      "speaker": "speaker.narrator",
+      "model": "eleven_v3",
+      "settings": {
+        "stability": 0.0,
+        "speed": 1.08
+      },
+      "takes": 2,
+      "dir": "base/campaigns/vanguard.utcc/assets/audio/narration/what-the-hollow-sang-page-1",
+      "id": "asset.audio.campaign.vanguard.what-the-hollow-sang-page-1",
+      "title": "what-the-hollow-sang, page 1 (narration)"
+    },
+    {
+      "name": "what-the-hollow-sang-2",
+      "kind": "line",
+      "line": "campaign.vanguard.what-the-hollow-sang.page-2",
+      "speaker": "speaker.narrator",
+      "model": "eleven_v3",
+      "settings": {
+        "stability": 0.0,
+        "speed": 1.08
+      },
+      "takes": 2,
+      "dir": "base/campaigns/vanguard.utcc/assets/audio/narration/what-the-hollow-sang-page-2",
+      "id": "asset.audio.campaign.vanguard.what-the-hollow-sang-page-2",
+      "title": "what-the-hollow-sang, page 2 (narration)"
+    },
+    {
+      "name": "keepers-of-glass-1",
+      "kind": "line",
+      "line": "campaign.vanguard.keepers-of-glass.page-1",
+      "speaker": "speaker.narrator",
+      "model": "eleven_v3",
+      "settings": {
+        "stability": 0.0,
+        "speed": 1.08
+      },
+      "takes": 2,
+      "dir": "base/campaigns/vanguard.utcc/assets/audio/narration/keepers-of-glass-page-1",
+      "id": "asset.audio.campaign.vanguard.keepers-of-glass-page-1",
+      "title": "keepers-of-glass, page 1 (narration)"
+    },
+    {
+      "name": "keepers-of-glass-2",
+      "kind": "line",
+      "line": "campaign.vanguard.keepers-of-glass.page-2",
+      "speaker": "speaker.narrator",
+      "model": "eleven_v3",
+      "settings": {
+        "stability": 0.0,
+        "speed": 1.08
+      },
+      "takes": 2,
+      "dir": "base/campaigns/vanguard.utcc/assets/audio/narration/keepers-of-glass-page-2",
+      "id": "asset.audio.campaign.vanguard.keepers-of-glass-page-2",
+      "title": "keepers-of-glass, page 2 (narration)"
     }
   ]
 }

@@ -1,0 +1,41 @@
+{
+  "provider": "elevenlabs",
+  "kind": "line",
+  "spec": {
+    "name": "gl-turn-your-column-around-the",
+    "line": "line.glass-road.turn-your-column-around-the",
+    "dir": "base/campaigns/vanguard.utcc/assets/audio/lines/glass-road/turn-your-column-around-the",
+    "id": "asset.audio.line.glass-road.turn-your-column-around-the",
+    "title": "glass-road: turn-your-column-around-the",
+    "kind": "line",
+    "speaker": "speaker.coilkeeper-vosk",
+    "tags": "[threatening]",
+    "model": "eleven_v3",
+    "settings": {
+      "stability": 0.5,
+      "speed": 1.0
+    },
+    "takes": 2
+  },
+  "takes": [
+    "take-1.mp3",
+    "take-2.mp3"
+  ],
+  "picked": "take-2.mp3",
+  "request": {
+    "text": "[threatening] Turn your column around. The next ant on my road goes home in pieces.",
+    "model_id": "eleven_v3",
+    "voice_settings": {
+      "stability": 0.5,
+      "speed": 1.0
+    }
+  },
+  "endpoint": "/v1/text-to-speech/iUfUrxjSrgCZtd4F4GqD",
+  "text": "Turn your column around. The next ant on my road goes home in pieces.",
+  "voice": {
+    "description": "A beetle savant and keeper of a great machine, about fifty: a cold, clipped, nasal baritone, arrogant and condescending, precise like a clockmaker, contemptuous of outsiders, with a slight metallic dryness. He speaks English with a soft, neutral accent, close to the microphone in a quiet room, performing a character in a fantasy game.",
+    "model": "eleven_ttv_v3",
+    "preview": "take-1-3.mp3",
+    "voice_id": "iUfUrxjSrgCZtd4F4GqD"
+  }
+}

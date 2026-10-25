@@ -1,0 +1,1156 @@
+{
+  "items": [
+    {
+      "name": "fo-sap-from-an-old-root",
+      "line": "line.founding.sap-from-an-old-root",
+      "dir": "base/campaigns/vanguard.utcc/assets/audio/lines/founding/sap-from-an-old-root",
+      "id": "asset.audio.line.founding.sap-from-an-old-root",
+      "title": "founding: sap-from-an-old-root",
+      "kind": "line",
+      "speaker": "speaker.aurelith",
+      "tags": "[warm]",
+      "model": "eleven_v3",
+      "settings": {
+        "stability": 0.5,
+        "speed": 1.0
+      },
+      "takes": 2
+    },
+    {
+      "name": "fo-salves-flasks-wraps-for-cold",
+      "line": "line.founding.salves-flasks-wraps-for-cold",
+      "dir": "base/campaigns/vanguard.utcc/assets/audio/lines/founding/salves-flasks-wraps-for-cold",
+      "id": "asset.audio.line.founding.salves-flasks-wraps-for-cold",
+      "title": "founding: salves-flasks-wraps-for-cold",
+      "kind": "line",
+      "speaker": "speaker.pill-bug-peddler",
+      "tags": "[cheerful] [fast]",
+      "model": "eleven_v3",
+      "settings": {
+        "stability": 0.5,
+        "speed": 1.0
+      },
+      "takes": 2
+    },
+    {
+      "name": "fo-toads-mind-their-tongues-and",
+      "line": "line.founding.toads-mind-their-tongues-and",
+      "dir": "base/campaigns/vanguard.utcc/assets/audio/lines/founding/toads-mind-their-tongues-and",
+      "id": "asset.audio.line.founding.toads-mind-their-tongues-and",
+      "title": "founding: toads-mind-their-tongues-and",
+      "kind": "line",
+      "speaker": "speaker.aurelith",
+      "tags": "[wary]",
+      "model": "eleven_v3",
+      "settings": {
+        "stability": 0.5,
+        "speed": 1.0
+      },
+      "takes": 2
+    },
+    {
+      "name": "fo-the-roots-here-are-awake",
+      "line": "line.founding.the-roots-here-are-awake",
+      "dir": "base/campaigns/vanguard.utcc/assets/audio/lines/founding/the-roots-here-are-awake",
+      "id": "asset.audio.line.founding.the-roots-here-are-awake",
+      "title": "founding: the-roots-here-are-awake",
+      "kind": "line",
+      "speaker": "speaker.aurelith",
+      "tags": "[wary]",
+      "model": "eleven_v3",
+      "settings": {
+        "stability": 0.5,
+        "speed": 1.0
+      },
+      "takes": 2
+    },
+    {
+      "name": "fo-hornets-leave-them-be-until",
+      "line": "line.founding.hornets-leave-them-be-until",
+      "dir": "base/campaigns/vanguard.utcc/assets/audio/lines/founding/hornets-leave-them-be-until",
+      "id": "asset.audio.line.founding.hornets-leave-them-be-until",
+      "title": "founding: hornets-leave-them-be-until",
+      "kind": "line",
+      "speaker": "speaker.aurelith",
+      "tags": "[calm]",
+      "model": "eleven_v3",
+      "settings": {
+        "stability": 0.5,
+        "speed": 1.0
+      },
+      "takes": 2
+    },
+    {
+      "name": "fo-behind-the-water-someone-hid",
+      "line": "line.founding.behind-the-water-someone-hid",
+      "dir": "base/campaigns/vanguard.utcc/assets/audio/lines/founding/behind-the-water-someone-hid",
+      "id": "asset.audio.line.founding.behind-the-water-someone-hid",
+      "title": "founding: behind-the-water-someone-hid",
+      "kind": "line",
+      "speaker": "speaker.aurelith",
+      "tags": "[curious]",
+      "model": "eleven_v3",
+      "settings": {
+        "stability": 0.5,
+        "speed": 1.0
+      },
+      "takes": 2
+    },
+    {
+      "name": "fo-one-root-across-the-ravine",
+      "line": "line.founding.one-root-across-the-ravine",
+      "dir": "base/campaigns/vanguard.utcc/assets/audio/lines/founding/one-root-across-the-ravine",
+      "id": "asset.audio.line.founding.one-root-across-the-ravine",
+      "title": "founding: one-root-across-the-ravine",
+      "kind": "line",
+      "speaker": "speaker.aurelith",
+      "tags": "[thoughtful]",
+      "model": "eleven_v3",
+      "settings": {
+        "stability": 0.5,
+        "speed": 1.0
+      },
+      "takes": 2
+    },
+    {
+      "name": "fo-their-burrows-this-is-where",
+      "line": "line.founding.their-burrows-this-is-where",
+      "dir": "base/campaigns/vanguard.utcc/assets/audio/lines/founding/their-burrows-this-is-where",
+      "id": "asset.audio.line.founding.their-burrows-this-is-where",
+      "title": "founding: their-burrows-this-is-where",
+      "kind": "line",
+      "speaker": "speaker.aurelith",
+      "tags": "[determined]",
+      "model": "eleven_v3",
+      "settings": {
+        "stability": 0.5,
+        "speed": 1.0
+      },
+      "takes": 2
+    },
+    {
+      "name": "fo-substance-welling-up-raw-at",
+      "line": "line.founding.substance-welling-up-raw-at",
+      "dir": "base/campaigns/vanguard.utcc/assets/audio/lines/founding/substance-welling-up-raw-at",
+      "id": "asset.audio.line.founding.substance-welling-up-raw-at",
+      "title": "founding: substance-welling-up-raw-at",
+      "kind": "line",
+      "speaker": "speaker.aurelith",
+      "tags": "[uneasy]",
+      "model": "eleven_v3",
+      "settings": {
+        "stability": 0.5,
+        "speed": 1.0
+      },
+      "takes": 2
+    },
+    {
+      "name": "fo-a-dew-spring-walled-in",
+      "line": "line.founding.a-dew-spring-walled-in",
+      "dir": "base/campaigns/vanguard.utcc/assets/audio/lines/founding/a-dew-spring-walled-in",
+      "id": "asset.audio.line.founding.a-dew-spring-walled-in",
+      "title": "founding: a-dew-spring-walled-in",
+      "kind": "line",
+      "speaker": "speaker.aurelith",
+      "tags": "[curious]",
+      "model": "eleven_v3",
+      "settings": {
+        "stability": 0.5,
+        "speed": 1.0
+      },
+      "takes": 2
+    },
+    {
+      "name": "fo-caplings-let-the-young-warriors",
+      "line": "line.founding.caplings-let-the-young-warriors",
+      "dir": "base/campaigns/vanguard.utcc/assets/audio/lines/founding/caplings-let-the-young-warriors",
+      "id": "asset.audio.line.founding.caplings-let-the-young-warriors",
+      "title": "founding: caplings-let-the-young-warriors",
+      "kind": "line",
+      "speaker": "speaker.aurelith",
+      "tags": "[amused]",
+      "model": "eleven_v3",
+      "settings": {
+        "stability": 0.5,
+        "speed": 1.0
+      },
+      "takes": 2
+    },
+    {
+      "name": "fo-look-at-the-pool-they",
+      "line": "line.founding.look-at-the-pool-they",
+      "dir": "base/campaigns/vanguard.utcc/assets/audio/lines/founding/look-at-the-pool-they",
+      "id": "asset.audio.line.founding.look-at-the-pool-they",
+      "title": "founding: look-at-the-pool-they",
+      "kind": "line",
+      "speaker": "speaker.aurelith",
+      "tags": "[grim]",
+      "model": "eleven_v3",
+      "settings": {
+        "stability": 0.5,
+        "speed": 1.0
+      },
+      "takes": 2
+    },
+    {
+      "name": "fo-my-queen-the-glade-just",
+      "line": "line.founding.my-queen-the-glade-just",
+      "dir": "base/campaigns/vanguard.utcc/assets/audio/lines/founding/my-queen-the-glade-just",
+      "id": "asset.audio.line.founding.my-queen-the-glade-just",
+      "title": "founding: my-queen-the-glade-just",
+      "kind": "line",
+      "speaker": "speaker.tiv",
+      "tags": "[excited]",
+      "model": "eleven_v3",
+      "settings": {
+        "stability": 0.5,
+        "speed": 1.0
+      },
+      "takes": 2
+    },
+    {
+      "name": "fo-here-we-start-again-and",
+      "line": "line.founding.here-we-start-again-and",
+      "dir": "base/campaigns/vanguard.utcc/assets/audio/lines/founding/here-we-start-again-and",
+      "id": "asset.audio.line.founding.here-we-start-again-and",
+      "title": "founding: here-we-start-again-and",
+      "kind": "line",
+      "speaker": "speaker.aurelith",
+      "tags": "[resolute]",
+      "model": "eleven_v3",
+      "settings": {
+        "stability": 0.5,
+        "speed": 1.0
+      },
+      "takes": 2
+    },
+    {
+      "name": "fo-and-if-the-brood-that",
+      "line": "line.founding.and-if-the-brood-that",
+      "dir": "base/campaigns/vanguard.utcc/assets/audio/lines/founding/and-if-the-brood-that",
+      "id": "asset.audio.line.founding.and-if-the-brood-that",
+      "title": "founding: and-if-the-brood-that",
+      "kind": "line",
+      "speaker": "speaker.tiv",
+      "tags": "[worried]",
+      "model": "eleven_v3",
+      "settings": {
+        "stability": 0.5,
+        "speed": 1.0
+      },
+      "takes": 2
+    },
+    {
+      "name": "fo-then-they-find-us-ready",
+      "line": "line.founding.then-they-find-us-ready",
+      "dir": "base/campaigns/vanguard.utcc/assets/audio/lines/founding/then-they-find-us-ready",
+      "id": "asset.audio.line.founding.then-they-find-us-ready",
+      "title": "founding: then-they-find-us-ready",
+      "kind": "line",
+      "speaker": "speaker.aurelith",
+      "tags": "[commanding]",
+      "model": "eleven_v3",
+      "settings": {
+        "stability": 0.5,
+        "speed": 1.0
+      },
+      "takes": 2
+    },
+    {
+      "name": "fo-majesty-hold-your-stings-it",
+      "line": "line.founding.majesty-hold-your-stings-it",
+      "dir": "base/campaigns/vanguard.utcc/assets/audio/lines/founding/majesty-hold-your-stings-it",
+      "id": "asset.audio.line.founding.majesty-hold-your-stings-it",
+      "title": "founding: majesty-hold-your-stings-it",
+      "kind": "line",
+      "speaker": "speaker.oleander",
+      "tags": "[amused] [calling out]",
+      "model": "eleven_v3",
+      "settings": {
+        "stability": 0.5,
+        "speed": 1.0
+      },
+      "takes": 2
+    },
+    {
+      "name": "fo-i-had-your-letter-i",
+      "line": "line.founding.i-had-your-letter-i",
+      "dir": "base/campaigns/vanguard.utcc/assets/audio/lines/founding/i-had-your-letter-i",
+      "id": "asset.audio.line.founding.i-had-your-letter-i",
+      "title": "founding: i-had-your-letter-i",
+      "kind": "line",
+      "speaker": "speaker.oleander",
+      "tags": "[serious]",
+      "model": "eleven_v3",
+      "settings": {
+        "stability": 0.5,
+        "speed": 1.0
+      },
+      "takes": 2
+    },
+    {
+      "name": "fo-then-tell-me-it-can",
+      "line": "line.founding.then-tell-me-it-can",
+      "dir": "base/campaigns/vanguard.utcc/assets/audio/lines/founding/then-tell-me-it-can",
+      "id": "asset.audio.line.founding.then-tell-me-it-can",
+      "title": "founding: then-tell-me-it-can",
+      "kind": "line",
+      "speaker": "speaker.aurelith",
+      "tags": "[earnest]",
+      "model": "eleven_v3",
+      "settings": {
+        "stability": 0.5,
+        "speed": 1.0
+      },
+      "takes": 2
+    },
+    {
+      "name": "fo-not-by-ants-not-yet",
+      "line": "line.founding.not-by-ants-not-yet",
+      "dir": "base/campaigns/vanguard.utcc/assets/audio/lines/founding/not-by-ants-not-yet",
+      "id": "asset.audio.line.founding.not-by-ants-not-yet",
+      "title": "founding: not-by-ants-not-yet",
+      "kind": "line",
+      "speaker": "speaker.oleander",
+      "tags": "[knowing]",
+      "model": "eleven_v3",
+      "settings": {
+        "stability": 0.5,
+        "speed": 1.0
+      },
+      "takes": 2
+    },
+    {
+      "name": "fo-then-we-will-learn-their",
+      "line": "line.founding.then-we-will-learn-their",
+      "dir": "base/campaigns/vanguard.utcc/assets/audio/lines/founding/then-we-will-learn-their",
+      "id": "asset.audio.line.founding.then-we-will-learn-their",
+      "title": "founding: then-we-will-learn-their",
+      "kind": "line",
+      "speaker": "speaker.aurelith",
+      "tags": "[warm] [resolute]",
+      "model": "eleven_v3",
+      "settings": {
+        "stability": 0.5,
+        "speed": 1.0
+      },
+      "takes": 2
+    },
+    {
+      "name": "fo-gladly-and-you-have-a",
+      "line": "line.founding.gladly-and-you-have-a",
+      "dir": "base/campaigns/vanguard.utcc/assets/audio/lines/founding/gladly-and-you-have-a",
+      "id": "asset.audio.line.founding.gladly-and-you-have-a",
+      "title": "founding: gladly-and-you-have-a",
+      "kind": "line",
+      "speaker": "speaker.oleander",
+      "tags": "[pleased]",
+      "model": "eleven_v3",
+      "settings": {
+        "stability": 0.5,
+        "speed": 1.0
+      },
+      "takes": 2
+    },
+    {
+      "name": "fo-the-burrows-are-broken-the",
+      "line": "line.founding.the-burrows-are-broken-the",
+      "dir": "base/campaigns/vanguard.utcc/assets/audio/lines/founding/the-burrows-are-broken-the",
+      "id": "asset.audio.line.founding.the-burrows-are-broken-the",
+      "title": "founding: the-burrows-are-broken-the",
+      "kind": "line",
+      "speaker": "speaker.aurelith",
+      "tags": "[triumphant]",
+      "model": "eleven_v3",
+      "settings": {
+        "stability": 0.5,
+        "speed": 1.0
+      },
+      "takes": 2
+    },
+    {
+      "name": "fo-then-the-beetles-are-next",
+      "line": "line.founding.then-the-beetles-are-next",
+      "dir": "base/campaigns/vanguard.utcc/assets/audio/lines/founding/then-the-beetles-are-next",
+      "id": "asset.audio.line.founding.then-the-beetles-are-next",
+      "title": "founding: then-the-beetles-are-next",
+      "kind": "line",
+      "speaker": "speaker.oleander",
+      "tags": "[eager]",
+      "model": "eleven_v3",
+      "settings": {
+        "stability": 0.5,
+        "speed": 1.0
+      },
+      "takes": 2
+    },
+    {
+      "name": "fo-look-at-it-shine-raw",
+      "line": "line.founding.look-at-it-shine-raw",
+      "dir": "base/campaigns/vanguard.utcc/assets/audio/lines/founding/look-at-it-shine-raw",
+      "id": "asset.audio.line.founding.look-at-it-shine-raw",
+      "title": "founding: look-at-it-shine-raw",
+      "kind": "line",
+      "speaker": "speaker.oleander",
+      "tags": "[fascinated]",
+      "model": "eleven_v3",
+      "settings": {
+        "stability": 0.5,
+        "speed": 1.0
+      },
+      "takes": 2
+    },
+    {
+      "name": "fo-hhh-hhhh-haa-choo",
+      "line": "line.founding.hhh-hhhh-haa-choo",
+      "dir": "base/campaigns/vanguard.utcc/assets/audio/lines/founding/hhh-hhhh-haa-choo",
+      "id": "asset.audio.line.founding.hhh-hhhh-haa-choo",
+      "title": "founding: hhh-hhhh-haa-choo",
+      "kind": "effect",
+      "prompt": "A tiny insect's comic sneeze: a few little gasping breaths building up, then a big squeaky 'achoo', close, cartoonish, no words",
+      "seconds": 2.5,
+      "takes": 2,
+      "event": {
+        "id": "sound.line.founding.hhh-hhhh-haa-choo",
+        "category": "dialogue",
+        "file": "base/campaigns/vanguard.utcc/sounds/lines/line.founding.hhh-hhhh-haa-choo.json"
+      }
+    },
+    {
+      "name": "fo-the-colony-stands-now-we",
+      "line": "line.founding.the-colony-stands-now-we",
+      "dir": "base/campaigns/vanguard.utcc/assets/audio/lines/founding/the-colony-stands-now-we",
+      "id": "asset.audio.line.founding.the-colony-stands-now-we",
+      "title": "founding: the-colony-stands-now-we",
+      "kind": "line",
+      "speaker": "speaker.aurelith",
+      "tags": "[commanding]",
+      "model": "eleven_v3",
+      "settings": {
+        "stability": 0.5,
+        "speed": 1.0
+      },
+      "takes": 2
+    },
+    {
+      "name": "fo-the-ridge-burrows-are-broken",
+      "line": "line.founding.the-ridge-burrows-are-broken",
+      "dir": "base/campaigns/vanguard.utcc/assets/audio/lines/founding/the-ridge-burrows-are-broken",
+      "id": "asset.audio.line.founding.the-ridge-burrows-are-broken",
+      "title": "founding: the-ridge-burrows-are-broken",
+      "kind": "line",
+      "speaker": "speaker.aurelith",
+      "tags": "[satisfied]",
+      "model": "eleven_v3",
+      "settings": {
+        "stability": 0.5,
+        "speed": 1.0
+      },
+      "takes": 2
+    },
+    {
+      "name": "fo-the-den-is-empty-nothing",
+      "line": "line.founding.the-den-is-empty-nothing",
+      "dir": "base/campaigns/vanguard.utcc/assets/audio/lines/founding/the-den-is-empty-nothing",
+      "id": "asset.audio.line.founding.the-den-is-empty-nothing",
+      "title": "founding: the-den-is-empty-nothing",
+      "kind": "line",
+      "speaker": "speaker.aurelith",
+      "tags": "[firm]",
+      "model": "eleven_v3",
+      "settings": {
+        "stability": 0.5,
+        "speed": 1.0
+      },
+      "takes": 2
+    },
+    {
+      "name": "fo-there-drawn-not-drunk-that",
+      "line": "line.founding.there-drawn-not-drunk-that",
+      "dir": "base/campaigns/vanguard.utcc/assets/audio/lines/founding/there-drawn-not-drunk-that",
+      "id": "asset.audio.line.founding.there-drawn-not-drunk-that",
+      "title": "founding: there-drawn-not-drunk-that",
+      "kind": "line",
+      "speaker": "speaker.oleander",
+      "tags": "[satisfied] [softly]",
+      "model": "eleven_v3",
+      "settings": {
+        "stability": 0.5,
+        "speed": 1.0
+      },
+      "takes": 2
+    },
+    {
+      "name": "fo-movement-on-the-ridge-and",
+      "line": "line.founding.movement-on-the-ridge-and",
+      "dir": "base/campaigns/vanguard.utcc/assets/audio/lines/founding/movement-on-the-ridge-and",
+      "id": "asset.audio.line.founding.movement-on-the-ridge-and",
+      "title": "founding: movement-on-the-ridge-and",
+      "kind": "line",
+      "speaker": "speaker.aurelith",
+      "tags": "[urgent] [shouting]",
+      "model": "eleven_v3",
+      "settings": {
+        "stability": 0.5,
+        "speed": 1.0
+      },
+      "takes": 2
+    },
+    {
+      "name": "gl-carts-on-the-road-majesty",
+      "line": "line.glass-road.carts-on-the-road-majesty",
+      "dir": "base/campaigns/vanguard.utcc/assets/audio/lines/glass-road/carts-on-the-road-majesty",
+      "id": "asset.audio.line.glass-road.carts-on-the-road-majesty",
+      "title": "glass-road: carts-on-the-road-majesty",
+      "kind": "line",
+      "speaker": "speaker.korrath",
+      "tags": "[gruff]",
+      "model": "eleven_v3",
+      "settings": {
+        "stability": 0.5,
+        "speed": 1.0
+      },
+      "takes": 2
+    },
+    {
+      "name": "gl-that-s-one-cart-that",
+      "line": "line.glass-road.that-s-one-cart-that",
+      "dir": "base/campaigns/vanguard.utcc/assets/audio/lines/glass-road/that-s-one-cart-that",
+      "id": "asset.audio.line.glass-road.that-s-one-cart-that",
+      "title": "glass-road: that-s-one-cart-that",
+      "kind": "line",
+      "speaker": "speaker.korrath",
+      "tags": "[satisfied]",
+      "model": "eleven_v3",
+      "settings": {
+        "stability": 0.5,
+        "speed": 1.0
+      },
+      "takes": 2
+    },
+    {
+      "name": "gl-salves-flasks-sealed-jars-they",
+      "line": "line.glass-road.salves-flasks-sealed-jars-they",
+      "dir": "base/campaigns/vanguard.utcc/assets/audio/lines/glass-road/salves-flasks-sealed-jars-they",
+      "id": "asset.audio.line.glass-road.salves-flasks-sealed-jars-they",
+      "title": "glass-road: salves-flasks-sealed-jars-they",
+      "kind": "line",
+      "speaker": "speaker.oleander",
+      "tags": "[amused]",
+      "model": "eleven_v3",
+      "settings": {
+        "stability": 0.5,
+        "speed": 1.0
+      },
+      "takes": 2
+    },
+    {
+      "name": "gl-three-caravans-the-station-will",
+      "line": "line.glass-road.three-caravans-the-station-will",
+      "dir": "base/campaigns/vanguard.utcc/assets/audio/lines/glass-road/three-caravans-the-station-will",
+      "id": "asset.audio.line.glass-road.three-caravans-the-station-will",
+      "title": "glass-road: three-caravans-the-station-will",
+      "kind": "line",
+      "speaker": "speaker.korrath",
+      "tags": "[satisfied]",
+      "model": "eleven_v3",
+      "settings": {
+        "stability": 0.5,
+        "speed": 1.0
+      },
+      "takes": 2
+    },
+    {
+      "name": "gl-majesty-that-rubble-that-s",
+      "line": "line.glass-road.majesty-that-rubble-that-s",
+      "dir": "base/campaigns/vanguard.utcc/assets/audio/lines/glass-road/majesty-that-rubble-that-s",
+      "id": "asset.audio.line.glass-road.majesty-that-rubble-that-s",
+      "title": "glass-road: majesty-that-rubble-that-s",
+      "kind": "line",
+      "speaker": "speaker.korrath",
+      "tags": "[intrigued]",
+      "model": "eleven_v3",
+      "settings": {
+        "stability": 0.5,
+        "speed": 1.0
+      },
+      "takes": 2
+    },
+    {
+      "name": "gl-a-tunnel-this-far-from",
+      "line": "line.glass-road.a-tunnel-this-far-from",
+      "dir": "base/campaigns/vanguard.utcc/assets/audio/lines/glass-road/a-tunnel-this-far-from",
+      "id": "asset.audio.line.glass-road.a-tunnel-this-far-from",
+      "title": "glass-road: a-tunnel-this-far-from",
+      "kind": "line",
+      "speaker": "speaker.aurelith",
+      "tags": "[curious]",
+      "model": "eleven_v3",
+      "settings": {
+        "stability": 0.5,
+        "speed": 1.0
+      },
+      "takes": 2
+    },
+    {
+      "name": "gl-our-grandmothers-dug-toward-the",
+      "line": "line.glass-road.our-grandmothers-dug-toward-the",
+      "dir": "base/campaigns/vanguard.utcc/assets/audio/lines/glass-road/our-grandmothers-dug-toward-the",
+      "id": "asset.audio.line.glass-road.our-grandmothers-dug-toward-the",
+      "title": "glass-road: our-grandmothers-dug-toward-the",
+      "kind": "line",
+      "speaker": "speaker.korrath",
+      "tags": "[proud]",
+      "model": "eleven_v3",
+      "settings": {
+        "stability": 0.5,
+        "speed": 1.0
+      },
+      "takes": 2
+    },
+    {
+      "name": "gl-hornwatch-towers-beetle-guns-never",
+      "line": "line.glass-road.hornwatch-towers-beetle-guns-never",
+      "dir": "base/campaigns/vanguard.utcc/assets/audio/lines/glass-road/hornwatch-towers-beetle-guns-never",
+      "id": "asset.audio.line.glass-road.hornwatch-towers-beetle-guns-never",
+      "title": "glass-road: hornwatch-towers-beetle-guns-never",
+      "kind": "line",
+      "speaker": "speaker.korrath",
+      "tags": "[grim]",
+      "model": "eleven_v3",
+      "settings": {
+        "stability": 0.5,
+        "speed": 1.0
+      },
+      "takes": 2
+    },
+    {
+      "name": "gl-an-old-toll-house-the",
+      "line": "line.glass-road.an-old-toll-house-the",
+      "dir": "base/campaigns/vanguard.utcc/assets/audio/lines/glass-road/an-old-toll-house-the",
+      "id": "asset.audio.line.glass-road.an-old-toll-house-the",
+      "title": "glass-road: an-old-toll-house-the",
+      "kind": "line",
+      "speaker": "speaker.oleander",
+      "tags": "[dry]",
+      "model": "eleven_v3",
+      "settings": {
+        "stability": 0.5,
+        "speed": 1.0
+      },
+      "takes": 2
+    },
+    {
+      "name": "gl-toads-in-the-bog-and",
+      "line": "line.glass-road.toads-in-the-bog-and",
+      "dir": "base/campaigns/vanguard.utcc/assets/audio/lines/glass-road/toads-in-the-bog-and",
+      "id": "asset.audio.line.glass-road.toads-in-the-bog-and",
+      "title": "glass-road: toads-in-the-bog-and",
+      "kind": "line",
+      "speaker": "speaker.oleander",
+      "tags": "[curious]",
+      "model": "eleven_v3",
+      "settings": {
+        "stability": 0.5,
+        "speed": 1.0
+      },
+      "takes": 2
+    },
+    {
+      "name": "gl-amber-under-those-thorns-clear",
+      "line": "line.glass-road.amber-under-those-thorns-clear",
+      "dir": "base/campaigns/vanguard.utcc/assets/audio/lines/glass-road/amber-under-those-thorns-clear",
+      "id": "asset.audio.line.glass-road.amber-under-those-thorns-clear",
+      "title": "glass-road: amber-under-those-thorns-clear",
+      "kind": "line",
+      "speaker": "speaker.korrath",
+      "tags": "[gruff]",
+      "model": "eleven_v3",
+      "settings": {
+        "stability": 0.5,
+        "speed": 1.0
+      },
+      "takes": 2
+    },
+    {
+      "name": "gl-careful-that-is-the-hollow",
+      "line": "line.glass-road.careful-that-is-the-hollow",
+      "dir": "base/campaigns/vanguard.utcc/assets/audio/lines/glass-road/careful-that-is-the-hollow",
+      "id": "asset.audio.line.glass-road.careful-that-is-the-hollow",
+      "title": "glass-road: careful-that-is-the-hollow",
+      "kind": "line",
+      "speaker": "speaker.oleander",
+      "tags": "[hushed]",
+      "model": "eleven_v3",
+      "settings": {
+        "stability": 0.5,
+        "speed": 1.0
+      },
+      "takes": 2
+    },
+    {
+      "name": "gl-a-beetle-surveyor-he-never",
+      "line": "line.glass-road.a-beetle-surveyor-he-never",
+      "dir": "base/campaigns/vanguard.utcc/assets/audio/lines/glass-road/a-beetle-surveyor-he-never",
+      "id": "asset.audio.line.glass-road.a-beetle-surveyor-he-never",
+      "title": "glass-road: a-beetle-surveyor-he-never",
+      "kind": "line",
+      "speaker": "speaker.aurelith",
+      "tags": "[solemn]",
+      "model": "eleven_v3",
+      "settings": {
+        "stability": 0.5,
+        "speed": 1.0
+      },
+      "takes": 2
+    },
+    {
+      "name": "gl-take-it-then-drink-from",
+      "line": "line.glass-road.take-it-then-drink-from",
+      "dir": "base/campaigns/vanguard.utcc/assets/audio/lines/glass-road/take-it-then-drink-from",
+      "id": "asset.audio.line.glass-road.take-it-then-drink-from",
+      "title": "glass-road: take-it-then-drink-from",
+      "kind": "line",
+      "speaker": "speaker.coilkeeper-vosk",
+      "tags": "[cold] [mocking]",
+      "model": "eleven_v3",
+      "settings": {
+        "stability": 0.5,
+        "speed": 1.0
+      },
+      "takes": 2
+    },
+    {
+      "name": "gl-the-gate-is-down-majesty",
+      "line": "line.glass-road.the-gate-is-down-majesty",
+      "dir": "base/campaigns/vanguard.utcc/assets/audio/lines/glass-road/the-gate-is-down-majesty",
+      "id": "asset.audio.line.glass-road.the-gate-is-down-majesty",
+      "title": "glass-road: the-gate-is-down-majesty",
+      "kind": "line",
+      "speaker": "speaker.korrath",
+      "tags": "[shouting]",
+      "model": "eleven_v3",
+      "settings": {
+        "stability": 0.5,
+        "speed": 1.0
+      },
+      "takes": 2
+    },
+    {
+      "name": "gl-ants-inside-my-walls-seal",
+      "line": "line.glass-road.ants-inside-my-walls-seal",
+      "dir": "base/campaigns/vanguard.utcc/assets/audio/lines/glass-road/ants-inside-my-walls-seal",
+      "id": "asset.audio.line.glass-road.ants-inside-my-walls-seal",
+      "title": "glass-road: ants-inside-my-walls-seal",
+      "kind": "line",
+      "speaker": "speaker.coilkeeper-vosk",
+      "tags": "[shouting] [furious]",
+      "model": "eleven_v3",
+      "settings": {
+        "stability": 0.5,
+        "speed": 1.0
+      },
+      "takes": 2
+    },
+    {
+      "name": "gl-we-came-to-ask-coilkeeper",
+      "line": "line.glass-road.we-came-to-ask-coilkeeper",
+      "dir": "base/campaigns/vanguard.utcc/assets/audio/lines/glass-road/we-came-to-ask-coilkeeper",
+      "id": "asset.audio.line.glass-road.we-came-to-ask-coilkeeper",
+      "title": "glass-road: we-came-to-ask-coilkeeper",
+      "kind": "line",
+      "speaker": "speaker.aurelith",
+      "tags": "[cold] [resolute]",
+      "model": "eleven_v3",
+      "settings": {
+        "stability": 0.5,
+        "speed": 1.0
+      },
+      "takes": 2
+    },
+    {
+      "name": "gl-hnnnk-zzz-pressure-s-fine",
+      "line": "line.glass-road.hnnnk-zzz-pressure-s-fine",
+      "dir": "base/campaigns/vanguard.utcc/assets/audio/lines/glass-road/hnnnk-zzz-pressure-s-fine",
+      "id": "asset.audio.line.glass-road.hnnnk-zzz-pressure-s-fine",
+      "title": "glass-road: hnnnk-zzz-pressure-s-fine",
+      "kind": "line",
+      "speaker": "speaker.beetle-engineer",
+      "tags": "[snoring] [mumbling]",
+      "model": "eleven_v3",
+      "settings": {
+        "stability": 0.5,
+        "speed": 1.0
+      },
+      "takes": 2
+    },
+    {
+      "name": "gl-wha-ants-i-wasn-t",
+      "line": "line.glass-road.wha-ants-i-wasn-t",
+      "dir": "base/campaigns/vanguard.utcc/assets/audio/lines/glass-road/wha-ants-i-wasn-t",
+      "id": "asset.audio.line.glass-road.wha-ants-i-wasn-t",
+      "title": "glass-road: wha-ants-i-wasn-t",
+      "kind": "line",
+      "speaker": "speaker.beetle-engineer",
+      "tags": "[startled] [flustered]",
+      "model": "eleven_v3",
+      "settings": {
+        "stability": 0.5,
+        "speed": 1.0
+      },
+      "takes": 2
+    },
+    {
+      "name": "gl-fine-fine-take-this-and",
+      "line": "line.glass-road.fine-fine-take-this-and",
+      "dir": "base/campaigns/vanguard.utcc/assets/audio/lines/glass-road/fine-fine-take-this-and",
+      "id": "asset.audio.line.glass-road.fine-fine-take-this-and",
+      "title": "glass-road: fine-fine-take-this-and",
+      "kind": "line",
+      "speaker": "speaker.beetle-engineer",
+      "tags": "[grumbling]",
+      "model": "eleven_v3",
+      "settings": {
+        "stability": 0.5,
+        "speed": 1.0
+      },
+      "takes": 2
+    },
+    {
+      "name": "gl-majesty-your-mother-set-me",
+      "line": "line.glass-road.majesty-your-mother-set-me",
+      "dir": "base/campaigns/vanguard.utcc/assets/audio/lines/glass-road/majesty-your-mother-set-me",
+      "id": "asset.audio.line.glass-road.majesty-your-mother-set-me",
+      "title": "glass-road: majesty-your-mother-set-me",
+      "kind": "line",
+      "speaker": "speaker.korrath",
+      "tags": "[dry]",
+      "model": "eleven_v3",
+      "settings": {
+        "stability": 0.5,
+        "speed": 1.0
+      },
+      "takes": 2
+    },
+    {
+      "name": "gl-the-beetles-keep-substance-in",
+      "line": "line.glass-road.the-beetles-keep-substance-in",
+      "dir": "base/campaigns/vanguard.utcc/assets/audio/lines/glass-road/the-beetles-keep-substance-in",
+      "id": "asset.audio.line.glass-road.the-beetles-keep-substance-in",
+      "title": "glass-road: the-beetles-keep-substance-in",
+      "kind": "line",
+      "speaker": "speaker.aurelith",
+      "tags": "[earnest]",
+      "model": "eleven_v3",
+      "settings": {
+        "stability": 0.5,
+        "speed": 1.0
+      },
+      "takes": 2
+    },
+    {
+      "name": "gl-they-keep-a-condenser-at",
+      "line": "line.glass-road.they-keep-a-condenser-at",
+      "dir": "base/campaigns/vanguard.utcc/assets/audio/lines/glass-road/they-keep-a-condenser-at",
+      "id": "asset.audio.line.glass-road.they-keep-a-condenser-at",
+      "title": "glass-road: they-keep-a-condenser-at",
+      "kind": "line",
+      "speaker": "speaker.oleander",
+      "tags": "[knowing]",
+      "model": "eleven_v3",
+      "settings": {
+        "stability": 0.5,
+        "speed": 1.0
+      },
+      "takes": 2
+    },
+    {
+      "name": "gl-and-when-they-will-not",
+      "line": "line.glass-road.and-when-they-will-not",
+      "dir": "base/campaigns/vanguard.utcc/assets/audio/lines/glass-road/and-when-they-will-not",
+      "id": "asset.audio.line.glass-road.and-when-they-will-not",
+      "title": "glass-road: and-when-they-will-not",
+      "kind": "line",
+      "speaker": "speaker.korrath",
+      "tags": "[sceptical]",
+      "model": "eleven_v3",
+      "settings": {
+        "stability": 0.5,
+        "speed": 1.0
+      },
+      "takes": 2
+    },
+    {
+      "name": "gl-then-i-will-take-it",
+      "line": "line.glass-road.then-i-will-take-it",
+      "dir": "base/campaigns/vanguard.utcc/assets/audio/lines/glass-road/then-i-will-take-it",
+      "id": "asset.audio.line.glass-road.then-i-will-take-it",
+      "title": "glass-road: then-i-will-take-it",
+      "kind": "line",
+      "speaker": "speaker.aurelith",
+      "tags": "[resolute] [fierce]",
+      "model": "eleven_v3",
+      "settings": {
+        "stability": 0.5,
+        "speed": 1.0
+      },
+      "takes": 2
+    },
+    {
+      "name": "gl-your-mother-would-have-called",
+      "line": "line.glass-road.your-mother-would-have-called",
+      "dir": "base/campaigns/vanguard.utcc/assets/audio/lines/glass-road/your-mother-would-have-called",
+      "id": "asset.audio.line.glass-road.your-mother-would-have-called",
+      "title": "glass-road: your-mother-would-have-called",
+      "kind": "line",
+      "speaker": "speaker.korrath",
+      "tags": "[dry]",
+      "model": "eleven_v3",
+      "settings": {
+        "stability": 0.5,
+        "speed": 1.0
+      },
+      "takes": 2
+    },
+    {
+      "name": "gl-my-mother-is-not-here",
+      "line": "line.glass-road.my-mother-is-not-here",
+      "dir": "base/campaigns/vanguard.utcc/assets/audio/lines/glass-road/my-mother-is-not-here",
+      "id": "asset.audio.line.glass-road.my-mother-is-not-here",
+      "title": "glass-road: my-mother-is-not-here",
+      "kind": "line",
+      "speaker": "speaker.aurelith",
+      "tags": "[cold]",
+      "model": "eleven_v3",
+      "settings": {
+        "stability": 0.5,
+        "speed": 1.0
+      },
+      "takes": 2
+    },
+    {
+      "name": "gl-then-my-mandibles-are-yours",
+      "line": "line.glass-road.then-my-mandibles-are-yours",
+      "dir": "base/campaigns/vanguard.utcc/assets/audio/lines/glass-road/then-my-mandibles-are-yours",
+      "id": "asset.audio.line.glass-road.then-my-mandibles-are-yours",
+      "title": "glass-road: then-my-mandibles-are-yours",
+      "kind": "line",
+      "speaker": "speaker.korrath",
+      "tags": "[pause] [solemn]",
+      "model": "eleven_v3",
+      "settings": {
+        "stability": 0.5,
+        "speed": 1.0
+      },
+      "takes": 2
+    },
+    {
+      "name": "gl-the-road-runs-north-of",
+      "line": "line.glass-road.the-road-runs-north-of",
+      "dir": "base/campaigns/vanguard.utcc/assets/audio/lines/glass-road/the-road-runs-north-of",
+      "id": "asset.audio.line.glass-road.the-road-runs-north-of",
+      "title": "glass-road: the-road-runs-north-of",
+      "kind": "line",
+      "speaker": "speaker.oleander",
+      "tags": "[thoughtful]",
+      "model": "eleven_v3",
+      "settings": {
+        "stability": 0.5,
+        "speed": 1.0
+      },
+      "takes": 2
+    },
+    {
+      "name": "gl-it-runs-under-the-road",
+      "line": "line.glass-road.it-runs-under-the-road",
+      "dir": "base/campaigns/vanguard.utcc/assets/audio/lines/glass-road/it-runs-under-the-road",
+      "id": "asset.audio.line.glass-road.it-runs-under-the-road",
+      "title": "glass-road: it-runs-under-the-road",
+      "kind": "line",
+      "speaker": "speaker.korrath",
+      "tags": "[gruff]",
+      "model": "eleven_v3",
+      "settings": {
+        "stability": 0.5,
+        "speed": 1.0
+      },
+      "takes": 2
+    },
+    {
+      "name": "gl-then-we-have-not",
+      "line": "line.glass-road.then-we-have-not",
+      "dir": "base/campaigns/vanguard.utcc/assets/audio/lines/glass-road/then-we-have-not",
+      "id": "asset.audio.line.glass-road.then-we-have-not",
+      "title": "glass-road: then-we-have-not",
+      "kind": "line",
+      "speaker": "speaker.aurelith",
+      "tags": "[determined]",
+      "model": "eleven_v3",
+      "settings": {
+        "stability": 0.5,
+        "speed": 1.0
+      },
+      "takes": 2
+    },
+    {
+      "name": "gl-keeper-of-the-glass-i",
+      "line": "line.glass-road.keeper-of-the-glass-i",
+      "dir": "base/campaigns/vanguard.utcc/assets/audio/lines/glass-road/keeper-of-the-glass-i",
+      "id": "asset.audio.line.glass-road.keeper-of-the-glass-i",
+      "title": "glass-road: keeper-of-the-glass-i",
+      "kind": "line",
+      "speaker": "speaker.aurelith",
+      "tags": "[calling out] [regal]",
+      "model": "eleven_v3",
+      "settings": {
+        "stability": 0.5,
+        "speed": 1.0
+      },
+      "takes": 2
+    },
+    {
+      "name": "gl-coilkeeper-vosk-i-know-what",
+      "line": "line.glass-road.coilkeeper-vosk-i-know-what",
+      "dir": "base/campaigns/vanguard.utcc/assets/audio/lines/glass-road/coilkeeper-vosk-i-know-what",
+      "id": "asset.audio.line.glass-road.coilkeeper-vosk-i-know-what",
+      "title": "glass-road: coilkeeper-vosk-i-know-what",
+      "kind": "line",
+      "speaker": "speaker.coilkeeper-vosk",
+      "tags": "[condescending]",
+      "model": "eleven_v3",
+      "settings": {
+        "stability": 0.5,
+        "speed": 1.0
+      },
+      "takes": 2
+    },
+    {
+      "name": "gl-then-teach-us-your-glass",
+      "line": "line.glass-road.then-teach-us-your-glass",
+      "dir": "base/campaigns/vanguard.utcc/assets/audio/lines/glass-road/then-teach-us-your-glass",
+      "id": "asset.audio.line.glass-road.then-teach-us-your-glass",
+      "title": "glass-road: then-teach-us-your-glass",
+      "kind": "line",
+      "speaker": "speaker.aurelith",
+      "tags": "[earnest]",
+      "model": "eleven_v3",
+      "settings": {
+        "stability": 0.5,
+        "speed": 1.0
+      },
+      "takes": 2
+    },
+    {
+      "name": "gl-glass-is-not-for-those",
+      "line": "line.glass-road.glass-is-not-for-those",
+      "dir": "base/campaigns/vanguard.utcc/assets/audio/lines/glass-road/glass-is-not-for-those",
+      "id": "asset.audio.line.glass-road.glass-is-not-for-those",
+      "title": "glass-road: glass-is-not-for-those",
+      "kind": "line",
+      "speaker": "speaker.coilkeeper-vosk",
+      "tags": "[cold]",
+      "model": "eleven_v3",
+      "settings": {
+        "stability": 0.5,
+        "speed": 1.0
+      },
+      "takes": 2
+    },
+    {
+      "name": "gl-turn-your-column-around-the",
+      "line": "line.glass-road.turn-your-column-around-the",
+      "dir": "base/campaigns/vanguard.utcc/assets/audio/lines/glass-road/turn-your-column-around-the",
+      "id": "asset.audio.line.glass-road.turn-your-column-around-the",
+      "title": "glass-road: turn-your-column-around-the",
+      "kind": "line",
+      "speaker": "speaker.coilkeeper-vosk",
+      "tags": "[threatening]",
+      "model": "eleven_v3",
+      "settings": {
+        "stability": 0.5,
+        "speed": 1.0
+      },
+      "takes": 2
+    },
+    {
+      "name": "gl-they-re-waking-the-lodge",
+      "line": "line.glass-road.they-re-waking-the-lodge",
+      "dir": "base/campaigns/vanguard.utcc/assets/audio/lines/glass-road/they-re-waking-the-lodge",
+      "id": "asset.audio.line.glass-road.they-re-waking-the-lodge",
+      "title": "glass-road: they-re-waking-the-lodge",
+      "kind": "line",
+      "speaker": "speaker.korrath",
+      "tags": "[urgent]",
+      "model": "eleven_v3",
+      "settings": {
+        "stability": 0.5,
+        "speed": 1.0
+      },
+      "takes": 2
+    },
+    {
+      "name": "gl-they-re-opening-the-lodge",
+      "line": "line.glass-road.they-re-opening-the-lodge",
+      "dir": "base/campaigns/vanguard.utcc/assets/audio/lines/glass-road/they-re-opening-the-lodge",
+      "id": "asset.audio.line.glass-road.they-re-opening-the-lodge",
+      "title": "glass-road: they-re-opening-the-lodge",
+      "kind": "line",
+      "speaker": "speaker.korrath",
+      "tags": "[shouting]",
+      "model": "eleven_v3",
+      "settings": {
+        "stability": 0.5,
+        "speed": 1.0
+      },
+      "takes": 2
+    },
+    {
+      "name": "gl-the-condenser-is-behind-that",
+      "line": "line.glass-road.the-condenser-is-behind-that",
+      "dir": "base/campaigns/vanguard.utcc/assets/audio/lines/glass-road/the-condenser-is-behind-that",
+      "id": "asset.audio.line.glass-road.the-condenser-is-behind-that",
+      "title": "glass-road: the-condenser-is-behind-that",
+      "kind": "line",
+      "speaker": "speaker.oleander",
+      "tags": "[urgent]",
+      "model": "eleven_v3",
+      "settings": {
+        "stability": 0.5,
+        "speed": 1.0
+      },
+      "takes": 2
+    },
+    {
+      "name": "gl-it-s-warm-it-hums",
+      "line": "line.glass-road.it-s-warm-it-hums",
+      "dir": "base/campaigns/vanguard.utcc/assets/audio/lines/glass-road/it-s-warm-it-hums",
+      "id": "asset.audio.line.glass-road.it-s-warm-it-hums",
+      "title": "glass-road: it-s-warm-it-hums",
+      "kind": "line",
+      "speaker": "speaker.aurelith",
+      "tags": "[awed] [softly]",
+      "model": "eleven_v3",
+      "settings": {
+        "stability": 0.5,
+        "speed": 1.0
+      },
+      "takes": 2
+    },
+    {
+      "name": "gl-now-we-can-learn-what",
+      "line": "line.glass-road.now-we-can-learn-what",
+      "dir": "base/campaigns/vanguard.utcc/assets/audio/lines/glass-road/now-we-can-learn-what",
+      "id": "asset.audio.line.glass-road.now-we-can-learn-what",
+      "title": "glass-road: now-we-can-learn-what",
+      "kind": "line",
+      "speaker": "speaker.oleander",
+      "tags": "[eager] [softly]",
+      "model": "eleven_v3",
+      "settings": {
+        "stability": 0.5,
+        "speed": 1.0
+      },
+      "takes": 2
+    }
+  ]
+}
