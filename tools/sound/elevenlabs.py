@@ -303,12 +303,27 @@ def keep_voice(folder, preview):
     print(item['speaker'], 'kept as', voice_id)
 
 
+# What a restricted key needs, by kind of request.
+PERMISSIONS = 'Sound Effects (effects, loops), Music, Text to Speech (lines), Voices: write (design and keep voices)'
+
+
 def check(online):
-    key()
+    secret = key()
     print('key found')
     if online:
-        data, _ = call('/v1/models', method='GET')
-        print(len(json.loads(data)), 'models available')
+        # Listing the models costs nothing; a restricted key without that permission is still
+        # a key ElevenLabs accepts.
+        request = urllib.request.Request(API + '/v1/models', headers={'xi-api-key': secret})
+        try:
+            with urllib.request.urlopen(request, timeout=60) as r:
+                print('key accepted;', len(json.loads(r.read())), 'models available')
+        except urllib.error.HTTPError as e:
+            detail = redact(e.read().decode('utf-8', 'replace'), secret)
+            if 'missing_permissions' in detail:
+                print('key accepted (it is restricted: it cannot list models, which this tool does not need)')
+            else:
+                sys.exit(f'ElevenLabs refused the key: HTTP {e.code}: {detail[:300]}')
+        print('a restricted key needs:', PERMISSIONS)
     print(len(specs()), 'spec items')
 
 
