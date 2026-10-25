@@ -41,6 +41,7 @@ fn vision_cost_with_400_moving_sensors() {
         seed: 3,
         slots: (0..PLAYERS)
             .map(|player| Slot {
+                difficulty: Default::default(),
                 player,
                 // Scripted players: AI players would add their own commands.
                 kind: SlotKind::Human,

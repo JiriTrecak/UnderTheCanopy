@@ -30,6 +30,7 @@ fn setup() -> MatchSetup {
     MatchSetup {
         seed: 5,
         slots: vec![Slot {
+            difficulty: Default::default(),
             player: 0,
             kind: SlotKind::Human,
             name: None,
@@ -161,6 +162,7 @@ fn heroes_of_other_definitions_stay_as_placed() {
 #[test]
 fn a_campaign_mission_saves_and_replays_identically() {
     let start = CampaignStart {
+        difficulty: Default::default(),
         heroes: vec![veteran()],
         hero_level_cap: Some(2),
         locked: [Id::new(SOLDIER).unwrap()].into_iter().collect(),

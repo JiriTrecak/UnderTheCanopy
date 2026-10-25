@@ -196,6 +196,7 @@ pub fn setup(teams: &[Option<u8>]) -> MatchSetup {
             .iter()
             .enumerate()
             .map(|(player, &team)| Slot {
+                difficulty: Default::default(),
                 player: player as u8,
                 kind: SlotKind::Human,
                 name: None,

@@ -1,6 +1,7 @@
 {
   "ui.campaign-steps.back": "Back",
   "ui.campaign-steps.reset": "Reset campaign",
+  "ui.campaign-steps.normal": "Normal",
   "ui.campaign-steps.campaign": "Campaign",
   "ui.campaign-steps.continue": "Continue",
   "ui.campaign-steps.play": "Play",

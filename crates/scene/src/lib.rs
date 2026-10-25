@@ -197,6 +197,7 @@ impl Look {
 /// what a spectator watches; a mission's player 1 always (a mission needs no starts).
 pub fn spectator_setup(map: &UtcMap, players: Option<usize>) -> MatchSetup {
     let slot = |player: u8| Slot {
+        difficulty: Default::default(),
         player,
         kind: SlotKind::Ai,
         name: None,

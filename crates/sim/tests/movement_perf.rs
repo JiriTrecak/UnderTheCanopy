@@ -100,6 +100,7 @@ fn four_hundred_units_cross_the_largest_shipped_map() {
         seed: 3,
         slots: (0..players)
             .map(|player| Slot {
+                difficulty: Default::default(),
                 player,
                 kind: SlotKind::Human,
                 name: None,

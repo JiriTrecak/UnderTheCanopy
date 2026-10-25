@@ -61,7 +61,8 @@
                 "class": "cs-footer-left",
                 "children": [
                   { "kind": "button", "class": "menu-action cs-back", "text": "@ui.campaign-steps.back", "action": "steps.back" },
-                  { "id": "reset", "kind": "button", "class": "menu-action cs-reset", "text": "@ui.campaign-steps.reset", "action": "steps.reset", "visible": false }
+                  { "id": "reset", "kind": "button", "class": "menu-action cs-reset", "text": "@ui.campaign-steps.reset", "action": "steps.reset", "visible": false },
+                  { "id": "difficulty", "kind": "dropdown", "class": "sk-select cs-difficulty", "action": "steps.difficulty", "options": ["@ui.campaign-steps.normal"] }
                 ]
               },
               { "id": "continue", "kind": "button", "class": "cs-continue", "text": "@ui.campaign-steps.continue", "action": "steps.continue" }

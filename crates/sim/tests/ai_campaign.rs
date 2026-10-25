@@ -55,6 +55,7 @@ fn start(map: &UtcMap) -> World {
     let setup = MatchSetup {
         seed: 11,
         slots: vec![Slot {
+            difficulty: Default::default(),
             player: 0,
             kind: SlotKind::Human,
             name: None,

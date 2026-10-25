@@ -54,5 +54,5 @@ pub mod vision;
 pub mod world;
 
 pub use action::Action;
-pub use setup::{MatchSetup, Slot, SlotKind};
+pub use setup::{Difficulty, MatchSetup, Slot, SlotKind};
 pub use world::{Queued, Save, World};

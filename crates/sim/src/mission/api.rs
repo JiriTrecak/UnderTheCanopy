@@ -42,7 +42,7 @@ const VARIABLE_VALUE: &str = "A variable holds a string, a number or a boolean";
 /// Camera transition when a shot gives none.
 const DEFAULT_TRANSITION_MS: u32 = 350;
 
-pub const NAMES: [&str; 44] = [
+pub const NAMES: [&str; 45] = [
     "has_item",
     "give_item",
     "take_item",
@@ -88,6 +88,7 @@ pub const NAMES: [&str; 44] = [
     "campaign_set",
     "allow",
     "forbid",
+    "difficulty",
 ];
 
 mod ai;

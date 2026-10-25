@@ -740,6 +740,7 @@ mod tests {
             seed: 1,
             slots: (0..players)
                 .map(|player| Slot {
+                    difficulty: Default::default(),
                     player,
                     kind: if player == 0 {
                         SlotKind::Human

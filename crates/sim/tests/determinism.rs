@@ -14,6 +14,7 @@ fn data() -> &'static Path {
 fn setup(players: usize) -> MatchSetup {
     let slots = (0..players as u8)
         .map(|player| Slot {
+            difficulty: Default::default(),
             player,
             kind: SlotKind::Ai,
             name: None,

@@ -582,6 +582,7 @@ impl Fixture {
             Vec::new()
         };
         let slot = |player: u8| Slot {
+            difficulty: Default::default(),
             player,
             kind: SlotKind::Human,
             name: None,

@@ -1,7 +1,8 @@
 //! A campaign's tech in a mission (docs/campaign.md "Tech"): locked tech is refused for
 //! building, training, research and upgrades; `mission.allow` and `mission.forbid` change
 //! it mid-mission; a computer player can be held back the same way; campaign variables
-//! travel through `campaign_get` / `campaign_set`. Test-owned content only.
+//! travel through `campaign_get` / `campaign_set`, and the difficulty through
+//! `difficulty()`. Test-owned content only.
 
 mod economy_fixture;
 mod mission_fixture;
@@ -243,4 +244,40 @@ end"#;
     // Played on its own, a mission keeps no campaign variables.
     let alone = mission_fixture::started("function on_start() mission.campaign_set('x', 1) end");
     assert!(alone.state().campaign.is_none());
+}
+
+#[test]
+fn the_campaign_difficulty_reaches_the_script_and_survives_a_save() {
+    let script = r#"function on_start() mission.set("level", mission.difficulty()) end"#;
+    let fixture = mission_fixture::Mission::new(script);
+    let start = CampaignStart {
+        difficulty: canopy_sim::Difficulty::Hard,
+        ..CampaignStart::default()
+    };
+    let map = fixture.map();
+    let mut world = World::new_campaign(
+        mission_fixture::content(),
+        &map,
+        mission_fixture::setup(),
+        &start,
+    )
+    .unwrap_or_else(|e| panic!("{e}"));
+    world.step();
+    assert_eq!(mission_fixture::error(&world), None);
+    assert_eq!(
+        mission_fixture::variable(&world, "level"),
+        mission_fixture::string("hard")
+    );
+    let restored = World::restore(mission_fixture::content(), &map, world.save()).unwrap();
+    assert_eq!(
+        restored.state().campaign.as_ref().map(|c| c.difficulty),
+        Some(canopy_sim::Difficulty::Hard)
+    );
+    // Outside a campaign the level is Normal.
+    let mut world = World::new(mission_fixture::content(), &map, mission_fixture::setup()).unwrap();
+    world.step();
+    assert_eq!(
+        mission_fixture::variable(&world, "level"),
+        mission_fixture::string("normal")
+    );
 }

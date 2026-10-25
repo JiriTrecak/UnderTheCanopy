@@ -1851,6 +1851,7 @@ fn skirmish(rig: &mut Rig) -> Result<()> {
         for (i, team) in [(0, 0), (1, 0), (2, 1), (3, 1)] {
             rig.game.skirmish.slots[i].team = Some(team);
         }
+        rig.game.skirmish.slots[3].difficulty = canopy_sim::Difficulty::Hard;
     }
     rig.settle(0.4);
     rig.shoot("skirmish")?;

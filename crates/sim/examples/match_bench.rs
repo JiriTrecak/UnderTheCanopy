@@ -271,6 +271,7 @@ fn main() -> Result<(), String> {
                 .take(players.unwrap_or(2))
                 .enumerate()
                 .map(|(i, start)| Slot {
+                    difficulty: Default::default(),
                     player: start.player.saturating_sub(1),
                     kind: SlotKind::Ai,
                     name: None,

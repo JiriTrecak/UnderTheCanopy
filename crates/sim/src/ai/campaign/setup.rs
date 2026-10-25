@@ -23,6 +23,7 @@ pub fn mission_setup(map: &UtcMap, setup: MatchSetup) -> MatchSetup {
         .find(|s| s.player == 0)
         .cloned()
         .unwrap_or(Slot {
+            difficulty: Default::default(),
             player: 0,
             kind: SlotKind::Human,
             name: None,
@@ -37,6 +38,7 @@ pub fn mission_setup(map: &UtcMap, setup: MatchSetup) -> MatchSetup {
     let mut players = mission.players.clone();
     players.sort_by_key(|p| p.player);
     slots.extend(players.iter().map(|p| Slot {
+        difficulty: Default::default(),
         player: p.player.saturating_sub(1),
         kind: SlotKind::Ai,
         name: None,

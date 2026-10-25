@@ -148,6 +148,7 @@ mod tests {
             .iter()
             .enumerate()
             .map(|(player, &team)| Slot {
+                difficulty: Default::default(),
                 player: player as u8,
                 kind: SlotKind::Ai,
                 name: None,

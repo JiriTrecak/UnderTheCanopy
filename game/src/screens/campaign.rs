@@ -229,6 +229,18 @@ pub fn show_steps(
         &tr!("campaign.race-campaign", race = &race_name(data, &c.race)),
     );
     widgets::text(ui, "campaign-steps/title", &plain(campaign.name()));
+    let levels: Vec<String> = canopy_sim::Difficulty::ALL
+        .iter()
+        .map(|d| {
+            let name = crate::text::tr(&d.text_key());
+            tr!("campaign.difficulty", level = &name)
+        })
+        .collect();
+    let level = canopy_sim::Difficulty::ALL
+        .iter()
+        .position(|&d| d == progress.difficulty)
+        .unwrap_or(1);
+    widgets::options(ui, "campaign-steps/difficulty", &levels, level);
     if let Some(list) = widgets::find(ui, "campaign-steps/steps") {
         ui.set_count(list, entries.len());
     }

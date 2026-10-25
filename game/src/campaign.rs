@@ -14,6 +14,7 @@ use canopy_content::{
     campaign::{Campaign, Step},
 };
 use canopy_sim::{
+    Difficulty,
     campaign::{CampaignStart, CarriedHero},
     mission::state::Variable,
 };
@@ -38,6 +39,10 @@ pub struct Progress {
     /// The campaign variables mission scripts set: numbers, text and booleans.
     #[serde(skip_serializing_if = "BTreeMap::is_empty")]
     pub variables: BTreeMap<String, Value>,
+    /// The level the missions play at, chosen on the campaign screen; it can change
+    /// between any two missions.
+    #[serde(skip_serializing_if = "Difficulty::is_normal")]
+    pub difficulty: Difficulty,
 }
 
 impl Progress {
@@ -116,10 +121,11 @@ impl Progress {
     }
 
     /// What the mission at step `index` starts with: the campaign's tech up to it, the
-    /// carried heroes, its hero level cap and the campaign variables.
+    /// carried heroes, its hero level cap, the campaign variables and the difficulty.
     pub fn start(&self, campaign: &Campaign, content: &Content, index: usize) -> CampaignStart {
         let mission = campaign.steps.get(index).and_then(Step::mission);
         CampaignStart {
+            difficulty: self.difficulty,
             player: 0,
             locked: campaign.locked(content, index),
             heroes: self.heroes.values().cloned().collect(),

@@ -193,6 +193,7 @@ pub fn crowd_of(
         seed: 1,
         slots: (0..players)
             .map(|player| Slot {
+                difficulty: Default::default(),
                 player,
                 kind: SlotKind::Human,
                 name: None,
@@ -302,6 +303,7 @@ pub fn gallery(
     Ok(MatchSetup {
         seed: 1,
         slots: vec![Slot {
+            difficulty: Default::default(),
             player: 0,
             kind: SlotKind::Human,
             name: None,
@@ -433,6 +435,7 @@ pub fn encounter(map: &mut UtcMap, content: &Content, caster: &str) -> Result<Ma
     Ok(MatchSetup {
         seed: 1,
         slots: vec![Slot {
+            difficulty: Default::default(),
             player: 0,
             kind: SlotKind::Human,
             name: None,

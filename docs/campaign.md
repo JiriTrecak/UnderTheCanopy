@@ -28,7 +28,7 @@ vanguard.utcc/
 | **Mission** | Its loading screen, then the playable map | The map in `missions/`; the loading art, chapter line, title, story text; heroes arriving and leaving; tech; hero level cap |
 | **Cinematic** | For now a placeholder card ("cinematic here later"), then on | Title and a note of what it will show; later its scene and the cinematic player |
 
-There is no branching, no side missions, no continuing into another campaign and no difficulty yet. A mission script may set campaign variables that later missions read, which changes what happens inside them but never the order.
+There is no branching, no side missions and no continuing into another campaign. The player chooses a difficulty on the campaign screen (D105); every level plays alike for now. A mission script may set campaign variables that later missions read, which changes what happens inside them but never the order.
 
 ## Playing a campaign
 
@@ -68,7 +68,7 @@ The skirmish AI is far too strong for a campaign. Campaign opponents are a separ
 - **Allies**: every computer player has a team, so any behaviour serves the player's side as well as the enemy's. An allied Base holds its ground, allied Waves march on the enemy (the nearest enemy base by default), a dormant ally arrives to the rescue. Allies share their vision with the player by default (set per player), and scripts can hand an ally's units to the player (`mission.transfer`) or have them follow a hero.
 - **Dormant players**: a computer player can start a mission with nothing and be brought in by the script, arriving at a region with an army and then playing its behaviour: allies coming to the rescue, or a new enemy.
 - **Scripts** pause and resume waves, send the next wave now, change the target, wake dormant players and switch a player's behaviour.
-- The wave format leaves room for numbers per difficulty, for when difficulty comes.
+- The wave format leaves room for numbers per difficulty; scripts read the campaign's level with `mission.difficulty()` (D105).
 
 ### How the campaign AI plays (built)
 
@@ -155,7 +155,7 @@ The shapes every part builds against (2026-10-21). Field names are camelCase JSO
 
 - `team` is `ally` (player 1's team) or `enemy`; `behaviour` one of `passive`, `base`, `waves`, `skirmish`; a wave's `from` is `"trained"` or `{"region": "<id>"}`, its `target` `"base"`, `"nearest"` or `{"region": "<id>"}`; `until` (seconds) ends a wave line, and a later line can take over. `skirmish` takes `{"style", "armyCap", "pace", "income"}`. Optional `color` is the player's team colour over its slot's, everywhere the slot's would show (team colour masks, the minimap, the world UI): a player colour by name (`red`, `blue`, `green`, `yellow`, `orange`, `purple`, `teal`, `white`, as `config/players.json` names them) or any `#rrggbb` (a feral brood's sickly violet-grey, a colour no player has); the editor's Players panel picks it (Slot, the eight swatches, or the picker). Players the map lists nowhere stay out of the match.
 
-**Mission script additions** (Lua, the `mission` API): `give_stock(player, item, amount)` adds a currency (`item.amber`) to a player's stock, or takes it with a negative amount, never below nothing (`stock(player, item)` reads it); `campaign_get(name)`, `campaign_set(name, value)`; `allow(id)`, `forbid(id)` (tech, for the rest of the mission); `ai_waves(player, on)`, `ai_attack_now(player)`, `ai_target(player, region)`, `ai_behaviour(player, behaviour)`, `ai_wake(player)` (a dormant player arrives: its placements marked `activation: "script"` appear, then it plays its behaviour).
+**Mission script additions** (Lua, the `mission` API): `give_stock(player, item, amount)` adds a currency (`item.amber`) to a player's stock, or takes it with a negative amount, never below nothing (`stock(player, item)` reads it); `campaign_get(name)`, `campaign_set(name, value)`; `allow(id)`, `forbid(id)` (tech, for the rest of the mission); `difficulty()` (the campaign's level: "easy", "normal" or "hard"); `ai_waves(player, on)`, `ai_attack_now(player)`, `ai_target(player, region)`, `ai_behaviour(player, behaviour)`, `ai_wake(player)` (a dormant player arrives: its placements marked `activation: "script"` appear, then it plays its behaviour).
 
 ## The runtime
 

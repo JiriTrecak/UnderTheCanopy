@@ -54,7 +54,7 @@ pub const NAMES: [&str; 19] = [
 
 /// Functions that only read: inside a scene they answer every run and are no statements.
 /// A new read-only function of the `mission` table belongs here.
-pub const QUERIES: [&str; 14] = [
+pub const QUERIES: [&str; 15] = [
     "clicks",
     "has_item",
     "dialogue_busy",
@@ -69,6 +69,7 @@ pub const QUERIES: [&str; 14] = [
     "get",
     "playing",
     "campaign_get",
+    "difficulty",
 ];
 
 /// The longest blend, fade or wait, seconds.

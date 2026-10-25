@@ -447,6 +447,7 @@ pub fn setup(players: u8) -> MatchSetup {
         seed: 11,
         slots: (0..players)
             .map(|player| Slot {
+                difficulty: Default::default(),
                 player,
                 kind: SlotKind::Human,
                 name: None,

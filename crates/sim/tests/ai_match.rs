@@ -62,6 +62,7 @@ fn setup(map: &UtcMap) -> MatchSetup {
             .player_starts
             .iter()
             .map(|s| Slot {
+                difficulty: Default::default(),
                 player: s.player - 1,
                 kind: SlotKind::Ai,
                 name: None,

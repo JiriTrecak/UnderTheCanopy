@@ -153,6 +153,7 @@ fn main() {
             seed,
             slots: (0..2)
                 .map(|p| Slot {
+                    difficulty: Default::default(),
                     player: p,
                     kind,
                     name: None,

@@ -193,6 +193,7 @@ mod tests {
             seed: 5,
             slots: (0..2)
                 .map(|player| Slot {
+                    difficulty: Default::default(),
                     player,
                     kind: SlotKind::Human,
                     name: None,

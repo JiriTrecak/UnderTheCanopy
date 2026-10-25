@@ -218,6 +218,7 @@ fn duel(content: Arc<Content>, map: &UtcMap, seed: u32, cap: u32, args: &Args) -
             .iter()
             .enumerate()
             .map(|(i, &player)| Slot {
+                difficulty: Default::default(),
                 player,
                 kind: SlotKind::Ai,
                 name: None,

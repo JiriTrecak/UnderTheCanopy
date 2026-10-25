@@ -1,7 +1,9 @@
 {
   "schemaVersion": 1,
   "unreleased": {
-    "added": [],
+    "added": [
+      "Choose each computer player's difficulty in skirmish, and the campaign's difficulty on the campaign screen (every level plays alike for now)"
+    ],
     "improved": [
       "Large matches no longer stutter when workers cannot reach a resource"
     ],

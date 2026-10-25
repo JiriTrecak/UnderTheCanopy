@@ -1,6 +1,6 @@
 //! Skirmish setup (old `src/ui/menu/skirmish.ts`): a battlefield from the map library,
-//! every start filled by a human (at most one) or a computer player, each with a race,
-//! a starting hero, a team and a colour.
+//! every start filled by a human (at most one) or a computer player of a difficulty, each
+//! with a race, a starting hero, a team and a colour.
 //!
 //! Teams (D20): every slot has one; "No team" lets the simulation give the slot a team
 //! of its own (free for all). The old screen had no team choice.
@@ -8,7 +8,7 @@
 use super::{ui_host::UiHost, widgets, widgets::Palette};
 use crate::data::{GameData, MapEntry};
 use canopy_render::Gpu;
-use canopy_sim::{MatchSetup, Slot, SlotKind};
+use canopy_sim::{Difficulty, MatchSetup, Slot, SlotKind};
 
 /// Team choices offered (`None` is "No team").
 pub const TEAMS: u8 = 4;
@@ -18,6 +18,8 @@ pub struct SlotChoice {
     /// The start's player number (1–8).
     pub player: u8,
     pub human: bool,
+    /// A computer's level (Warcraft III's "Computer (Easy)" in the controller choice).
+    pub difficulty: Difficulty,
     pub race: String,
     pub hero: Option<String>,
     pub team: Option<u8>,
@@ -70,6 +72,7 @@ impl Skirmish {
                         Some(h) => h == player,
                         None => i == 0,
                     },
+                    difficulty: kept.map_or(Difficulty::Normal, |s| s.difficulty),
                     race,
                     hero,
                     team: kept.and_then(|s| s.team),
@@ -163,6 +166,11 @@ impl Skirmish {
                 .slots
                 .iter()
                 .map(|s| Slot {
+                    difficulty: if s.human {
+                        Difficulty::Normal
+                    } else {
+                        s.difficulty
+                    },
                     player: s.player.saturating_sub(1),
                     kind: if s.human {
                         SlotKind::Human
@@ -222,11 +230,17 @@ impl Skirmish {
                 tr!("hud.role-computer")
             };
             widgets::text(ui, &format!("{base}/sub"), &sub);
+            let mut controllers = vec![tr!("hud.role-human")];
+            controllers.extend(
+                Difficulty::ALL
+                    .iter()
+                    .map(|d| crate::text::tr(&format!("skirmish.ai-{}", d.name()))),
+            );
             widgets::options(
                 ui,
                 &format!("{base}/controller"),
-                &[tr!("hud.role-human"), tr!("skirmish.ai")],
-                usize::from(!slot.human),
+                &controllers,
+                controller(slot),
             );
             widgets::options(
                 ui,
@@ -307,7 +321,15 @@ impl Skirmish {
         colors: usize,
     ) {
         match field {
-            "controller" => self.set_human(slot, option == 0),
+            "controller" => {
+                self.set_human(slot, option == 0);
+                if let (Some(s), Some(&d)) = (
+                    self.slots.get_mut(slot),
+                    option.checked_sub(1).and_then(|o| Difficulty::ALL.get(o)),
+                ) {
+                    s.difficulty = d;
+                }
+            }
             "team" => {
                 if let Some(s) = self.slots.get_mut(slot) {
                     s.team = (option > 0).then(|| (option - 1) as u8);
@@ -333,6 +355,18 @@ impl Skirmish {
     }
 }
 
+/// The controller choice of `slot`: Human, then a computer of each difficulty.
+fn controller(slot: &SlotChoice) -> usize {
+    if slot.human {
+        0
+    } else {
+        1 + Difficulty::ALL
+            .iter()
+            .position(|&d| d == slot.difficulty)
+            .unwrap_or(1)
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -341,6 +375,7 @@ mod tests {
         SlotChoice {
             player,
             human,
+            difficulty: Difficulty::Normal,
             race: "r".into(),
             hero: None,
             team: None,

@@ -798,6 +798,7 @@ fn occupancy(map: &UtcMap, content: &Content, terrain: &Terrain) -> Result<(), S
         .player_starts
         .iter()
         .map(|s| Slot {
+            difficulty: Default::default(),
             player: s.player.saturating_sub(1),
             kind: SlotKind::Human,
             name: None,
@@ -951,6 +952,7 @@ pub fn untangle(
         .player_starts
         .iter()
         .map(|s| Slot {
+            difficulty: Default::default(),
             player: s.player.saturating_sub(1),
             kind: SlotKind::Human,
             name: None,

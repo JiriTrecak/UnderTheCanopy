@@ -274,6 +274,7 @@ fn main() {
     let setup = MatchSetup {
         seed: 7,
         slots: vec![Slot {
+            difficulty: Default::default(),
             player: 0,
             kind: SlotKind::Human,
             name: None,
@@ -283,6 +284,7 @@ fn main() {
         }],
     };
     let start = CampaignStart {
+        difficulty: Default::default(),
         player: 0,
         locked: Default::default(),
         heroes: Vec::new(),

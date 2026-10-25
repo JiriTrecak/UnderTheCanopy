@@ -376,6 +376,7 @@ pub fn free_for_all(players: u8) -> MatchSetup {
         seed: 7,
         slots: (0..players)
             .map(|player| Slot {
+                difficulty: Default::default(),
                 player,
                 kind: SlotKind::Human,
                 name: None,
@@ -399,6 +400,7 @@ pub fn map_with(entities: Vec<Value>, camps: Vec<Value>, terrain: Value) -> UtcM
 /// Two players on separate teams; `allied` puts them on one team.
 pub fn setup(allied: bool) -> MatchSetup {
     let slot = |player: u8| Slot {
+        difficulty: Default::default(),
         player,
         kind: SlotKind::Human,
         name: None,

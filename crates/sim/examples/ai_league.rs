@@ -158,6 +158,7 @@ fn play(
             .iter()
             .enumerate()
             .map(|(i, &player)| Slot {
+                difficulty: Default::default(),
                 player,
                 kind: SlotKind::Ai,
                 name: None,

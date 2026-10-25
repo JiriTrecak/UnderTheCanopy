@@ -6,6 +6,7 @@
   "campaign.coming-later-note": "Coming later — {note}",
   "campaign.complete": "Complete",
   "campaign.continue": "Continue",
+  "campaign.difficulty": "Difficulty: {level}",
   "campaign.mission": "Mission",
   "campaign.new-chapter": "A new chapter begins.",
   "campaign.next": "Next: {title}",

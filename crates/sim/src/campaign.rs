@@ -16,6 +16,7 @@ use crate::{
     heroes::Progression,
     items::{Bonuses, ItemRuntime},
     mission::state::{MAX_VARIABLE_TEXT, MAX_VARIABLES, Variable},
+    setup::Difficulty,
     state::State,
 };
 use canopy_content::{Id, game::Kind, placement::Owner};
@@ -42,6 +43,10 @@ pub struct CampaignStart {
     /// The campaign variables earlier missions set.
     #[serde(default)]
     pub variables: BTreeMap<String, Variable>,
+    /// The level the player chose for the campaign (scripts read it with
+    /// `mission.difficulty()`).
+    #[serde(default, skip_serializing_if = "Difficulty::is_normal")]
+    pub difficulty: Difficulty,
 }
 
 /// A hero as a won mission leaves it (old `companyMember`).
@@ -80,6 +85,8 @@ pub struct CampaignState {
     pub hero_level_cap: Option<u32>,
     #[serde(default, skip_serializing_if = "BTreeMap::is_empty")]
     pub variables: BTreeMap<String, Variable>,
+    #[serde(default, skip_serializing_if = "Difficulty::is_normal")]
+    pub difficulty: Difficulty,
 }
 
 /// What each owner may not build, train or research, by owner.
@@ -191,6 +198,7 @@ pub fn begin(state: &mut State, catalog: &Catalog, start: &CampaignStart) {
         player: start.player,
         hero_level_cap: start.hero_level_cap,
         variables: start.variables.clone(),
+        difficulty: start.difficulty,
     });
     if !start.locked.is_empty() {
         lock(state, owner, start.locked.iter().cloned());

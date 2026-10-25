@@ -317,6 +317,7 @@ fn eight_colonies_run_a_full_economy() {
         seed: 9,
         slots: (0..players)
             .map(|player| Slot {
+                difficulty: Default::default(),
                 player,
                 // Scripted players: AI players would add their own commands.
                 kind: SlotKind::Human,

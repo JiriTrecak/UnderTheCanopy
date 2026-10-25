@@ -216,6 +216,7 @@ pub fn setup() -> MatchSetup {
     MatchSetup {
         seed: 7,
         slots: vec![Slot {
+            difficulty: Default::default(),
             player: 0,
             kind: SlotKind::Human,
             name: None,

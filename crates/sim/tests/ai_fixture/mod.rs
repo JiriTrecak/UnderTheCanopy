@@ -595,6 +595,7 @@ pub fn setup(both: bool) -> MatchSetup {
             .into_iter()
             .enumerate()
             .map(|(player, kind)| Slot {
+                difficulty: Default::default(),
                 player: player as u8,
                 kind,
                 name: None,

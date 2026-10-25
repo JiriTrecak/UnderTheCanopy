@@ -1,4 +1,7 @@
 {
+  "difficulty.easy.name": "Easy",
+  "difficulty.hard.name": "Hard",
+  "difficulty.normal.name": "Normal",
   "match.autoplay": "Autoplay {speed}×",
   "match.autoplay-scene": "Autoplay {speed}× · scene",
   "match.back-to-replays": "Back to the replays.",

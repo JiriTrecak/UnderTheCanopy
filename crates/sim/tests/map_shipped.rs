@@ -23,6 +23,7 @@ fn shipped_maps_are_playable_and_armies_reach_everything() {
                 .player_starts
                 .iter()
                 .map(|s| Slot {
+                    difficulty: Default::default(),
                     player: s.player - 1,
                     kind: SlotKind::Human,
                     name: None,

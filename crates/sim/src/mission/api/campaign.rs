@@ -1,6 +1,6 @@
 //! The campaign's part of the `mission` table (docs/campaign.md "Mission script
-//! additions"): `campaign_get(name)`, `campaign_set(name, value)`, `allow(id)` and
-//! `forbid(id)`.
+//! additions"): `campaign_get(name)`, `campaign_set(name, value)`, `allow(id)`,
+//! `forbid(id)` and `difficulty()`.
 //!
 //! Like every call, they change nothing until the run succeeds: they queue
 //! [`crate::campaign::Change`]s, and `campaign_get` reads the run's own earlier sets.
@@ -9,11 +9,18 @@ use super::{Api, Args, Reply, none, one, text};
 use crate::{
     campaign::{self, Change},
     mission::{effect::MissionEffect, sandbox::Scalar, state::Variable},
+    setup::Difficulty,
 };
 use canopy_content::{Id, game::Kind};
 
 /// The names this part answers, in the order `NAMES` lists them.
-pub const NAMES: [&str; 4] = ["campaign_get", "campaign_set", "allow", "forbid"];
+pub const NAMES: [&str; 5] = [
+    "campaign_get",
+    "campaign_set",
+    "allow",
+    "forbid",
+    "difficulty",
+];
 
 impl Api<'_> {
     pub(super) fn campaign(&mut self, name: &str, a: &Args) -> Reply {
@@ -28,6 +35,15 @@ impl Api<'_> {
                 let id = self.tech(a)?;
                 self.effect(MissionEffect::Campaign(Change::Forbid(id)))
             }
+            // The campaign's level ("easy", "normal", "hard"); "normal" outside a campaign.
+            "difficulty" => one(Scalar::String(
+                self.state
+                    .campaign
+                    .as_ref()
+                    .map_or(Difficulty::Normal, |c| c.difficulty)
+                    .name()
+                    .to_string(),
+            )),
             _ => Err(format!("Unknown mission function {name}")),
         }
     }

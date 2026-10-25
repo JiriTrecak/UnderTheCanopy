@@ -81,6 +81,7 @@ fn setup_for(players: u8) -> MatchSetup {
         seed: 7,
         slots: (0..players)
             .map(|player| Slot {
+                difficulty: Default::default(),
                 player,
                 kind: SlotKind::Human,
                 name: None,

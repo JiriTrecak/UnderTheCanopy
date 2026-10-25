@@ -237,6 +237,7 @@ fn campaign_world(content: &Arc<Content>, map: &UtcMap) -> Result<World, String>
     let setup = MatchSetup {
         seed: 1,
         slots: vec![Slot {
+            difficulty: Default::default(),
             player: 0,
             kind: SlotKind::Human,
             name: None,
@@ -251,6 +252,7 @@ fn campaign_world(content: &Arc<Content>, map: &UtcMap) -> Result<World, String>
         heroes: Vec::new(),
         hero_level_cap: None,
         variables: BTreeMap::new(),
+        difficulty: Default::default(),
     };
     World::new_campaign(content.clone(), map, setup, &start).map_err(|e| e.to_string())
 }

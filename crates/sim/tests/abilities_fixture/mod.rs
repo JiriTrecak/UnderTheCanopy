@@ -410,6 +410,7 @@ pub fn camp(id: &str, members: &[&str], home: (f64, f64)) -> Value {
 /// Two players on separate teams (`allied` puts them on one).
 pub fn setup(allied: bool) -> MatchSetup {
     let slot = |player: u8| Slot {
+        difficulty: Default::default(),
         player,
         kind: SlotKind::Human,
         name: None,

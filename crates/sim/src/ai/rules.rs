@@ -2,7 +2,7 @@
 //! style (D75) and the army it recruits, read from its race's data — never from lists of
 //! unit names (D53). Hero abilities are learned in the order the hero lists them.
 
-use crate::catalog::Catalog;
+use crate::{catalog::Catalog, setup::Difficulty};
 use canopy_content::{
     Id,
     game::{Creation, Definition, Kind, ProductionMode},
@@ -125,6 +125,15 @@ pub struct AiRules {
 }
 
 impl AiRules {
+    /// These rules as a computer player of `difficulty` plays them. Every level plays the
+    /// same AI for now (Jiri, 2026-10-25: one AI is pushed first, then the levels are
+    /// decided); the levels will differ here.
+    pub fn at(self, difficulty: Difficulty) -> Self {
+        match difficulty {
+            Difficulty::Easy | Difficulty::Normal | Difficulty::Hard => self,
+        }
+    }
+
     /// Whether a spending command would make something the mission's tech forbids.
     pub fn forbids(&self, action: &crate::action::Action) -> bool {
         use crate::action::Action;

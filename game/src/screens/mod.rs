@@ -1037,8 +1037,8 @@ impl Game {
     }
 
     /// Loads the mission at `step` of campaign `c`: player 1 plays the campaign's race,
-    /// computer players take the other starts, and the campaign hands it its tech, carried
-    /// heroes, level cap and variables.
+    /// computer players of the campaign's difficulty take the other starts, and the
+    /// campaign hands it its tech, carried heroes, level cap, variables and difficulty.
     fn begin_mission(
         &mut self,
         data: &GameData,
@@ -1051,7 +1051,11 @@ impl Game {
         let Some(map) = data.map(mission.map.as_str()) else {
             return;
         };
+        let start = self
+            .campaign_progress(c.id())
+            .start(&c.campaign, &data.content, step);
         let mut slots = vec![canopy_sim::Slot {
+            difficulty: Default::default(),
             player: 0,
             kind: canopy_sim::SlotKind::Human,
             name: Some(self.settings.display_name()),
@@ -1062,6 +1066,7 @@ impl Game {
         // Players with a start are computer players (`mission.players` refines this).
         for &player in map.starts.iter().filter(|&&p| p > 1) {
             slots.push(canopy_sim::Slot {
+                difficulty: start.difficulty,
                 player: player - 1,
                 kind: canopy_sim::SlotKind::Ai,
                 name: None,
@@ -1074,9 +1079,6 @@ impl Game {
             seed: seed(),
             slots,
         };
-        let start = self
-            .campaign_progress(c.id())
-            .start(&c.campaign, &data.content, step);
         self.play_step_music(data, &c.campaign.steps[step]);
         self.start_rerun(Rerun {
             map: mission.map.to_string(),
@@ -1929,6 +1931,18 @@ impl Game {
                     self.continue_campaign(&campaign);
                 }
             }
+            "steps.difficulty" => {
+                if let (Screen::Campaign { campaign }, Some(&difficulty)) = (
+                    self.flow.screen().clone(),
+                    selected.and_then(|o| canopy_sim::Difficulty::ALL.get(o)),
+                ) {
+                    let mut progress = self.campaign_progress(&campaign);
+                    if progress.difficulty != difficulty {
+                        progress.difficulty = difficulty;
+                        self.store_progress(&campaign, progress);
+                    }
+                }
+            }
             "steps.reset" if clicked => {
                 if let Screen::Campaign { campaign } = self.flow.screen().clone() {
                     self.ask_reset(&campaign);
@@ -2429,7 +2443,15 @@ impl Game {
                 self.list_saves();
             }
             Ask::ResetCampaign(campaign) => {
-                self.store_progress(&campaign, crate::campaign::Progress::default());
+                // A reset starts the story over at the level the player chose.
+                let difficulty = self.campaign_progress(&campaign).difficulty;
+                self.store_progress(
+                    &campaign,
+                    crate::campaign::Progress {
+                        difficulty,
+                        ..Default::default()
+                    },
+                );
             }
         }
     }

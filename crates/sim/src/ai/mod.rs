@@ -329,6 +329,7 @@ struct Brain {
     /// Decides on ticks where `tick % decisionTicks == phase`.
     phase: u32,
     race: Option<String>,
+    difficulty: crate::setup::Difficulty,
     rules: AiRules,
     blockers: RefCell<ObservedBlockers>,
     navigation: RefCell<Option<ObservedNavigation>>,
@@ -369,12 +370,14 @@ impl Brains {
             .enumerate()
             .map(|(index, slot)| {
                 let style = AiStyle::of_match(setup.seed, slot.player);
-                let rules = AiRules::for_race(catalog, slot.race.as_deref(), style);
+                let rules =
+                    AiRules::for_race(catalog, slot.race.as_deref(), style).at(slot.difficulty);
                 Brain {
                     player: slot.player,
                     owner: Owner::Player(slot.player),
                     phase: index as u32 * rules.decision_ticks / count,
                     race: slot.race.clone(),
+                    difficulty: slot.difficulty,
                     rules,
                     blockers: RefCell::new(ObservedBlockers::new(cells)),
                     navigation: RefCell::new(None),
@@ -391,7 +394,7 @@ impl Brains {
     /// experiments; the next decision uses it).
     pub fn restyle(&mut self, catalog: &crate::catalog::Catalog, player: u8, style: AiStyle) {
         for b in self.brains.iter_mut().filter(|b| b.player == player) {
-            let mut rules = AiRules::for_race(catalog, b.race.as_deref(), style);
+            let mut rules = AiRules::for_race(catalog, b.race.as_deref(), style).at(b.difficulty);
             rules.forbidden = b.rules.forbidden.clone();
             rules
                 .composition
@@ -416,7 +419,7 @@ impl Brains {
                 .as_deref()
                 .and_then(AiStyle::parse)
                 .unwrap_or(b.rules.style);
-            let mut rules = AiRules::for_race(catalog, b.race.as_deref(), style);
+            let mut rules = AiRules::for_race(catalog, b.race.as_deref(), style).at(b.difficulty);
             if let Some(cap) = limits.army_cap {
                 rules.army.maximum = rules.army.maximum.min(cap);
                 rules.army.minimum = rules.army.minimum.min(cap);

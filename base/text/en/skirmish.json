@@ -1,5 +1,8 @@
 {
   "skirmish.ai": "AI",
+  "skirmish.ai-easy": "Easy AI",
+  "skirmish.ai-normal": "Normal AI",
+  "skirmish.ai-hard": "Hard AI",
   "skirmish.no-maps": "No maps available",
   "skirmish.observer": "Observer · Watch all colonies",
   "skirmish.open-testbed": "Open testbed →",

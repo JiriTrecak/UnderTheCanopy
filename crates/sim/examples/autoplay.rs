@@ -182,6 +182,7 @@ fn play(args: &Args, base: &Arc<Content>, mission: &Mission) -> Result<Played, S
         Some((c, index)) => (
             Some(c.campaign.race.clone()),
             CampaignStart {
+                difficulty: Default::default(),
                 player: 0,
                 locked: c.campaign.locked(&content, *index),
                 heroes: Vec::new(),
@@ -194,6 +195,7 @@ fn play(args: &Args, base: &Arc<Content>, mission: &Mission) -> Result<Played, S
         None => (None, CampaignStart::default()),
     };
     let mut slots = vec![Slot {
+        difficulty: Default::default(),
         player: 0,
         kind: SlotKind::Human,
         name: None,
@@ -203,6 +205,7 @@ fn play(args: &Args, base: &Arc<Content>, mission: &Mission) -> Result<Played, S
     }];
     for start in mission.map.player_starts.iter().filter(|s| s.player > 1) {
         slots.push(Slot {
+            difficulty: Default::default(),
             player: start.player - 1,
             kind: SlotKind::Ai,
             name: None,
