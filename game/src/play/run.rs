@@ -747,12 +747,7 @@ impl InMatch {
 
     /// Cinematic mode of the mission shown (a running script, an undecided match).
     fn cinema_on(&self) -> bool {
-        let view = &self.play.knowledge().view;
-        view.outcome.is_none()
-            && view
-                .mission
-                .as_ref()
-                .is_some_and(|m| m.cinema.on && m.error.is_none())
+        self.play.cinema_on()
     }
 
     /// The view of a mission's saved-camera shot (`mission.camera_to`): while cinematic
@@ -1101,11 +1096,9 @@ impl InMatch {
             ui.register_image(&name, desc);
         }
         self.hud.update(ui, &self.play);
-        // Cinematic mode hides the HUD and lets go of the selection (Warcraft III).
+        // Cinematic mode hides the HUD; the selection stays for when it ends (Jiri,
+        // 2026-10-25: unlike Warcraft III, which lets go of it).
         let cinema = self.cinema_on();
-        if cinema && !self.play.selection.ids().is_empty() {
-            self.play.select(Vec::new(), None);
-        }
         host.audio.set_duck(cinema);
         ui.show("hud", !self.hud_hidden && !cinema);
         for name in self.hud.take_image_requests() {

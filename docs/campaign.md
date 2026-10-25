@@ -206,7 +206,7 @@ function on_start()
 end
 
 function scenes.opening()
-  mission.cinematic(true)                  -- bars in, HUD and selection away, commands refused
+  mission.cinematic(true)                  -- bars in, HUD and selection rings away (the selection is kept), commands refused
   mission.camera_to("road", 0)             -- a cut
   mission.move("aurelith", 84, 112)        -- already running when the picture comes up
   mission.fade_in(2.5)
@@ -238,7 +238,7 @@ How it runs: the sandbox has no coroutines and a fresh Lua state every run, so a
 |---|---|
 | `play(name[, skippable])` | Starts `scenes[name]` (skippable unless `false`); one scene at a time |
 | `playing()` | The scene in play, or nil (query) |
-| `cinematic(on)` | Cinematic mode: letterbox bars slide in, the HUD hides, the selection clears, player commands are refused (the game menu and the skip still work), the world's sounds duck while music and voices keep theirs, and the battle holds: only the units the script directs act, and the computer players wait (above) |
+| `cinematic(on)` | Cinematic mode: letterbox bars slide in, the HUD and the selection rings hide (the selection is kept for after), player commands are refused (the game menu and the skip still work), the world's sounds duck while music and voices keep theirs, and the battle holds: only the units the script directs act, and the computer players wait (above) |
 | `camera_to(id[, seconds])` | Cuts (0, the default) or blends, eased, to a saved camera |
 | `shot(kind, subject…[, options])` | A shot preset on actors where they stand (below): `shot("single", unit)`, `shot("over", from, to)`, `shot("two", a, b)`, `shot("wide", unit_or_region)`; options `{side = "left"\|"right", distance, height, fov, roll, seconds}` |
 | `camera_pan(x, y[, seconds])` | The current saved camera, looking at another point |

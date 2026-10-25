@@ -364,6 +364,16 @@ impl Play {
     /// A mission cinematic holds the match (old `MissionHud.active`): a scene, a
     /// cinematic line still playing or cinematic mode, before the outcome and without a
     /// script error. Returns where the scene stands (x, z) when it has a place.
+    /// Whether the mission's cinematic mode is on (`mission.cinematic`): bars, no HUD.
+    pub fn cinema_on(&self) -> bool {
+        let view = &self.know.view;
+        view.outcome.is_none()
+            && view
+                .mission
+                .as_ref()
+                .is_some_and(|m| m.cinema.on && m.error.is_none())
+    }
+
     pub fn cinematic(&self) -> Option<Option<[f32; 2]>> {
         let v = &self.know.view;
         let m = v.mission.as_ref()?;
@@ -876,8 +886,9 @@ impl Play {
             .and_then(|p| p.rally.as_ref())
             .map(|r| [r.point.x as f32 / 1000.0, r.point.y as f32 / 1000.0]);
         WorldUi {
-            // No selection rings during a cinematic (old `gameSelect([])`).
-            selected: if self.cinematic().is_some() {
+            // No selection rings during a cinematic or in cinematic mode; the selection
+            // itself stays (old `gameSelect([])`).
+            selected: if self.cinematic().is_some() || self.cinema_on() {
                 Vec::new()
             } else {
                 self.selection.ids().to_vec()
