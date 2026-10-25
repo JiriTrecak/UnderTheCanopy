@@ -2,7 +2,9 @@
   "schemaVersion": 1,
   "unreleased": {
     "added": [],
-    "improved": [],
+    "improved": [
+      "Campaign forest maps render up to twice as fast on the GPU, and every map a little faster, with the same picture"
+    ],
     "fixed": [],
     "knownIssues": []
   },
