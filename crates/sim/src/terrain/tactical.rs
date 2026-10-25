@@ -149,8 +149,9 @@ impl TacticalTerrain {
         let min_x = block(ax.min(b.x) / COARSE as f64).max(0);
         let max_x = block((ax.max(b.x) + 1.0) / COARSE as f64).min(coarse_last);
         let mut maximum = i32::from(i16::MIN);
-        for y in min_y..=max_y {
-            for x in min_x..=max_x {
+        // Half-open ranges: the inclusive ones cost a check each step in this hot loop.
+        for y in min_y..max_y + 1 {
+            for x in min_x..max_x + 1 {
                 maximum = maximum.max(i32::from(
                     self.coarse[y as usize * self.coarse_side + x as usize],
                 ));
@@ -176,8 +177,8 @@ impl TacticalTerrain {
             let fy0 = block(y0.min(y1) / FINE as f64);
             let fy1 = block((y0.max(y1) + 1.0) / FINE as f64).min(fine_last);
             let mut high = i32::from(i16::MIN);
-            for y in fy0..=fy1 {
-                for x in fx0..=fx1 {
+            for y in fy0..fy1 + 1 {
+                for x in fx0..fx1 + 1 {
                     high = high.max(i32::from(
                         self.fine[y as usize * self.fine_side + x as usize],
                     ));
@@ -187,7 +188,7 @@ impl TacticalTerrain {
             let line0 = from + (to - from) * t0;
             let line1 = from + (to - from) * t1;
             if f64::from(high) >= line0.min(line1) - 1e-9 {
-                for i in start..=end {
+                for i in start..end + 1 {
                     let t = i as f64 / total;
                     if self.height(ax + dx * t, ay + dy * t) > from + (to - from) * t {
                         return false;

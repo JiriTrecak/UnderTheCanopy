@@ -1245,7 +1245,8 @@ impl Spatial {
                 let b = (u + offset).div_euclid(1000).min(i64::from(hi));
                 a..=b
             };
-            for cy in within(uy, reach.min(separation - 1), y0, y1) {
+            let rows = within(uy, reach.min(separation - 1), y0, y1);
+            for cy in *rows.start()..*rows.end() + 1 {
                 let sy = uy - cy * 1000;
                 let room = square - sy * sy - 1;
                 if room < 0 {

@@ -92,10 +92,26 @@ impl<'a> Sight<'a> {
         let target = self.sight_point(entity);
         let layered = self.terrain.surfaces().is_some();
         let anchor = statics::anchor(entity);
-        let mut cells = Vec::new();
+        // A unit covers one cell: held inline, a footprint spills to the heap.
+        let (mut inline, mut count, mut spill) = ([0u32; 4], 0, Vec::new());
         if !(airborne || layered) {
-            statics::Place::of(entity).nodes(self.terrain, self.catalog, |n| cells.push(n));
+            statics::Place::of(entity).nodes(self.terrain, self.catalog, |n| {
+                if count < inline.len() {
+                    inline[count] = n;
+                } else {
+                    if spill.is_empty() {
+                        spill.extend_from_slice(&inline);
+                    }
+                    spill.push(n);
+                }
+                count += 1;
+            });
         }
+        let cells: &[u32] = if spill.is_empty() {
+            &inline[..count]
+        } else {
+            &spill
+        };
         let (hx, hy) = half_extents(self.catalog, entity);
         let query = self.vision.index.sectors(
             Milli {

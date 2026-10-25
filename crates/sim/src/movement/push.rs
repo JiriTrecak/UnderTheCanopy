@@ -164,6 +164,10 @@ impl Motion {
         let mut cells = vec![(0i32, 0i32); bodies.len()];
         let mut fill: Vec<u32> = Vec::new();
         let mut delta: Vec<(i64, i64)> = Vec::new();
+        // The same buckets of the bodies that can be moved: two planted bodies take no
+        // share of an overlap (`shares`), so a planted body meets only these.
+        let mut mobile_starts: Vec<u32> = Vec::new();
+        let mut mobile: Vec<Member> = Vec::new();
         // Every pair that can overlap is in neighbouring buckets once a bucket is as wide
         // as the widest reach, so any such width finds the same pairs as `BUCKET`; a crowd
         // of small bodies then tests far fewer.
@@ -226,6 +230,22 @@ impl Motion {
                 };
                 *at += 1;
             }
+            mobile_starts.clear();
+            mobile_starts.resize(starts.len(), 0);
+            for (i, body) in bodies.iter().enumerate() {
+                if body.stance != Stance::Planted {
+                    mobile_starts[slots[i] + 1] += 1;
+                }
+            }
+            for b in 1..mobile_starts.len() {
+                mobile_starts[b] += mobile_starts[b - 1];
+            }
+            mobile.clear();
+            mobile.extend(
+                members
+                    .iter()
+                    .filter(|m| bodies[m.index as usize].stance != Stance::Planted),
+            );
             delta.clear();
             delta.resize(bodies.len(), (0, 0));
             let mut any = false;
@@ -233,12 +253,17 @@ impl Motion {
                 let (ax, ay) = at(i, &moved);
                 let (bx, by) = cells[i];
                 let (air, own_reach) = (bodies[i].air, bodies[i].radius + tuning.push_room);
-                for nx in bx - 1..=bx + 1 {
-                    for ny in by - 1..=by + 1 {
+                let (list, bounds) = if bodies[i].stance == Stance::Planted {
+                    (&mobile, &mobile_starts)
+                } else {
+                    (&members, &starts)
+                };
+                for nx in bx - 1..bx + 2 {
+                    for ny in by - 1..by + 2 {
                         let b = bucket((nx, ny), air);
                         // A bucket holds its bodies in index order: only those after `i`
                         // make new pairs.
-                        let bucket = &members[starts[b] as usize..starts[b + 1] as usize];
+                        let bucket = &list[bounds[b] as usize..bounds[b + 1] as usize];
                         let after = bucket.partition_point(|m| m.index as usize <= i);
                         for m in &bucket[after..] {
                             let j = m.index as usize;

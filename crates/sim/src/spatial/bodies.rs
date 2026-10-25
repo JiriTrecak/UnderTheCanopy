@@ -327,10 +327,13 @@ impl Bodies {
         if x0 > x1 || y0 > y1 {
             return true;
         }
+        // A cell `c` holds the milli-cell positions `1000·c − 500 ≤ v < 1000·c + 500`, so
+        // the cell test reads the positions without dividing.
+        let (lx, hx) = (x0 * 1000 - 500, x1 * 1000 + 500);
+        let (ly, hy) = (y0 * 1000 - 500, y1 * 1000 + 500);
         let inside = |record: &BodyRecord| {
-            let (x, y) = record.xy();
-            let (x, y) = (i64::from(x), i64::from(y));
-            x >= x0 && x <= x1 && y >= y0 && y <= y1
+            let (x, y) = (i64::from(record.x), i64::from(record.y));
+            x >= lx && x < hx && y >= ly && y < hy
         };
         let (bx0, bx1) = ((x0 >> SHIFT) as u32, (x1 >> SHIFT) as u32);
         let (by0, by1) = ((y0 >> SHIFT) as u32, (y1 >> SHIFT) as u32);
@@ -343,8 +346,8 @@ impl Bodies {
             }
             return true;
         }
-        for by in by0..=by1 {
-            for bx in bx0..=bx1 {
+        for by in by0..by1 + 1 {
+            for bx in bx0..bx1 + 1 {
                 let mut at = self.heads[(by * self.blocks + bx) as usize];
                 while at != NONE {
                     let slot = at as usize;

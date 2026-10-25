@@ -219,6 +219,52 @@ fn nearby(f: &Frame, p: Pt, radius: i32) -> Vec<(i32, i32)> {
     points
 }
 
+/// Doorway checks of one frame, where the knowledge, the navigation and the widest body
+/// stay the same: what they share across sites.
+#[derive(Debug, Default)]
+pub struct DoorMemo {
+    /// The flood origin found near each approach (it does not depend on the site).
+    origins: Vec<(Approach, Option<(i32, i32)>)>,
+    /// Floods that ran out without a goal and never came near their foundation.
+    floods: Vec<Flood>,
+}
+
+/// An approach point by its coordinates' bits.
+type Approach = (u64, u64);
+
+/// A flood from `origin` within `radius` cells that met no goal: the cells it took, in
+/// order, and as a set. A foundation that keeps away from them changes none of its steps,
+/// so for any such site the flood takes the same cells, and reaches a doorway exactly
+/// when one of them is a goal.
+#[derive(Debug)]
+struct Flood {
+    origin: (i32, i32),
+    radius: u64,
+    taken: Vec<u32>,
+    /// One bit per map cell.
+    set: Vec<u64>,
+}
+
+impl Flood {
+    /// Whether the foundation `cells` keeps out of reach of every step the flood takes:
+    /// a step reads its two neighbouring cells and the sweep of a body of `reach` cells
+    /// around them, so no taken cell within that sweep and a cell more of the foundation
+    /// leaves it untouched.
+    fn clear_of(&self, cells: &CellBounds, reach: i64, size: u32) -> bool {
+        let margin = reach + 2;
+        let last = i64::from(size) - 1;
+        for y in (cells.min_y - margin).max(0)..=(cells.max_y + margin).min(last) {
+            for x in (cells.min_x - margin).max(0)..=(cells.max_x + margin).min(last) {
+                let c = (y * i64::from(size) + x) as usize;
+                if self.set[c / 64] >> (c % 64) & 1 != 0 {
+                    return false;
+                }
+            }
+        }
+        true
+    }
+}
+
 /// Whether a worker of the widest ground body could still walk from `approach` to the
 /// doorway with the foundation in place (old `doorReachable`).
 fn door_reachable(f: &Frame, cells: &CellBounds, approach: Pt, door: Pt, outpost: bool) -> bool {
@@ -316,10 +362,24 @@ fn door_reachable(f: &Frame, cells: &CellBounds, approach: Pt, door: Pt, outpost
             false
         };
         let index = |q: (i32, i32)| q.1 as u32 * size + q.0 as u32;
-        let Some(origin) = nearby(f, approach, 8)
-            .into_iter()
-            .find(|&q| certified(index(q), index(q), false))
-        else {
+        // Without the foundation's overlay the search for an origin is the same at every
+        // site: it is made once a frame for each approach.
+        let key = (approach.x.to_bits(), approach.y.to_bits());
+        let known = f
+            .doors
+            .borrow()
+            .origins
+            .iter()
+            .find(|(k, _)| *k == key)
+            .map(|&(_, o)| o);
+        let origin = known.unwrap_or_else(|| {
+            let origin = nearby(f, approach, 8)
+                .into_iter()
+                .find(|&q| certified(index(q), index(q), false));
+            f.doors.borrow_mut().origins.push((key, origin));
+            origin
+        });
+        let Some(origin) = origin else {
             return false;
         };
         if !certified(index(origin), index(origin), true) {
@@ -334,6 +394,16 @@ fn door_reachable(f: &Frame, cells: &CellBounds, approach: Pt, door: Pt, outpost
             return false;
         }
         goals.sort_unstable();
+        let flood_radius: f64 = if outpost { 32.0 } else { 60.0 };
+        let reach = radius_cells.ceil() as i64;
+        let is_goal = |c: u32| goals.binary_search(&c).is_ok();
+        if let Some(found) = f.doors.borrow().floods.iter().find(|m| {
+            m.origin == origin
+                && m.radius == flood_radius.to_bits()
+                && m.clear_of(cells, reach, size)
+        }) {
+            return found.taken.iter().any(|&c| is_goal(c));
+        }
         let _span = tracing::trace_span!("ai door flood").entered();
         // The planes' closed cells are the known blockers and the water (`base_step`).
         let closed = |c: u32| match planes {
@@ -355,15 +425,34 @@ fn door_reachable(f: &Frame, cells: &CellBounds, approach: Pt, door: Pt, outpost
             }
             _ => certified(a, b, true),
         };
-        flood(
+        let mut taken = Vec::new();
+        let reached = flood(
             f,
             origin,
-            if outpost { 32.0 } else { 60.0 },
+            flood_radius,
             proposed,
             closed,
             step,
-            |c| goals.binary_search(&c).is_ok(),
-        )
+            is_goal,
+            &mut taken,
+        );
+        if !reached {
+            let mut set = vec![0u64; (size * size).div_ceil(64) as usize];
+            for &c in &taken {
+                set[c as usize / 64] |= 1 << (c % 64);
+            }
+            let flood = Flood {
+                origin,
+                radius: flood_radius.to_bits(),
+                taken,
+                set,
+            };
+            // Only a flood its own foundation left untouched is every far site's flood.
+            if flood.clear_of(cells, reach, size) {
+                f.doors.borrow_mut().floods.push(flood);
+            }
+        }
+        reached
     };
     if geo.layered() {
         check(None, None)
@@ -379,7 +468,9 @@ fn door_reachable(f: &Frame, cells: &CellBounds, approach: Pt, door: Pt, outpost
 }
 
 /// The bounded four-neighbour flood from `origin` (old `PlacementSearch.reachable`),
-/// including its unmarked first node and 4096-node budget.
+/// including its unmarked first node and 4096-node budget. The cells it takes are added
+/// to `taken` in order.
+#[allow(clippy::too_many_arguments)]
 fn flood(
     f: &Frame,
     origin: (i32, i32),
@@ -388,6 +479,7 @@ fn flood(
     closed: impl Fn(u32) -> bool,
     step: impl Fn(u32, u32) -> bool,
     goal: impl Fn(u32) -> bool,
+    taken: &mut Vec<u32>,
 ) -> bool {
     let geo = f.geo;
     let size = geo.size as i32;
@@ -404,6 +496,7 @@ fn flood(
         let (x, y) = queue[head];
         head += 1;
         let from = (y * size + x) as u32;
+        taken.push(from);
         if goal(from) {
             return true;
         }
