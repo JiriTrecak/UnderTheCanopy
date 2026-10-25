@@ -557,7 +557,7 @@ impl Game {
             // An overlay holds the input: the match only follows releases and focus.
             playing.window_event(window, event, &self.host.ui, true);
         }
-        // A card or a loaded mission moves on with any key but Escape.
+        // A card moves on with Space; a loaded mission begins with any key but Escape.
         if !consumed
             && let WindowEvent::KeyboardInput { event: key, .. } = event
             && key.state == winit::event::ElementState::Pressed
@@ -566,8 +566,10 @@ impl Game {
                 != winit::keyboard::PhysicalKey::Code(winit::keyboard::KeyCode::Escape)
             && self.flow.overlays().is_empty()
         {
+            let space = key.physical_key
+                == winit::keyboard::PhysicalKey::Code(winit::keyboard::KeyCode::Space);
             match self.flow.screen() {
-                Screen::Step { .. } => {
+                Screen::Step { .. } if space => {
                     self.card_next();
                     return;
                 }
@@ -974,8 +976,12 @@ impl Game {
         else {
             return;
         };
+        let page = card.page;
         if card.advance(step) {
             self.finish_step();
+        } else if card.page != page {
+            // Turned by hand: the old page's voice gives way.
+            self.audio.hush(canopy_audio::Category::Dialogue, 0.5);
         }
     }
 
@@ -1025,11 +1031,14 @@ impl Game {
     }
 
     /// Story narration for the page on screen, once per page (a dialogue sound event).
-    fn play_narration(&mut self, data: &GameData, event: &str) {
+    /// Whether it is heard (there is a sound device and the voice started).
+    fn play_narration(&mut self, data: &GameData, event: &str) -> bool {
         self.bind_sounds(data);
-        if let Some(event) = self.audio.event(event) {
-            self.audio.play_event(event, canopy_audio::At::Listener);
-        }
+        self.audio
+            .event(event)
+            .and_then(|event| self.audio.play_event(event, canopy_audio::At::Listener))
+            .is_some()
+            && self.audio.has_output()
     }
 
     /// An interface sound by what it marks (`rules/sounds.json` → `interface`).
@@ -1510,23 +1519,38 @@ impl Game {
             && self.flow.overlays().is_empty()
             && !self.fading_out
         {
-            let before = card.time;
             card.time += dt;
+            let speak = !card.spoken && card.time >= card.voice_at();
+            if speak {
+                card.spoken = true;
+            }
+            // A page read aloud turns by itself a moment after its voice ends.
+            if card.voiced && !self.audio.speaking(canopy_audio::Category::Dialogue) {
+                card.quiet += dt;
+            }
             let page = card.page;
-            let narration = self.data.clone().and_then(|data| {
+            let quiet = card.voiced && card.quiet >= campaign::VOICE_PAUSE;
+            let next = self.data.clone().and_then(|data| {
                 let c = data.campaign(&card.campaign)?;
                 let step = c.campaign.steps.get(card.step)?;
-                let narration = match step {
-                    canopy_content::campaign::Step::Story(s) if before == 0.0 => {
-                        s.pages.get(page)?.narration.clone()
-                    }
-                    _ => None,
+                let (narration, more) = match step {
+                    canopy_content::campaign::Step::Story(s) => (
+                        s.pages.get(page)?.narration.clone().filter(|_| speak),
+                        page + 1 < s.pages.len(),
+                    ),
+                    _ => (None, false),
                 };
-                Some((card.due(step), narration, data.clone()))
+                Some((card.due(step), narration, quiet && more, data.clone()))
             });
-            if let Some((due, narration, data)) = narration {
+            if let Some((due, narration, turn, data)) = next {
+                if turn && let Some(card) = &mut self.card {
+                    card.turn();
+                }
                 if let Some(asset) = narration {
-                    self.play_narration(&data, asset.as_str());
+                    let voiced = self.play_narration(&data, asset.as_str());
+                    if let Some(card) = &mut self.card {
+                        card.voiced = voiced;
+                    }
                 }
                 if due {
                     self.finish_step();

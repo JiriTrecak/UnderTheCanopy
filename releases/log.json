@@ -12,7 +12,8 @@
       "The first story of the ants' campaign is now read aloud by a narrator"
     ],
     "improved": [
-      "Large matches no longer stutter when workers cannot reach a resource"
+      "Large matches no longer stutter when workers cannot reach a resource",
+      "Narrated story pages turn by themselves a moment after the narrator finishes, with a soft crossfade; Space continues a story, and stray clicks or other keys no longer skip ahead"
     ],
     "fixed": [],
     "knownIssues": []

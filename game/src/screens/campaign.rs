@@ -21,6 +21,11 @@ pub const CINEMATIC_SECONDS: f32 = 6.0;
 const REVEAL_DELAY: f32 = 0.35;
 const REVEAL_STAGGER: f32 = 0.9;
 const REVEAL_FADE: f32 = 1.3;
+/// Seconds a story page crossfades into the next, and that the old page's text takes to go.
+pub const TURN_SECONDS: f32 = 1.4;
+const TEXT_OUT: f32 = 0.6;
+/// Seconds a page waits after its voice ends before it turns by itself.
+pub const VOICE_PAUSE: f32 = 1.0;
 
 /// Escapes markup in authored text.
 fn plain(text: &str) -> String {
@@ -318,6 +323,13 @@ pub struct Card {
     pub page: usize,
     /// Seconds the page (or card) has shown.
     pub time: f32,
+    /// The page this one turned from: it fades out above it for [`TURN_SECONDS`].
+    pub from: Option<usize>,
+    /// The page's narration has been started.
+    pub spoken: bool,
+    /// The narration is audible, and seconds it has been silent since it ended.
+    pub voiced: bool,
+    pub quiet: f32,
 }
 
 impl Card {
@@ -327,6 +339,45 @@ impl Card {
             step,
             page: 0,
             time: 0.0,
+            from: None,
+            spoken: false,
+            voiced: false,
+            quiet: 0.0,
+        }
+    }
+
+    /// Turns to the next page, crossfading from this one.
+    pub fn turn(&mut self) {
+        *self = Self {
+            from: Some(self.page),
+            page: self.page + 1,
+            ..Self::new(&self.campaign, self.step)
+        };
+    }
+
+    /// The page turned from and how far it has faded (0 to 1), while it does.
+    pub fn turning(&self) -> Option<(usize, f32)> {
+        self.from
+            .filter(|_| self.time < TURN_SECONDS)
+            .map(|from| (from, self.time / TURN_SECONDS))
+    }
+
+    /// Seconds into the page at which its narration starts: as a turned page's first
+    /// paragraph appears.
+    pub fn voice_at(&self) -> f32 {
+        if self.from.is_some() {
+            TEXT_OUT + REVEAL_DELAY
+        } else {
+            0.0
+        }
+    }
+
+    /// The clock of the page's text: a turned page's text appears once the old text is gone.
+    fn text_time(&self) -> f32 {
+        if self.from.is_some() {
+            self.time - TEXT_OUT
+        } else {
+            self.time
         }
     }
 
@@ -342,12 +393,11 @@ impl Card {
             Step::Story(s) => {
                 let page = s.pages.get(self.page);
                 let count = page.map_or(0, |p| paragraphs(&p.text).len());
-                if self.time < Self::revealed_at(count) {
-                    self.time = Self::revealed_at(count);
+                if self.text_time() < Self::revealed_at(count) {
+                    self.time += Self::revealed_at(count) - self.text_time();
                     false
                 } else if self.page + 1 < s.pages.len() {
-                    self.page += 1;
-                    self.time = 0.0;
+                    self.turn();
                     false
                 } else {
                     true
@@ -383,7 +433,15 @@ pub fn show_card(host: &mut UiHost, gpu: &Gpu, data: &GameData, card: &Card) {
     let art = image(host, gpu, data, step_art(campaign, step, card.page))
         .or_else(|| Some(host.ui.image_key("menu-aftermath")));
     set_image(host, "card/art", art);
+    let turning = card.turning();
+    let before =
+        turning.and_then(|(from, _)| image(host, gpu, data, step_art(campaign, step, from)));
+    set_image(host, "card/art-before", before);
     let ui = &mut host.ui;
+    widgets::visible(ui, "card/art-before", before.is_some());
+    if let (Some(node), Some((_, t))) = (widgets::find(ui, "card/art-before"), turning) {
+        ui.set_opacity(node, 1.0 - t * t * (3.0 - 2.0 * t));
+    }
     let story = matches!(step, Step::Story(_));
     widgets::visible(ui, "card/story", story);
     widgets::visible(ui, "card/title", !story);
@@ -395,7 +453,9 @@ pub fn show_card(host: &mut UiHost, gpu: &Gpu, data: &GameData, card: &Card) {
     }
     match step {
         Step::Story(s) => {
-            let page = s.pages.get(card.page);
+            // A turned page's old text fades first, then the new one appears.
+            let leaving = card.from.filter(|_| card.time < TEXT_OUT);
+            let page = s.pages.get(leaving.unwrap_or(card.page));
             let texts = page.map(|p| paragraphs(&p.text)).unwrap_or_default();
             widgets::text(ui, "card/story/panel/kicker", &plain(&s.title));
             if let Some(list) = widgets::find(ui, "card/story/panel/text") {
@@ -405,9 +465,14 @@ pub fn show_card(host: &mut UiHost, gpu: &Gpu, data: &GameData, card: &Card) {
                 let path = format!("card/story/panel/text/{i}");
                 widgets::text(ui, &path, &plain(text));
                 if let Some(node) = widgets::find(ui, &path) {
-                    let shown = reveal(card.time, i);
-                    ui.set_opacity(node, shown);
-                    ui.set_shift(node, 0.0, (1.0 - shown) * 12.0);
+                    if leaving.is_some() {
+                        ui.set_opacity(node, 1.0 - card.time / TEXT_OUT);
+                        ui.set_shift(node, 0.0, 0.0);
+                    } else {
+                        let shown = reveal(card.text_time(), i);
+                        ui.set_opacity(node, shown);
+                        ui.set_shift(node, 0.0, (1.0 - shown) * 12.0);
+                    }
                 }
             }
             widgets::text(
@@ -583,7 +648,16 @@ mod tests {
         assert!(!card.advance(story));
         assert_eq!(reveal(card.time, 1), 1.0);
         assert!(!card.advance(story));
-        assert_eq!((card.page, card.time), (1, 0.0));
+        assert_eq!((card.page, card.time, card.from), (1, 0.0, Some(0)));
+        // The turned page fades out above it, and its text comes after the old one's.
+        assert_eq!(card.turning(), Some((0, 0.0)));
+        assert!(!card.advance(story));
+        assert_eq!(
+            card.turning(),
+            None,
+            "a Continue during the turn shows the page"
+        );
+        assert_eq!(reveal(card.text_time(), 0), 1.0);
         card.time = 10.0;
         assert!(card.advance(story), "the last page ends the story");
         let chapter = &campaign.campaign.steps[0];

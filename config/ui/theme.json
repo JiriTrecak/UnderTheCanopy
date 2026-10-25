@@ -382,7 +382,6 @@
 
     "cd": { "position": "absolute", "left": "0", "top": "0", "width": "100%", "height": "100%", "background": "#030504", "overflow": "hidden", "text-shadow": "0 2px 8px #000" },
     "cd-veil": { "position": "absolute", "left": "0", "top": "0", "width": "100%", "height": "100%", "background": "radial-gradient(circle, #00000094, #0000002e)", "pointer-events": "none" },
-    "cd-catch": { "position": "absolute", "left": "0", "top": "0", "width": "100%", "height": "100%" },
     "cd-story": { "position": "absolute", "left": "0", "top": "0", "width": "100%", "height": "100%", "pointer-events": "none" },
     "cd-story-shade": { "position": "absolute", "left": "0", "bottom": "0", "width": "100%", "height": "62%", "background": "linear-gradient(to bottom, #03050400, #030504f2)", "pointer-events": "none" },
     "cd-panel": {

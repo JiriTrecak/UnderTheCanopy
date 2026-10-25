@@ -6,8 +6,8 @@
     "class": "cd",
     "children": [
       { "id": "art", "kind": "image", "class": "cover", "image": "menu-aftermath" },
+      { "id": "art-before", "kind": "image", "class": "cover" },
       { "id": "veil", "class": "cd-veil" },
-      { "id": "catch", "kind": "button", "class": "cd-catch", "action": "card.next" },
       {
         "id": "story", "class": "cd-story",
         "children": [
@@ -39,7 +39,7 @@
           { "id": "note", "kind": "label", "class": "cd-title-note" }
         ]
       },
-      { "id": "hint", "kind": "label", "class": "cd-hint", "text": "@ui.card.click-or-press-any-key" }
+      { "id": "hint", "kind": "label", "class": "cd-hint", "text": "@ui.card.press-space" }
     ]
   }
 }
