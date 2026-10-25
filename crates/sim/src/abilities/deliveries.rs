@@ -230,7 +230,9 @@ pub fn candidates(
     )
 }
 
-/// [`candidates`] among the entities `standing` holds (current: nothing moved since).
+/// [`candidates`] among the entities `standing` holds (current: nothing moved since),
+/// leaving out those `leave` names (before their snapshots are taken).
+#[allow(clippy::too_many_arguments)]
 pub fn candidates_among(
     ctx: &Ctx,
     state: &State,
@@ -239,6 +241,7 @@ pub fn candidates_among(
     point: (f64, f64),
     radius: f64,
     standing: &[(EntityId, Milli)],
+    leave: impl Fn(EntityId) -> bool,
 ) -> Vec<Actor> {
     let r2 = radius * radius;
     let near = standing
@@ -250,6 +253,7 @@ pub fn candidates_among(
             );
             dx * dx + dy * dy <= r2
         })
+        .filter(|&&(id, _)| !leave(id))
         .filter_map(|&(id, _)| state.entities.get(id));
     candidates_of(ctx, state, caster, spell, point, radius, near)
 }

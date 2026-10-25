@@ -1223,27 +1223,35 @@ impl Spatial {
             }
             let (ux, uy) = (i64::from(unit.x), i64::from(unit.y));
             let separation = i64::from(radius + unit.radius);
-            let span = separation.min(reach);
-            let cells = |u: i64, lo: i32, hi: i32| {
-                let a = (u - span).div_euclid(1000).max(i64::from(lo));
-                let b = ((u + span).div_euclid(1000) + 1).min(i64::from(hi));
+            if separation <= 0 {
+                return true;
+            }
+            let square = separation * separation;
+            // The centres `p` with `|p − u|` inside the reach box and `|p − u|² < square`
+            // (`geometry::body_blocks_segment` of a point, exact in integers), row by row:
+            // a row's offsets `s` satisfy `s² ≤ square − sy² − 1`.
+            let within = |u: i64, offset: i64, lo: i32, hi: i32| {
+                // Cells `c` with `|u − 1000·c| ≤ offset`.
+                let a = (u - offset + 999).div_euclid(1000).max(i64::from(lo));
+                let b = (u + offset).div_euclid(1000).min(i64::from(hi));
                 a..=b
             };
-            let square = separation * separation;
-            for cy in cells(uy, y0, y1) {
+            for cy in within(uy, reach.min(separation - 1), y0, y1) {
                 let sy = uy - cy * 1000;
-                if sy.abs() > reach {
+                let room = square - sy * sy - 1;
+                if room < 0 {
                     continue;
                 }
+                let offset = (room as u64).isqrt().min(reach as u64) as i64;
                 let row = (cy - i64::from(y0)) as usize * w;
-                for cx in cells(ux, x0, x1) {
-                    let sx = ux - cx * 1000;
-                    // `geometry::body_blocks_segment` of a point (exact in integers: the
-                    // offsets are within the reach).
-                    if sx.abs() <= reach && sx * sx + sy * sy < square {
-                        scan.touched[row + (cx - i64::from(x0)) as usize] = true;
-                    }
+                let xs = within(ux, offset, x0, x1);
+                if xs.is_empty() {
+                    continue;
                 }
+                let (a, b) = (*xs.start(), *xs.end());
+                scan.touched
+                    [row + (a - i64::from(x0)) as usize..=row + (b - i64::from(x0)) as usize]
+                    .fill(true);
             }
             true
         });

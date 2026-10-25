@@ -150,6 +150,24 @@ fn auras(ctx: &mut Ctx, state: &mut State) {
                 continue;
             }
             let center = (h.x(), h.y());
+            let moves = !still(&per);
+            // While only statuses are applied, a run touches its own recipient alone: a
+            // unit the aura has settled already stays settled until its turn, so it is
+            // left out before its snapshot is taken.
+            let settled = |t: crate::entity::EntityId| {
+                !moves && status_ops::aura_settled(ctx, state, b.ability, rank, h.id, t, &per)
+            };
+            // (Checked in debug builds once the holder's runs are done.)
+            let left: Vec<crate::entity::EntityId> = if cfg!(debug_assertions) {
+                state
+                    .entities
+                    .iter()
+                    .map(|e| e.id)
+                    .filter(|&t| settled(t))
+                    .collect()
+            } else {
+                Vec::new()
+            };
             let near = deliveries::candidates_among(
                 ctx,
                 state,
@@ -158,8 +176,8 @@ fn auras(ctx: &mut Ctx, state: &mut State) {
                 center,
                 aura.radius,
                 standing.of(state),
+                settled,
             );
-            let moves = !still(&per);
             for target in near {
                 if aura.melee_only && !target.melee {
                     continue;
@@ -181,6 +199,11 @@ fn auras(ctx: &mut Ctx, state: &mut State) {
                     standing.forget();
                 }
             }
+            debug_assert!(
+                left.iter()
+                    .all(|&t| status_ops::aura_settled(ctx, state, b.ability, rank, h.id, t, &per)),
+                "an aura's run changed another recipient"
+            );
         }
     }
 }
