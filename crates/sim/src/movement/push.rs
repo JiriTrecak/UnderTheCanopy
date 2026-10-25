@@ -20,6 +20,8 @@ use std::collections::BTreeMap;
 
 /// Buckets of the pair search, milli-cells.
 const BUCKET: i32 = 8_000;
+/// Buckets a side of the pair search at most, while they stay within [`BUCKET`].
+const SPREAD: i64 = 48;
 /// A body in a bucket of the pair search: where it stands this round.
 #[derive(Debug, Clone, Copy)]
 struct Member {
@@ -165,17 +167,34 @@ impl Motion {
         let mut fill: Vec<u32> = Vec::new();
         let mut delta: Vec<(i64, i64)> = Vec::new();
         // The same buckets of the bodies that can be moved: two planted bodies take no
-        // share of an overlap (`shares`), so a planted body meets only these.
+        // share of an overlap (`shares`), so a planted body meets only these. Worth making
+        // when most bodies are planted (a battle).
         let mut mobile_starts: Vec<u32> = Vec::new();
         let mut mobile: Vec<Member> = Vec::new();
+        let planted = bodies
+            .iter()
+            .filter(|b| b.stance == Stance::Planted)
+            .count();
+        let split = planted * 2 >= bodies.len();
         // Every pair that can overlap is in neighbouring buckets once a bucket is as wide
         // as the widest reach, so any such width finds the same pairs as `BUCKET`; a crowd
         // of small bodies then tests far fewer.
         let widest = 2 * bodies.iter().map(|b| b.radius).max().unwrap_or(0) + tuning.push_room;
+        // Bodies spread over a whole map would make a bucket grid of the map, cleared and
+        // filled every round: no more than `SPREAD` buckets a side are made, wider ones
+        // (up to `BUCKET`) finding the same pairs.
+        let span = {
+            let (xs, ys) = (bodies.iter().map(|b| b.at.x), bodies.iter().map(|b| b.at.y));
+            let extent = |v: &mut dyn Iterator<Item = i32>| {
+                let (lo, hi) = v.fold((i32::MAX, i32::MIN), |(l, h), x| (l.min(x), h.max(x)));
+                i64::from(hi) - i64::from(lo)
+            };
+            extent(&mut xs.into_iter()).max(extent(&mut ys.into_iter()))
+        };
         let side = if widest > i64::from(BUCKET) {
             BUCKET
         } else {
-            (widest as i32).max(1000)
+            (widest.max(span / SPREAD).min(i64::from(BUCKET)) as i32).max(1000)
         };
         for _ in 0..tuning.push_rounds {
             let at = |i: usize, moved: &[(i64, i64)]| {
@@ -231,8 +250,11 @@ impl Motion {
                 *at += 1;
             }
             mobile_starts.clear();
-            mobile_starts.resize(starts.len(), 0);
-            for (i, body) in bodies.iter().enumerate() {
+            mobile.clear();
+            if split {
+                mobile_starts.resize(starts.len(), 0);
+            }
+            for (i, body) in bodies.iter().enumerate().filter(|_| split) {
                 if body.stance != Stance::Planted {
                     mobile_starts[slots[i] + 1] += 1;
                 }
@@ -240,12 +262,13 @@ impl Motion {
             for b in 1..mobile_starts.len() {
                 mobile_starts[b] += mobile_starts[b - 1];
             }
-            mobile.clear();
-            mobile.extend(
-                members
-                    .iter()
-                    .filter(|m| bodies[m.index as usize].stance != Stance::Planted),
-            );
+            if split {
+                mobile.extend(
+                    members
+                        .iter()
+                        .filter(|m| bodies[m.index as usize].stance != Stance::Planted),
+                );
+            }
             delta.clear();
             delta.resize(bodies.len(), (0, 0));
             let mut any = false;
@@ -253,7 +276,7 @@ impl Motion {
                 let (ax, ay) = at(i, &moved);
                 let (bx, by) = cells[i];
                 let (air, own_reach) = (bodies[i].air, bodies[i].radius + tuning.push_room);
-                let (list, bounds) = if bodies[i].stance == Stance::Planted {
+                let (list, bounds) = if split && bodies[i].stance == Stance::Planted {
                     (&mobile, &mobile_starts)
                 } else {
                     (&members, &starts)
