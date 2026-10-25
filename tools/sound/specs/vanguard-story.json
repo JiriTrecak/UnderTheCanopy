@@ -1,0 +1,25 @@
+{
+  "items": [
+    {
+      "name": "narrator-hearth",
+      "kind": "voice",
+      "speaker": "speaker.narrator",
+      "description": "An old woman storyteller in her seventies: a warm, low alto voice, gentle and kind, with a faint husky grain, slow and deliberate. She speaks English with a soft, neutral accent, clearly and unhurried, close to the microphone in a quiet room, as if telling a tale to children by lantern light.",
+      "text": "Under the canopy, every colony keeps one law above the rest: the Queen tends the brood.\n\nAurelith had worn the crown for a single winter. From the high balconies of the Spire she could watch her whole colony wake: workers at the amber stores, soldiers at the gates, nurses carrying the young up into the light."
+    },
+    {
+      "name": "narrator-lantern",
+      "kind": "voice",
+      "speaker": "speaker.narrator",
+      "description": "A wise elderly woman narrator: deep, rich and velvety, calm and a little solemn, with long pauses and a hint of mystery in her voice. She speaks English with a soft, neutral accent, clearly and unhurried, close to the microphone in a quiet room, as if telling a tale to children by lantern light.",
+      "text": "Under the canopy, every colony keeps one law above the rest: the Queen tends the brood.\n\nAurelith had worn the crown for a single winter. From the high balconies of the Spire she could watch her whole colony wake: workers at the amber stores, soldiers at the gates, nurses carrying the young up into the light."
+    },
+    {
+      "name": "narrator-meadow",
+      "kind": "voice",
+      "speaker": "speaker.narrator",
+      "description": "A grandmotherly woman in her sixties: a bright, clear, tender voice with a gentle smile in it, warm and enchanted, softly wondering. She speaks English with a soft, neutral accent, clearly and unhurried, close to the microphone in a quiet room, as if telling a tale to children by lantern light.",
+      "text": "Under the canopy, every colony keeps one law above the rest: the Queen tends the brood.\n\nAurelith had worn the crown for a single winter. From the high balconies of the Spire she could watch her whole colony wake: workers at the amber stores, soldiers at the gates, nurses carrying the young up into the light."
+    }
+  ]
+}

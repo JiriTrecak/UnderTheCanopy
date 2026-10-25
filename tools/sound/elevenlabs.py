@@ -62,8 +62,9 @@ DESIGN = ('/v1/text-to-voice/design', 'eleven_ttv_v3')
 KEEP_VOICE = '/v1/text-to-voice'
 SPEECH = ('/v1/text-to-speech/{voice}', 'eleven_v3')
 # Effects arrive as MP3 and are stored as 16-bit WAV (short sounds stay PCM in the pack);
-# music and voice stay MP3 and stream (no second lossy encoding).
-FORMAT = 'mp3_44100_192'
+# music and voice stay MP3 and stream (no second lossy encoding). 128 kbps works on every
+# plan; ELEVENLABS_FORMAT=mp3_44100_192 on Creator and above.
+FORMAT = os.environ.get('ELEVENLABS_FORMAT', 'mp3_44100_128')
 
 
 def key():
