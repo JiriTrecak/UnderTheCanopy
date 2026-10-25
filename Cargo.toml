@@ -33,7 +33,8 @@ directories = "6"
 egui = "0.36"
 egui_dock = "0.21"
 egui-wgpu = { version = "0.36", default-features = false }
-egui-winit = { version = "0.36", default-features = false }
+# Copy and paste in text fields (the editor's, the debug overlay's) need its clipboard.
+egui-winit = { version = "0.36", default-features = false, features = ["clipboard"] }
 etagere = "0.3"
 flate2 = "1"
 futures-util = { version = "0.3", default-features = false, features = ["sink", "std"] }
