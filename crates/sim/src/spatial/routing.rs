@@ -897,6 +897,7 @@ fn planes<'a>(
         closed: clearance.closed(),
         steep: steep.any(),
         words: steep.words_per_row(),
+        avoid: None,
     })
 }
 

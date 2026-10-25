@@ -8,7 +8,6 @@ use super::{
 };
 use crate::state::State;
 use canopy_content::abilities::{Activation, Anchor, Operation};
-use std::borrow::Cow;
 
 /// Step 2: the ability lifecycle, cast orders, autocast and taunts.
 pub fn begin(ctx: &mut Ctx, state: &mut State) {
@@ -104,14 +103,13 @@ fn auras(ctx: &mut Ctx, state: &mut State) {
             if !h.alive || !h.targetable {
                 break;
             }
-            let once: Vec<Cow<Operation>> = spell
+            let once: Vec<&Operation> = spell
                 .on_release
                 .iter()
                 .filter(|op| match op {
                     Operation::Effect(e) => e.target() == Anchor::Caster || e.query().is_some(),
                     Operation::Branch(_) => false,
                 })
-                .map(Cow::Borrowed)
                 .collect();
             if !once.is_empty() {
                 run(
@@ -121,7 +119,7 @@ fn auras(ctx: &mut Ctx, state: &mut State) {
                     Aim::Unit(Box::new(h.clone())),
                     b.ability,
                     rank,
-                    Ops::List(once),
+                    Ops::Picked(&once),
                 );
             }
             let per: Vec<&Operation> = spell
@@ -140,7 +138,6 @@ fn auras(ctx: &mut Ctx, state: &mut State) {
                 if aura.melee_only && !target.melee {
                     continue;
                 }
-                let ops = Ops::List(per.iter().map(|&op| Cow::Borrowed(op)).collect());
                 run(
                     ctx,
                     state,
@@ -148,7 +145,7 @@ fn auras(ctx: &mut Ctx, state: &mut State) {
                     Aim::Unit(Box::new(target)),
                     b.ability,
                     rank,
-                    ops,
+                    Ops::Picked(&per),
                 );
             }
         }

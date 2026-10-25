@@ -60,6 +60,8 @@ pub struct Planes<'a> {
     pub closed: &'a [u32],
     pub steep: &'a [u32],
     pub words: usize,
+    /// A rectangle of cells `(x0, x1, y0, y1)` closed as well (a proposed foundation).
+    pub avoid: Option<(i32, i32, i32, i32)>,
 }
 
 #[derive(Debug, Clone)]
@@ -142,6 +144,26 @@ impl AdjacentSweep {
             .all(|&(ax, ay, bx, by)| step((base + ay * s + ax) as u32, (base + by * s + bx) as u32))
     }
 
+    /// Whether the sweep from `from` to the neighbouring `to` enters a cell of the rectangle
+    /// `(x0, x1, y0, y1)` (false when it would leave the map).
+    pub fn enters(
+        &self,
+        size: u32,
+        from: u32,
+        to: u32,
+        (ax0, ax1, ay0, ay1): (i32, i32, i32, i32),
+    ) -> bool {
+        let (x, y) = ((from % size) as i32, (from / size) as i32);
+        let (dx, dy) = ((to % size) as i32 - x, (to / size) as i32 - y);
+        if dx.abs() > 1 || dy.abs() > 1 {
+            return false;
+        }
+        let p = &self.patterns[((dy + 1) * 3 + dx + 1) as usize];
+        p.entered
+            .iter()
+            .any(|&(ry, x0, x1)| (ay0..=ay1).contains(&(y + ry)) && x + x0 <= ax1 && x + x1 >= ax0)
+    }
+
     /// [`AdjacentSweep::clear`] for the ground step (the entered cell open, the height
     /// change at most a ground step), read from bit planes of the same grid: every entered
     /// cell open and no steep step near decides at once; a steep step near takes the edges
@@ -174,6 +196,13 @@ impl AdjacentSweep {
         for run in &p.entered {
             let (ry, x0, x1) = at(run);
             if any_bit(planes.closed, planes.words, ry, x0, x1) {
+                return false;
+            }
+            if let Some((ax0, ax1, ay0, ay1)) = planes.avoid
+                && (ay0..=ay1).contains(&(ry as i32))
+                && x0 as i32 <= ax1
+                && x1 as i32 >= ax0
+            {
                 return false;
             }
         }
@@ -245,6 +274,7 @@ mod tests {
             closed: clearance.closed(),
             steep: steep.any(),
             words: steep.words_per_row(),
+            avoid: None,
         };
         let step = |a: u32, b: u32| {
             walk[b as usize]

@@ -46,6 +46,20 @@ pub fn can_traverse(size: u32, from: u32, to: u32, mut step: impl FnMut(u32, u32
     step(from, side_x) && step(from, side_y) && step(side_x, to) && step(side_y, to)
 }
 
+/// `(f, h, cell)` as one number of the same order: costs are never negative and a
+/// heuristic priority never needs more than 32 bits (map sides stay below 65 536 cells).
+fn key(f: i64, h: i64, cell: u32) -> u128 {
+    assert!(
+        f >= 0 && (0..=i64::from(u32::MAX)).contains(&h),
+        "search key out of range"
+    );
+    (f as u128) << 64 | (h as u128) << 32 | u128::from(cell)
+}
+
+fn unkey(k: u128) -> (i64, i64, u32) {
+    ((k >> 64) as i64, (k >> 32 & 0xffff_ffff) as i64, k as u32)
+}
+
 pub fn octile(dx: i64, dy: i64) -> i64 {
     let (dx, dy) = (dx.abs(), dy.abs());
     CARDINAL_COST * dx.max(dy) + (DIAGONAL_COST - CARDINAL_COST) * dx.min(dy)
@@ -54,34 +68,40 @@ pub fn octile(dx: i64, dy: i64) -> i64 {
 /// Reusable search buffers shared by every grid search.
 #[derive(Debug, Default, Clone)]
 pub struct Scratch {
-    prev: Vec<u32>,
-    cost: Vec<i64>,
-    seen: Vec<u32>,
-    closed: Vec<u32>,
+    /// Per cell, together so one visit reads one place.
+    nodes: Vec<Node>,
     epoch: u32,
-    heap: BinaryHeap<Reverse<(i64, i64, u32)>>,
-    probe: Vec<u32>,
+    /// Open cells by `(f, h priority, cell)`, packed by [`key`].
+    heap: BinaryHeap<Reverse<u128>>,
     reverse: Vec<u32>,
     queue: Vec<u32>,
     /// Nodes expanded by the latest search.
     pub expanded: u32,
 }
 
+/// A cell's search state; the marks hold the epoch of the search that set them.
+#[derive(Debug, Default, Clone, Copy)]
+struct Node {
+    cost: i64,
+    prev: u32,
+    seen: u32,
+    closed: u32,
+    probe: u32,
+}
+
 impl Scratch {
     fn begin(&mut self, n: usize) -> u32 {
-        if self.seen.len() != n {
-            self.prev = vec![0; n];
-            self.cost = vec![0; n];
-            self.seen = vec![0; n];
-            self.closed = vec![0; n];
-            self.probe = vec![0; n];
+        if self.nodes.len() != n {
+            self.nodes = vec![Node::default(); n];
             self.epoch = 0;
         }
         self.epoch += 1;
         if self.epoch == u32::MAX {
-            self.seen.fill(0);
-            self.closed.fill(0);
-            self.probe.fill(0);
+            for node in &mut self.nodes {
+                node.seen = 0;
+                node.closed = 0;
+                node.probe = 0;
+            }
             self.epoch = 1;
         }
         self.expanded = 0;
@@ -223,6 +243,19 @@ impl GridNavigation {
         self.edges[f] & bit != 0
     }
 
+    /// The step rule's answer for a cardinal neighbour step, remembered like the search's.
+    pub fn cardinal(
+        &mut self,
+        from: u32,
+        to: u32,
+        step: &mut impl FnMut(u32, u32) -> bool,
+    ) -> bool {
+        let dx = i64::from(to % self.size) - i64::from(from % self.size);
+        let dy = i64::from(to / self.size) - i64::from(from / self.size);
+        assert!(dx.abs() + dy.abs() == 1, "not a cardinal step");
+        self.edge(from, to, direction_bit(dx as i32, dy as i32), step)
+    }
+
     /// Whether `a → b` (a step of `(dx, dy)`) is traversable and free of blocked cells.
     fn traverse(
         &mut self,
@@ -319,7 +352,7 @@ impl GridNavigation {
         // A small goal-side pocket proves failure cheaply; larger ones fall through.
         s.reverse.clear();
         s.reverse.push(goal);
-        s.probe[goal as usize] = epoch;
+        s.nodes[goal as usize].probe = epoch;
         let mut reached = false;
         let mut cursor = 0;
         while cursor < s.reverse.len() && s.reverse.len() < q.probe_limit {
@@ -331,7 +364,7 @@ impl GridNavigation {
                     continue;
                 }
                 let from = ny as u32 * size + nx as u32;
-                if s.probe[from as usize] == epoch
+                if s.nodes[from as usize].probe == epoch
                     || (from != start && obstacle(from))
                     || !self.traverse(from, to, -dx, -dy, blocked, step)
                 {
@@ -341,7 +374,7 @@ impl GridNavigation {
                     reached = true;
                     break;
                 }
-                s.probe[from as usize] = epoch;
+                s.nodes[from as usize].probe = epoch;
                 s.reverse.push(from);
             }
             if reached {
@@ -390,14 +423,15 @@ impl GridNavigation {
         }
         let sector_width = size.div_ceil(super::sectors::SECTOR_SIZE);
         s.heap.clear();
-        s.seen[start as usize] = epoch;
-        s.cost[start as usize] = 0;
+        s.nodes[start as usize].seen = epoch;
+        s.nodes[start as usize].cost = 0;
         let p0 = priority(h0);
-        s.heap.push(Reverse((p0, p0, start)));
-        while let Some(Reverse((f, ph, id))) = s.heap.pop() {
+        s.heap.push(Reverse(key(p0, p0, start)));
+        while let Some(Reverse(packed)) = s.heap.pop() {
+            let (f, ph, id) = unkey(packed);
             let g = f - ph;
             let i = id as usize;
-            if s.closed[i] == epoch || g != s.cost[i] {
+            if s.nodes[i].closed == epoch || g != s.nodes[i].cost {
                 continue;
             }
             if id == goal {
@@ -405,12 +439,12 @@ impl GridNavigation {
                 let mut at = goal;
                 while at != start {
                     out.push(at);
-                    at = s.prev[at as usize];
+                    at = s.nodes[at as usize].prev;
                 }
                 out.reverse();
                 return Some(out);
             }
-            s.closed[i] = epoch;
+            s.nodes[i].closed = epoch;
             s.expanded += 1;
             let (x, y) = ((id % size) as i32, (id / size) as i32);
             // Known-impassable edges are skipped before any other work.
@@ -432,7 +466,7 @@ impl GridNavigation {
                 }
                 let next = ny as u32 * size + nx as u32;
                 let j = next as usize;
-                if !weighted && s.closed[j] == epoch {
+                if !weighted && s.nodes[j].closed == epoch {
                     continue;
                 }
                 let g2 = g + if dx != 0 && dy != 0 {
@@ -440,7 +474,7 @@ impl GridNavigation {
                 } else {
                     CARDINAL_COST
                 };
-                if s.seen[j] == epoch && g2 >= s.cost[j] {
+                if s.nodes[j].seen == epoch && g2 >= s.nodes[j].cost {
                     continue;
                 }
                 let h = heuristic(nx, ny);
@@ -462,13 +496,13 @@ impl GridNavigation {
                     continue;
                 }
                 if weighted {
-                    s.closed[j] = 0;
+                    s.nodes[j].closed = 0;
                 }
-                s.seen[j] = epoch;
-                s.cost[j] = g2;
-                s.prev[j] = id;
+                s.nodes[j].seen = epoch;
+                s.nodes[j].cost = g2;
+                s.nodes[j].prev = id;
                 let ph = priority(h);
-                s.heap.push(Reverse((g2 + ph, ph, next)));
+                s.heap.push(Reverse(key(g2 + ph, ph, next)));
             }
         }
         // Only an exhaustive unrestricted search proves the whole reachable region.
@@ -480,7 +514,7 @@ impl GridNavigation {
                 Vec::new()
             };
             cells.clear();
-            cells.extend(s.closed[..n as usize].iter().map(|&c| c == epoch));
+            cells.extend(s.nodes[..n as usize].iter().map(|c| c.closed == epoch));
             self.origins.insert(0, (start, cells));
         }
         None
@@ -518,7 +552,14 @@ impl GridNavigation {
         let mut queue = std::mem::take(&mut s.queue);
         queue.clear();
         queue.push(start);
-        s.closed[start as usize] = epoch;
+        s.nodes[start as usize].closed = epoch;
+        // A diagonal step needs both of its cardinal sides open, so the cardinal steps alone
+        // reach the same cells (a corridor could cut a side off: then all eight).
+        let directions = if q.corridor.is_none() {
+            &DIRECTIONS[..4]
+        } else {
+            &DIRECTIONS[..]
+        };
         let mut cursor = 0;
         let mut found = false;
         'flood: while cursor < queue.len() {
@@ -528,7 +569,7 @@ impl GridNavigation {
             let i = id as usize;
             let (x, y) = ((id % size) as i32, (id / size) as i32);
             let candidates = self.edges[i] | !self.known[i];
-            for (direction, (dx, dy)) in DIRECTIONS.into_iter().enumerate() {
+            for (direction, &(dx, dy)) in directions.iter().enumerate() {
                 if candidates & (1 << direction) == 0 {
                     continue;
                 }
@@ -545,7 +586,7 @@ impl GridNavigation {
                 }
                 let next = ny as u32 * size + nx as u32;
                 let j = next as usize;
-                if s.closed[j] == epoch {
+                if s.nodes[j].closed == epoch {
                     continue;
                 }
                 if let Some(blocked) = blocked
@@ -566,7 +607,7 @@ impl GridNavigation {
                     found = true;
                     break 'flood;
                 }
-                s.closed[j] = epoch;
+                s.nodes[j].closed = epoch;
                 queue.push(next);
             }
         }
@@ -578,7 +619,7 @@ impl GridNavigation {
                 Vec::new()
             };
             cells.clear();
-            cells.extend(s.closed[..n as usize].iter().map(|&c| c == epoch));
+            cells.extend(s.nodes[..n as usize].iter().map(|c| c.closed == epoch));
             self.origins.insert(0, (start, cells));
         }
         found

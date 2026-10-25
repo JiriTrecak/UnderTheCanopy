@@ -459,22 +459,32 @@ fn route_to_spot(
     let (hx, hy) = half_extents(senses.catalog, t);
     let tick = state.tick;
     // Cells allies of the same owner and locomotion already head to for this target.
-    let mut reserved: Vec<u32> = state
-        .entities
-        .iter()
-        .filter(|o| {
-            o.id != actor
-                && o.owner == e.owner
-                && o.hp.is_none_or(|hp| hp > 0)
-                && o.ready_tick <= tick
-                && crate::spatial::present(o)
-                && spatial.body_of(o).air == body.air
-                && o.unit
-                    .as_ref()
-                    .is_some_and(|u| u.target == Some(target) && !u.route.is_empty())
-        })
-        .filter_map(|o| o.unit.as_ref().expect("unit").goal)
-        .collect();
+    let ally = |o: &&crate::entity::Entity| {
+        o.id != actor
+            && o.owner == e.owner
+            && o.hp.is_none_or(|hp| hp > 0)
+            && o.ready_tick <= tick
+            && crate::spatial::present(o)
+            && spatial.body_of(o).air == body.air
+            && o.unit
+                .as_ref()
+                .is_some_and(|u| u.target == Some(target) && !u.route.is_empty())
+    };
+    let goal = |o: &crate::entity::Entity| o.unit.as_ref().expect("unit").goal;
+    let mut reserved: Vec<u32> = match senses.cache.and_then(|c| c.owned(state, e.owner)) {
+        Some(ids) => ids
+            .iter()
+            .filter_map(|&id| state.entities.get(id))
+            .filter(ally)
+            .filter_map(goal)
+            .collect(),
+        None => state
+            .entities
+            .iter()
+            .filter(ally)
+            .filter_map(goal)
+            .collect(),
+    };
     reserved.sort_unstable();
     reserved.dedup();
     let size = spatial.size() as i64;

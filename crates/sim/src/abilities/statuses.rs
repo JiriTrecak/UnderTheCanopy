@@ -134,7 +134,13 @@ pub fn spell_modifiers_with(
     let mut groups: Vec<(super::library::StatusKey, Modifiers)> = Vec::new();
     for s in &e.statuses {
         let d = decl(catalog, s);
-        let mut m = d.rank(s.rank).modifiers;
+        let declared = &d.rank(s.rank).modifiers;
+        // No modifier at all: stacks, blocks and per-source merging leave it empty.
+        if declared.present == 0 && !matches!(d.stacking, Some((_, StackScope::Source))) {
+            f(declared);
+            continue;
+        }
+        let mut m = *declared;
         if d.stacking.is_some() {
             m = m.times(s.stacks.unwrap_or(1));
         }

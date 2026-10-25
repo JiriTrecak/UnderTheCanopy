@@ -1205,21 +1205,19 @@ impl Spatial {
                 let b = ((u + span).div_euclid(1000) + 1).min(i64::from(hi));
                 a..=b
             };
+            let square = separation * separation;
             for cy in cells(uy, y0, y1) {
-                let py = cy * 1000;
-                if (uy - py).abs() > reach {
+                let sy = uy - cy * 1000;
+                if sy.abs() > reach {
                     continue;
                 }
+                let row = (cy - i64::from(y0)) as usize * w;
                 for cx in cells(ux, x0, x1) {
-                    let px = cx * 1000;
-                    if (ux - px).abs() > reach {
-                        continue;
-                    }
-                    // `geometry::body_blocks_segment` of a point.
-                    let (sx, sy) = ((ux - px) as f64, (uy - py) as f64);
-                    if sx * sx + sy * sy < (separation * separation) as f64 {
-                        let i = (cy - i64::from(y0)) as usize * w + (cx - i64::from(x0)) as usize;
-                        scan.touched[i] = true;
+                    let sx = ux - cx * 1000;
+                    // `geometry::body_blocks_segment` of a point (exact in integers: the
+                    // offsets are within the reach).
+                    if sx.abs() <= reach && sx * sx + sy * sy < square {
+                        scan.touched[row + (cx - i64::from(x0)) as usize] = true;
                     }
                 }
             }

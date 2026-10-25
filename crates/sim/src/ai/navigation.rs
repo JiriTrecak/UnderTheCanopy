@@ -210,6 +210,8 @@ pub struct ObservedNavigation {
     pub searches: u64,
     /// Compiled neighbour sweeps by radius (milli-cells), for checks outside the profiles.
     sweeps: BTreeMap<i32, AdjacentSweep>,
+    /// Remembered neighbour steps of the placement doorway check, by radius.
+    door_edges: BTreeMap<i32, GridNavigation>,
 }
 
 const MAX_ANSWERS: usize = 1024;
@@ -243,6 +245,7 @@ impl ObservedNavigation {
             surface_scratch: SurfaceScratch::default(),
             searches: 0,
             sweeps: BTreeMap::new(),
+            door_edges: BTreeMap::new(),
         }
     }
 
@@ -273,6 +276,9 @@ impl ObservedNavigation {
                 },
                 &changed,
             );
+        }
+        for (&radius, edges) in &mut self.door_edges {
+            edges.invalidate(Some(&changed), (radius + 999) / 1000 + 2);
         }
         for (_, p) in &mut self.profiles {
             p.grid
@@ -316,6 +322,29 @@ impl ObservedNavigation {
         self.sweeps
             .entry(radius)
             .or_insert_with(|| AdjacentSweep::new(radius))
+    }
+
+    /// The known closed and steep cells as bit planes (maps without decks).
+    pub fn planes<'a>(&'a self, geo: &'a Geography) -> Option<Planes<'a>> {
+        let steep = geo.terrain.steep_edges();
+        self.clearance.as_ref().map(|c| Planes {
+            closed: c.closed(),
+            steep: steep.any(),
+            words: steep.words_per_row(),
+            avoid: None,
+        })
+    }
+
+    /// The doorway check's remembered steps for `radius` (hand them back with
+    /// [`ObservedNavigation::put_door_edges`]).
+    pub fn take_door_edges(&mut self, radius: i32) -> GridNavigation {
+        self.door_edges
+            .remove(&radius)
+            .unwrap_or_else(|| GridNavigation::new(self.size))
+    }
+
+    pub fn put_door_edges(&mut self, radius: i32, edges: GridNavigation) {
+        self.door_edges.insert(radius, edges);
     }
 
     /// The neighbour sweep [`ObservedNavigation::sweep`] compiled for `radius`.
@@ -581,6 +610,7 @@ impl ObservedNavigation {
             closed: c.closed(),
             steep: steep.any(),
             words: steep.words_per_row(),
+            avoid: None,
         });
         let mut step = |x: u32, y: u32| match planes {
             Some(planes) => adjacent.clear_planes(size, x, y, planes, |u, v| ground.step(u, v)),
