@@ -164,6 +164,12 @@ The sidebar on the right of every editor: Claude (Anthropic, the default) or Ope
   6. `problems`.
 - **Movement:** `lab_run` the scenario that shows it, with each `approach`, and compare `stuckTicks`, `flips` and `mostInReach`.
 
+## Changing the editor itself
+
+- **After a change to the editor, run** `canopy capture-screens --only editor-ui`. It uses every workbench by hand (clicks, typing, keys, drags), on a copy of the base package, and fails with a picture and the widget list of each failed check.
+- **Run** `--only editor`, `blocks`, `lab`, `editor-campaigns` and `cameras` for the pictures.
+- **Label new hand-drawn widgets** (`response.widget_info(...)`), so screen readers and the test can find them.
+
 ## Pitfalls
 
 - **Large answers:** `list_elements` with no editor lists everything, which is large. Name the editor (maps, campaigns, units, abilities, effects, buildings, races, assets, lab).
