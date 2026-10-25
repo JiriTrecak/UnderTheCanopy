@@ -9,7 +9,8 @@
       "Online lobbies: join as a spectator, watch matches already under way, set spectator places and an observer delay, remove players, and set each computer's difficulty",
       "A Player ID in Settings (Network), shown to other players and kept with your matches and reports",
       "Find a match: ranked and unranked 1v1 matchmaking online; choose a race or Random and veto one map; ranked results count on the ladder",
-      "The first story of the ants' campaign is now read aloud by a narrator"
+      "The first story of the ants' campaign is now read aloud by a narrator",
+      "Music on the main menu: a forest war march"
     ],
     "improved": [
       "Large matches no longer stutter when workers cannot reach a resource",

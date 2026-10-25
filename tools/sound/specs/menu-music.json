@@ -16,33 +16,18 @@
       }
     },
     {
-      "name": "menu-gathering-of-the-broods",
+      "name": "menu-forest-war-march-full",
       "kind": "music",
-      "prompt": "Armies gathering beneath a giant magical forest before a battle: tension building to an epic swell. Pounding taiko and timpani, urgent staccato strings, low brass stabs, a solemn wordless choir, glittering harp and celesta for the forest's magic, a heroic trumpet and horn line at the climax. Fast tempo, C minor, cinematic fantasy orchestra. A 30-second instrumental piece for a fantasy real-time strategy game's main menu, made to loop: its last bars lead back into its opening so the restart is seamless. Live orchestral and acoustic instruments only: no drum kit, no synth leads, no electronic or modern pop sound, no sung words.",
-      "seconds": 30,
-      "takes": 1,
-      "dir": "base/assets/audio/music/menu/gathering-of-the-broods",
-      "id": "asset.audio.music.menu-gathering-of-the-broods",
-      "title": "Gathering of the broods",
+      "prompt": "A war march through an ancient enchanted forest: proud, determined, a little mysterious. Steady deep war drums and frame drums, a driving low string ostinato, a noble French horn melody answered by a wooden flute, harp glints and a wordless choir rising at the swell. Moderate march tempo, D minor. A two-and-a-half-minute instrumental main menu theme for a fantasy real-time strategy game, made to loop: a quiet opening with harp and low drums, the full march with the horn theme, a softer middle where the wooden flute carries the melody over strings, a final great swell with choir and horns, then it settles back to the quiet drums of the opening so the restart is seamless. Live orchestral and acoustic instruments only: no drum kit, no synth leads, no electronic or modern pop sound, no sung words.",
+      "seconds": 150,
+      "takes": 2,
+      "dir": "base/assets/audio/music/menu/forest-war-march",
+      "id": "asset.audio.music.menu-forest-war-march",
+      "title": "Forest war march",
       "event": {
-        "id": "sound.music.menu-gathering-of-the-broods",
+        "id": "sound.music.menu-forest-war-march",
         "category": "music",
-        "note": "Gathering of the broods"
-      }
-    },
-    {
-      "name": "menu-woodland-battle-hymn",
-      "kind": "music",
-      "prompt": "An organic, primal battle hymn of a forest-dwelling insect folk: earthy and warlike yet magical. Deep log drums and hand drums in a rolling war rhythm, a marimba and plucked-string ostinato, bowed double basses, a bold wooden flute and low horn melody, a chanting wordless choir, shimmering harp at the peak. Moderate driving tempo, E minor, fantasy orchestra with folk colour. A 30-second instrumental piece for a fantasy real-time strategy game's main menu, made to loop: its last bars lead back into its opening so the restart is seamless. Live orchestral and acoustic instruments only: no drum kit, no synth leads, no electronic or modern pop sound, no sung words.",
-      "seconds": 30,
-      "takes": 1,
-      "dir": "base/assets/audio/music/menu/woodland-battle-hymn",
-      "id": "asset.audio.music.menu-woodland-battle-hymn",
-      "title": "Woodland battle hymn",
-      "event": {
-        "id": "sound.music.menu-woodland-battle-hymn",
-        "category": "music",
-        "note": "Woodland battle hymn"
+        "note": "Forest war march"
       }
     }
   ]
