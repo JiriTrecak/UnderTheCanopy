@@ -545,6 +545,15 @@ fn row(
     let height = if chapter { 52.0 } else { 76.0 };
     let width = ui.available_width();
     let (full, response) = ui.allocate_exact_size(vec2(width, height), Sense::click_and_drag());
+    let name = format!("Step {i}: {}", ctx.say(text(step, "title")));
+    response.widget_info(|| {
+        egui::WidgetInfo::selected(
+            egui::WidgetType::Button,
+            true,
+            state.selected == Some(i),
+            &name,
+        )
+    });
     let rect = Rect::from_min_max(full.min + vec2(indent, 0.0), full.max);
     let selected = state.selected == Some(i);
     let dragged = state.drag == Some(i);

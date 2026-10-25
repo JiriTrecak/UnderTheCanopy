@@ -20,6 +20,9 @@ pub fn row(
     dirty: bool,
 ) -> Response {
     let (rect, response) = ui.allocate_exact_size(vec2(ui.available_width(), 26.0), Sense::click());
+    response.widget_info(|| {
+        egui::WidgetInfo::selected(egui::WidgetType::Button, true, selected, label)
+    });
     let painter = ui.painter();
     let fill = if selected {
         SELECTED
@@ -124,6 +127,9 @@ pub fn status(ui: &mut Ui, text: &str, dot: Color32) -> Response {
         .layout_no_wrap(text.to_string(), FontId::proportional(11.5), MUTED);
     let size = vec2(32.0 + galley.size().x, 28.0);
     let (rect, response) = ui.allocate_exact_size(size, Sense::click());
+    response
+        .widget_info(|| egui::WidgetInfo::selected(egui::WidgetType::Button, true, false, text));
+
     let painter = ui.painter();
     painter.rect_filled(
         rect,
@@ -174,6 +180,10 @@ pub fn icon_button(ui: &mut Ui, icon: Icon, on: bool, enabled: bool) -> Response
         Sense::hover()
     };
     let (rect, response) = ui.allocate_exact_size(vec2(28.0, 28.0), sense);
+    // Named for screen readers and the UI tests: the icon's name.
+    response.widget_info(|| {
+        egui::WidgetInfo::selected(egui::WidgetType::Button, enabled, on, format!("{icon:?}"))
+    });
     let painter = ui.painter();
     let hovered = enabled && response.hovered();
     if on || hovered {
@@ -198,6 +208,9 @@ pub fn icon_button(ui: &mut Ui, icon: Icon, on: bool, enabled: bool) -> Response
 /// An editor's button on the rail: icon over a short label.
 pub fn rail_item(ui: &mut Ui, icon: Icon, label: &str, selected: bool) -> Response {
     let (rect, response) = ui.allocate_exact_size(vec2(52.0, 48.0), Sense::click());
+    response.widget_info(|| {
+        egui::WidgetInfo::selected(egui::WidgetType::Button, true, selected, label)
+    });
     let painter = ui.painter();
     let hovered = response.hovered();
     let fill = if selected {
@@ -239,6 +252,7 @@ pub fn badge(ui: &mut Ui, text: &str, dot: Option<Color32>) -> Response {
     let inset = if dot.is_some() { 19.0 } else { 8.0 };
     let size = vec2(inset + galley.size().x + 8.0, 20.0);
     let (rect, response) = ui.allocate_exact_size(size, Sense::hover());
+    response.widget_info(|| egui::WidgetInfo::labeled(egui::WidgetType::Label, true, text));
     let painter = ui.painter();
     painter.rect_filled(rect, 5, SELECTED);
     if let Some(color) = dot {

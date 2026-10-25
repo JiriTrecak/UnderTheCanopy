@@ -64,6 +64,9 @@ pub(super) fn frame() -> egui::Frame {
 /// One tool's button: its icon, highlighted when chosen; its name, key and use on hover.
 fn tool_button(ui: &mut Ui, tool: BlockTool, on: bool) -> bool {
     let (rect, response) = ui.allocate_exact_size(vec2(38.0, 38.0), Sense::click());
+    response.widget_info(|| {
+        egui::WidgetInfo::selected(egui::WidgetType::Button, true, on, tool.name())
+    });
     let hovered = response.hovered();
     let painter = ui.painter();
     if on {
@@ -204,6 +207,8 @@ fn picker(
         .layout_no_wrap(name.to_string(), FontId::proportional(12.5), TEXT);
     let size = vec2(5.0 + 24.0 + 8.0 + galley.size().x + 10.0 + 10.0 + 8.0, 32.0);
     let (rect, response) = ui.allocate_exact_size(size, Sense::click());
+    response
+        .widget_info(|| egui::WidgetInfo::selected(egui::WidgetType::Button, true, false, name));
     let popup = Popup::default_response_id(&response);
     if open {
         Popup::open_id(ui.ctx(), popup);
@@ -267,6 +272,8 @@ fn picker(
 /// One choice in a picker's grid: its picture, its name under it, its key in the corner.
 fn tile(ui: &mut Ui, palette: &mut Palette, pick: &Pick, on: bool) -> bool {
     let (rect, response) = ui.allocate_exact_size(vec2(92.0, 112.0), Sense::click());
+    response
+        .widget_info(|| egui::WidgetInfo::selected(egui::WidgetType::Button, true, on, &pick.name));
     let hovered = response.hovered();
     if on || hovered {
         ui.painter().rect(
@@ -399,6 +406,9 @@ fn entry_picture(ui: &Ui, palette: &mut Palette, rect: Rect, entry: &Entry) {
 /// One entry in the Place picker's grid: its picture, its name under it.
 fn place_tile(ui: &mut Ui, palette: &mut Palette, entry: &Entry, on: bool) -> bool {
     let (rect, response) = ui.allocate_exact_size(vec2(84.0, 108.0), Sense::click());
+    response.widget_info(|| {
+        egui::WidgetInfo::selected(egui::WidgetType::Button, true, on, &entry.name)
+    });
     let hovered = response.hovered();
     if on || hovered {
         ui.painter().rect(
@@ -472,6 +482,8 @@ fn place_picker(ui: &mut Ui, session: &mut Session, open: bool) {
         .layout_no_wrap(name.to_string(), FontId::proportional(12.5), TEXT);
     let size = vec2(5.0 + 24.0 + 8.0 + galley.size().x + 10.0 + 10.0 + 8.0, 32.0);
     let (rect, response) = ui.allocate_exact_size(size, Sense::click());
+    response
+        .widget_info(|| egui::WidgetInfo::selected(egui::WidgetType::Button, true, false, name));
     let popup = Popup::default_response_id(&response);
     if open {
         Popup::open_id(ui.ctx(), popup);
@@ -868,6 +880,7 @@ fn key_chip(ui: &mut Ui, key: &str) {
 /// A panel's switch in the view bar: its icon, highlighted while the panel shows.
 fn panel_button(ui: &mut Ui, icon: Icon, on: bool, hint: &str) -> bool {
     let (rect, response) = ui.allocate_exact_size(vec2(30.0, 30.0), Sense::click());
+    response.widget_info(|| egui::WidgetInfo::selected(egui::WidgetType::Button, true, on, hint));
     let hovered = response.hovered();
     let painter = ui.painter();
     if on {
@@ -1016,6 +1029,8 @@ fn view_button(ui: &mut Ui, icon: Icon, name: &str, hint: &str, on: bool) -> boo
         .layout_no_wrap(name.to_string(), FontId::proportional(12.5), TEXT);
     let size = vec2(10.0 + 18.0 + 7.0 + galley.size().x + 12.0, 30.0);
     let (rect, response) = ui.allocate_exact_size(size, Sense::click());
+    response.widget_info(|| egui::WidgetInfo::selected(egui::WidgetType::Button, true, on, name));
+
     let hovered = response.hovered();
     let painter = ui.painter();
     if on {

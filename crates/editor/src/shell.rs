@@ -45,8 +45,8 @@ struct Workspace {
 }
 
 impl Workspace {
-    fn read(package: &Package, kind: Kind) -> Self {
-        let library = Library::read(package, kind);
+    fn read(package: &Package, kind: Kind, data: Option<&std::path::Path>) -> Self {
+        let library = Library::read(package, kind, data);
         // Several collections show one folder each, open.
         let expanded = if kind.sections().len() > 1 {
             library
@@ -1100,12 +1100,15 @@ impl Shell {
         }
         self.structure = structure;
         let overlaid = self.overlaid(package);
+        let data = self.data.clone();
         for kind in KINDS {
             match self.workspaces.get_mut(&kind) {
-                Some(workspace) => workspace.library = Library::read(&overlaid, kind),
+                Some(workspace) => {
+                    workspace.library = Library::read(&overlaid, kind, self.data.as_deref())
+                }
                 None => {
                     self.workspaces
-                        .insert(kind, Workspace::read(&overlaid, kind));
+                        .insert(kind, Workspace::read(&overlaid, kind, data.as_deref()));
                 }
             }
         }
@@ -1444,7 +1447,16 @@ impl Shell {
                     });
                 }
                 Dialog::Delete { document, id } => {
-                    let elsewhere: Vec<&Use> = uses.iter().filter(|u| u.document != *document).collect();
+                    // The element's own entries in the text library (its name and
+                    // description, D96) are not uses: they go with it.
+                    let own_text: Vec<&Use> = uses
+                        .iter()
+                        .filter(|u| u.key && u.around.is_some() && u.document != *document)
+                        .collect();
+                    let elsewhere: Vec<&Use> = uses
+                        .iter()
+                        .filter(|u| u.document != *document && !(u.key && u.around.is_some()))
+                        .collect();
                     if elsewhere.is_empty() {
                         ui.label(RichText::new(format!("Delete {id}?")).size(14.0).color(TEXT));
                         ui.label(
@@ -1468,9 +1480,16 @@ impl Shell {
                                         document: document.clone(),
                                         pointer: None,
                                     },
-                                    commands: vec![Command::Delete {
-                                        document: document.clone(),
-                                    }],
+                                    commands: own_text
+                                        .iter()
+                                        .map(|u| Command::Remove {
+                                            document: u.document.clone(),
+                                            pointer: u.pointer.clone(),
+                                        })
+                                        .chain([Command::Delete {
+                                            document: document.clone(),
+                                        }])
+                                        .collect(),
                                     merge: None,
                                 });
                             }
@@ -2318,18 +2337,77 @@ impl Shell {
 
     fn undo(&mut self) {
         if let Some(context) = self.store.as_mut().and_then(Store::undo) {
-            self.reveal(&context);
+            self.after_history(&context);
         }
     }
 
     fn redo(&mut self) {
         if let Some(context) = self.store.as_mut().and_then(Store::redo) {
-            self.reveal(&context);
+            self.after_history(&context);
+        }
+    }
+
+    /// After an undo or redo: shows where the step happened, unless it took a document
+    /// out of existence (an undone creation), whose tabs close instead.
+    fn after_history(&mut self, context: &Context) {
+        self.close_vanished_tabs();
+        if !self.vanished(&context.document) {
+            self.reveal(context);
+        }
+    }
+
+    /// Whether `document` is gone altogether: the store holds nothing and no file is
+    /// left that saving would remove (a deleted document keeps its tab, saying so).
+    fn vanished(&mut self, document: &str) -> bool {
+        let held = self
+            .store
+            .as_mut()
+            .is_some_and(|s| matches!(s.get(document), Ok(Some(_))));
+        if held {
+            return false;
+        }
+        let on_disk = match document.strip_prefix(crate::lab::PREFIX) {
+            Some(rest) => self
+                .data
+                .as_ref()
+                .is_some_and(|d| d.join(canopy_content::lab::LABS_FOLDER).join(rest).exists()),
+            None => self
+                .package
+                .as_ref()
+                .is_ok_and(|p| p.root.join(document).exists()),
+        };
+        !on_disk
+    }
+
+    fn close_vanished_tabs(&mut self) {
+        let open: Vec<String> = self
+            .workspaces
+            .values()
+            .flat_map(|w| w.dock.iter_all_tabs().map(|(_, d)| d.document.clone()))
+            .collect();
+        let gone: Vec<String> = open.into_iter().filter(|d| self.vanished(d)).collect();
+        if gone.is_empty() {
+            return;
+        }
+        for workspace in self.workspaces.values_mut() {
+            let before = workspace.dock.iter_all_tabs().count();
+            workspace.dock.retain_tabs(|d| !gone.contains(&d.document));
+            // The closed tab may have been the one in front: bring the last one there, or
+            // the editor shows no document at all.
+            if workspace.dock.iter_all_tabs().count() != before
+                && let Some(path) = workspace.dock.iter_all_tabs().last().map(|(p, _)| p)
+            {
+                let _ = workspace.dock.set_active_tab(path);
+                workspace
+                    .dock
+                    .set_focused_node_and_surface(path.node_path());
+            }
         }
     }
 
     /// Brings back where a step happened: its editor and its document's tab.
     fn reveal(&mut self, context: &Context) {
+        let data = self.data.clone();
         let Ok(package) = &self.package else {
             return;
         };
@@ -2337,7 +2415,7 @@ impl Shell {
         let workspace = self
             .workspaces
             .entry(context.editor)
-            .or_insert_with(|| Workspace::read(package, context.editor));
+            .or_insert_with(|| Workspace::read(package, context.editor, data.as_deref()));
         // A map's other files (its scenery, its grids) open the map.
         let document = crate::map::map_document_of(&context.document)
             .unwrap_or_else(|| context.document.clone());
@@ -2569,6 +2647,7 @@ impl Shell {
 
     /// Opens the current editor's first `n` elements in library order (captures).
     pub fn open_first(&mut self, n: usize) {
+        let data = self.data.clone();
         let Ok(package) = &self.package else {
             return;
         };
@@ -2576,7 +2655,7 @@ impl Shell {
         let workspace = self
             .workspaces
             .entry(kind)
-            .or_insert_with(|| Workspace::read(package, kind));
+            .or_insert_with(|| Workspace::read(package, kind, data.as_deref()));
         let mut elements = Vec::new();
         workspace
             .library

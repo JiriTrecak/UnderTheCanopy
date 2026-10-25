@@ -108,6 +108,9 @@ impl Target {
     }
 }
 
+#[path = "capture_ui.rs"]
+mod ui;
+
 struct Rig {
     gpu: Gpu,
     renderer: Renderer,
@@ -315,6 +318,7 @@ pub fn run(
             "neutrals" => neutrals(&mut rig, &paths)?,
             "cameras" => cameras(&mut rig, &paths)?,
             "editor-campaigns" => editor_campaigns(&mut rig, &paths)?,
+            "editor-ui" => ui::editor_ui(&mut rig, &paths)?,
             "settings" => settings_tabs(&mut rig)?,
             "campaign" => campaigns(&mut rig, &paths)?,
             "replays" => {

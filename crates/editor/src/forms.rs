@@ -220,6 +220,9 @@ impl<'a> Form<'a> {
         let response = frame.show(ui, |ui| {
             ui.horizontal(|ui| {
                 let (rect, response) = ui.allocate_exact_size(vec2(LABEL, 24.0), Sense::hover());
+                response.widget_info(|| {
+                    egui::WidgetInfo::labeled(egui::WidgetType::Label, true, label)
+                });
                 ui.painter().text(
                     rect.left_center(),
                     egui::Align2::LEFT_CENTER,

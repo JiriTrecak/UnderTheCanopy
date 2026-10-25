@@ -35,7 +35,7 @@ mod widgets;
 mod world;
 
 pub use document::Command;
-pub use library::Kind;
+pub use library::{KINDS, Kind};
 use std::path::PathBuf;
 use winit::{event::WindowEvent, window::Window};
 
@@ -105,6 +105,24 @@ pub struct Editor {
     /// A second viewport, opened for the map editor's split view: its generated world.
     stage_generated: Option<Result<stage::Stage, String>>,
     data: PathBuf,
+    /// The last headless frame's widgets, from egui's accessibility tree (UI tests).
+    widgets: Vec<Widget>,
+}
+
+/// A widget as the last headless frame laid it out (its accessibility node): what the UI
+/// tests find by its label, value or placeholder, and click, type into or drag.
+#[derive(Debug, Clone)]
+pub struct Widget {
+    /// The node's role (`Button`, `TextInput`, `Label`, `CheckBox`, …).
+    pub role: String,
+    pub label: String,
+    pub value: String,
+    pub placeholder: String,
+    /// Where it is, in points.
+    pub rect: egui::Rect,
+    pub enabled: bool,
+    /// Selected or checked.
+    pub on: bool,
 }
 
 impl Editor {
@@ -153,7 +171,18 @@ impl Editor {
             stage: None,
             stage_generated: None,
             data: setup.data,
+            widgets: Vec::new(),
         }
+    }
+
+    /// Records each headless frame's widgets for [`Editor::widgets`] (UI tests).
+    pub fn record_widgets(&mut self) {
+        self.ctx.enable_accesskit();
+    }
+
+    /// The widgets of the last headless frame, when recording.
+    pub fn widgets(&self) -> &[Widget] {
+        &self.widgets
     }
 
     /// Feeds a window event.
@@ -204,7 +233,30 @@ impl Editor {
             .entry(egui::ViewportId::ROOT)
             .or_default()
             .native_pixels_per_point = Some(scale);
-        self.frame(input, size, gpu).0
+        let (output, platform) = self.frame(input, size, gpu);
+        if let Some(update) = platform.accesskit_update {
+            use egui::accesskit::Toggled;
+            self.widgets = update
+                .nodes
+                .iter()
+                .filter_map(|(_, node)| {
+                    let bounds = node.bounds()?;
+                    Some(Widget {
+                        role: format!("{:?}", node.role()),
+                        label: node.label().unwrap_or_default().to_string(),
+                        value: node.value().unwrap_or_default().to_string(),
+                        placeholder: node.placeholder().unwrap_or_default().to_string(),
+                        rect: egui::Rect::from_min_max(
+                            egui::pos2(bounds.x0 as f32, bounds.y0 as f32),
+                            egui::pos2(bounds.x1 as f32, bounds.y1 as f32),
+                        ),
+                        enabled: !node.is_disabled(),
+                        on: matches!(node.toggled(), Some(Toggled::True)),
+                    })
+                })
+                .collect();
+        }
+        output
     }
 
     /// The window is closing: true when it may close now, false when the editor first asks

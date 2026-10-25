@@ -187,10 +187,11 @@ pub struct Library {
 
 impl Library {
     /// Reads `kind`'s collections from `package`. One collection lists its tree at the
-    /// root; several list one folder per section.
-    pub fn read(package: &Package, kind: Kind) -> Self {
+    /// root; several list one folder per section. The lab's scenarios are in `data`'s
+    /// `labs/` (the folder the store mounts), beside the package when it is not given.
+    pub fn read(package: &Package, kind: Kind, data: Option<&std::path::Path>) -> Self {
         if kind == Kind::Lab {
-            return crate::lab::library(package.root.parent());
+            return crate::lab::library(data.or(package.root.parent()));
         }
         let sections = kind.sections();
         let mut library = Library::default();
@@ -383,7 +384,7 @@ mod tests {
     #[test]
     fn folders_come_first_and_elements_take_their_names() {
         let (_dir, package) = package();
-        let library = Library::read(&package, Kind::Abilities);
+        let library = Library::read(&package, Kind::Abilities, None);
         assert_eq!(library.count, 3);
         assert!(library.problems.is_empty(), "{:?}", library.problems);
         let Node::Folder {
@@ -410,7 +411,7 @@ mod tests {
     #[test]
     fn maps_show_their_package_name_and_open_their_terrain_document() {
         let (_dir, package) = package();
-        let library = Library::read(&package, Kind::Maps);
+        let library = Library::read(&package, Kind::Maps, None);
         let mut elements = Vec::new();
         library.nodes.iter().for_each(|n| n.elements(&mut elements));
         assert_eq!(elements.len(), 1);
@@ -421,7 +422,7 @@ mod tests {
     #[test]
     fn several_collections_list_one_folder_each() {
         let (_dir, package) = package();
-        let library = Library::read(&package, Kind::Buildings);
+        let library = Library::read(&package, Kind::Buildings, None);
         let names: Vec<_> = library
             .nodes
             .iter()

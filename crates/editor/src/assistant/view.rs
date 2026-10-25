@@ -306,6 +306,11 @@ impl Assistant {
                 Frame::new()
                     .inner_margin(Margin::symmetric(14, 12))
                     .show(ui, |ui| {
+                        // Why the settings opened (a message sent without a key).
+                        if let Some(error) = &self.error {
+                            ui.label(RichText::new(error).color(ERROR));
+                            ui.add_space(8.0);
+                        }
                         let mut changed = false;
                         ui.label(eyebrow("Provider"));
                         ui.horizontal(|ui| {
