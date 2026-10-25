@@ -9,6 +9,7 @@ import { WebSocketServer } from "ws";
 import { Feedback, MAX_BODY, RETRY_MS, SWEEP_MS } from "./feedback";
 import { MatchHost } from "./host";
 import { PROTOCOL, admit, type CreateRoom, type JoinRoom } from "./protocol";
+import { Queue, queueRoute } from "./queue";
 
 const PORT = Number(process.env.PORT ?? 8787);
 const BIND = process.env.BIND ?? "127.0.0.1";
@@ -17,7 +18,7 @@ const VERSION: string = JSON.parse(readFileSync(new URL("../package.json", impor
 const CORS = {
   "access-control-allow-origin": "*",
   "access-control-allow-headers": "content-type, authorization",
-  "access-control-allow-methods": "GET, POST, OPTIONS",
+  "access-control-allow-methods": "GET, POST, DELETE, OPTIONS",
 };
 
 // The ladder website (docs/server.md#ladder). Loaded on its own so that a Node without
@@ -30,7 +31,9 @@ const ladder = await import("./ladder/routes")
   });
 
 const host = new MatchHost();
-const probes=setInterval(()=>host.pulse(),1000);
+// The 1v1 queues (docs/server.md#queues-and-matchmaking) rate and record through the ladder.
+const queue = ladder ? new Queue({ db: ladder.db, host }) : null;
+const probes=setInterval(()=>{host.pulse();queue?.pulse();},1000);
 probes.unref();
 
 // Player feedback becomes issues in the game's Linear team (docs/server.md, D59).
@@ -119,6 +122,14 @@ async function handle(req: IncomingMessage, res: ServerResponse): Promise<void> 
       const reply = feedback.submit(body, clientAddress(req));
       send(res, reply.status, reply.body);
       return;
+    }
+    if (path === "/api/queue" || path.startsWith("/api/queue/")) {
+      const body = req.method === "POST" ? await readJson(req, 64 * 1024).catch((e: unknown) => (e instanceof Error ? e : new Error("bad json"))) : undefined;
+      const reply = queueRoute(queue, req.method ?? "GET", path, body);
+      if (reply) {
+        send(res, reply.status, reply.body);
+        return;
+      }
     }
     if (req.method === "GET" && path === "/api/rooms") {
       send(res, 200, host.list());
@@ -285,6 +296,11 @@ function bearer(req: IncomingMessage): string | null {
 }
 
 function send(res: ServerResponse, status: number, body: unknown): void {
+  if (status === 204) {
+    res.writeHead(204, CORS);
+    res.end();
+    return;
+  }
   const data = JSON.stringify(body);
   res.writeHead(status, { "content-type": "application/json", ...CORS });
   res.end(data);

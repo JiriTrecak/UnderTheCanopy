@@ -120,6 +120,38 @@ The public face of ranked play ([D107](decisions.md)): a website under `/ladder`
 
 **Running it locally**: `cd server && npm run seed-ladder && npm start`, then open `http://127.0.0.1:8787/ladder`. On the host, Nginx needs a `location /ladder` proxied like `/api/`, and `LADDER_DATA` should point outside the deployed folder (for example `/var/lib/canopy-matchhost/ladder`); neither is set up yet.
 
+## Queues and matchmaking
+
+D107's ranked and unranked 1v1 queues. The Rust client is `crates/net` (`queue.rs`); the server is `src/queue.ts` with the ladder's database (`src/ladder/`). A server without the ladder (no `node:sqlite`) answers the queue routes 503.
+
+**Routes**
+- `GET /api/queue`: `{pool: [{id, name}], races: [{id, name}], searching: {ranked, unranked}}`. The pool is the ladder's maps marked for it (`npm run ladder-pool -- <map ids>`; the seed marks its maps); races are the ladder's.
+- `POST /api/queue` with `{protocol: 2, playerId, name, mode: "ranked" | "unranked", race: <race id> | "random", veto?: <map id>}` → `{ticket}`. Version and Player ID are checked as for rooms (426, 400 `bad_player_id`); 400 `bad_mode`, `bad_race`, `bad_veto` (not in the pool), 503 `no_pool` (an empty pool). A Player ID already searching replaces its old ticket.
+- `GET /api/queue/:ticket` → `{state: "searching", seconds, range}` (`range`: the rating difference accepted now), or `{state: "matched", token, room, you}` (the same as joining a room). 404 once the ticket is unknown. Clients poll about once a second; a searching ticket not asked for 15 s is dropped; a matched one stays readable 60 s.
+- `DELETE /api/queue/:ticket` → 204: stops searching (a matched ticket is not undone).
+
+**Matching**, once a second, each mode on its own:
+- A ticket's rating is its player's rating this season for its race; for Random, the mean over the races, a race never played counting as the initial rating. Unranked matching uses the same numbers and records nothing.
+- Two tickets pair when their ratings differ by at most `150 + 25 × s`, `s` the longer wait in seconds, up to 1000; after 120 s any two pair. Longest waiting first, each with the closest-rated partner it may take; never a Player ID with itself.
+- The map: a random pool map neither player vetoed (the whole pool when none is left). Random races are resolved here, uniformly over the races.
+- The server creates the room: two human seats (players 0 and 1, teams 1 and 2, colours 0 and 1, the resolved races, no hero: the content's default), 2 spectator places, the observer delay 120 s for ranked and none for unranked, and `queue: "ranked" | "unranked"` on the room view and the match config. Lobby messages are refused in it. It starts by itself once both players' sockets are bound; when one is not within 30 s, the room ends and the bound player receives `error {code: "MATCH_CANCELLED"}`.
+
+**Results** (ranked only):
+- Each game reports `ended` as before. The server records the match in the ladder when both reports name the same winner, or when one report came and the other player is away (left or dropped) or sends none within 30 s. Reports that disagree record nothing and are logged as disputed (later replayed with `canopy replay --verify`).
+- The record: the current season (none: nothing recorded), the map, the duration (the reported tick × 25 ms), the winner's slot, both Player IDs (a player is added on first sight with their name), races and starting heroes; no replay yet. Leaving a ranked match is a loss: the leaver is away, defeated, and the other game reports the outcome.
+
+**As built** (where the contract left room):
+- The longer-waiting player takes seat 0 (the room's host in its view). The room is named "Ranked 1v1" or "Unranked 1v1" and is listed in `GET /api/rooms` like any other, so its match can be spectated.
+- `seconds` is whole seconds searched; `range` is `150 + 25 × seconds` up to 1000 for the ticket's own wait (it stays 1000 after 120 s, when anyone is accepted); pairing uses the longer wait of the two.
+- Player IDs compare without case, as on the ladder, for replacing and for never pairing with oneself. Entering replaces a searching ticket in either queue; a matched ticket is never replaced.
+- "This season" is the season under way: between seasons every rating is the initial one and nothing is recorded.
+- `POST /api/queue` checks in this order: 503 `ladder_unavailable`, 400 `bad_json`, 426, `bad_player_id`, `bad_mode`, `bad_race` (also `random` when the ladder has no races), 503 `no_pool`, `bad_veto`. A missing or empty `name` becomes the Player ID; control characters become spaces and it is cut to 32 characters. `DELETE` answers 204 for an unknown ticket too.
+- Lobby messages (`startMatch`, `selectRace`, `selectHero`, `selectTeam`, `selectColor`, `setSeat`, `setSpectatorPlaces`, `setObserverDelay`, `kick`, `takeSeat`, `spectate`, `loadSave`, `restart`) are refused with `error {code: "LOBBY_REFUSED"}`; `POST …/start`, `…/load` and `…/restart` answer 400 `queue_room`, joining as a player `full`. Spectators join the 2 places as in any lobby.
+- The 30 s run from the match, checked once a second; a player who leaves before the start cancels the room too. The cancelled player's socket closes after `MATCH_CANCELLED` (no `ended`), as does one that binds to the room before it is discarded.
+- A report's `winner` counts only as slot 0 or 1; anything else is no winner, which records nothing (and disagrees with a report that names one). A seat's first report counts. The duration comes from the larger reported tick, in whole seconds. Reports are heard for 30 s after the first one, or 30 s after the room ended when none came; a desynced room's are ignored. Whether the other player is away is judged when the first report arrives; otherwise the 30 s decide.
+- Heroes are recorded as none: no hero is chosen in a queue's room and the server does not know the content's default. A player new to the ladder is added with the queue's name; a known one keeps theirs.
+- `npm run ladder-pool -- <ids>` needs at least one id and changes nothing when one has no package; like the seed it copies each map's `preview.webp` into `$LADDER_DATA/media/maps/`. An older database gains the maps' `pool` column when the server opens it.
+
 ## Feedback
 
 [D59](decisions.md). `POST /api/feedback` takes a report from the game (`crates/net/src/feedback.rs`). It is a lobby route of its own, not part of the frozen match protocol (D10).

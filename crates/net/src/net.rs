@@ -215,6 +215,35 @@ impl Net {
         })
     }
 
+    /// `GET /api/queue`: the queues' map pool and races, and how many search.
+    pub fn queue_info(&self) -> Pending<crate::queue::QueueInfo> {
+        self.json(self.get("/api/queue"))
+    }
+
+    /// `POST /api/queue`: starts searching; the ticket is then polled with
+    /// [`Net::ticket`] about once a second.
+    pub fn enter_queue(&self, body: &crate::queue::EnterQueue) -> Pending<crate::queue::Ticket> {
+        self.json(self.post("/api/queue").json(body))
+    }
+
+    /// `GET /api/queue/:ticket`: still searching, or the room both players were put in.
+    pub fn ticket(&self, ticket: &str) -> Pending<crate::queue::TicketState> {
+        self.json(self.get(&format!("/api/queue/{}", encode_uri_component(ticket))))
+    }
+
+    /// `DELETE /api/queue/:ticket`: stops searching. Errors are ignored; the request
+    /// completes even if every other handle is dropped meanwhile.
+    pub fn leave_queue(&self, ticket: &str) -> Pending<()> {
+        let path = format!("/api/queue/{}", encode_uri_component(ticket));
+        let request = self.inner.http.delete(self.inner.server.http(&path));
+        let keep = self.clone();
+        self.run(async move {
+            let _ = request.send().await;
+            drop(keep);
+            Ok(())
+        })
+    }
+
     /// Opens the room's socket with a seat from [`Net::create_room`] or [`Net::join_room`].
     pub fn enter(&self, joined: &Joined) -> Session {
         let link = self.link(&joined.room.id, &joined.token, 0);

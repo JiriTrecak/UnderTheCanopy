@@ -61,5 +61,19 @@
   "mp.observer-delay-off": "No observer delay",
   "mp.observer-delay": "{minutes} min observer delay",
   "mp.take-seat": "Take a seat",
-  "mp.spectate": "Spectate instead"
+  "mp.spectate": "Spectate instead",
+  "mp.ranked": "Ranked 1v1",
+  "mp.unranked": "Unranked 1v1",
+  "mp.random": "Random",
+  "mp.no-veto": "No veto",
+  "mp.pool": "Map pool: {maps}. A match is never on a map either player vetoed, unless both vetoes leave none.",
+  "mp.queue-unavailable": "Matchmaking is not available on this server.",
+  "mp.searching": "Searching… {time}",
+  "mp.searching-count": "{count, plural, =0 {Nobody is searching right now} one {# player searching} other {# players searching}}",
+  "mp.match-found": "Match found — starting…",
+  "mp.search-ended": "The search ended. Try again.",
+  "mp.find-match": "Find match",
+  "mp.cancel-search": "Cancel search",
+  "mp.footnote-ranked": "Ranked: wins and losses move your rating for the race you play",
+  "mp.footnote-unranked": "Unranked: a match against a player of your level, nothing recorded"
 }

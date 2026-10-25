@@ -9,7 +9,8 @@
     "check": "tsc --noEmit",
     "test": "node --import tsx --test test/*.test.ts",
     "build-ladder": "tailwindcss -i src/ladder/styles.css -o src/ladder/public/ladder.css --minify",
-    "seed-ladder": "tsx src/ladder/seed.ts"
+    "seed-ladder": "tsx src/ladder/seed.ts",
+    "ladder-pool": "tsx src/ladder/pool.ts"
   },
   "dependencies": {
     "tsx": "^4.23.12",

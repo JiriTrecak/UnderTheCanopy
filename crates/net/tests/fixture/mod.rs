@@ -267,10 +267,32 @@ pub fn server_folder() -> PathBuf {
         .unwrap_or_else(|| manifest.join("../../server"))
 }
 
-/// The match server, run locally on a free port; killed on drop.
+/// The match server, run locally on a free port with a ladder of its own (an empty
+/// season with Frozen Dream as the queues' pool); killed on drop, its ladder removed.
 pub struct MatchServer {
     child: Child,
     pub address: ServerAddress,
+    ladder: PathBuf,
+}
+
+impl Drop for MatchServer {
+    fn drop(&mut self) {
+        let _ = self.child.kill();
+        let _ = self.child.wait();
+        let _ = std::fs::remove_dir_all(&self.ladder);
+    }
+}
+
+/// The ladder database of a test server: the seed with no players or matches.
+fn seed_ladder(folder: &Path, ladder: &Path) -> bool {
+    Command::new("node")
+        .args(["--import", "tsx", "src/ladder/seed.ts"])
+        .args(["--players", "0", "--matches", "0", "--maps", "frozen-dream"])
+        .current_dir(folder)
+        .env("LADDER_DATA", ladder)
+        .stdout(Stdio::null())
+        .status()
+        .is_ok_and(|s| s.success())
 }
 
 impl MatchServer {
@@ -291,6 +313,12 @@ impl MatchServer {
                 .and_then(|l| l.local_addr())
                 .expect("free port")
                 .port();
+            let ladder =
+                std::env::temp_dir().join(format!("canopy-ladder-{}-{port}", std::process::id()));
+            let _ = std::fs::remove_dir_all(&ladder);
+            if !seed_ladder(&folder, &ladder) {
+                eprintln!("the test ladder could not be seeded; the queues answer 503");
+            }
             // `node --import tsx` keeps the server in this one process (the tsx command
             // runs it in a child that a kill would orphan).
             let mut child = Command::new("node")
@@ -298,6 +326,7 @@ impl MatchServer {
                 .current_dir(&folder)
                 .env("PORT", port.to_string())
                 .env("BIND", "127.0.0.1")
+                .env("LADDER_DATA", &ladder)
                 .stdout(Stdio::piped())
                 .stderr(Stdio::inherit())
                 .spawn()
@@ -310,9 +339,12 @@ impl MatchServer {
                     let _ = tx.send(line);
                 }
             });
-            let listening = rx
-                .recv_timeout(Duration::from_secs(30))
-                .is_ok_and(|line| line.starts_with("matchhost"));
+            let deadline = std::time::Instant::now() + Duration::from_secs(30);
+            let listening = std::iter::from_fn(|| {
+                rx.recv_timeout(deadline.saturating_duration_since(std::time::Instant::now()))
+                    .ok()
+            })
+            .any(|line| line.starts_with("matchhost"));
             let address = ServerAddress::parse(&format!("http://127.0.0.1:{port}")).unwrap();
             let healthy = listening
                 && Net::new(address.clone())
@@ -321,22 +353,20 @@ impl MatchServer {
                     .wait()
                     .is_ok_and(|h| h.ok);
             if healthy {
-                return Some(Self { child, address });
+                return Some(Self {
+                    child,
+                    address,
+                    ladder,
+                });
             }
             let _ = child.kill();
             let _ = child.wait();
+            let _ = std::fs::remove_dir_all(&ladder);
         }
         panic!("the match server did not start");
     }
 
     pub fn net(&self) -> Net {
         Net::new(self.address.clone()).expect("network thread")
-    }
-}
-
-impl Drop for MatchServer {
-    fn drop(&mut self) {
-        let _ = self.child.kill();
-        let _ = self.child.wait();
     }
 }

@@ -15,6 +15,7 @@
 
 use super::{ui_host::UiHost, widgets, widgets::Palette};
 use crate::data::{GameData, MapEntry};
+use canopy_net::queue::{EnterQueue, QueueInfo, QueueMode, Ticket, TicketState};
 use canopy_net::{
     Event, Net, Pending, Phase, ServerAddress, Session,
     wire::{
@@ -62,8 +63,19 @@ const REFRESH: Duration = Duration::from_secs(5);
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum Tab {
+    /// Ranked and unranked 1v1 matchmaking (D107).
+    Queue,
     Find,
     Create,
+}
+
+/// A search in a matchmaking queue.
+#[derive(Debug, Clone)]
+pub struct Search {
+    pub ticket: String,
+    pub since: Instant,
+    /// The server's count, else the time since searching began.
+    pub seconds: u32,
 }
 
 /// What the multiplayer screens ask of the app.
@@ -105,6 +117,17 @@ pub struct Multiplayer {
     saved_check: Option<Pending<RoomView>>,
     /// The kept seat's match plays on: it can be rejoined.
     pub rejoinable: Option<RoomView>,
+    /// Matchmaking: what the server's queues offer, the choices, and a search under way.
+    pub queue: Option<QueueInfo>,
+    queue_pending: Option<Pending<QueueInfo>>,
+    pub queue_mode: QueueMode,
+    /// A race id of the queue's, or [`canopy_net::queue::RANDOM`].
+    pub queue_race: String,
+    pub queue_veto: Option<String>,
+    pub search: Option<Search>,
+    entering: Option<Pending<Ticket>>,
+    asking: Option<Pending<TicketState>>,
+    asked: Option<Instant>,
 }
 
 impl Default for Multiplayer {
@@ -119,7 +142,7 @@ impl Default for Multiplayer {
             rooms: Vec::new(),
             rooms_loaded: false,
             last_refresh: None,
-            tab: Tab::Find,
+            tab: Tab::Queue,
             selected_room: None,
             selected_map: 0,
             seats: 0,
@@ -130,6 +153,15 @@ impl Default for Multiplayer {
             saved: None,
             saved_check: None,
             rejoinable: None,
+            queue: None,
+            queue_pending: None,
+            queue_mode: QueueMode::Ranked,
+            queue_race: canopy_net::queue::RANDOM.into(),
+            queue_veto: None,
+            search: None,
+            entering: None,
+            asking: None,
+            asked: None,
         }
     }
 }
@@ -195,7 +227,125 @@ impl Multiplayer {
         };
         self.health = Some(net.health());
         self.rooms_pending = Some(net.rooms());
+        self.queue_pending = Some(net.queue_info());
         self.last_refresh = Some(Instant::now());
+    }
+
+    /// Starts searching the chosen queue, or stops the search under way.
+    pub fn toggle_search(&mut self, name: &str, player_id: &str) {
+        if self.search.is_some() || self.entering.is_some() {
+            self.stop_search();
+            return;
+        }
+        let Some(net) = &self.net else {
+            self.status = tr!("mp.not-connected");
+            return;
+        };
+        let body = EnterQueue::new(
+            player_id,
+            name,
+            self.queue_mode,
+            &self.queue_race,
+            self.queue_veto.as_deref(),
+        );
+        self.entering = Some(net.enter_queue(&body));
+        self.status = tr!("mp.contacting-host");
+    }
+
+    /// Stops searching (leaving the screen, or Cancel).
+    pub fn stop_search(&mut self) {
+        if let (Some(net), Some(search)) = (&self.net, self.search.take()) {
+            drop(net.leave_queue(&search.ticket));
+        }
+        self.entering = None;
+        self.asking = None;
+        self.status.clear();
+    }
+
+    /// A queue choice: the mode, race or veto dropdown's option.
+    pub fn choose_queue(&mut self, field: &str, option: usize, data: &GameData) {
+        match field {
+            "mode" => {
+                self.queue_mode = if option == 1 {
+                    QueueMode::Unranked
+                } else {
+                    QueueMode::Ranked
+                }
+            }
+            "race" => {
+                self.queue_race = option
+                    .checked_sub(1)
+                    .and_then(|i| self.queue.as_ref()?.races.get(i))
+                    .map_or_else(|| canopy_net::queue::RANDOM.into(), |r| r.id.clone());
+            }
+            "veto" => {
+                self.queue_veto = option
+                    .checked_sub(1)
+                    .and_then(|i| self.vetoable(data).get(i).map(|m| m.id.clone()));
+            }
+            _ => {}
+        }
+    }
+
+    /// The pool maps this game has, which may be vetoed.
+    fn vetoable(&self, data: &GameData) -> Vec<canopy_net::queue::Named> {
+        self.queue.as_ref().map_or_else(Vec::new, |q| {
+            q.pool
+                .iter()
+                .filter(|m| data.map(&m.id).is_some())
+                .cloned()
+                .collect()
+        })
+    }
+
+    /// Follows the search: asks for the ticket about once a second and enters the room a
+    /// match puts this player in.
+    fn follow_search(&mut self) {
+        if let Some(reply) = self.entering.as_ref().and_then(Pending::poll) {
+            self.entering = None;
+            match reply {
+                Ok(t) => {
+                    self.search = Some(Search {
+                        ticket: t.ticket,
+                        since: Instant::now(),
+                        seconds: 0,
+                    });
+                    self.status.clear();
+                }
+                Err(e) => self.status = e.to_string(),
+            }
+        }
+        if let Some(reply) = self.asking.as_ref().and_then(Pending::poll) {
+            self.asking = None;
+            match reply {
+                Ok(TicketState::Searching { seconds, .. }) => {
+                    if let Some(s) = &mut self.search {
+                        s.seconds = seconds;
+                    }
+                }
+                Ok(TicketState::Matched(joined)) => {
+                    self.search = None;
+                    if let Some(net) = &self.net {
+                        self.session = Some(net.enter(&joined));
+                        self.hosting = false;
+                        self.status = tr!("mp.match-found");
+                    }
+                }
+                Err(e) => {
+                    tracing::warn!(error = %e, "matchmaking ticket");
+                    self.search = None;
+                    self.status = tr!("mp.search-ended");
+                }
+            }
+        }
+        let due = self
+            .asked
+            .is_none_or(|t| t.elapsed() >= Duration::from_secs(1));
+        if let (Some(net), Some(search), None, true) = (&self.net, &self.search, &self.asking, due)
+        {
+            self.asking = Some(net.ticket(&search.ticket));
+            self.asked = Some(Instant::now());
+        }
     }
 
     /// Polls replies (every frame while a multiplayer screen shows).
@@ -245,6 +395,11 @@ impl Multiplayer {
         {
             self.refresh();
         }
+        if let Some(reply) = self.queue_pending.as_ref().and_then(Pending::poll) {
+            self.queue_pending = None;
+            self.queue = reply.ok();
+        }
+        self.follow_search();
         if let Some(reply) = self.saved_check.as_ref().and_then(Pending::poll) {
             self.saved_check = None;
             match reply {
@@ -325,6 +480,7 @@ impl Multiplayer {
             return;
         }
         match self.tab {
+            Tab::Queue => {}
             Tab::Find => {
                 let Some(room) = self.selected_room.and_then(|i| self.rooms.get(i)) else {
                     return;
@@ -386,9 +542,19 @@ impl Multiplayer {
         name_focus: bool,
     ) {
         let creating = self.tab == Tab::Create;
+        let queueing = self.tab == Tab::Queue;
         let ui = &mut host.ui;
-        widgets::checked(ui, "multiplayer/find", !creating);
+        widgets::checked(ui, "multiplayer/queue", queueing);
+        widgets::checked(ui, "multiplayer/find", self.tab == Tab::Find);
         widgets::checked(ui, "multiplayer/create", creating);
+        widgets::visible(ui, "multiplayer/queue-panel", queueing);
+        for id in ["list-title", "hint", "spectate"] {
+            widgets::visible(ui, &format!("multiplayer/{id}"), !queueing);
+        }
+        if queueing {
+            self.show_queue(host, gpu, data, palette);
+            return;
+        }
         widgets::text(
             ui,
             "multiplayer/list-title",
@@ -562,6 +728,128 @@ impl Multiplayer {
                 .map_or(r.map_id.as_str(), |m| m.name.as_str());
             widgets::text(ui, "multiplayer/rejoin", &tr!("mp.rejoin", map = map_name));
         }
+    }
+
+    /// Matchmaking: the queue, race and veto, and the search.
+    fn show_queue(&self, host: &mut UiHost, gpu: &Gpu, data: &GameData, palette: &Palette) {
+        let ui = &mut host.ui;
+        for id in [
+            "rooms",
+            "maps",
+            "refresh",
+            "empty",
+            "roster",
+            "roster-caption",
+            "slots",
+            "slots-caption",
+        ] {
+            widgets::visible(ui, &format!("multiplayer/{id}"), false);
+        }
+        let searching = self.search.is_some() || self.entering.is_some();
+        let modes = [tr!("mp.ranked"), tr!("mp.unranked")];
+        widgets::options(
+            ui,
+            "multiplayer/queue-panel/mode",
+            &modes,
+            usize::from(self.queue_mode == QueueMode::Unranked),
+        );
+        let mut races = vec![tr!("mp.random")];
+        let mut race = 0;
+        if let Some(q) = &self.queue {
+            for (i, r) in q.races.iter().enumerate() {
+                // The game's own name for the race when it has it.
+                let name = widgets::races(data)
+                    .into_iter()
+                    .find(|(id, _)| *id == r.id)
+                    .map_or_else(|| r.name.clone(), |(_, n)| n);
+                races.push(name);
+                if r.id == self.queue_race {
+                    race = i + 1;
+                }
+            }
+        }
+        widgets::options(ui, "multiplayer/queue-panel/race", &races, race);
+        let vetoable = self.vetoable(data);
+        let mut vetoes = vec![tr!("mp.no-veto")];
+        vetoes.extend(vetoable.iter().map(|m| {
+            data.map(&m.id)
+                .map_or_else(|| m.name.clone(), |e| e.name.clone())
+        }));
+        let veto = self
+            .queue_veto
+            .as_ref()
+            .and_then(|v| vetoable.iter().position(|m| &m.id == v))
+            .map_or(0, |i| i + 1);
+        widgets::options(ui, "multiplayer/queue-panel/veto", &vetoes, veto);
+        for id in ["mode", "race", "veto"] {
+            widgets::enabled(ui, &format!("multiplayer/queue-panel/{id}"), !searching);
+        }
+        let pool: Vec<String> = self.queue.as_ref().map_or_else(Vec::new, |q| {
+            q.pool
+                .iter()
+                .map(|m| {
+                    data.map(&m.id)
+                        .map_or_else(|| m.name.clone(), |e| e.name.clone())
+                })
+                .collect()
+        });
+        let available = self.queue.as_ref().is_some_and(|q| !q.pool.is_empty());
+        widgets::text(
+            ui,
+            "multiplayer/queue-panel/pool",
+            &if available {
+                tr!("mp.pool", maps = &pool.join(", "))
+            } else {
+                tr!("mp.queue-unavailable")
+            },
+        );
+        let state = match &self.search {
+            Some(s) => {
+                let seconds = s.seconds.max(s.since.elapsed().as_secs() as u32);
+                tr!(
+                    "mp.searching",
+                    time = &format!("{}:{:02}", seconds / 60, seconds % 60)
+                )
+            }
+            None if self.session.is_some() => tr!("mp.match-found"),
+            None => self.queue.as_ref().map_or_else(String::new, |q| {
+                let n = match self.queue_mode {
+                    QueueMode::Ranked => q.searching.ranked,
+                    QueueMode::Unranked => q.searching.unranked,
+                };
+                tr!("mp.searching-count", count = n)
+            }),
+        };
+        widgets::text(ui, "multiplayer/queue-panel/state", &state);
+        // The vetoed map in the preview, so the choice is seen.
+        let shown = self.queue_veto.as_deref().and_then(|v| data.map(v));
+        widgets::map_preview(host, gpu, data, palette, "multiplayer", shown, None);
+        let ui = &mut host.ui;
+        widgets::text(ui, "multiplayer/status", &self.status);
+        widgets::visible(ui, "multiplayer/status", !self.status.is_empty());
+        widgets::text(
+            ui,
+            "multiplayer/footnote",
+            &match self.queue_mode {
+                QueueMode::Ranked => tr!("mp.footnote-ranked"),
+                QueueMode::Unranked => tr!("mp.footnote-unranked"),
+            },
+        );
+        widgets::text(
+            ui,
+            "multiplayer/go",
+            &if searching {
+                tr!("mp.cancel-search")
+            } else {
+                tr!("mp.find-match")
+            },
+        );
+        widgets::enabled(
+            ui,
+            "multiplayer/go",
+            self.net.is_some() && self.session.is_none() && (available || searching),
+        );
+        widgets::visible(ui, "multiplayer/rejoin", self.rejoinable.is_some());
     }
 
     /// The room before its match.

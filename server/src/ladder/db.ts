@@ -29,10 +29,12 @@ create table if not exists heroes (
   name text not null,
   portrait text
 );
+-- pool: 1 for the maps the queues play (npm run ladder-pool; the seed marks its maps).
 create table if not exists maps (
   id text primary key,
   name text not null,
-  preview text
+  preview text,
+  pool integer not null default 0
 );
 create table if not exists players (
   id integer primary key,
@@ -144,14 +146,22 @@ export class LadderDb {
     this.db = new DatabaseSync(file);
     this.db.exec("pragma journal_mode = wal; pragma foreign_keys = on; pragma busy_timeout = 2000;");
     this.db.exec(SCHEMA);
+    this.migrate();
+  }
+
+  /** Brings a database written by an older server up to the schema. */
+  private migrate(): void {
+    const columns = (this.db.prepare("pragma table_info(maps)").all() as Row[]).map((r) => str(r.name));
+    if (!columns.includes("pool")) this.db.exec("alter table maps add column pool integer not null default 0");
   }
 
   close(): void {
     this.db.close();
   }
 
-  /** Runs `work` in one transaction. */
+  /** Runs `work` in one transaction (inside the one already open, if any). */
   transaction<T>(work: () => T): T {
+    if (this.db.isTransaction) return work();
     this.db.exec("begin");
     try {
       const out = work();
@@ -182,8 +192,20 @@ export class LadderDb {
     this.db.prepare("insert or replace into heroes (id, race, name, portrait) values (?, ?, ?, ?)").run(h.id, h.race, h.name, h.portrait);
   }
 
+  /** Writes a map's name and preview; whether it is in the queues' pool stays as it was. */
   putMap(m: MapRow): void {
-    this.db.prepare("insert or replace into maps (id, name, preview) values (?, ?, ?)").run(m.id, m.name, m.preview);
+    this.db
+      .prepare("insert into maps (id, name, preview) values (?, ?, ?) on conflict (id) do update set name = excluded.name, preview = excluded.preview")
+      .run(m.id, m.name, m.preview);
+  }
+
+  /** Makes exactly these maps the queues' pool (each must already be a row). */
+  setPool(ids: readonly string[]): void {
+    this.transaction(() => {
+      this.db.exec("update maps set pool = 0");
+      const mark = this.db.prepare("update maps set pool = 1 where id = ?");
+      for (const id of ids) if (Number(mark.run(id).changes) !== 1) throw Error(`No map ${id} in the ladder`);
+    });
   }
 
   addPlayer(p: { playerId: string; displayName: string; createdAt: Date }): number {
@@ -274,6 +296,11 @@ export class LadderDb {
   heroes(): Map<string, Hero> {
     const rows = this.db.prepare("select * from heroes").all() as Row[];
     return new Map(rows.map((r) => [str(r.id), { id: str(r.id), race: str(r.race), name: str(r.name), portrait: opt(r.portrait) }]));
+  }
+
+  /** The maps the queues play, by name. */
+  pool(): MapRow[] {
+    return (this.db.prepare("select * from maps where pool = 1 order by name, id").all() as Row[]).map((r) => ({ id: str(r.id), name: str(r.name), preview: opt(r.preview) }));
   }
 
   maps(): Map<string, MapRow> {

@@ -26,6 +26,7 @@ import {
   type CreateRoom,
   type MatchConfig,
   type PipelineSnap,
+  type QueueMode,
   type RoomState,
   type RoomView,
   type ServerMsg,
@@ -47,6 +48,28 @@ export const DROP_AFTER_MS = 30_000;
 export const RESUME_BY_OTHERS_AFTER_MS = 30_000;
 /** The countdown between `resuming` and `resumed` (s). */
 export const RESUME_COUNTDOWN_S = 3;
+/** How long a queue's room waits for both players' sockets before it is cancelled (ms). */
+export const QUEUE_BIND_MS = 30_000;
+/** A queue's room: spectator places, and the observer delay of each queue (s). */
+export const QUEUE_SPECTATOR_PLACES = 2;
+export const QUEUE_OBSERVER_DELAY: Record<QueueMode, number> = { ranked: 120, unranked: 0 };
+/** Lobby messages, which a queue's room refuses: it has no lobby. */
+const LOBBY_MESSAGES = new Set<ClientMsg["type"]>([
+  "startMatch", "selectRace", "selectHero", "selectTeam", "selectColor", "setSeat", "setSpectatorPlaces",
+  "setObserverDelay", "kick", "takeSeat", "spectate", "loadSave", "restart",
+]);
+
+/** A player a queue seats in a room, with the race already resolved. */
+export type QueuedSeat = { name: string; playerId: string; race: string };
+/** What a game reported at the end of a match: `ended` from a seated player. */
+export type EndedReport = { player: number; outcome: unknown; tick: unknown };
+/** A room a queue fills: seat 0 and seat 1, and who hears the players' `ended` reports. */
+export type QueuedMatch = {
+  mode: QueueMode;
+  mapId: string;
+  seats: readonly [QueuedSeat, QueuedSeat];
+  onReport?: (report: EndedReport) => void;
+};
 
 /** Runs `fn` after `ms` milliseconds; the result cancels it. */
 export type Schedule = (fn: () => void, ms: number) => () => void;
@@ -128,6 +151,11 @@ export class HostedMatch {
   private waitingShown = false;
   private readonly schedule: Schedule;
   private readonly logLine: (line: string) => void;
+  /** The queue that filled this room (no lobby), or null for a lobby's room. */
+  private queue: QueueMode | null = null;
+  /** When the queue made the room: both sockets must be bound `QUEUE_BIND_MS` after. */
+  private queuedAt = 0;
+  private onReport: ((report: EndedReport) => void) | null = null;
 
   constructor(draft: CreateRoom, id: string = crypto.randomUUID(), private readonly now=()=>performance.now(), options: HostOptions = {}) {
     this.schedule = options.schedule ?? realSchedule;
@@ -155,6 +183,51 @@ export class HostedMatch {
 
   private log(line: string) {
     this.logLine(`room ${this.id}: ${line}`);
+  }
+
+  /** Makes this fresh room a queue's: the creator in seat 0, the other player in seat 1,
+   * their races set, teams 1 and 2, colours 0 and 1, no lobby. Returns both seats' tokens. */
+  queued(setup: QueuedMatch): [string, string] {
+    this.queue = setup.mode;
+    this.onReport = setup.onReport ?? null;
+    this.queuedAt = this.now();
+    this.spectatorPlaces = QUEUE_SPECTATOR_PLACES;
+    this.observerDelay = QUEUE_OBSERVER_DELAY[setup.mode];
+    const first = this.members.get(this.hostToken)!;
+    first.race = setup.seats[0].race;
+    const t = token();
+    const second = this.member(t, setup.seats[1].name, setup.seats[1].playerId, "player", 1);
+    second.race = setup.seats[1].race;
+    this.members.set(t, second);
+    this.seats.forEach((seat, i) => Object.assign(seat, { seat: "open", team: i + 1, color: i }));
+    this.log(`${setup.mode} queue: seat 0 ${who(first)} ${first.race}, seat 1 ${who(second)} ${second.race}`);
+    return [this.hostToken, t];
+  }
+
+  /** Where the room is: lobby, match, ended or desynced. */
+  get status(): RoomState {
+    return this.state;
+  }
+
+  /** The queue that filled this room, if one did. */
+  get queueMode(): QueueMode | null {
+    return this.queue;
+  }
+
+  /** Whether seat `player` of the match is away: dropped or left. */
+  isAway(player: number): boolean {
+    return !!this.mailbox?.isDropped(player);
+  }
+
+  /** A queue's room ends before its match: every bound player hears `MATCH_CANCELLED`. */
+  private cancel(why: string) {
+    this.log(`cancelled: ${why}`);
+    this.state = "ended";
+    for (const m of this.members.values()) {
+      if (!m.send) continue;
+      m.send({ type: "error", code: "MATCH_CANCELLED", message: "The other player did not arrive. Search again." });
+      this.disconnect(m);
+    }
   }
 
   // Races and heroes are content: the server passes the seats' choices on, unchecked
@@ -216,6 +289,7 @@ export class HostedMatch {
       observerDelay: this.observerDelay,
       tick: this.mailbox?.tick,
       inputDelayMs: (this.config?.delay ?? this.chooseDelay())*TICK_MS,
+      ...(this.queue ? { queue: this.queue } : {}),
     };
   }
 
@@ -247,6 +321,8 @@ export class HostedMatch {
       return { token: t, you: { role: "spectator", name: guestName } };
     }
     if (this.state !== "waiting") return { error: "not_waiting" };
+    // A queue's two seats are its matched players'.
+    if (this.queue) return { error: "full" };
     let player = 0;
     while (player < this.slotCount && (this.seated(player) || this.seats[player]!.seat !== "open")) player++;
     if (player >= this.slotCount) return { error: "full" };
@@ -263,6 +339,13 @@ export class HostedMatch {
     const m = this.members.get(auth);
     if (!m) return;
     this.log(`${who(m)} left`);
+    if (this.state === "waiting" && this.queue) {
+      // A queue's match cannot start without both players.
+      this.members.delete(auth);
+      if (m.role === "player") this.cancel(`${who(m)} left`);
+      else this.fanout({ type: "room", room: this.view() });
+      return;
+    }
     if (this.state === "waiting") {
       if (auth === this.hostToken) {
         this.state = "ended";
@@ -301,7 +384,13 @@ export class HostedMatch {
   }
 
   start(auth: string): { error: string } | { config: MatchConfig } {
+    // A queue's room starts by itself once both players are bound.
+    if (this.queue) return { error: "queue_room" };
     if (auth !== this.hostToken) return { error: "not_host" };
+    return this.launch();
+  }
+
+  private launch(): { error: string } | { config: MatchConfig } {
     if (this.state !== "waiting") return { error: "not_waiting" };
     const players = [...this.members.values()]
       .filter((m) => m.role === "player" && m.player != null)
@@ -328,6 +417,7 @@ export class HostedMatch {
       slots,
       observerDelay: beatsOf(this.observerDelay),
       colors,
+      ...(this.queue ? { queue: this.queue } : {}),
     };
     this.seatIds = new Map(players.map((m) => [m.player!, m.playerId]));
     this.begin(config);
@@ -400,6 +490,7 @@ export class HostedMatch {
     auth: string,
     save: unknown,
   ): { error: string } | { config: MatchConfig } {
+    if (this.queue) return { error: "queue_room" };
     if (auth !== this.hostToken) return { error: "not_host" };
     if (this.state === "ended") return { error: "ended" };
     const parsed = parseSaveForHost(save);
@@ -440,6 +531,7 @@ export class HostedMatch {
    * Host F10 Restart. Does not reload a save.
    */
   restart(auth: string): { error: string } | { config: MatchConfig } {
+    if (this.queue) return { error: "queue_room" };
     if (auth !== this.hostToken) return { error: "not_host" };
     if (this.state !== "playing" || !this.config)
       return { error: "not_playing" };
@@ -465,6 +557,12 @@ export class HostedMatch {
   ): { error: string } | { you: ClientIdentity; room: RoomView } {
     const m = this.members.get(auth);
     if (!m) return { error: "bad_token" };
+    if (this.queue && this.state === "ended" && !this.config) {
+      // Bound after the queue's room was cancelled, before it was discarded.
+      send({ type: "error", code: "MATCH_CANCELLED", message: "The other player did not arrive. Search again." });
+      options.close?.();
+      return { error: "cancelled" };
+    }
     m.send = send;
     m.close = options.close ?? null;
     m.latency.reset();
@@ -486,6 +584,8 @@ export class HostedMatch {
       // A reconnect must revalidate its content before receiving go.
       if(m.player!=null)this.ready.delete(m.player);
     }
+    // A queue's room starts once both players' sockets are bound.
+    if (this.queue && this.state === "waiting" && [0, 1].every((p) => this.seated(p)?.send)) this.launch();
     return { you, room: this.view() };
   }
 
@@ -507,6 +607,10 @@ export class HostedMatch {
     const refuse = (code: string, message: string) => m.send?.({ type: "error", code, message });
     const host = m.token === this.hostToken;
     const waiting = this.state === "waiting";
+    if (this.queue && LOBBY_MESSAGES.has(msg.type)) {
+      refuse("LOBBY_REFUSED", "A queue's match has no lobby.");
+      return;
+    }
     if(msg.type==='startMatch') {
       const result=this.start(auth);
       if('error' in result)refuse('START_REJECTED',result.error);
@@ -748,6 +852,9 @@ export class HostedMatch {
       return;
     }
     if (msg.type === "ended") {
+      // A queue hears every seated player's report, also those after the room ended.
+      if (this.onReport && this.config && this.state !== "desynced" && m.role === "player" && this.humanSlot(m.player))
+        this.onReport({ player: m.player!, outcome: msg.outcome, tick: msg.tick });
       if (this.state !== "playing") return;
       this.shutdown(msg.outcome);
     }
@@ -820,6 +927,7 @@ export class HostedMatch {
 
   /** Transport maintenance and the waiting notices; never advances the game or changes a live delay. */
   pulse():void {
+    if (this.queue && this.state === "waiting" && this.now() - this.queuedAt >= QUEUE_BIND_MS) this.cancel("a player did not connect within 30 s");
     const connected=[...this.members.values()].some(m=>m.role==='player'&&m.send);
     if(connected)this.emptySince=null;
     else this.emptySince??=this.now();
@@ -897,6 +1005,25 @@ export class MatchHost {
     this.rooms.set(match.id, match);
     const you = match.you(match.hostToken)!;
     return { token: match.hostToken, room: match.view(), you };
+  }
+
+  /** A queue's room for two matched players; each seat's token and identity, as joining
+   * would give them. */
+  createQueued(setup: QueuedMatch): { room: HostedMatch; seats: [{ token: string; you: ClientIdentity }, { token: string; you: ClientIdentity }] } {
+    const [first, second] = setup.seats;
+    const draft: CreateRoom = {
+      name: setup.mode === "ranked" ? "Ranked 1v1" : "Unranked 1v1",
+      mapId: setup.mapId,
+      mapRevision: setup.mapId,
+      slotCount: 2,
+      guestName: first.name,
+      playerId: first.playerId,
+    };
+    const match = new HostedMatch(draft, String(this.nextId++), this.now, this.options);
+    this.rooms.set(match.id, match);
+    const tokens = match.queued(setup);
+    const seat = (t: string) => ({ token: t, you: match.you(t)! });
+    return { room: match, seats: [seat(tokens[0]), seat(tokens[1])] };
   }
 
   get(id: string): HostedMatch | undefined {

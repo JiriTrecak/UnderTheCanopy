@@ -51,7 +51,8 @@
           {
             "class": "mp-tabs",
             "children": [
-              { "id": "find", "kind": "button", "class": "mp-tab", "text": "@ui.multiplayer.find-a-lobby", "action": "mp.find", "checked": true },
+              { "id": "queue", "kind": "button", "class": "mp-tab", "text": "@ui.multiplayer.find-a-match", "action": "mp.queue", "checked": true },
+              { "id": "find", "kind": "button", "class": "mp-tab", "text": "@ui.multiplayer.find-a-lobby", "action": "mp.find" },
               { "id": "create", "kind": "button", "class": "mp-tab", "text": "@ui.multiplayer.create-a-lobby", "action": "mp.create" }
             ]
           },
@@ -70,7 +71,21 @@
                   },
                   { "id": "rooms", "class": "sk-maps", "repeat": "mp-room" },
                   { "id": "maps", "class": "sk-maps", "repeat": "sk-map", "visible": false },
-                  { "id": "empty", "kind": "label", "class": "sk-hint", "text": "@ui.multiplayer.looking-for-lobbies" }
+                  { "id": "empty", "kind": "label", "class": "sk-hint", "text": "@ui.multiplayer.looking-for-lobbies" },
+                  {
+                    "id": "queue-panel", "class": "mp-queue", "visible": false,
+                    "children": [
+                      { "kind": "label", "class": "sk-section", "text": "@ui.multiplayer.find-a-match" },
+                      { "kind": "label", "class": "mp-caption", "text": "@ui.multiplayer.queue" },
+                      { "id": "mode", "kind": "dropdown", "class": "sk-select", "action": "mp.queue-mode", "options": [] },
+                      { "kind": "label", "class": "mp-caption", "text": "@ui.multiplayer.race" },
+                      { "id": "race", "kind": "dropdown", "class": "sk-select", "action": "mp.queue-race", "options": [] },
+                      { "kind": "label", "class": "mp-caption", "text": "@ui.multiplayer.veto" },
+                      { "id": "veto", "kind": "dropdown", "class": "sk-select", "action": "mp.queue-veto", "options": [] },
+                      { "id": "pool", "kind": "label", "class": "sk-hint" },
+                      { "id": "state", "kind": "label", "class": "mp-search" }
+                    ]
+                  }
                 ]
               },
               {

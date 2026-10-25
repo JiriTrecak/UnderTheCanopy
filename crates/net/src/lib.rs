@@ -25,6 +25,7 @@ mod link;
 pub mod lockstep;
 pub mod mailbox;
 mod net;
+pub mod queue;
 pub mod server;
 pub mod session;
 /// The TLS client configuration (the platform's verifier); the game's updater shares it.

@@ -1945,6 +1945,10 @@ impl Game {
                 }
             }
             "campaign.back" | "steps.back" | "skirmish.back" | "mp.back" if clicked => {
+                // Leaving Multiplayer stops a search.
+                if name == "mp.back" {
+                    self.mp.stop_search();
+                }
                 self.navigate(Intent::Back)
             }
             "steps.continue" if clicked => {
@@ -2089,6 +2093,16 @@ impl Game {
                 self.mp.refresh();
             }
             "mp.create" if clicked => self.mp.tab = multiplayer::Tab::Create,
+            "mp.queue" if clicked => {
+                self.mp.tab = multiplayer::Tab::Queue;
+                self.mp.refresh();
+            }
+            "mp.queue-mode" | "mp.queue-race" | "mp.queue-veto" => {
+                if let Some(option) = selected {
+                    self.mp
+                        .choose_queue(name.trim_start_matches("mp.queue-"), option, &data);
+                }
+            }
             "mp.refresh" if clicked => self.mp.refresh(),
             "mp.room" if clicked => self.mp.selected_room = action.index,
             "mp.name" => {
@@ -2102,6 +2116,11 @@ impl Game {
                 if let Some(i) = selected {
                     self.mp.seats = i;
                 }
+            }
+            "mp.go" if clicked && self.mp.tab == multiplayer::Tab::Queue => {
+                let player = self.settings.display_name();
+                let id = self.settings.multiplayer.player_id.clone();
+                self.mp.toggle_search(&player, &id);
             }
             "mp.go" | "mp.spectate" if clicked => {
                 let role = if name == "mp.spectate" {

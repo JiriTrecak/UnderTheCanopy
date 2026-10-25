@@ -1158,6 +1158,7 @@ mod tests {
             colors: None,
             company: None,
             observer_delay: 0,
+            queue: None,
         };
         let send = |message: ServerMsg| from.send(FromIo::Message(Box::new(message))).unwrap();
         send(ServerMsg::Start {
@@ -1225,6 +1226,7 @@ mod tests {
             colors: None,
             company: None,
             observer_delay: 0,
+            queue: None,
         };
         let send = |message: ServerMsg| from.send(FromIo::Message(Box::new(message))).unwrap();
         send(ServerMsg::Start {

@@ -25,6 +25,8 @@ const PROFILE_PAGE = 20;
 const TOP = 10;
 
 export type Ladder = {
+  /** The database the site reads; the queues rate and record through it too. */
+  db: LadderDb;
   handle(req: IncomingMessage, res: ServerResponse, url: URL): Promise<void>;
   close(): void;
 };
@@ -236,7 +238,7 @@ export function createLadder(opts: { paths?: LadderPaths; now?: () => Date } = {
     });
   }
 
-  return { handle, close: () => db.close() };
+  return { db, handle, close: () => db.close() };
 }
 
 function boardJson(r: { rank: number; playerId: string; displayName: string; rating: number; deviation: number; games: number; wins: number; losses: number; league: number; tier: number; hero: string | null }) {

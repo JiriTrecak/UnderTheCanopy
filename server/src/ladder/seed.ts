@@ -236,6 +236,8 @@ function main(): void {
       }
       db.putMap({ id: map.id, name: map.name, preview });
     }
+    // The seeded maps are the queues' pool.
+    db.setPool(pool.map((m) => m.id));
     const seasonId = db.addSeason({ number: season.number, name: `Season ${season.number}`, startsAt: season.starts, endsAt: season.ends });
 
     // Players: a skill per race, a favourite race and hero, and how much they play.

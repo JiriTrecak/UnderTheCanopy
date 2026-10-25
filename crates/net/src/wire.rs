@@ -217,6 +217,9 @@ pub struct RoomView {
     /// How far spectators see behind the players, seconds.
     #[serde(default)]
     pub observer_delay: u32,
+    /// The queue that matched this room's players (no lobby: it starts by itself).
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub queue: Option<crate::queue::QueueMode>,
 }
 
 /// The frozen start of a networked match (`MatchConfig`), identical on every peer.
@@ -244,6 +247,9 @@ pub struct MatchConfig {
     /// Beats spectators stay behind the players.
     #[serde(default)]
     pub observer_delay: u32,
+    /// The queue that matched the players, if one did.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub queue: Option<crate::queue::QueueMode>,
 }
 
 impl MatchConfig {

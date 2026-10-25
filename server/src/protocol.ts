@@ -53,6 +53,10 @@ export const COLORS = 8;
 /** What a lobby seat holds: open for a human to join, locked by the host, or a computer. */
 export type Seat = "open" | "closed" | "ai";
 
+/** The 1v1 queue that matched a room's players (docs/server.md#queues-and-matchmaking). */
+export type QueueMode = "ranked" | "unranked";
+export const QUEUE_MODES: readonly QueueMode[] = ["ranked", "unranked"];
+
 export type MatchConfig = {
   v: 2;
   roomId: string;
@@ -70,6 +74,8 @@ export type MatchConfig = {
   colors?: number[];
   /** A campaign company; opaque to the server. */
   company?: unknown[];
+  /** The queue that matched the players; absent for a lobby's match. */
+  queue?: QueueMode;
 };
 
 const idSchema = z.string().regex(/^[a-z][a-z0-9]*(?:[.-][a-z0-9]+)*$/);
@@ -191,6 +197,8 @@ export type RoomView = {
   observerDelay: number;
   tick?: number;
   inputDelayMs?: number;
+  /** The queue that matched the players: no lobby, the match starts by itself. */
+  queue?: QueueMode;
 };
 
 export type CreateRoom = { name: string; mapId: string; mapRevision: string; slotCount: number; guestName: string; playerId: string; protocol?: number };

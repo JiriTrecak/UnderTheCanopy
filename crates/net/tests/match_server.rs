@@ -578,3 +578,119 @@ fn players_with_different_content_are_refused() {
         assert_eq!(peer.tick(), 0);
     }
 }
+
+/// `GET path` on the server's HTTP side, the body as JSON.
+fn get_json(server: &MatchServer, path: &str) -> serde_json::Value {
+    use std::io::{Read, Write};
+    let authority = server
+        .address
+        .http("")
+        .trim_end_matches('/')
+        .replace("http://", "");
+    let mut stream = std::net::TcpStream::connect(&authority).expect("connect");
+    write!(stream, "GET {path} HTTP/1.0\r\nHost: {authority}\r\n\r\n").unwrap();
+    let mut text = String::new();
+    stream.read_to_string(&mut text).unwrap();
+    let body = text.split_once("\r\n\r\n").map_or("", |(_, b)| b);
+    serde_json::from_str(body).unwrap_or_else(|e| panic!("{path}: {e}: {text}"))
+}
+
+#[test]
+fn two_players_are_matched_in_the_ranked_queue_and_the_result_is_rated() {
+    use canopy_net::queue::{EnterQueue, QueueMode, TicketState};
+    let Some(server) = MatchServer::start() else {
+        return;
+    };
+    let net = server.net();
+    let info = net.queue_info().wait().expect("the queues");
+    assert_eq!(
+        info.pool.iter().map(|m| m.id.as_str()).collect::<Vec<_>>(),
+        ["frozen-dream"]
+    );
+    let race = info.races.first().expect("a race").id.clone();
+    // Bo vetoes the whole pool: the match is on it anyway.
+    let tickets = [
+        EnterQueue::new(
+            "Ann1",
+            "Ann",
+            QueueMode::Ranked,
+            canopy_net::queue::RANDOM,
+            None,
+        ),
+        EnterQueue::new("Bo1", "Bo", QueueMode::Ranked, &race, Some("frozen-dream")),
+    ]
+    .map(|body| net.enter_queue(&body).wait().expect("searching").ticket);
+    let deadline = Instant::now() + Duration::from_secs(20);
+    let mut joined = [None, None];
+    while joined.iter().any(Option::is_none) {
+        for (i, ticket) in tickets.iter().enumerate() {
+            if joined[i].is_none()
+                && let TicketState::Matched(j) = net.ticket(ticket).wait().expect("ticket")
+            {
+                joined[i] = Some(j);
+            }
+        }
+        assert!(Instant::now() < deadline, "no match");
+        std::thread::sleep(Duration::from_millis(200));
+    }
+    let [Some(ann), Some(bo)] = joined else {
+        unreachable!()
+    };
+    assert_eq!(ann.room.id, bo.room.id);
+    assert_eq!(ann.room.queue, Some(QueueMode::Ranked));
+    assert_eq!(ann.room.map_id, "frozen-dream");
+    assert_eq!(ann.room.observer_delay, 120);
+    // The room starts by itself once both are connected.
+    let mut a = Peer::new("Ann", &net, &ann);
+    let mut b = Peer::new("Bo", &net, &bo);
+    let deadline = Instant::now() + Duration::from_secs(20);
+    while a.world.is_none() || b.world.is_none() {
+        a.pump(0);
+        b.pump(0);
+        assert!(Instant::now() < deadline, "the queued match did not start");
+        std::thread::sleep(Duration::from_millis(5));
+    }
+    let config = a.session.config().expect("config").clone();
+    assert_eq!(config.queue, Some(QueueMode::Ranked));
+    assert!(
+        config.slots.iter().all(|s| s.race.is_some()),
+        "Random is resolved"
+    );
+    run(&mut [&mut a, &mut b], 80, |_| {});
+    // Bo leaves: a loss. Ann's game reports the outcome; the server rates it.
+    let (me, other) = (
+        a.session.player().expect("seat"),
+        b.session.player().expect("seat"),
+    );
+    let Peer { session, .. } = b;
+    session.leave();
+    run(&mut [&mut a], 120, |_| {});
+    a.session.report_outcome(
+        WireOutcome {
+            winner: Some(me),
+            defeated: vec![other],
+        },
+        a.tick(),
+        a.world().fingerprint(),
+    );
+    let deadline = Instant::now() + Duration::from_secs(20);
+    loop {
+        let ann = get_json(&server, "/ladder/api/players/Ann1");
+        let bo = get_json(&server, "/ladder/api/players/Bo1");
+        let record = |p: &serde_json::Value, key: &str| {
+            p["ratings"]
+                .as_array()
+                .map_or(0, |r| r.iter().map(|r| r[key].as_u64().unwrap_or(0)).sum())
+        };
+        if record(&ann, "wins") == 1 && record(&bo, "losses") == 1 {
+            assert_eq!(ann["matches"].as_array().map_or(0, Vec::len), 1);
+            break;
+        }
+        assert!(
+            Instant::now() < deadline,
+            "the result was not rated: {ann} {bo}"
+        );
+        std::thread::sleep(Duration::from_millis(200));
+    }
+    a.assert_no_trouble();
+}
