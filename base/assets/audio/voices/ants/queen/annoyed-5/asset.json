@@ -1,0 +1,22 @@
+{
+  "id": "asset.audio.voice.ants-queen-annoyed-5",
+  "name": "Ants queen: My mother warned me about advisers like you.",
+  "kind": "audio",
+  "tags": [
+    "line"
+  ],
+  "license": "Generated with ElevenLabs for Under the Canopy (generation.json).",
+  "resources": [
+    {
+      "role": "audio",
+      "index": 1,
+      "format": "mp3"
+    },
+    {
+      "role": "generation",
+      "index": 1,
+      "format": "json"
+    }
+  ],
+  "seconds": 2.8
+}

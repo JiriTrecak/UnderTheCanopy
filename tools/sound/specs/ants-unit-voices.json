@@ -92,13 +92,13 @@
       "kind": "line",
       "line": "voice.ants.queen.order-2",
       "speaker": "speaker.aurelith",
-      "tags": "[determined]",
+      "tags": "[firm]",
       "model": "eleven_v3",
       "settings": {
         "stability": 0.5,
         "speed": 1.0
       },
-      "takes": 1,
+      "takes": 2,
       "dir": "base/assets/audio/voices/ants/queen/order-2",
       "id": "asset.audio.voice.ants-queen-order-2",
       "title": "Ants queen: It will be done.",
@@ -724,6 +724,646 @@
       "title": "Ants archer: Needler, standing ready.",
       "event": {
         "id": "sound.ants.archer.ready",
+        "category": "voice"
+      }
+    },
+    {
+      "name": "v-queen-select-4",
+      "kind": "line",
+      "line": "voice.ants.queen.select-4",
+      "speaker": "speaker.aurelith",
+      "tags": "[warm]",
+      "model": "eleven_v3",
+      "settings": {
+        "stability": 0.5,
+        "speed": 1.0
+      },
+      "takes": 2,
+      "dir": "base/assets/audio/voices/ants/queen/select-4",
+      "id": "asset.audio.voice.ants-queen-select-4",
+      "title": "Ants queen: My people.",
+      "event": {
+        "id": "sound.ants.queen.select",
+        "category": "voice"
+      }
+    },
+    {
+      "name": "v-queen-select-5",
+      "kind": "line",
+      "line": "voice.ants.queen.select-5",
+      "speaker": "speaker.aurelith",
+      "tags": "[regal]",
+      "model": "eleven_v3",
+      "settings": {
+        "stability": 0.5,
+        "speed": 1.0
+      },
+      "takes": 2,
+      "dir": "base/assets/audio/voices/ants/queen/select-5",
+      "id": "asset.audio.voice.ants-queen-select-5",
+      "title": "Ants queen: The Amber Court listens.",
+      "event": {
+        "id": "sound.ants.queen.select",
+        "category": "voice"
+      }
+    },
+    {
+      "name": "v-queen-select-6",
+      "kind": "line",
+      "line": "voice.ants.queen.select-6",
+      "speaker": "speaker.aurelith",
+      "tags": "[firm]",
+      "model": "eleven_v3",
+      "settings": {
+        "stability": 0.5,
+        "speed": 1.0
+      },
+      "takes": 2,
+      "dir": "base/assets/audio/voices/ants/queen/select-6",
+      "id": "asset.audio.voice.ants-queen-select-6",
+      "title": "Ants queen: Say it plainly.",
+      "event": {
+        "id": "sound.ants.queen.select",
+        "category": "voice"
+      }
+    },
+    {
+      "name": "v-queen-select-7",
+      "kind": "line",
+      "line": "voice.ants.queen.select-7",
+      "speaker": "speaker.aurelith",
+      "tags": "[attentive]",
+      "model": "eleven_v3",
+      "settings": {
+        "stability": 0.5,
+        "speed": 1.0
+      },
+      "takes": 2,
+      "dir": "base/assets/audio/voices/ants/queen/select-7",
+      "id": "asset.audio.voice.ants-queen-select-7",
+      "title": "Ants queen: What does the colony need?",
+      "event": {
+        "id": "sound.ants.queen.select",
+        "category": "voice"
+      }
+    },
+    {
+      "name": "v-queen-order-4",
+      "kind": "line",
+      "line": "voice.ants.queen.order-4",
+      "speaker": "speaker.aurelith",
+      "tags": "[brisk]",
+      "model": "eleven_v3",
+      "settings": {
+        "stability": 0.5,
+        "speed": 1.0
+      },
+      "takes": 2,
+      "dir": "base/assets/audio/voices/ants/queen/order-4",
+      "id": "asset.audio.voice.ants-queen-order-4",
+      "title": "Ants queen: Keep up.",
+      "event": {
+        "id": "sound.ants.queen.order",
+        "category": "voice"
+      }
+    },
+    {
+      "name": "v-queen-order-5",
+      "kind": "line",
+      "line": "voice.ants.queen.order-5",
+      "speaker": "speaker.aurelith",
+      "tags": "[determined]",
+      "model": "eleven_v3",
+      "settings": {
+        "stability": 0.5,
+        "speed": 1.0
+      },
+      "takes": 2,
+      "dir": "base/assets/audio/voices/ants/queen/order-5",
+      "id": "asset.audio.voice.ants-queen-order-5",
+      "title": "Ants queen: Through the roots, then.",
+      "event": {
+        "id": "sound.ants.queen.order",
+        "category": "voice"
+      }
+    },
+    {
+      "name": "v-queen-order-6",
+      "kind": "line",
+      "line": "voice.ants.queen.order-6",
+      "speaker": "speaker.aurelith",
+      "tags": "[resolute]",
+      "model": "eleven_v3",
+      "settings": {
+        "stability": 0.5,
+        "speed": 1.0
+      },
+      "takes": 2,
+      "dir": "base/assets/audio/voices/ants/queen/order-6",
+      "id": "asset.audio.voice.ants-queen-order-6",
+      "title": "Ants queen: Where the brood needs me.",
+      "event": {
+        "id": "sound.ants.queen.order",
+        "category": "voice"
+      }
+    },
+    {
+      "name": "v-queen-order-7",
+      "kind": "line",
+      "line": "voice.ants.queen.order-7",
+      "speaker": "speaker.aurelith",
+      "tags": "[firm]",
+      "model": "eleven_v3",
+      "settings": {
+        "stability": 0.5,
+        "speed": 1.0
+      },
+      "takes": 2,
+      "dir": "base/assets/audio/voices/ants/queen/order-7",
+      "id": "asset.audio.voice.ants-queen-order-7",
+      "title": "Ants queen: I go.",
+      "event": {
+        "id": "sound.ants.queen.order",
+        "category": "voice"
+      }
+    },
+    {
+      "name": "v-queen-attack-4",
+      "kind": "line",
+      "line": "voice.ants.queen.attack-4",
+      "speaker": "speaker.aurelith",
+      "tags": "[shouting]",
+      "model": "eleven_v3",
+      "settings": {
+        "stability": 0.5,
+        "speed": 1.0
+      },
+      "takes": 2,
+      "dir": "base/assets/audio/voices/ants/queen/attack-4",
+      "id": "asset.audio.voice.ants-queen-attack-4",
+      "title": "Ants queen: Break them!",
+      "event": {
+        "id": "sound.ants.queen.attack",
+        "category": "voice"
+      }
+    },
+    {
+      "name": "v-queen-attack-5",
+      "kind": "line",
+      "line": "voice.ants.queen.attack-5",
+      "speaker": "speaker.aurelith",
+      "tags": "[fierce]",
+      "model": "eleven_v3",
+      "settings": {
+        "stability": 0.5,
+        "speed": 1.0
+      },
+      "takes": 2,
+      "dir": "base/assets/audio/voices/ants/queen/attack-5",
+      "id": "asset.audio.voice.ants-queen-attack-5",
+      "title": "Ants queen: Not one step further!",
+      "event": {
+        "id": "sound.ants.queen.attack",
+        "category": "voice"
+      }
+    },
+    {
+      "name": "v-queen-attack-6",
+      "kind": "line",
+      "line": "voice.ants.queen.attack-6",
+      "speaker": "speaker.aurelith",
+      "tags": "[fierce]",
+      "model": "eleven_v3",
+      "settings": {
+        "stability": 0.5,
+        "speed": 1.0
+      },
+      "takes": 2,
+      "dir": "base/assets/audio/voices/ants/queen/attack-6",
+      "id": "asset.audio.voice.ants-queen-attack-6",
+      "title": "Ants queen: Feel the amber's weight!",
+      "event": {
+        "id": "sound.ants.queen.attack",
+        "category": "voice"
+      }
+    },
+    {
+      "name": "v-queen-annoyed-3",
+      "kind": "line",
+      "line": "voice.ants.queen.annoyed-3",
+      "speaker": "speaker.aurelith",
+      "tags": "[impatient]",
+      "model": "eleven_v3",
+      "settings": {
+        "stability": 0.5,
+        "speed": 1.0
+      },
+      "takes": 2,
+      "dir": "base/assets/audio/voices/ants/queen/annoyed-3",
+      "id": "asset.audio.voice.ants-queen-annoyed-3",
+      "title": "Ants queen: I have a colony to run.",
+      "event": {
+        "id": "sound.ants.queen.annoyed",
+        "category": "voice"
+      }
+    },
+    {
+      "name": "v-queen-annoyed-4",
+      "kind": "line",
+      "line": "voice.ants.queen.annoyed-4",
+      "speaker": "speaker.aurelith",
+      "tags": "[dry]",
+      "model": "eleven_v3",
+      "settings": {
+        "stability": 0.5,
+        "speed": 1.0
+      },
+      "takes": 2,
+      "dir": "base/assets/audio/voices/ants/queen/annoyed-4",
+      "id": "asset.audio.voice.ants-queen-annoyed-4",
+      "title": "Ants queen: Poke a queen, expect the sting.",
+      "event": {
+        "id": "sound.ants.queen.annoyed",
+        "category": "voice"
+      }
+    },
+    {
+      "name": "v-queen-annoyed-5",
+      "kind": "line",
+      "line": "voice.ants.queen.annoyed-5",
+      "speaker": "speaker.aurelith",
+      "tags": "[sarcastic]",
+      "model": "eleven_v3",
+      "settings": {
+        "stability": 0.5,
+        "speed": 1.0
+      },
+      "takes": 2,
+      "dir": "base/assets/audio/voices/ants/queen/annoyed-5",
+      "id": "asset.audio.voice.ants-queen-annoyed-5",
+      "title": "Ants queen: My mother warned me about advisers like you.",
+      "event": {
+        "id": "sound.ants.queen.annoyed",
+        "category": "voice"
+      }
+    },
+    {
+      "name": "v-queen-annoyed-6",
+      "kind": "line",
+      "line": "voice.ants.queen.annoyed-6",
+      "speaker": "speaker.aurelith",
+      "tags": "[annoyed]",
+      "model": "eleven_v3",
+      "settings": {
+        "stability": 0.5,
+        "speed": 1.0
+      },
+      "takes": 2,
+      "dir": "base/assets/audio/voices/ants/queen/annoyed-6",
+      "id": "asset.audio.voice.ants-queen-annoyed-6",
+      "title": "Ants queen: Keep this up and you can tend the larvae.",
+      "event": {
+        "id": "sound.ants.queen.annoyed",
+        "category": "voice"
+      }
+    },
+    {
+      "name": "v-queen-annoyed-7",
+      "kind": "line",
+      "line": "voice.ants.queen.annoyed-7",
+      "speaker": "speaker.aurelith",
+      "tags": "[sighs]",
+      "model": "eleven_v3",
+      "settings": {
+        "stability": 0.5,
+        "speed": 1.0
+      },
+      "takes": 2,
+      "dir": "base/assets/audio/voices/ants/queen/annoyed-7",
+      "id": "asset.audio.voice.ants-queen-annoyed-7",
+      "title": "Ants queen: Fine. I'm a very patient queen. Very.",
+      "event": {
+        "id": "sound.ants.queen.annoyed",
+        "category": "voice"
+      }
+    },
+    {
+      "name": "v-warrior-select-4",
+      "kind": "line",
+      "line": "voice.ants.warrior.select-4",
+      "speaker": "speaker.hollow-raider",
+      "tags": "[gruff]",
+      "model": "eleven_v3",
+      "settings": {
+        "stability": 0.5,
+        "speed": 1.0
+      },
+      "takes": 2,
+      "dir": "base/assets/audio/voices/ants/warrior/select-4",
+      "id": "asset.audio.voice.ants-warrior-select-4",
+      "title": "Ants warrior: Jaws sharp.",
+      "event": {
+        "id": "sound.ants.warrior.select",
+        "category": "voice"
+      }
+    },
+    {
+      "name": "v-warrior-select-5",
+      "kind": "line",
+      "line": "voice.ants.warrior.select-5",
+      "speaker": "speaker.hollow-raider",
+      "tags": "[gruff]",
+      "model": "eleven_v3",
+      "settings": {
+        "stability": 0.5,
+        "speed": 1.0
+      },
+      "takes": 2,
+      "dir": "base/assets/audio/voices/ants/warrior/select-5",
+      "id": "asset.audio.voice.ants-warrior-select-5",
+      "title": "Ants warrior: What's the job?",
+      "event": {
+        "id": "sound.ants.warrior.select",
+        "category": "voice"
+      }
+    },
+    {
+      "name": "v-warrior-order-4",
+      "kind": "line",
+      "line": "voice.ants.warrior.order-4",
+      "speaker": "speaker.hollow-raider",
+      "tags": "[gruff]",
+      "model": "eleven_v3",
+      "settings": {
+        "stability": 0.5,
+        "speed": 1.0
+      },
+      "takes": 2,
+      "dir": "base/assets/audio/voices/ants/warrior/order-4",
+      "id": "asset.audio.voice.ants-warrior-order-4",
+      "title": "Ants warrior: Going.",
+      "event": {
+        "id": "sound.ants.warrior.order",
+        "category": "voice"
+      }
+    },
+    {
+      "name": "v-warrior-order-5",
+      "kind": "line",
+      "line": "voice.ants.warrior.order-5",
+      "speaker": "speaker.hollow-raider",
+      "tags": "[brisk]",
+      "model": "eleven_v3",
+      "settings": {
+        "stability": 0.5,
+        "speed": 1.0
+      },
+      "takes": 2,
+      "dir": "base/assets/audio/voices/ants/warrior/order-5",
+      "id": "asset.audio.voice.ants-warrior-order-5",
+      "title": "Ants warrior: Tunnel's clear ahead.",
+      "event": {
+        "id": "sound.ants.warrior.order",
+        "category": "voice"
+      }
+    },
+    {
+      "name": "v-warrior-attack-4",
+      "kind": "line",
+      "line": "voice.ants.warrior.attack-4",
+      "speaker": "speaker.hollow-raider",
+      "tags": "[shouting]",
+      "model": "eleven_v3",
+      "settings": {
+        "stability": 0.5,
+        "speed": 1.0
+      },
+      "takes": 2,
+      "dir": "base/assets/audio/voices/ants/warrior/attack-4",
+      "id": "asset.audio.voice.ants-warrior-attack-4",
+      "title": "Ants warrior: Crack their shells!",
+      "event": {
+        "id": "sound.ants.warrior.attack",
+        "category": "voice"
+      }
+    },
+    {
+      "name": "v-warrior-attack-5",
+      "kind": "line",
+      "line": "voice.ants.warrior.attack-5",
+      "speaker": "speaker.hollow-raider",
+      "tags": "[shouting]",
+      "model": "eleven_v3",
+      "settings": {
+        "stability": 0.5,
+        "speed": 1.0
+      },
+      "takes": 2,
+      "dir": "base/assets/audio/voices/ants/warrior/attack-5",
+      "id": "asset.audio.voice.ants-warrior-attack-5",
+      "title": "Ants warrior: Raiders, bite!",
+      "event": {
+        "id": "sound.ants.warrior.attack",
+        "category": "voice"
+      }
+    },
+    {
+      "name": "v-warrior-annoyed-3",
+      "kind": "line",
+      "line": "voice.ants.warrior.annoyed-3",
+      "speaker": "speaker.hollow-raider",
+      "tags": "[annoyed]",
+      "model": "eleven_v3",
+      "settings": {
+        "stability": 0.5,
+        "speed": 1.0
+      },
+      "takes": 2,
+      "dir": "base/assets/audio/voices/ants/warrior/annoyed-3",
+      "id": "asset.audio.voice.ants-warrior-annoyed-3",
+      "title": "Ants warrior: Poke me again and I bite back.",
+      "event": {
+        "id": "sound.ants.warrior.annoyed",
+        "category": "voice"
+      }
+    },
+    {
+      "name": "v-warrior-annoyed-4",
+      "kind": "line",
+      "line": "voice.ants.warrior.annoyed-4",
+      "speaker": "speaker.hollow-raider",
+      "tags": "[grumbling]",
+      "model": "eleven_v3",
+      "settings": {
+        "stability": 0.5,
+        "speed": 1.0
+      },
+      "takes": 2,
+      "dir": "base/assets/audio/voices/ants/warrior/annoyed-4",
+      "id": "asset.audio.voice.ants-warrior-annoyed-4",
+      "title": "Ants warrior: My mandibles are getting itchy.",
+      "event": {
+        "id": "sound.ants.warrior.annoyed",
+        "category": "voice"
+      }
+    },
+    {
+      "name": "v-archer-select-4",
+      "kind": "line",
+      "line": "voice.ants.archer.select-4",
+      "speaker": "speaker.needler",
+      "tags": "[quietly]",
+      "model": "eleven_v3",
+      "settings": {
+        "stability": 0.5,
+        "speed": 1.0
+      },
+      "takes": 2,
+      "dir": "base/assets/audio/voices/ants/archer/select-4",
+      "id": "asset.audio.voice.ants-archer-select-4",
+      "title": "Ants archer: Wind's still. Good.",
+      "event": {
+        "id": "sound.ants.archer.select",
+        "category": "voice"
+      }
+    },
+    {
+      "name": "v-archer-select-5",
+      "kind": "line",
+      "line": "voice.ants.archer.select-5",
+      "speaker": "speaker.needler",
+      "tags": "[calm]",
+      "model": "eleven_v3",
+      "settings": {
+        "stability": 0.5,
+        "speed": 1.0
+      },
+      "takes": 2,
+      "dir": "base/assets/audio/voices/ants/archer/select-5",
+      "id": "asset.audio.voice.ants-archer-select-5",
+      "title": "Ants archer: Ready when you are.",
+      "event": {
+        "id": "sound.ants.archer.select",
+        "category": "voice"
+      }
+    },
+    {
+      "name": "v-archer-order-4",
+      "kind": "line",
+      "line": "voice.ants.archer.order-4",
+      "speaker": "speaker.needler",
+      "tags": "[calm]",
+      "model": "eleven_v3",
+      "settings": {
+        "stability": 0.5,
+        "speed": 1.0
+      },
+      "takes": 2,
+      "dir": "base/assets/audio/voices/ants/archer/order-4",
+      "id": "asset.audio.voice.ants-archer-order-4",
+      "title": "Ants archer: On my way.",
+      "event": {
+        "id": "sound.ants.archer.order",
+        "category": "voice"
+      }
+    },
+    {
+      "name": "v-archer-order-5",
+      "kind": "line",
+      "line": "voice.ants.archer.order-5",
+      "speaker": "speaker.needler",
+      "tags": "[quietly]",
+      "model": "eleven_v3",
+      "settings": {
+        "stability": 0.5,
+        "speed": 1.0
+      },
+      "takes": 2,
+      "dir": "base/assets/audio/voices/ants/archer/order-5",
+      "id": "asset.audio.voice.ants-archer-order-5",
+      "title": "Ants archer: Finding a high root.",
+      "event": {
+        "id": "sound.ants.archer.order",
+        "category": "voice"
+      }
+    },
+    {
+      "name": "v-archer-attack-4",
+      "kind": "line",
+      "line": "voice.ants.archer.attack-4",
+      "speaker": "speaker.needler",
+      "tags": "[focused]",
+      "model": "eleven_v3",
+      "settings": {
+        "stability": 0.5,
+        "speed": 1.0
+      },
+      "takes": 2,
+      "dir": "base/assets/audio/voices/ants/archer/attack-4",
+      "id": "asset.audio.voice.ants-archer-attack-4",
+      "title": "Ants archer: Got one in my sights.",
+      "event": {
+        "id": "sound.ants.archer.attack",
+        "category": "voice"
+      }
+    },
+    {
+      "name": "v-archer-attack-5",
+      "kind": "line",
+      "line": "voice.ants.archer.attack-5",
+      "speaker": "speaker.needler",
+      "tags": "[sharp]",
+      "model": "eleven_v3",
+      "settings": {
+        "stability": 0.5,
+        "speed": 1.0
+      },
+      "takes": 2,
+      "dir": "base/assets/audio/voices/ants/archer/attack-5",
+      "id": "asset.audio.voice.ants-archer-attack-5",
+      "title": "Ants archer: Needles away!",
+      "event": {
+        "id": "sound.ants.archer.attack",
+        "category": "voice"
+      }
+    },
+    {
+      "name": "v-archer-annoyed-3",
+      "kind": "line",
+      "line": "voice.ants.archer.annoyed-3",
+      "speaker": "speaker.needler",
+      "tags": "[dry]",
+      "model": "eleven_v3",
+      "settings": {
+        "stability": 0.5,
+        "speed": 1.0
+      },
+      "takes": 2,
+      "dir": "base/assets/audio/voices/ants/archer/annoyed-3",
+      "id": "asset.audio.voice.ants-archer-annoyed-3",
+      "title": "Ants archer: I could thread a needle through your antenna.",
+      "event": {
+        "id": "sound.ants.archer.annoyed",
+        "category": "voice"
+      }
+    },
+    {
+      "name": "v-archer-annoyed-4",
+      "kind": "line",
+      "line": "voice.ants.archer.annoyed-4",
+      "speaker": "speaker.needler",
+      "tags": "[sarcastic]",
+      "model": "eleven_v3",
+      "settings": {
+        "stability": 0.5,
+        "speed": 1.0
+      },
+      "takes": 2,
+      "dir": "base/assets/audio/voices/ants/archer/annoyed-4",
+      "id": "asset.audio.voice.ants-archer-annoyed-4",
+      "title": "Ants archer: Click me one more time. I dare you.",
+      "event": {
+        "id": "sound.ants.archer.annoyed",
         "category": "voice"
       }
     }
