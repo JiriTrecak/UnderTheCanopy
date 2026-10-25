@@ -284,7 +284,7 @@ impl MinimapGpu {
         &self.texture
     }
 
-    pub fn prepare(&mut self, queue: &wgpu::Queue, frame: &MinimapFrame, fog: bool) {
+    pub fn prepare(&mut self, queue: &impl crate::upload::Writes, frame: &MinimapFrame, fog: bool) {
         let markers = &frame.markers[..frame.markers.len().min(MAX_MINIMAP_VERTICES) / 3 * 3];
         if !markers.is_empty() {
             queue.write_buffer(&self.vertices, 0, bytemuck::cast_slice(markers));

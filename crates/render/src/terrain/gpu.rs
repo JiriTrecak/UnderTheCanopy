@@ -1039,7 +1039,7 @@ impl TerrainGpu {
 
     pub fn prepare(
         &mut self,
-        queue: &wgpu::Queue,
+        queue: &impl crate::upload::Writes,
         camera: &CameraView,
         screen_height: f32,
         shadow_planes: Option<&[Vec4; 6]>,
@@ -1111,7 +1111,7 @@ impl TerrainGpu {
     /// Culls the foundations against the camera and the sun's view and uploads them.
     fn prepare_foundations(
         &mut self,
-        queue: &wgpu::Queue,
+        queue: &impl crate::upload::Writes,
         camera: &CameraView,
         shadow_planes: Option<&[Vec4; 6]>,
     ) {

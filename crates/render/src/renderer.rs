@@ -1,5 +1,6 @@
 //! The renderer: owns the frame graph's resources and records its passes in order.
 
+use crate::upload::Writes;
 use crate::{
     actors::{ActorInstance, ActorsGpu},
     camera::{CameraView, frustum_planes},
@@ -416,6 +417,8 @@ pub struct Renderer {
     ripples: Ripples,
     ui: Option<crate::ui::UiLayer>,
     timer: Option<GpuTimer>,
+    /// The staging belt the frame's buffer writes go through ([`crate::upload`]).
+    belt: Option<wgpu::util::StagingBelt>,
     /// The device has timestamp queries, and passes are timed with them
     /// ([`Self::set_pass_timing`]).
     timestamps: bool,
@@ -590,6 +593,7 @@ impl Renderer {
             ripples: Ripples::new(),
             ui: None,
             timer: None,
+            belt: None,
             timestamps: gpu.features.timestamps,
             pass_timing: false,
             isolate_passes: false,
@@ -1159,7 +1163,13 @@ impl Renderer {
         let _span = tracing::trace_span!("render").entered();
         let start = Instant::now();
         let device = &gpu.device;
-        let queue = &gpu.queue;
+        // Buffer writes go through the reused staging belt (upload.rs).
+        let mut belt = self
+            .belt
+            .take()
+            .unwrap_or_else(|| wgpu::util::StagingBelt::new(device.clone(), crate::upload::CHUNK));
+        let uploads = crate::upload::Uploads::new(device, &gpu.queue, &mut belt);
+        let queue = &uploads;
         if let Some(timer) = &mut self.timer {
             timer.begin_frame();
         }
@@ -1270,7 +1280,7 @@ impl Renderer {
             crate::frame::NORMAL_OFFSET,
             self.terrain.as_ref().map_or(f32::MIN, TerrainGpu::lowest),
         );
-        if let Some(statics) = &self.statics {
+        if let Some(statics) = &mut self.statics {
             statics.prepare(
                 queue,
                 camera.view_projection,
@@ -1433,6 +1443,8 @@ impl Renderer {
         let background = self.forest.as_ref().map_or(lighting.background, |f| {
             f.background(lighting.background, sun.1)
         });
+        // Skinning recorded in the culling's compute pass (one pass begun, not two).
+        let mut skinned = false;
         for (index, pass) in self.graph.passes().iter().enumerate() {
             let pass_start = Instant::now();
             let _span = tracing::trace_span!("pass", name = pass.name).entered();
@@ -1450,7 +1462,17 @@ impl Renderer {
                     if let Some(statics) = &self.statics {
                         statics.cull(&mut compute);
                     }
+                    // Unless the passes are timed apart, the skinning follows in the same
+                    // pass: the two dispatches share nothing.
+                    let next = self.graph.passes().get(index + 1).map(|p| p.name);
+                    if next == Some(passes::SKIN) && writes.is_none() && !self.isolate_passes {
+                        if let Some(actors) = &self.actors {
+                            actors.skin(&mut compute);
+                        }
+                        skinned = true;
+                    }
                 }
+                (passes::SKIN, PassKind::Compute) if skinned => {}
                 (passes::SKIN, PassKind::Compute) => {
                     let mut compute = encoder.begin_compute_pass(&wgpu::ComputePassDescriptor {
                         label: Some(passes::SKIN),
@@ -1499,8 +1521,8 @@ impl Renderer {
                     if let Some(water) = &mut self.water {
                         if water.ripples_pending() {
                             report.draws += water.encode_ripples(&mut encoder, writes);
-                        } else {
-                            // Nothing to draw or clear: keep the pass measurable.
+                        } else if writes.is_some() {
+                            // Nothing to draw or clear: a timed frame keeps the pass.
                             drop(encoder.begin_compute_pass(&wgpu::ComputePassDescriptor {
                                 label: Some(passes::RIPPLES),
                                 timestamp_writes: timestamps.and_then(|t| t.compute_writes(index)),
@@ -1673,6 +1695,8 @@ impl Renderer {
                 // The minimap bake leaves the UI's list and target for the next frame.
                 (passes::UI, PassKind::Render) => match self.ui.as_mut().filter(|_| !self.baking) {
                     Some(ui) => report.draws += ui.encode(&mut encoder, output, writes),
+                    // Without a UI only a timed frame records the (empty) pass.
+                    None if writes.is_none() => {}
                     None => drop(encoder.begin_render_pass(&wgpu::RenderPassDescriptor {
                         label: Some(passes::UI),
                         color_attachments: &[Some(wgpu::RenderPassColorAttachment {
@@ -1703,7 +1727,8 @@ impl Renderer {
                     }),
                 );
                 let submitted = Instant::now();
-                queue.submit([recorded.finish()]);
+                gpu.queue
+                    .submit(uploads.take().into_iter().chain([recorded.finish()]));
                 let _ = device.poll(wgpu::PollType::wait_indefinitely());
                 report
                     .isolated_ms
@@ -1724,8 +1749,13 @@ impl Renderer {
         let submitted = Instant::now();
         {
             let _span = tracing::trace_span!("submit").entered();
-            queue.submit([encoder.finish()]);
+            gpu.queue
+                .submit(uploads.take().into_iter().chain([encoder.finish()]));
         }
+        uploads.recall();
+        self.belt = Some(belt);
+        // Lets the recalled chunks' mapping finish without waiting.
+        let _ = device.poll(wgpu::PollType::Poll);
         let recorded = start.elapsed();
         if sample {
             let _ = device.poll(wgpu::PollType::wait_indefinitely());

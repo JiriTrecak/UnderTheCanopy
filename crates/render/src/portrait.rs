@@ -270,7 +270,12 @@ impl PortraitGpu {
     }
 
     /// The portrait's frame uniform for `camera` under the world's `lighting`.
-    pub fn prepare(&self, queue: &wgpu::Queue, camera: &CameraView, world: &Lighting) {
+    pub fn prepare(
+        &self,
+        queue: &impl crate::upload::Writes,
+        camera: &CameraView,
+        world: &Lighting,
+    ) {
         let light = lighting(world);
         let uniform = FrameUniform::new(&FrameParams {
             camera,

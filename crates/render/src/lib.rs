@@ -31,6 +31,7 @@ pub mod terrain;
 pub mod texture;
 pub mod timing;
 pub mod ui;
+pub mod upload;
 pub mod water;
 pub mod world_ui;
 

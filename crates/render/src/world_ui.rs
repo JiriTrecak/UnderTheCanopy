@@ -403,7 +403,7 @@ impl WorldUiGpu {
     /// Uploads a frame's lists (clipped to the budgets).
     pub fn prepare(
         &mut self,
-        queue: &wgpu::Queue,
+        queue: &impl crate::upload::Writes,
         frame: &WorldUiFrame,
         output: [u32; 2],
         output_srgb: bool,

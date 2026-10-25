@@ -78,6 +78,64 @@ const CUT_LIST: usize = 2;
 const CUT_CUTAWAY: u32 = 1;
 const CUT_CEILING: u32 = 2;
 
+/// Side of the cells of [`ModelCells`], world units.
+const CELL: f32 = 32.0;
+
+/// Which models have instances where: the instances bucketed into square cells of the
+/// ground, each cell with the box around its instances' spheres and the set of models it
+/// holds. A model none of whose cells touch a view has no instance in that view's list,
+/// so its draws are left out instead of drawing nothing (renderer §9).
+#[derive(Debug, Clone, Default)]
+pub struct ModelCells {
+    cells: Vec<(Vec3, Vec3, Vec<u64>)>,
+    words: usize,
+}
+
+impl ModelCells {
+    /// `spheres`: each instance's model and world bounding sphere.
+    pub fn new(models: usize, spheres: impl Iterator<Item = (usize, Vec4)>) -> Self {
+        let words = models.div_ceil(64).max(1);
+        let mut map: BTreeMap<(i32, i32), (Vec3, Vec3, Vec<u64>)> = BTreeMap::new();
+        for (model, s) in spheres {
+            let key = ((s.x / CELL).floor() as i32, (s.z / CELL).floor() as i32);
+            let (lo, hi, set) = map
+                .entry(key)
+                .or_insert_with(|| (Vec3::splat(f32::MAX), Vec3::splat(f32::MIN), vec![0; words]));
+            *lo = lo.min(s.truncate() - s.w);
+            *hi = hi.max(s.truncate() + s.w);
+            set[model / 64] |= 1 << (model % 64);
+        }
+        Self {
+            cells: map.into_values().collect(),
+            words,
+        }
+    }
+
+    /// The models with a cell touching every plane's inner side (n·p + d ≥ 0), as a bit
+    /// set: a box is outside a plane only when its corner farthest along the normal is.
+    pub fn touching(&self, planes: &[Vec4]) -> Vec<u64> {
+        let mut set = vec![0; self.words];
+        for (lo, hi, models) in &self.cells {
+            let inside = planes.iter().all(|p| {
+                let n = p.truncate();
+                let corner = Vec3::select(n.cmpge(Vec3::ZERO), *hi, *lo);
+                n.dot(corner) + p.w >= -0.01
+            });
+            if inside {
+                for (s, m) in set.iter_mut().zip(models) {
+                    *s |= m;
+                }
+            }
+        }
+        set
+    }
+}
+
+fn has_model(set: &[u64], model: usize) -> bool {
+    set.get(model / 64)
+        .is_some_and(|w| w & (1 << (model % 64)) != 0)
+}
+
 /// Scenery is cut lower: low ground clutter (curled leaves, acorns, fern sprigs) needs its
 /// small shadows to read as depth from the play camera.
 pub const STATIC_SHADOW_MIN_HEIGHT: f32 = 0.2;
@@ -193,6 +251,11 @@ pub struct StaticsGpu {
     item_buffer: wgpu::Buffer,
     item_info: Vec<[u32; 4]>,
     slot_of: Vec<u32>,
+    /// Where each model's instances are, and the models the camera's and the sun's views
+    /// may hold this frame ([`ModelCells::touching`]).
+    cells: ModelCells,
+    in_camera: Vec<u64>,
+    in_sun: Vec<u64>,
     /// Bytes of GPU memory (buffers and textures).
     pub bytes: u64,
     pub stats: StaticsStats,
@@ -944,7 +1007,16 @@ impl StaticsGpu {
             shadow_draws: shadow_draws.len() as u32,
         };
         tracing::info!(?stats, "statics");
+        let cells = ModelCells::new(
+            models.len(),
+            items
+                .iter()
+                .map(|i| (i.info[0] as usize, Vec4::from_array(i.sphere))),
+        );
         Ok(Self {
+            in_camera: vec![!0; cells.words],
+            in_sun: vec![!0; cells.words],
+            cells,
             items: items.len() as u32,
             draws: args.len() as u32,
             item_info: items.iter().map(|i| i.info).collect(),
@@ -977,14 +1049,16 @@ impl StaticsGpu {
     /// Sets the culling planes of the camera and the sun, and the cutaway's units (`None`
     /// while the cutaway is shut; `changed`: the mask changed since the last frame).
     pub fn prepare(
-        &self,
-        queue: &wgpu::Queue,
+        &mut self,
+        queue: &impl crate::upload::Writes,
         camera: Mat4,
         sun: Mat4,
         casters: &CasterCull,
         cutaway: Option<&crate::cutaway::CutawayMask>,
         changed: bool,
     ) {
+        self.in_camera = self.cells.touching(&frustum_planes(camera));
+        self.in_sun = self.cells.touching(&frustum_planes(sun));
         let mut planes = [[0.0; 4]; 12];
         for (i, p) in frustum_planes(camera)
             .iter()
@@ -1066,8 +1140,11 @@ impl StaticsGpu {
         let mut bound_model = (usize::MAX, usize::MAX);
         let mut count = 0;
         for draw in draws {
-            // No instance of a model nothing can cut this frame is in its cut list.
-            if draw.list == CUT_LIST && !self.may_cut(draw.model, cutaway) {
+            // No instance of a model nothing can cut this frame is in its cut list, nor of
+            // a model out of view in any list.
+            if (draw.list == CUT_LIST && !self.may_cut(draw.model, cutaway))
+                || !has_model(&self.in_camera, draw.model)
+            {
                 continue;
             }
             count += 1;
@@ -1124,7 +1201,10 @@ impl StaticsGpu {
             let Variant::Opaque { double_sided } = material.variant else {
                 continue;
             };
-            if draw.list != CUT_LIST || !self.may_cut(draw.model, cutaway) {
+            if draw.list != CUT_LIST
+                || !self.may_cut(draw.model, cutaway)
+                || !has_model(&self.in_camera, draw.model)
+            {
                 continue;
             }
             if current != Some(double_sided) {
@@ -1176,6 +1256,9 @@ impl StaticsGpu {
         pass.set_bind_group(0, frame, &[]);
         let mut count = 0;
         for draw in &self.shadow_draws {
+            if !has_model(&self.in_sun, draw.model) {
+                continue;
+            }
             let model = &self.models[draw.model];
             pass.set_bind_group(2, &self.instance_group, &self.offsets(draw.model, SUN_LIST));
             match draw.section {
@@ -1274,6 +1357,28 @@ impl StaticsGpu {
 mod tests {
     use super::*;
     use crate::camera::{FlatGround, RtsCamera};
+
+    #[test]
+    fn models_out_of_view_have_no_cell_in_it() {
+        let view = RtsCamera::new([100.0, 100.0], None).view(16.0 / 9.0, &FlatGround);
+        let planes = view.frustum();
+        let spheres = [
+            (0, Vec4::new(100.0, 0.0, 100.0, 2.0)),
+            (1, Vec4::new(900.0, 0.0, 900.0, 2.0)),
+            (1, Vec4::new(901.0, 0.0, 905.0, 2.0)),
+            (70, Vec4::new(100.0, 0.0, 30.0, 40.0)),
+        ];
+        let cells = ModelCells::new(71, spheres.into_iter());
+        let set = cells.touching(&planes);
+        for (model, sphere) in spheres {
+            // Every model with a visible instance is in the set.
+            if sphere_visible(&planes, sphere) {
+                assert!(has_model(&set, model), "{model}");
+            }
+        }
+        assert!(has_model(&set, 0) && has_model(&set, 70));
+        assert!(!has_model(&set, 1));
+    }
 
     #[test]
     fn spheres_follow_the_transform_and_the_frustum() {

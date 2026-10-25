@@ -837,7 +837,7 @@ impl PostStack {
     #[allow(clippy::too_many_arguments)]
     pub fn prepare(
         &self,
-        queue: &wgpu::Queue,
+        queue: &impl crate::upload::Writes,
         camera: &CameraView,
         seconds: f32,
         scene: [u32; 2],

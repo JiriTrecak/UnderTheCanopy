@@ -666,7 +666,7 @@ impl WaterGpu {
     /// Culls chunks for `camera` and uploads this frame's values and live rings.
     pub fn prepare(
         &mut self,
-        queue: &wgpu::Queue,
+        queue: &impl crate::upload::Writes,
         camera: &CameraView,
         seconds: f32,
         ripples: &Ripples,

@@ -191,7 +191,7 @@ pub fn texture(device: &wgpu::Device) -> wgpu::Texture {
 
 /// Writes rows `from..to` of `mask` into `texture`.
 pub fn upload(
-    queue: &wgpu::Queue,
+    queue: &impl crate::upload::Writes,
     texture: &wgpu::Texture,
     mask: &CutawayMask,
     rows: (usize, usize),
