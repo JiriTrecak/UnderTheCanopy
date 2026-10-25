@@ -25,6 +25,9 @@ pub struct UiRenderer {
     textures: HashMap<TextureId, wgpu::BindGroup>,
     white: wgpu::BindGroup,
     srgb_target: bool,
+    /// The globals and the quads last written.
+    written_globals: Option<[u32; 4]>,
+    written_quads: Vec<crate::Quad>,
 }
 
 impl UiRenderer {
@@ -163,6 +166,8 @@ impl UiRenderer {
             sampler,
             atlas: None,
             globals_group: None,
+            written_globals: None,
+            written_quads: Vec::new(),
             instances: None,
             textures: HashMap::new(),
             white,
@@ -260,7 +265,10 @@ impl UiRenderer {
             self.srgb_target as u32,
             0,
         ];
-        queue.write_buffer(&self.globals, 0, bytemuck::cast_slice(&globals));
+        if self.written_globals != Some(globals) {
+            queue.write_buffer(&self.globals, 0, bytemuck::cast_slice(&globals));
+            self.written_globals = Some(globals);
+        }
         let bytes: &[u8] = bytemuck::cast_slice(&list.quads);
         let needed = bytes.len().max(64) as u64;
         if self.instances.as_ref().is_none_or(|b| b.size() < needed) {
@@ -270,11 +278,15 @@ impl UiRenderer {
                 usage: wgpu::BufferUsages::VERTEX | wgpu::BufferUsages::COPY_DST,
                 mapped_at_creation: false,
             }));
+            self.written_quads.clear();
         }
+        // A frame with the same quads as the buffer holds (a still screen) uploads none.
         if !bytes.is_empty()
+            && bytemuck::cast_slice::<_, u8>(&self.written_quads) != bytes
             && let Some(buffer) = &self.instances
         {
             queue.write_buffer(buffer, 0, bytes);
+            self.written_quads.clone_from(&list.quads);
         }
     }
 
@@ -290,6 +302,9 @@ impl UiRenderer {
         pass.set_pipeline(&self.pipeline);
         pass.set_bind_group(0, globals, &[]);
         pass.set_vertex_buffer(0, instances.slice(..));
+        // Scissor and image change only where they differ from the batch before.
+        let mut scissor = None;
+        let mut bound: Option<&wgpu::BindGroup> = None;
         for batch in &list.batches {
             let (x, y, w, h) = match batch.scissor {
                 Some([x, y, w, h]) => {
@@ -299,15 +314,21 @@ impl UiRenderer {
                 }
                 None => (0, 0, vw, vh),
             };
-            if w == 0 || h == 0 {
+            if w == 0 || h == 0 || batch.quads.is_empty() {
                 continue;
             }
-            pass.set_scissor_rect(x, y, w, h);
+            if scissor != Some((x, y, w, h)) {
+                pass.set_scissor_rect(x, y, w, h);
+                scissor = Some((x, y, w, h));
+            }
             let group = batch
                 .texture
                 .and_then(|t| self.textures.get(&t))
                 .unwrap_or(&self.white);
-            pass.set_bind_group(1, group, &[]);
+            if !bound.is_some_and(|b| std::ptr::eq(b, group)) {
+                pass.set_bind_group(1, group, &[]);
+                bound = Some(group);
+            }
             pass.draw(0..6, batch.quads.clone());
         }
     }

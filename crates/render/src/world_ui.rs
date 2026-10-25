@@ -121,6 +121,8 @@ pub struct WorldUiGpu {
     /// The `under` list at the start of the ground buffer, and its vertex count.
     under: Option<Arc<Vec<GroundVertex>>>,
     under_count: usize,
+    /// The overlay uniform last written.
+    written_uniform: Option<[f32; 4]>,
     ground_count: u32,
     overlay_count: u32,
     glyphs: wgpu::TextureView,
@@ -326,6 +328,7 @@ impl WorldUiGpu {
             uniform,
             under: None,
             under_count: 0,
+            written_uniform: None,
             ground_count: 0,
             overlay_count: 0,
             glyphs,
@@ -444,7 +447,10 @@ impl WorldUiGpu {
                 0.0,
             ],
         };
-        queue.write_buffer(&self.uniform, 0, bytemuck::bytes_of(&uniform));
+        if self.written_uniform != Some(uniform.scale) {
+            queue.write_buffer(&self.uniform, 0, bytemuck::bytes_of(&uniform));
+            self.written_uniform = Some(uniform.scale);
+        }
     }
 
     /// Draws the ground list (inside the forward pass).
