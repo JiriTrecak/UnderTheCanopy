@@ -1505,7 +1505,8 @@ impl Renderer {
                         report.draws += dressing.draw_decals(&mut rp, &self.frame_group);
                     }
                     if let Some(statics) = &self.statics {
-                        report.draws += statics.draw_forward(&mut rp, &self.frame_group);
+                        report.draws +=
+                            statics.draw_forward(&mut rp, &self.frame_group, self.cutaway.active);
                     }
                     if let Some(actors) = &self.actors {
                         report.draws += actors.draw_forward(&mut rp, &self.frame_group);
