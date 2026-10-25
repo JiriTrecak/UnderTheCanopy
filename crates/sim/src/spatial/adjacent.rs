@@ -4,6 +4,7 @@
 //! exactly the answer of the full sweep.
 
 use super::geometry::{Fixed, clear_sweep, sweep_pattern};
+use crate::terrain::SteepEdges;
 
 #[derive(Debug, Clone)]
 struct Pattern {
@@ -17,6 +18,9 @@ struct Pattern {
     entered: Vec<(i32, i32, i32)>,
     /// Row runs of the cells entered from another cell, where a steep step could stop it.
     crossed: Vec<(i32, i32, i32)>,
+    /// The steps between different cells, each once: the step's direction as its steep
+    /// plane `(dy + 1) * 3 + dx + 1` and the entered cell.
+    steps: Vec<(usize, i32, i32)>,
 }
 
 /// Row runs `(dy, x0, x1)` covering exactly `cells`.
@@ -51,6 +55,46 @@ fn any_bit(bits: &[u32], words: usize, y: usize, x0: usize, x1: usize) -> bool {
         };
         bits[row + w] & low & high != 0
     })
+}
+
+/// Every cell's neighbour steps, answered at once by whole rows of bits: a step is
+/// refused when the sweep would leave the map, enter a closed cell or cross a steep step
+/// (what [`AdjacentSweep::clear`] asks of the ground step), and passes otherwise. Bit `x`
+/// of row `y` of direction `(dy + 1) * 3 + dx + 1`.
+pub struct StepTable {
+    words: usize,
+    refused: Vec<Vec<u64>>,
+}
+
+impl StepTable {
+    /// Whether the sweep from `from` to the neighbouring (or same) cell `to` passes.
+    pub fn passes(&self, size: u32, from: u32, to: u32) -> bool {
+        let (x, y) = (from % size, from / size);
+        let (dx, dy) = ((to % size) as i32 - x as i32, (to / size) as i32 - y as i32);
+        let k = ((dy + 1) * 3 + dx + 1) as usize;
+        self.refused[k][y as usize * self.words + x as usize / 64] & (1 << (x % 64)) == 0
+    }
+}
+
+/// Row `y` of `bits` (rows of `words` 64-bit words) shifted so bit `x` reads bit `x + t`.
+fn shifted(bits: &[u64], words: usize, y: usize, t: i32, out: &mut [u64]) {
+    let row = &bits[y * words..(y + 1) * words];
+    for (w, o) in out.iter_mut().enumerate() {
+        let at = |i: i64| -> u64 {
+            if i < 0 || i >= words as i64 {
+                0
+            } else {
+                row[i as usize]
+            }
+        };
+        let (q, r) = ((t.div_euclid(64)) as i64, t.rem_euclid(64) as u32);
+        let low = at(w as i64 + q);
+        *o = if r == 0 {
+            low
+        } else {
+            (low >> r) | (at(w as i64 + q + 1) << (64 - r))
+        };
+    }
 }
 
 /// Bit planes over the ground grid for [`AdjacentSweep::clear_planes`]: closed cells and
@@ -105,6 +149,13 @@ impl AdjacentSweep {
                         .map(|&(_, _, bx, by)| (bx, by))
                         .collect(),
                 );
+                let mut steps: Vec<(usize, i32, i32)> = edges
+                    .iter()
+                    .filter(|&&(ax, ay, bx, by)| (ax, ay) != (bx, by))
+                    .map(|&(ax, ay, bx, by)| (((by - ay + 1) * 3 + bx - ax + 1) as usize, bx, by))
+                    .collect();
+                steps.sort_unstable();
+                steps.dedup();
                 Pattern {
                     edges,
                     min_x,
@@ -113,6 +164,7 @@ impl AdjacentSweep {
                     max_y,
                     entered,
                     crossed,
+                    steps,
                 }
             })
             .collect();
@@ -145,6 +197,61 @@ impl AdjacentSweep {
         p.edges
             .iter()
             .all(|&(ax, ay, bx, by)| step((base + ay * s + ax) as u32, (base + by * s + bx) as u32))
+    }
+
+    /// Every cell's neighbour steps over ground with `closed` cells (rows of
+    /// `steep.words_per_row()` words) and `steep` steps, at once ([`StepTable`]).
+    pub fn table(&self, size: u32, closed: &[u32], steep: &SteepEdges) -> StepTable {
+        let size = size as usize;
+        let words = size.div_ceil(64);
+        let words32 = steep.words_per_row();
+        let widen = |plane: &[u32]| {
+            let mut out = vec![0u64; words * size];
+            for y in 0..size {
+                for w in 0..words32 {
+                    let v = u64::from(plane[y * words32 + w]);
+                    out[y * words + w / 2] |= v << (32 * (w % 2));
+                }
+            }
+            out
+        };
+        let closed = widen(closed);
+        let planes: Vec<Vec<u64>> = (0..9)
+            .map(|k| widen(steep.plane(k % 3 - 1, k / 3 - 1)))
+            .collect();
+        let mut shift = vec![0u64; words];
+        let refused = self
+            .patterns
+            .iter()
+            .map(|p| {
+                let mut refuse = vec![u64::MAX; words * size];
+                for y in 0..size as i32 {
+                    if y + p.min_y < 0 || y + p.max_y >= size as i32 {
+                        continue;
+                    }
+                    let no = &mut refuse[y as usize * words..(y as usize + 1) * words];
+                    no.iter_mut().for_each(|w| *w = 0);
+                    for x in 0..size as i32 {
+                        if x + p.min_x < 0 || x + p.max_x >= size as i32 {
+                            no[x as usize / 64] |= 1 << (x % 64);
+                        }
+                    }
+                    // Every edge enters an open cell, on the level when it comes from another.
+                    for &(ry, x0, x1) in &p.entered {
+                        for t in x0..=x1 {
+                            shifted(&closed, words, (y + ry) as usize, t, &mut shift);
+                            no.iter_mut().zip(&shift).for_each(|(a, s)| *a |= s);
+                        }
+                    }
+                    for &(k, bx, by) in &p.steps {
+                        shifted(&planes[k], words, (y + by) as usize, bx, &mut shift);
+                        no.iter_mut().zip(&shift).for_each(|(a, s)| *a |= s);
+                    }
+                }
+                refuse
+            })
+            .collect();
+        StepTable { words, refused }
     }
 
     /// Whether the sweep from `from` to the neighbouring `to` enters a cell of the rectangle
@@ -265,12 +372,18 @@ mod tests {
 
     #[test]
     fn bit_planes_answer_as_the_edges() {
+        // 40 and 70 cells: rows of two or three 32-bit words, one or two 64-bit ones.
+        // Closed cells and a terraced patch with steep steps.
+        for size in [40u32, 70] {
+            planes_answer_as_the_edges(size);
+        }
+    }
+
+    fn planes_answer_as_the_edges(size: u32) {
         use crate::{
             spatial::clearance::Clearance,
             terrain::{MAX_GROUND_STEP_CM, SteepEdges},
         };
-        // 40 cells: two words a row. Closed cells and a terraced patch with steep steps.
-        let size = 40u32;
         let n = (size * size) as usize;
         let walk: Vec<bool> = (0..n as u32)
             .map(|c| !(c % 13 == 4 || c % 29 == 7))
@@ -301,6 +414,7 @@ mod tests {
         };
         for radius in [500, 1250, 2500] {
             let compiled = AdjacentSweep::new(radius);
+            let table = compiled.table(size, clearance.closed(), &steep);
             for from in 0..size * size {
                 for (dx, dy) in [(0, 0), (1, 0), (-1, 1), (1, 1), (0, -1), (-1, -1)] {
                     let (x, y) = ((from % size) as i32 + dx, (from / size) as i32 + dy);
@@ -313,6 +427,11 @@ mod tests {
                         compiled.clear_planes(size, from, to, planes, step),
                         exact,
                         "radius {radius} from {from} to {to}"
+                    );
+                    assert_eq!(
+                        table.passes(size, from, to),
+                        exact,
+                        "radius {radius} from {from} to {to}, table"
                     );
                     let rough = Planes {
                         rough: Some(clearance.rough()),

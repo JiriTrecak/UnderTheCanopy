@@ -368,6 +368,7 @@ impl Spatial {
         bodies.dedup_by_key(|b| b.radius_milli());
         for body in bodies {
             self.mesh(&body);
+            self.warm_grid(&body);
         }
     }
 

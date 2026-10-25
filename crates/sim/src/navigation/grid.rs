@@ -148,6 +148,8 @@ pub struct GridNavigation {
     /// The exact reachable regions of the latest exhausted unrestricted searches and the
     /// cells they started from, newest first.
     origins: Vec<(u32, Vec<bool>)>,
+    /// Every neighbour step is remembered ([`GridNavigation::warm`]) and none forgotten.
+    warm: bool,
 }
 
 /// Exhausted regions remembered per step rule.
@@ -161,6 +163,7 @@ impl GridNavigation {
             edges: vec![0; n],
             known: vec![0; n],
             origins: Vec::new(),
+            warm: false,
         }
     }
 
@@ -178,6 +181,7 @@ impl GridNavigation {
     }
 
     fn forget_edges(&mut self, cells: Option<&[u32]>, padding: i32) {
+        self.warm = false;
         let Some(cells) = cells else {
             self.known.fill(0);
             return;
@@ -241,6 +245,60 @@ impl GridNavigation {
             self.known[f] |= bit;
         }
         self.edges[f] & bit != 0
+    }
+
+    /// Remembers every neighbour step on the map: the cardinal steps first, then each
+    /// diagonal from its own step and the four cardinal sides (as [`GridNavigation::path`]
+    /// would answer them one by one).
+    /// Whether every neighbour step is remembered since the last [`GridNavigation::warm`].
+    pub fn warmed(&self) -> bool {
+        self.warm
+    }
+
+    pub fn warm(&mut self, step: &mut impl FnMut(u32, u32) -> bool) {
+        self.warm = true;
+        let size = self.size as i32;
+        let index = |x: i32, y: i32| (y * size + x) as u32;
+        for diagonal in [false, true] {
+            for y in 0..size {
+                for x in 0..size {
+                    let from = index(x, y);
+                    let f = from as usize;
+                    for (dx, dy) in DIRECTIONS {
+                        if (dx != 0 && dy != 0) != diagonal {
+                            continue;
+                        }
+                        let (nx, ny) = (x + dx, y + dy);
+                        if nx < 0 || ny < 0 || nx >= size || ny >= size {
+                            continue;
+                        }
+                        let bit = direction_bit(dx, dy);
+                        if self.known[f] & bit != 0 {
+                            continue;
+                        }
+                        let to = index(nx, ny);
+                        let clear = if diagonal {
+                            let (bx, by) = (direction_bit(dx, 0), direction_bit(0, dy));
+                            let (side_x, side_y) = (index(nx, y) as usize, index(x, ny) as usize);
+                            let open = |c: usize, b: u8| self.edges[c] & b != 0;
+                            step(from, to)
+                                && open(f, bx)
+                                && open(f, by)
+                                && open(side_x, by)
+                                && open(side_y, bx)
+                        } else {
+                            step(from, to)
+                        };
+                        if clear {
+                            self.edges[f] |= bit;
+                        } else {
+                            self.edges[f] &= !bit;
+                        }
+                        self.known[f] |= bit;
+                    }
+                }
+            }
+        }
     }
 
     /// The step rule's answer for a cardinal neighbour step, remembered like the search's.

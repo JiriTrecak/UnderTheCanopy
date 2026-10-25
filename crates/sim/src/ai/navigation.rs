@@ -369,7 +369,33 @@ impl ObservedNavigation {
         for m in movers.iter().filter(|m| !m.air) {
             let i = self.profile(geo, m);
             self.mesh(geo, i);
+            self.warm(geo, i);
         }
+    }
+
+    /// Computes every neighbour step of a profile's grid ahead of play.
+    fn warm(&mut self, geo: &Geography, i: usize) {
+        let _span = tracing::trace_span!("ai warm steps").entered();
+        let size = self.size;
+        let ground = Ground {
+            walk: &self.walk,
+            heights: geo.terrain.heights(),
+        };
+        let steep = geo.terrain.steep_edges();
+        let (_, p) = &mut self.profiles[i];
+        if p.grid.warmed() {
+            return;
+        }
+        let adjacent = &p.adjacent;
+        let table = self
+            .clearance
+            .as_ref()
+            .map(|c| adjacent.table(size, c.closed(), steep));
+        let mut step = |x: u32, y: u32| match &table {
+            Some(t) => t.passes(size, x, y),
+            None => adjacent.clear(size, x, y, |u, v| ground.step(u, v)),
+        };
+        p.grid.warm(&mut step);
     }
 
     fn mesh(&mut self, geo: &Geography, i: usize) {

@@ -82,6 +82,36 @@ impl Spatial {
         }
     }
 
+    /// Computes every neighbour step of the body's grid ahead of play.
+    pub(super) fn warm_grid(&mut self, body: &Body) {
+        let radius = body.radius_milli();
+        self.ensure_navigation(radius);
+        let mut grid = self.grids.remove(&radius).expect("grid navigation");
+        if !grid.warmed() {
+            let table = match (self.adjacent.get(&radius), &self.clearance) {
+                (Some(sweep), Some(clearance)) if radius >= 500 => {
+                    Some(sweep.table(self.size, clearance.closed(), self.terrain.steep_edges()))
+                }
+                _ => None,
+            };
+            let exact = body_step(
+                self.size,
+                &self.walk,
+                self.terrain.heights(),
+                &self.adjacent,
+                radius,
+                planes(&self.clearance, &self.terrain),
+            );
+            let size = self.size;
+            let mut step = |a: u32, b: u32| match &table {
+                Some(t) => t.passes(size, a, b),
+                None => exact(a, b),
+            };
+            grid.warm(&mut step);
+        }
+        self.grids.insert(radius, grid);
+    }
+
     fn ensure_navigation(&mut self, radius: i32) {
         let cells = (self.size * self.size) as usize;
         self.steps
