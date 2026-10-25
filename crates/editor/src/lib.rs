@@ -8,6 +8,7 @@
 //! record the frame. The look is [`theme`] (Tailwind's zinc, as the old spell studio).
 
 mod assets;
+mod assistant;
 mod campaign;
 mod checker;
 mod document;
@@ -387,6 +388,17 @@ impl Editor {
 
     pub fn set_assistant(&mut self, open: bool) {
         self.shell.set_assistant(open);
+    }
+
+    /// Shows the assistant with `messages` as its thread (in the API's form) and, when
+    /// `settings`, its settings (captures).
+    pub fn assistant_thread(
+        &mut self,
+        title: &str,
+        messages: Vec<serde_json::Value>,
+        settings: bool,
+    ) {
+        self.shell.assistant_thread(title, messages, settings);
     }
 
     /// Runs one of MCP's campaign tools by its name (`add_campaign_step`,

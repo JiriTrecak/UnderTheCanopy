@@ -1104,6 +1104,44 @@ fn editor(rig: &mut Rig, paths: &Paths) -> Result<()> {
     }
     editor.set_assistant(true);
     shoot(&mut editor, rig, "editor-assistant")?;
+    // A finished conversation: what the user asked, Claude's notes and text, its tool
+    // calls (open, with their answers), as a thread holds them.
+    let thread = serde_json::json!([
+        {"role": "user", "content": [
+            {"type": "text", "text": "<editor-context>\nEditor: Units and heroes\n</editor-context>"},
+            {"type": "text", "text": "Make the Warrior a little tougher, about 10%."}
+        ]},
+        {"role": "assistant", "content": [
+            {"type": "thinking", "thinking": "Reading the Warrior and the units skill first.", "signature": "s"},
+            {"type": "tool_use", "id": "t1", "name": "read_skill", "input": {"name": "canopy-definitions"}},
+            {"type": "tool_use", "id": "t2", "name": "read_document", "input": {"document": "units/ants/warrior.json"}}
+        ]},
+        {"role": "user", "content": [
+            {"type": "tool_result", "tool_use_id": "t1", "content": "{ \"skill\": \"canopy-definitions\" }"},
+            {"type": "tool_result", "tool_use_id": "t2", "content": "{ \"body\": { \"maxHp\": 185, \"armor\": 1 } }"}
+        ]},
+        {"role": "assistant", "content": [
+            {"type": "tool_use", "id": "t3", "name": "edit", "input": {"label": "Warrior health 185 → 204", "commands": [
+                {"op": "set", "document": "units/ants/warrior.json", "pointer": "/body/maxHp", "value": 204}
+            ]}},
+            {"type": "tool_use", "id": "t4", "name": "problems", "input": {}}
+        ]},
+        {"role": "user", "content": [
+            {"type": "tool_result", "tool_use_id": "t3", "content": "{ \"done\": \"Warrior health 185 → 204\" }"},
+            {"type": "tool_result", "tool_use_id": "t4", "content": "{ \"problems\": [] }"}
+        ]},
+        {"role": "assistant", "content": [
+            {"type": "text", "text": "Done: the Warrior's health goes from **185** to **204** (+10%), in one undo step, *Warrior health 185 → 204*.\n\n- Armour stays at `1`; with it, a Warrior now survives one more hit from a Raider.\n- The check finds no problems. Nothing is saved yet."}
+        ]}
+    ]);
+    editor.assistant_thread(
+        "Make the Warrior a little tougher",
+        thread.as_array().cloned().unwrap_or_default(),
+        false,
+    );
+    shoot(&mut editor, rig, "editor-assistant-thread")?;
+    editor.assistant_thread("Settings", Vec::new(), true);
+    shoot(&mut editor, rig, "editor-assistant-settings")?;
     editor.set_assistant(false);
     editor.select(Kind::Races);
     editor.open_first(1);

@@ -15,6 +15,9 @@ flate2.workspace = true
 bzip2 = "0.6"
 base64.workspace = true
 canopy-assets = { path = "../assets" }
+# The assistant's HTTPS client (docs/editor.md, The assistant): the game's TLS setup.
+canopy-net = { path = "../net" }
+reqwest.workspace = true
 canopy-content = { path = "../content" }
 canopy-render = { path = "../render" }
 canopy-scene = { path = "../scene" }

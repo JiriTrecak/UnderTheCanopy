@@ -136,6 +136,21 @@ impl Shell {
                 self.cook_waiting.push(reply);
                 continue;
             }
+            if let Tool::LabRun(args) = tool {
+                // A run can take a second or more: off the editor's thread, on the content
+                // and scenario as they are now.
+                match self.lab_job(&args) {
+                    Ok((content, lab)) => {
+                        std::thread::spawn(move || {
+                            let _ = reply.send(run_lab(content, &lab, &args));
+                        });
+                    }
+                    Err(error) => {
+                        let _ = reply.send(Err(error));
+                    }
+                }
+                continue;
+            }
             let answer = self.answer(tool);
             let _ = reply.send(answer);
         }
@@ -215,8 +230,12 @@ impl Shell {
         }
         match tool {
             Tool::Status => {
+                let editor = self.current.label().to_lowercase();
+                let open = self.active_document();
                 let store = self.store.as_ref().expect("checked");
                 Ok(json!({
+                    "editor": editor,
+                    "open": open,
                     "package": self.package.as_ref().map(|p| p.root.display().to_string()).unwrap_or_default(),
                     "unsaved": store.dirty(),
                     "undo": store.undo_label(),
@@ -398,10 +417,211 @@ impl Shell {
                     .map_err(|e| e.to_string())?;
                 Ok(json!({ "renamed": old, "to": new, "uses": uses.len() }))
             }
+            Tool::Open { document } => {
+                let exists = self
+                    .store
+                    .as_mut()
+                    .is_some_and(|s| matches!(s.get(&document), Ok(Some(_))));
+                if !exists {
+                    return Err(format!("{document}: no such document"));
+                }
+                if Kind::of_document(&document).is_none() {
+                    return Err(format!("{document}: no editor shows it"));
+                }
+                self.reveal_document(&document);
+                Ok(json!({ "opened": document, "editor": self.current.label().to_lowercase() }))
+            }
+            Tool::Skill { name } => {
+                let data = self
+                    .data
+                    .as_deref()
+                    .ok_or("The editor has no repository.")?;
+                skill(data, name.as_deref())
+            }
+            Tool::Doc { path } => {
+                let data = self
+                    .data
+                    .as_deref()
+                    .ok_or("The editor has no repository.")?;
+                doc(data, &path)
+            }
+            Tool::LabRun(_) => unreachable!("lab runs answer when they finish"),
             _ => unreachable!("map tools answer above"),
         }
     }
 
+    /// What a lab run needs: the checked content and the scenario as the editor holds it.
+    fn lab_job(
+        &mut self,
+        args: &mcp::LabRunArgs,
+    ) -> Result<
+        (
+            std::sync::Arc<canopy_content::Content>,
+            canopy_content::lab::Lab,
+        ),
+        String,
+    > {
+        let content = self
+            .checked_content()
+            .ok_or("No version of the package has passed the check yet.")?;
+        let document = if args.scenario.starts_with(crate::lab::PREFIX) {
+            args.scenario.clone()
+        } else {
+            format!(
+                "{}{}{}",
+                crate::lab::PREFIX,
+                args.scenario,
+                canopy_content::lab::EXTENSION
+            )
+        };
+        let value = self
+            .store
+            .as_mut()
+            .and_then(|s| s.get(&document).ok().flatten().cloned())
+            .ok_or_else(|| {
+                format!("No scenario {document}; list_elements with editor lab lists them")
+            })?;
+        let lab: canopy_content::lab::Lab =
+            serde_json::from_value(value).map_err(|e| format!("{document}: {e}"))?;
+        let problems = lab.problems(&content);
+        if !problems.is_empty() {
+            return Err(format!("{document}: {}", problems.join("; ")));
+        }
+        Ok((content, lab))
+    }
+}
+
+/// Runs `lab` to its end (or `args.ticks`) and answers its measures.
+fn run_lab(
+    content: std::sync::Arc<canopy_content::Content>,
+    lab: &canopy_content::lab::Lab,
+    args: &mcp::LabRunArgs,
+) -> Result<Value, String> {
+    use canopy_sim::movement::tuning::{Approach, Tuning};
+    let mut tuning = Tuning::default();
+    if let Some(approach) = &args.approach {
+        tuning.approach = match approach.as_str() {
+            "spots" => Approach::Spots,
+            "direct" => Approach::Direct,
+            "ring" => Approach::Ring,
+            other => return Err(format!("No approach {other}: spots, direct or ring")),
+        };
+    }
+    if let Some(lead) = args.lead {
+        tuning.lead_fleeing = lead;
+    }
+    let mut run = canopy_sim::lab::Run::tuned(content, lab, tuning).map_err(|e| e.0.to_string())?;
+    let end = args.ticks.unwrap_or(lab.duration).min(lab.duration);
+    let started = std::time::Instant::now();
+    while run.tick() < end {
+        run.step();
+    }
+    let ms = started.elapsed().as_secs_f64() * 1000.0;
+    Ok(serde_json::json!({
+        "scenario": lab.name,
+        "seconds": f64::from(run.tick()) / f64::from(canopy_content::lab::TICKS),
+        "measures": run.measures(),
+        "stepMsMean": ms / f64::from(run.tick().max(1)),
+    }))
+}
+
+/// The skills folder of the repository at `data`.
+fn skills_dir(data: &std::path::Path) -> std::path::PathBuf {
+    data.join(".claude").join("skills")
+}
+
+/// A skill's `name:` and `description:` from its SKILL.md front matter.
+pub(crate) fn skill_summary(text: &str) -> (Option<String>, Option<String>) {
+    let mut name = None;
+    let mut description = None;
+    let mut lines = text.lines();
+    if lines.next().map(str::trim) != Some("---") {
+        return (None, None);
+    }
+    for line in lines {
+        if line.trim() == "---" {
+            break;
+        }
+        if let Some(v) = line.strip_prefix("name:") {
+            name = Some(v.trim().trim_matches('"').to_string());
+        } else if let Some(v) = line.strip_prefix("description:") {
+            description = Some(v.trim().trim_matches('"').to_string());
+        }
+    }
+    (name, description)
+}
+
+/// The repository's skills (`.claude/skills/*/SKILL.md`), by folder name.
+pub(crate) fn skills(data: &std::path::Path) -> Vec<(String, String)> {
+    let mut out = Vec::new();
+    let Ok(entries) = std::fs::read_dir(skills_dir(data)) else {
+        return out;
+    };
+    for entry in entries.flatten() {
+        let folder = entry.file_name().to_string_lossy().to_string();
+        if let Ok(text) = std::fs::read_to_string(entry.path().join("SKILL.md")) {
+            let (_, description) = skill_summary(&text);
+            out.push((folder, description.unwrap_or_default()));
+        }
+    }
+    out.sort();
+    out
+}
+
+/// `read_skill`: the list, or one skill's SKILL.md and the names of its other files.
+fn skill(data: &std::path::Path, name: Option<&str>) -> Result<Value, String> {
+    let Some(name) = name else {
+        let list: Vec<Value> = skills(data)
+            .into_iter()
+            .map(|(name, description)| serde_json::json!({ "name": name, "description": description }))
+            .collect();
+        return Ok(serde_json::json!({ "skills": list }));
+    };
+    if name.is_empty()
+        || !name
+            .chars()
+            .all(|c| c.is_ascii_alphanumeric() || c == '-' || c == '_')
+    {
+        return Err(format!("No skill {name}"));
+    }
+    let folder = skills_dir(data).join(name);
+    let text = std::fs::read_to_string(folder.join("SKILL.md"))
+        .map_err(|_| format!("No skill {name}; read_skill without a name lists them"))?;
+    let mut files: Vec<String> = Vec::new();
+    let mut stack = vec![folder.clone()];
+    while let Some(dir) = stack.pop() {
+        for entry in std::fs::read_dir(&dir).into_iter().flatten().flatten() {
+            let path = entry.path();
+            if path.is_dir() {
+                stack.push(path);
+            } else if let Ok(rel) = path.strip_prefix(data) {
+                let rel = rel.to_string_lossy().replace('\\', "/");
+                if !rel.ends_with("/SKILL.md") {
+                    files.push(rel);
+                }
+            }
+        }
+    }
+    files.sort();
+    Ok(serde_json::json!({ "skill": name, "text": text, "files": files }))
+}
+
+/// `read_doc`: a text file of the repository's documentation, never anything else.
+fn doc(data: &std::path::Path, path: &str) -> Result<Value, String> {
+    let path = path.trim_start_matches("./");
+    let allowed = path == "AGENTS.md"
+        || (path.starts_with("docs/") && path.ends_with(".md"))
+        || path.starts_with(".claude/skills/");
+    if !allowed || path.split('/').any(|part| part == ".." || part.is_empty()) {
+        return Err(format!(
+            "{path}: read_doc reads AGENTS.md, docs/*.md and skills' files only"
+        ));
+    }
+    let text = std::fs::read_to_string(data.join(path)).map_err(|e| format!("{path}: {e}"))?;
+    Ok(serde_json::json!({ "path": path, "text": text }))
+}
+
+impl Shell {
     /// The MCP panel: server state, start and stop, the setting, and the command for
     /// Claude Code.
     pub(super) fn mcp_dialog(&mut self, ctx: &egui::Context) {

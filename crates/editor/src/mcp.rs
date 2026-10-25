@@ -91,6 +91,35 @@ pub enum Tool {
     SoundEvents,
     /// Sound authoring with ElevenLabs (`crate::sound`), answered when it finishes.
     Sound(crate::sound::Call),
+    /// Shows a document in its editor, as a click in its library does.
+    Open {
+        document: String,
+    },
+    /// Runs a Combat Lab scenario headless (`canopy_sim::lab::Run`).
+    LabRun(LabRunArgs),
+    /// The repository's skills: the list, or one skill's text.
+    Skill {
+        name: Option<String>,
+    },
+    /// A file of the repository's docs or skills, read-only.
+    Doc {
+        path: String,
+    },
+}
+
+/// A Combat Lab scenario run to its end (or `ticks`), with the lab's tuning switches.
+#[derive(Debug, Clone, Deserialize, JsonSchema)]
+#[serde(rename_all = "camelCase")]
+pub struct LabRunArgs {
+    /// The scenario: its id (`tower-melee`) or its document (`@labs/tower-melee.lab.json`).
+    /// Unsaved edits play.
+    pub scenario: String,
+    /// Ticks to run (40 a second); the scenario's whole duration when absent.
+    pub ticks: Option<u32>,
+    /// The melee approach: spots (the game's), direct or ring.
+    pub approach: Option<String>,
+    /// Fast melee units lead a fleeing target (lab only).
+    pub lead: Option<bool>,
 }
 
 /// An ability's encounter, headless (the ability stage's take run to its end).
@@ -303,6 +332,19 @@ pub struct MapRemoveArgs {
     /// Any of starts, entities (amber, camps: a camp goes whole) and trees (scenery
     /// objects). All of them when absent.
     pub what: Option<Vec<String>>,
+}
+
+#[derive(Debug, Deserialize, JsonSchema)]
+struct SkillArgs {
+    /// The skill's name (`canopy-editor`); absent lists every skill with what it covers.
+    name: Option<String>,
+}
+
+#[derive(Debug, Deserialize, JsonSchema)]
+struct DocArgs {
+    /// A path from the repository's root: `AGENTS.md`, `docs/<name>.md`, or a file of a
+    /// skill (`.claude/skills/<name>/<file>`).
+    path: String,
 }
 
 #[derive(Clone)]
@@ -704,11 +746,167 @@ impl Handler {
     ) -> Result<CallToolResult, ErrorData> {
         self.ask(Tool::MapRemove(args)).await
     }
+
+    #[tool(
+        description = "Shows a document to the user in its editor (a unit, an ability, a map, a campaign, a lab scenario …), as a click in its library does: its tab opens and comes to the front."
+    )]
+    async fn open(
+        &self,
+        Parameters(args): Parameters<DocumentArgs>,
+    ) -> Result<CallToolResult, ErrorData> {
+        self.ask(Tool::Open {
+            document: args.document,
+        })
+        .await
+    }
+
+    #[tool(
+        description = "Runs a Combat Lab scenario (labs/*.lab.json) with the real simulation and returns its measures per group: alive, arrivals, unit-seconds held up and the longest hold-up, course flips, damage taken, the first swing and the most in reach at once, the worst overlap of two bodies, and the step's cost. The lab's tuning switches (approach, lead) apply to this run only; matches always play the game's."
+    )]
+    async fn lab_run(
+        &self,
+        Parameters(args): Parameters<LabRunArgs>,
+    ) -> Result<CallToolResult, ErrorData> {
+        self.ask(Tool::LabRun(args)).await
+    }
+
+    #[tool(
+        description = "The repository's skills: without a name, every skill with what it covers; with one, its SKILL.md and the other files in its folder. canopy-editor describes the editor's workbenches and these tools; the canopy-* skills describe the content formats."
+    )]
+    async fn read_skill(
+        &self,
+        Parameters(args): Parameters<SkillArgs>,
+    ) -> Result<CallToolResult, ErrorData> {
+        self.ask(Tool::Skill { name: args.name }).await
+    }
+
+    #[tool(
+        description = "Reads a file of the repository's documentation, read-only: AGENTS.md, docs/*.md (the plan, decisions, editor, campaign, story …) or a file of a skill's folder."
+    )]
+    async fn read_doc(
+        &self,
+        Parameters(args): Parameters<DocArgs>,
+    ) -> Result<CallToolResult, ErrorData> {
+        self.ask(Tool::Doc { path: args.path }).await
+    }
+}
+
+/// Every tool's definition (name, description, input schema), as MCP lists them; the
+/// assistant offers the same tools to Claude.
+pub fn definitions() -> Vec<rmcp::model::Tool> {
+    Handler::tool_router().list_all()
+}
+
+/// The tool call `name` with `args`, as the MCP handlers above build it (the assistant's
+/// dispatch: one set of tools, one set of answers).
+pub fn parse(name: &str, args: Value) -> Result<Tool, String> {
+    use crate::campaign::tools::Call as Campaign;
+    use crate::sound::Call as Sound;
+    fn arg<T: serde::de::DeserializeOwned>(args: Value) -> Result<T, String> {
+        let args = if args.is_null() {
+            Value::Object(Default::default())
+        } else {
+            args
+        };
+        serde_json::from_value(args).map_err(|e| format!("invalid arguments: {e}"))
+    }
+    Ok(match name {
+        "status" => Tool::Status,
+        "list_elements" => Tool::List {
+            editor: arg::<ListArgs>(args)?.editor,
+        },
+        "read_document" => Tool::Read {
+            document: arg::<DocumentArgs>(args)?.document,
+        },
+        "document_schema" => Tool::Schema {
+            document: arg::<DocumentArgs>(args)?.document,
+        },
+        "edit" => {
+            let a: EditArgs = arg(args)?;
+            Tool::Edit {
+                label: a.label,
+                commands: a.commands,
+            }
+        }
+        "undo" => Tool::Undo,
+        "redo" => Tool::Redo,
+        "save" => Tool::Save {
+            force: arg::<SaveArgs>(args)?.force,
+        },
+        "problems" => Tool::Problems,
+        "find_uses" => Tool::Uses {
+            id: arg::<UsesArgs>(args)?.id,
+        },
+        "rename_id" => {
+            let a: RenameArgs = arg(args)?;
+            Tool::Rename {
+                document: a.document,
+                new: a.new,
+            }
+        }
+        "create_map" => Tool::MapCreate(arg(args)?),
+        "map_info" => Tool::MapInfo {
+            map: arg::<MapArgs>(args)?.map,
+        },
+        "map_picture" => {
+            let a: MapPictureArgs = arg(args)?;
+            Tool::MapPicture {
+                map: a.map,
+                scale: a.scale,
+            }
+        }
+        "map_blocks" => Tool::MapBlocks(arg(args)?),
+        "map_place" => Tool::MapPlace(arg(args)?),
+        "map_remove" => Tool::MapRemove(arg(args)?),
+        "unused_assets" => Tool::UnusedAssets,
+        "import_asset" => Tool::Import(arg(args)?),
+        "cook" => Tool::Cook,
+        "map_preview" => Tool::MapPreview {
+            map: arg::<MapArgs>(args)?.map,
+        },
+        "import_starcraft" => Tool::ImportStarcraft(arg(args)?),
+        "encounter" => Tool::Encounter(arg(args)?),
+        "create_campaign" => Tool::Campaign(Campaign::Create(arg(args)?)),
+        "campaign_steps" => Tool::Campaign(Campaign::Steps(arg(args)?)),
+        "add_campaign_step" => Tool::Campaign(Campaign::Add(arg(args)?)),
+        "move_campaign_step" => Tool::Campaign(Campaign::Move(arg(args)?)),
+        "remove_campaign_step" => Tool::Campaign(Campaign::Remove(arg(args)?)),
+        "set_campaign_step" => Tool::Campaign(Campaign::Set(arg(args)?)),
+        "set_mission_tech" => Tool::Campaign(Campaign::Tech(arg(args)?)),
+        "mission_tech_tree" => Tool::Campaign(Campaign::Tree(arg(args)?)),
+        "set_mission_players" => Tool::Campaign(Campaign::Players(arg(args)?)),
+        "sound_events" => Tool::SoundEvents,
+        "generate_sound" => Tool::Sound(Sound::Generate(Box::new(arg(args)?))),
+        "pick_sound" => Tool::Sound(Sound::Pick(arg(args)?)),
+        "keep_voice" => Tool::Sound(Sound::Keep(arg(args)?)),
+        "open" => Tool::Open {
+            document: arg::<DocumentArgs>(args)?.document,
+        },
+        "lab_run" => Tool::LabRun(arg(args)?),
+        "read_skill" => Tool::Skill {
+            name: arg::<SkillArgs>(args)?.name,
+        },
+        "read_doc" => Tool::Doc {
+            path: arg::<DocArgs>(args)?.path,
+        },
+        other => return Err(format!("No tool {other}.")),
+    })
+}
+
+/// Tools that write files at once or spend money: the assistant asks before running them.
+pub fn needs_approval(name: &str, args: &Value) -> bool {
+    match name {
+        "save" | "cook" | "import_asset" | "map_preview" | "generate_sound" | "pick_sound"
+        | "keep_voice" => true,
+        // Listing the machine's maps writes nothing; importing one does.
+        "import_starcraft" => args.get("source").is_some_and(|s| !s.is_null()),
+        _ => false,
+    }
 }
 
 #[tool_handler(
     name = "Under the Canopy editor",
-    instructions = "Edits the game's base package (units, buildings, items, abilities, effects, races, rules, assets, maps) through the open editor. Find documents with list_elements, read them with read_document and their shape with document_schema, change them with edit (one undo step per call), check with problems, then save. Maps have their own tools: create_map, map_blocks (the block editor, D80), map_place, map_remove, map_info and map_picture. Campaigns too: create_campaign, campaign_steps, add_campaign_step, move_campaign_step, remove_campaign_step, set_campaign_step, set_mission_tech, mission_tech_tree and set_mission_players (docs/campaign.md). Sounds: sound_events, generate_sound, pick_sound and keep_voice (D97, skill canopy-sounds). The canopy-* skills in the repository describe the formats."
+    instructions = "Edits the game's base package (units, buildings, items, abilities, effects, races, rules, assets, maps) through the open editor. Find documents with list_elements, read them with read_document and their shape with document_schema, change them with edit (one undo step per call), check with problems, then save. Maps have their own tools: create_map, map_blocks (the block editor, D80), map_place, map_remove, map_info and map_picture. Campaigns too: create_campaign, campaign_steps, add_campaign_step, move_campaign_step, remove_campaign_step, set_campaign_step, set_mission_tech, mission_tech_tree and set_mission_players (docs/campaign.md). Sounds: sound_events, generate_sound, pick_sound and keep_voice (D97, skill canopy-sounds). The Combat Lab: lab_run (scenarios are documents under @labs/). open shows a document to the user. read_skill lists and reads the repository's skills (canopy-editor covers the editor and these tools; the canopy-* skills the formats); read_doc reads docs/*.md."
 )]
 impl ServerHandler for Handler {}
 

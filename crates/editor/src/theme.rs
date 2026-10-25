@@ -81,6 +81,15 @@ pub fn apply(ctx: &egui::Context, fonts: &[Vec<u8>]) {
             .or_default()
             .insert(i, name);
     }
+    // Claude's text and the tool rows use arrows and marks the interface font and egui's
+    // proportional fallbacks lack (→, ✓, ✕); egui's monospace font has them.
+    if definitions.font_data.contains_key("Hack") {
+        definitions
+            .families
+            .entry(FontFamily::Proportional)
+            .or_default()
+            .push("Hack".into());
+    }
     ctx.set_fonts(definitions);
     ctx.set_theme(egui::Theme::Dark);
     ctx.all_styles_mut(style);

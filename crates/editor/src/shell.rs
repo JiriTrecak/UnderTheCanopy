@@ -29,6 +29,7 @@ mod art;
 mod campaigns;
 mod maps;
 mod serve;
+pub(crate) use serve::skills;
 
 /// One editor's state, kept while switching editors.
 struct Workspace {
@@ -194,7 +195,10 @@ pub struct Shell {
     workspaces: HashMap<Kind, Workspace>,
     /// Whether the library (the list on the left) shows.
     library: bool,
+    /// The assistant's sidebar shows, and the assistant itself (its threads and the turn
+    /// at work, which goes on while the sidebar is closed).
     assistant: bool,
+    chat: crate::assistant::Assistant,
     /// Asking about unsaved changes before leaving.
     leaving: Option<Leave>,
     /// A short message in the header (saved, an error) and when it was set.
@@ -309,6 +313,7 @@ impl Shell {
         if let (Some(store), Some(labs)) = (store.as_mut(), labs.as_ref()) {
             store.mount(crate::lab::MOUNT_NAME, labs);
         }
+        let chat = crate::assistant::Assistant::new(user.clone(), data.clone());
         let token = serve::token(user.as_deref());
         let autostart = serve::autostart(user.as_deref());
         Self {
@@ -363,6 +368,7 @@ impl Shell {
             workspaces: HashMap::new(),
             library: true,
             assistant: false,
+            chat,
             leaving: None,
             notice: None,
             campaigns: Default::default(),
@@ -387,8 +393,19 @@ impl Shell {
         self.follow_disk();
         self.shortcuts(ui.ctx());
         self.rail(ui);
+        // A call waiting for the user's approval brings the sidebar back.
+        if self
+            .chat
+            .running
+            .as_ref()
+            .is_some_and(|r| r.approval.is_some())
+        {
+            self.assistant = true;
+        }
         if self.assistant {
             self.assistant(ui);
+        } else {
+            self.chat.poll();
         }
         self.header(ui);
         self.problems(ui);
@@ -2525,6 +2542,21 @@ impl Shell {
         self.current = kind;
     }
 
+    pub(crate) fn assistant_thread(&mut self, title: &str, messages: Vec<Value>, settings: bool) {
+        self.assistant = true;
+        self.chat.thread = crate::assistant::Thread {
+            id: "capture".into(),
+            title: title.into(),
+            messages,
+            usage: [5_200, 840, 38_000, 0],
+            cost: 0.04,
+            ..Default::default()
+        };
+        self.chat.settings_open = settings;
+        self.chat.list_open = false;
+        self.chat.follow = true;
+    }
+
     pub fn set_assistant(&mut self, open: bool) {
         self.assistant = open;
     }
@@ -2895,94 +2927,45 @@ impl Shell {
     }
 
     fn assistant(&mut self, ui: &mut Ui) {
+        let context = self.assistant_context();
+        let calls = self.calls.0.clone();
+        let mut close = false;
         egui::Panel::right("assistant")
-            .exact_size(ASSISTANT)
-            .resizable(false)
+            .default_size(ASSISTANT)
+            .size_range(320.0..=760.0)
+            .resizable(true)
             .show_separator_line(true)
             .frame(Frame::new().fill(SUNK))
             .show(ui, |ui| {
-                egui::Panel::top("assistant-heading")
-                    .exact_size(HEADER)
-                    .resizable(false)
-                    .show_separator_line(true)
-                    .frame(Frame::new().inner_margin(Margin {
-                        left: 16,
-                        right: 12,
-                        top: 0,
-                        bottom: 0,
-                    }))
-                    .show(ui, |ui| {
-                        ui.with_layout(Layout::left_to_right(Align::Center), |ui| {
-                            ui.vertical(|ui| {
-                                ui.spacing_mut().item_spacing.y = 2.0;
-                                ui.add_space(13.0);
-                                ui.label(
-                                    RichText::new("Assistant").size(13.0).color(TEXT).strong(),
-                                );
-                                ui.label(eyebrow("All editors").size(8.0));
-                            });
-                            ui.with_layout(Layout::right_to_left(Align::Center), |ui| {
-                                if icon_button(ui, Icon::Close, false, true)
-                                    .on_hover_text("Close")
-                                    .clicked()
-                                {
-                                    self.assistant = false;
-                                }
-                                icon_button(ui, Icon::Plus, false, false)
-                                    .on_hover_text("New thread");
-                            });
-                        });
-                    });
-                egui::Panel::top("assistant-threads")
-                    .resizable(false)
-                    .show_separator_line(true)
-                    .frame(Frame::new().inner_margin(Margin::symmetric(16, 12)))
-                    .show(ui, |ui| {
-                        ui.label(eyebrow("Threads"));
-                        ui.label(RichText::new("No threads yet").color(FAINT));
-                    });
-                egui::Panel::bottom("assistant-composer")
-                    .resizable(false)
-                    .show_separator_line(false)
-                    .frame(Frame::new().inner_margin(Margin::same(12)))
-                    .show(ui, |ui| {
-                        Frame::new()
-                            .fill(RAISED)
-                            .stroke(Stroke::new(1.0, STRONG))
-                            .corner_radius(10)
-                            .inner_margin(Margin::same(10))
-                            .show(ui, |ui| {
-                                ui.add_enabled_ui(false, |ui| {
-                                    let mut empty = String::new();
-                                    ui.add(
-                                        TextEdit::multiline(&mut empty)
-                                            .hint_text("Ask about anything in the open package…")
-                                            .desired_rows(2)
-                                            .desired_width(f32::INFINITY)
-                                            .frame(Frame::NONE),
-                                    );
-                                    ui.horizontal(|ui| {
-                                        ui.label(
-                                            RichText::new("Claude API").color(FAINT).size(11.0),
-                                        );
-                                        ui.with_layout(
-                                            Layout::right_to_left(Align::Center),
-                                            |ui| {
-                                                icon_button(ui, Icon::Send, false, false);
-                                            },
-                                        );
-                                    });
-                                });
-                            });
-                    });
-                egui::CentralPanel::no_frame().show(ui, |ui| {
-                    empty(
-                        ui,
-                        "The assistant comes in a later milestone",
-                        "One assistant for every editor, with a thread per topic. It edits through the same commands as the editor, so its changes undo like yours.",
-                    );
-                });
+                let env = crate::assistant::Env {
+                    calls: &calls,
+                    context,
+                };
+                if let Some(crate::assistant::view::Action::Close) = self.chat.show(ui, &env) {
+                    close = true;
+                }
             });
+        if close {
+            self.assistant = false;
+        }
+    }
+
+    /// What the user is looking at, for the assistant's next message.
+    fn assistant_context(&mut self) -> String {
+        let open = self.active_document();
+        let unsaved = self.store.as_ref().map_or(0, |s| s.dirty().len());
+        let problems = self.problem_count();
+        let mut lines = vec![format!("Editor: {}", self.current.name())];
+        lines.push(match open {
+            Some(document) => format!("Open document: {document}"),
+            None => "Open document: none".into(),
+        });
+        lines.push(format!("Unsaved documents: {unsaved}"));
+        lines.push(match problems {
+            Some(n) => format!("Problems found by the check: {n}"),
+            None => "The check is running".into(),
+        });
+        lines.join("\n")
     }
 }
 

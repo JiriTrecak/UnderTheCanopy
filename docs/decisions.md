@@ -1125,3 +1125,17 @@ The render thread's live scene, world UI, HUD and menu are optimised under one r
 - **Campaign:** the campaign screen's Difficulty choice is kept in the player's progress (a reset keeps it) and may change between any two missions. A mission gets it in its `CampaignStart` (saved in the campaign state); its computer players take it as their seats' level, and scripts read it with `mission.difficulty()` ("easy", "normal", "hard"; "normal" outside a campaign).
 - **Every level plays the same AI for now.** One AI is pushed first; what each level changes is decided after. The levels will differ in `AiRules::at` (the skirmish AI and a mission's Skirmish players) and in mission scripts and wave lines (the wave format leaves room for numbers per level).
 - **Multiplayer lobbies** keep their computer seats at Normal until the multiplayer pass (the match server does not carry the level yet).
+
+
+
+## D106. The editor's assistant (2026-10-25, Jiri: "implement the AI assist … it should be able to control all of the aspects of the editor, all the workbenches … tool calling and skills"; the rest decided by Claude, review)
+
+- **The MCP tools are the assistant's tools.** One definition list and one dispatch (`mcp::definitions`, `mcp::parse`): the assistant inside and agents outside call the same tools and get the same answers, all through the editor's commands on its thread, so every change is an undo step. New tools go to both.
+- **Skills over a giant prompt.** The system prompt states how the editor works and lists the content skills; the assistant reads a skill (`read_skill`) or a document (`read_doc`) when the task needs it. `canopy-editor` is the skill for the editor and its tools.
+- **Claude Opus 5.5, adaptive thinking, high effort by default**, Sonnet 5.5 as the cheaper choice; streamed over raw HTTPS (Rust has no official SDK), `fallbacks: "default"` for refusals, progress notes between tool calls, the stable prefix cached, the history append-only.
+- **Ask before writing files or spending money** (save, cook, imports, map previews, ElevenLabs); everything else runs as undoable edits.
+- **The user's key, kept private**: the environment's `ANTHROPIC_API_KEY`, else one kept in the user folder (owner-only); never shown or logged.
+
+## 2026-10-25 — Neighboring Understaffed relay routes
+
+The user approved deploying a separate Understaffed room-code relay on the existing EC2 alongside Canopy. Added an optional `/etc/nginx/understaffed-routes/*.conf` include inside the TLS server in `server/deploy/nginx.conf`, so future Canopy deployments preserve those routes. Understaffed runs its own systemd service on loopback port 8788; Canopy remains on 8787. No Canopy game protocol or gameplay changes. Understaffed deployment and validation are maintained in the adjacent Understaffed repository.
