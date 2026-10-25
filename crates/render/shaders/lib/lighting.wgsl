@@ -120,19 +120,39 @@ fn canopy_light(p: vec3f) -> f32 {
     return 1.0 - canopy_shade(p);
 }
 
+// Light `i`'s share at the surface (none beyond its range).
+fn point_light(s: Surface, diffuse: vec3f, i: u32) -> vec3f {
+    let light = lights.list[i];
+    let to_light = light.position.xyz - s.position;
+    let d = length(to_light);
+    let range = light.position.w;
+    if (d >= range) {
+        return vec3f(0.0);
+    }
+    let falloff = pow(clamp(1.0 - pow(d / range, 4.0), 0.0, 1.0), 2.0) / max(d * d, 0.01);
+    let nl = max(dot(s.normal, to_light / max(d, 1e-4)), 0.0);
+    return light.color.rgb * falloff * nl * diffuse / PI;
+}
+
+// The lights reaching the surface, summed in their order: the light grid's cell lists
+// every light that may reach it, so the lights it leaves out would add nothing.
 fn point_light_sum(s: Surface, diffuse: vec3f) -> vec3f {
     var sum = vec3f(0.0);
-    for (var i = 0u; i < frame.counts.x; i++) {
-        let light = point_lights[i];
-        let to_light = light.position.xyz - s.position;
-        let d = length(to_light);
-        let range = light.position.w;
-        if (d >= range) {
-            continue;
+    if (frame.counts.x == 0u) {
+        return sum;
+    }
+    let cell = vec2i(floor((s.position.xz - lights.grid.xy) * lights.grid.z));
+    if (any(cell < vec2i(0)) || any(cell >= vec2i(lights.size.xy))) {
+        return sum;
+    }
+    let mask = lights.cells[u32(cell.y) * lights.size.x + u32(cell.x)];
+    for (var word = 0u; word < 2u; word++) {
+        var bits = mask[word];
+        while (bits != 0u) {
+            let i = word * 32u + firstTrailingBit(bits);
+            bits &= bits - 1u;
+            sum += point_light(s, diffuse, i);
         }
-        let falloff = pow(clamp(1.0 - pow(d / range, 4.0), 0.0, 1.0), 2.0) / max(d * d, 0.01);
-        let nl = max(dot(s.normal, to_light / max(d, 1e-4)), 0.0);
-        sum += light.color.rgb * falloff * nl * diffuse / PI;
     }
     return sum;
 }

@@ -41,6 +41,17 @@ struct VsOut {
     @location(4) @interpolate(flat) instance: u32,
 }
 
+// `VsOut` for the lit pass after a depth prepass: it must place every vertex exactly as
+// the prepass (it tests depth for equality), so the position is invariant.
+struct VsOutInvariant {
+    @builtin(position) @invariant clip: vec4f,
+    @location(0) world: vec3f,
+    @location(1) normal: vec3f,
+    @location(2) uv: vec2f,
+    @location(3) color: vec4f,
+    @location(4) @interpolate(flat) instance: u32,
+}
+
 struct Placed {
     world: vec3f,
     local: vec3f,
@@ -75,6 +86,16 @@ fn normal_matrix(m: Affine) -> mat3x3f {
 
 @vertex
 fn vs_main(in: VertexIn, @builtin(instance_index) slot: u32) -> VsOut {
+    return vertex(in, slot);
+}
+
+@vertex
+fn vs_lit(in: VertexIn, @builtin(instance_index) slot: u32) -> VsOutInvariant {
+    let v = vertex(in, slot);
+    return VsOutInvariant(v.clip, v.world, v.normal, v.uv, v.color, v.instance);
+}
+
+fn vertex(in: VertexIn, slot: u32) -> VsOut {
     let id = visible[slot];
     let inst = instances[id];
     let m = Affine(inst.r0, inst.r1, inst.r2);
@@ -103,8 +124,8 @@ fn vs_main(in: VertexIn, @builtin(instance_index) slot: u32) -> VsOut {
     return out;
 }
 
-@fragment
-fn fs_main(in: VsOut, @builtin(front_facing) front: bool) -> SceneOut {
+// The shaded fragment of a section (cutaway and alpha test aside).
+fn lit(in: VsOut, front: bool) -> vec4f {
     var f: MaterialFragment;
     f.frag = in.clip;
     f.world = in.world;
@@ -121,14 +142,69 @@ fn fs_main(in: VsOut, @builtin(front_facing) front: bool) -> SceneOut {
     if (has(FOLIAGE)) {
         f.tint = foliage_variation(instances[in.instance]);
     }
-    if (cut_away(in.instance, in.clip.xy, in.world) || above_rts(in.instance, in.clip.xy, in.world)) {
+    return shade_material(f);
+}
+
+fn cut(instance: u32, clip: vec4f, world: vec3f) -> bool {
+    return cut_away(instance, clip.xy, world) || above_rts(instance, clip.xy, world);
+}
+
+// Sections the cutaway may open, alpha-tested and blended sections.
+@fragment
+fn fs_main(in: VsOut, @builtin(front_facing) front: bool) -> SceneOut {
+    if (cut(in.instance, in.clip, in.world)) {
         discard;
     }
-    let shaded = shade_material(f);
+    let shaded = lit(in, front);
     if (has(ALPHA_MASK) && shaded.a <= 0.0) {
         discard;
     }
     return scene_out(shaded, in.world);
+}
+
+// Opaque sections nothing can cut: no discard, so the GPU shades only the visible
+// surface, never hidden back faces or models behind models.
+@fragment
+fn fs_opaque(in: VsOut, @builtin(front_facing) front: bool) -> SceneOut {
+    return scene_out(lit(in, front), in.world);
+}
+
+// Opaque sections of canopy models the cutaway or the RTS ceiling may cut this frame draw
+// twice: a depth prepass (`fs_prepass_cut`, which carries the discards) settles which
+// samples they cover, then this pass shades exactly those samples (depth equal, no
+// writes) without a discard.
+@fragment
+fn fs_lit(in: VsOutInvariant, @builtin(front_facing) front: bool) -> SceneOut {
+    let v = VsOut(in.clip, in.world, in.normal, in.uv, in.color, in.instance);
+    return scene_out(lit(v, front), in.world);
+}
+
+// The prepass places vertices exactly as `vs_lit` (the same computation, invariant) and
+// passes on only what the cutaway reads.
+struct PrepassOut {
+    @builtin(position) @invariant clip: vec4f,
+    @location(0) world: vec3f,
+    @location(1) @interpolate(flat) instance: u32,
+}
+
+@vertex
+fn vs_prepass(in: VertexIn, @builtin(instance_index) slot: u32) -> PrepassOut {
+    let id = visible[slot];
+    let inst = instances[id];
+    let m = Affine(inst.r0, inst.r1, inst.r2);
+    let placed = place(m, in.position.xyz, in.leaf, has(FOLIAGE));
+    var out: PrepassOut;
+    out.world = placed.world;
+    out.clip = frame.view_proj * vec4f(placed.world, 1.0);
+    out.instance = id;
+    return out;
+}
+
+@fragment
+fn fs_prepass_cut(in: PrepassOut) {
+    if (cut(in.instance, in.clip, in.world)) {
+        discard;
+    }
 }
 
 // Foliage variation: every instance of a foliage model gets its own value and warmth from
@@ -173,9 +249,10 @@ fn cut_away(id: u32, frag: vec2f, world: vec3f) -> bool {
     return dither_discard(amount, frag);
 }
 
-// Giants above the RTS view: a canopy model's parts more than `RTS_CEILING` above its base
-// stipple away as the camera pitches down (the surroundings' rule, surroundings.wgsl), so a
-// tree can rise into the canopy for close cameras without covering the map from above.
+// Giants above the RTS view: a canopy model's parts more than `RTS_CEILING` above its
+// base stipple away as the camera pitches down (the surroundings' rule, surroundings.wgsl),
+// so a tree can rise into the canopy for close cameras without covering the map from
+// above. statics.rs keeps its own `RTS_CEILING` in step.
 // Shadows keep the whole tree, so its crown still shades the ground.
 const RTS_CEILING: f32 = 75.0;
 

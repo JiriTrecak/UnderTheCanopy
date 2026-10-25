@@ -6,9 +6,9 @@
 //! `step`, bound the map in light space. The light space is anchored at the world origin,
 //! so snapping the bounds to texels is the same wherever the camera is.
 
-use crate::camera::CameraView;
+use crate::camera::{CameraView, frustum_planes};
 use crate::environment::ShadowConfig;
-use glam::{Mat4, Vec3, Vec4Swizzles};
+use glam::{Mat4, Vec3, Vec4, Vec4Swizzles};
 
 /// How far towards the sun beyond the fitted slice casters are kept (tall trees, hills).
 pub const CASTER_REACH: f32 = 120.0;
@@ -98,6 +98,81 @@ pub fn fit(
     }
 }
 
+/// Which shadow casters can darken anything the camera sees.
+///
+/// Every surface that reads the sun's map (lit surfaces, water, the haze march) lies
+/// inside the camera's view, and reads it only where its depth is inside the map. A
+/// caster can only shade a point that lies behind it, away from the sun; so a caster
+/// matters only when its bounding sphere, swept away from the sun until the map's far
+/// plane or below the lowest ground (nothing under all of the ground can be seen),
+/// touches the camera's view. The sphere grows by every offset a read takes:
+/// the receivers' normal offset, the filter disk and the hardware filter's texels, and
+/// a little sway. Skipping the others leaves every texel any visible pixel reads as it
+/// was.
+#[derive(Debug, Clone, Copy, PartialEq)]
+pub struct CasterCull {
+    /// The camera's side planes and its near plane (n·p + d ≥ 0 inside).
+    pub planes: [Vec4; 5],
+    /// Unit vector towards the sun; w: the margin added to every radius (world units).
+    pub sweep: Vec4,
+    /// The map's depth row: `depth · (p, 1)` is a point's depth in the map (0 at the sun).
+    pub depth: Vec4,
+    /// Height under which nothing can be seen (the lowest ground), world units.
+    pub floor: f32,
+}
+
+/// Wind sway beyond a model's rest bounds, world units (scenery's flutter is centimetres).
+const SWAY_MARGIN: f32 = 0.5;
+
+impl CasterCull {
+    /// `texel`: the map's world units per texel; `filter`: the filter disk's radius in
+    /// texels (`shadow_softness`); `normal_offset`: the receivers' offset, world units;
+    /// `floor`: the lowest ground (`f32::MIN` when unknown).
+    pub fn new(
+        camera: Mat4,
+        shadow: Mat4,
+        towards_sun: Vec3,
+        texel: f32,
+        filter: f32,
+        normal_offset: f32,
+        floor: f32,
+    ) -> Self {
+        let p = frustum_planes(camera);
+        // The disk's radius (at least half a texel), the 2×2 comparison filter and the
+        // diagonal of a texel.
+        let margin = normal_offset
+            + (filter.max(0.5) + 2.0) * texel * std::f32::consts::SQRT_2
+            + SWAY_MARGIN;
+        Self {
+            planes: [p[0], p[1], p[2], p[3], p[5]],
+            sweep: towards_sun.normalize().extend(margin),
+            depth: shadow.row(2),
+            floor,
+        }
+    }
+
+    /// Whether a caster with this world bounding sphere can shade a visible point.
+    pub fn casts_into_view(&self, sphere: Vec4) -> bool {
+        let towards_sun = self.sweep.truncate();
+        let radius = sphere.w + self.sweep.w;
+        let start = sphere.truncate();
+        // Depth grows by `rate` per unit moved away from the sun.
+        let rate = -self.depth.truncate().dot(towards_sun);
+        if rate <= 1e-6 {
+            return true;
+        }
+        let depth = self.depth.dot(start.extend(1.0));
+        let mut length = ((1.0 - depth) / rate).max(0.0) + radius;
+        if towards_sun.y > 1e-3 {
+            length = length.min(((start.y + radius - self.floor) / towards_sun.y).max(0.0));
+        }
+        let end = start - towards_sun * length;
+        self.planes.iter().all(|p| {
+            p.truncate().dot(start) + p.w >= -radius || p.truncate().dot(end) + p.w >= -radius
+        })
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -140,6 +215,47 @@ mod tests {
             .project_point3(Vec3::new(300.0, 20.0, 300.0));
         assert!(top.z > 0.0);
         assert!(shadow.size[0] % 4.0 == 0.0);
+    }
+
+    #[test]
+    fn only_casters_whose_shadow_reaches_the_view_are_kept() {
+        let camera = RtsCamera::new([300.0, 300.0], None).view(16.0 / 9.0, &FlatGround);
+        let shadow = fit(&camera, 0.0, sun(), &config());
+        let cull = CasterCull::new(
+            camera.view_projection,
+            shadow.view_projection,
+            sun(),
+            shadow.texel,
+            1.5,
+            0.025,
+            f32::MIN,
+        );
+        let planes = frustum_planes(camera.view_projection);
+        let visible = |p: Vec3| planes.iter().all(|q| q.truncate().dot(p) + q.w >= 0.0);
+        // A caster standing in view casts into it.
+        assert!(cull.casts_into_view(Vec3::new(300.0, 2.0, 300.0).extend(1.0)));
+        // Casters just outside the view on the sun's side shade it; on the far side
+        // they do not. Find, along the sun's ground direction, the last ground point in
+        // view.
+        let ground = Vec3::new(sun().x, 0.0, sun().z).normalize();
+        let edge = (0..4000)
+            .map(|i| Vec3::new(300.0, 0.0, 300.0) + ground * (i as f32 * 0.1))
+            .take_while(|&p| visible(p))
+            .last()
+            .unwrap();
+        // A tall caster a little beyond the edge, towards the sun: its shadow falls back
+        // into view.
+        let tall = (edge + ground * 4.0 + Vec3::Y * 6.0).extend(1.0);
+        assert!(!visible(tall.truncate()));
+        assert!(cull.casts_into_view(tall));
+        // Away from the sun, beyond the opposite edge: nothing it shades is in view.
+        let back = (0..4000)
+            .map(|i| Vec3::new(300.0, 0.0, 300.0) - ground * (i as f32 * 0.1))
+            .take_while(|&p| visible(p))
+            .last()
+            .unwrap();
+        let behind = (back - ground * 20.0 + Vec3::Y).extend(1.0);
+        assert!(!cull.casts_into_view(behind));
     }
 
     #[test]

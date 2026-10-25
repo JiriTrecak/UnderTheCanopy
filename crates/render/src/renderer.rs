@@ -431,7 +431,7 @@ impl Renderer {
         let shadow_frame_buffer = uniform("shadow frame");
         let light_buffer = device.create_buffer(&wgpu::BufferDescriptor {
             label: Some("point lights"),
-            size: (MAX_POINT_LIGHTS * std::mem::size_of::<PointLight>()) as u64,
+            size: frame::LIGHTS_BYTES as u64,
             usage: wgpu::BufferUsages::STORAGE | wgpu::BufferUsages::COPY_DST,
             mapped_at_creation: false,
         });
@@ -1137,9 +1137,11 @@ impl Renderer {
                     .take(MAX_EFFECT_LIGHTS)
                     .copied(),
             );
-            if !lights.is_empty() {
-                queue.write_buffer(&self.light_buffer, 0, bytemuck::cast_slice(&lights));
-            }
+            queue.write_buffer(
+                &self.light_buffer,
+                0,
+                &frame::light_buffer_contents(&lights),
+            );
             self.point_lights = lights.len() as u32;
             self.lights_dirty = false;
         }
@@ -1196,8 +1198,17 @@ impl Renderer {
             report.triangles.terrain = stats.triangles;
             report.triangles.shadow += stats.shadow_triangles;
         }
+        let casters = crate::shadow::CasterCull::new(
+            camera.view_projection,
+            shadow_matrix,
+            lighting.sun_direction,
+            shadow_texel,
+            lighting.shadow_softness,
+            crate::frame::NORMAL_OFFSET,
+            self.terrain.as_ref().map_or(f32::MIN, TerrainGpu::lowest),
+        );
         if let Some(statics) = &self.statics {
-            statics.prepare(queue, camera.view_projection, shadow_matrix);
+            statics.prepare(queue, camera.view_projection, shadow_matrix, &casters);
         }
         if let Some(actors) = &mut self.actors {
             let subject = self
@@ -1279,7 +1290,7 @@ impl Renderer {
                 device,
                 queue,
                 camera.view_projection,
-                self.shadows.then_some(shadow_matrix),
+                self.shadows.then_some((shadow_matrix, &casters)),
                 Some(&lod),
             );
             report.actors = actors.stats;
@@ -1403,7 +1414,11 @@ impl Renderer {
                             report.draws += terrain.draw_shadow(&mut rp, &self.shadow_frame_group);
                         }
                         if let Some(statics) = &self.statics {
-                            report.draws += statics.draw_shadow(&mut rp, &self.shadow_frame_group);
+                            report.draws += statics.draw_shadow(
+                                &mut rp,
+                                &self.shadow_frame_group,
+                                self.environment.lighting.shadow_ceiling,
+                            );
                         }
                         if let Some(actors) = &self.actors {
                             report.draws += actors.draw_shadow(&mut rp, &self.shadow_frame_group);
@@ -1475,6 +1490,10 @@ impl Renderer {
                         occlusion_query_set: None,
                         multiview_mask: None,
                     });
+                    if let Some(statics) = &self.statics {
+                        report.draws +=
+                            statics.draw_prepass(&mut rp, &self.frame_group, self.cutaway.active);
+                    }
                     if let Some(terrain) = &self.terrain {
                         report.draws += terrain.draw_forward(&mut rp, &self.frame_group);
                     }
@@ -1486,7 +1505,8 @@ impl Renderer {
                         report.draws += dressing.draw_decals(&mut rp, &self.frame_group);
                     }
                     if let Some(statics) = &self.statics {
-                        report.draws += statics.draw_forward(&mut rp, &self.frame_group);
+                        report.draws +=
+                            statics.draw_forward(&mut rp, &self.frame_group, self.cutaway.active);
                     }
                     if let Some(actors) = &self.actors {
                         report.draws += actors.draw_forward(&mut rp, &self.frame_group);

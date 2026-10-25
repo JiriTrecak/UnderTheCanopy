@@ -2,7 +2,8 @@
 //!
 //! ```text
 //! canopy bench-render [--data <folder>] [--frames <n>] [--sizes <w>x<h>,…]
-//!                     [--scenes default,spectator,crowd,water,forest,menu,hud]
+//!                     [--scenes default,spectator,crowd,forest-road,forest-road-east,
+//!                               forest-hollow,menu,hud]
 //!                     [--label <name>] [shot options…]
 //! ```
 //!
@@ -68,9 +69,40 @@ const SCENES: &[Scene] = &[
             "128,128,1.6",
         ],
     },
+    Scene {
+        name: "forest-road",
+        about: "The Glass Road (campaign, Underleaf): giant scenery, foliage and water at the play zoom",
+        args: &[
+            "--map",
+            "base/campaigns/vanguard.utcc/missions/glass-road.utcm",
+            "--camera",
+            "200,200,1",
+        ],
+    },
+    Scene {
+        name: "forest-road-east",
+        about: "The Glass Road's densest stretch of giant scenery at the play zoom",
+        args: &[
+            "--map",
+            "base/campaigns/vanguard.utcc/missions/glass-road.utcm",
+            "--camera",
+            "330,150,1",
+        ],
+    },
+    Scene {
+        name: "forest-hollow",
+        about: "The Hollow Brood (campaign, Underleaf) at the play zoom",
+        args: &[
+            "--map",
+            "base/campaigns/vanguard.utcc/missions/hollow-brood.utcm",
+            "--camera",
+            "200,200,1",
+        ],
+    },
 ];
 
-const DEFAULT_SCENES: &str = "default,spectator,crowd,menu,hud";
+const DEFAULT_SCENES: &str =
+    "default,spectator,crowd,forest-road,forest-road-east,forest-hollow,menu,hud";
 
 /// One measured scene at one size.
 struct Result1 {
@@ -164,7 +196,9 @@ fn shot(
     extra: &[String],
 ) -> Result<Value> {
     let png = out_dir.join(format!("{}-{}x{}.png", scene.name, size[0], size[1]));
+    // Campaign missions are named by their path in the data folder.
     let output = std::process::Command::new(exe)
+        .current_dir(&paths.data)
         .arg("shot")
         .arg("--data")
         .arg(&paths.data)

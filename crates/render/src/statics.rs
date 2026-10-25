@@ -12,6 +12,7 @@ use crate::{
     camera::frustum_planes,
     device::GpuFeatures,
     material::{GpuMaterial, Textures, Variant},
+    shadow::CasterCull,
     targets,
 };
 use anyhow::{Context, Result};
@@ -56,6 +57,14 @@ const SLOT_ALIGN: u32 = 64;
 const MODEL_STRIDE: u64 = 256;
 /// Shorter instances cast no shadow (old `SHADOW_MIN_HEIGHT`); the live models keep it.
 pub const SHADOW_MIN_HEIGHT: f32 = 0.75;
+/// How far wind may lift a vertex above its rest bounds, world units.
+const SWAY_REACH: f32 = 1.0;
+/// Canopy parts this far above their base stipple away at RTS pitches (statics.wgsl
+/// `RTS_CEILING`).
+const RTS_CEILING: f32 = 75.0;
+/// The cutaway opens only canopy models at least this tall (statics.wgsl `cut_away`).
+const CUTAWAY_HEIGHT: f32 = 7.5;
+
 /// Scenery is cut lower: low ground clutter (curled leaves, acorns, fern sprigs) needs its
 /// small shadows to read as depth from the play camera.
 pub const STATIC_SHADOW_MIN_HEIGHT: f32 = 0.2;
@@ -88,6 +97,10 @@ struct CullItem {
 struct CullParams {
     planes: [[f32; 4]; 12],
     counts: [u32; 4],
+    caster_planes: [[f32; 4]; 5],
+    sweep: [f32; 4],
+    floor: [f32; 4],
+    sun_depth: [f32; 4],
 }
 
 /// One indirect draw.
@@ -110,6 +123,12 @@ struct GpuModel {
     sections: Vec<canopy_assets::Section>,
     materials: Vec<GpuMaterial>,
     masked_shadow_sections: Vec<usize>,
+    /// A canopy model: the cutaway may open it (its prepass discards).
+    canopy: bool,
+    /// Highest point of any instance over its base, world units (with the wind's reach).
+    reach: f32,
+    /// Tallest instance's canopy height (`wind.z` × scale), for the cutaway's threshold.
+    cut_height: f32,
     /// First visible slot per view.
     region: [u32; 2],
     depth_index_count: u32,
@@ -131,7 +150,14 @@ pub struct StaticsGpu {
     blend_draws: Vec<DrawRecord>,
     shadow_draws: Vec<DrawRecord>,
     pipelines: HashMap<Variant, wgpu::RenderPipeline>,
+    /// Opaque sections of models the cutaway or the RTS ceiling may cut, by
+    /// double-sidedness: the depth prepass (with the discards), then the lit pass (depth
+    /// equal, no discard).
+    prepass_pipelines: HashMap<bool, wgpu::RenderPipeline>,
+    cut_pipelines: HashMap<bool, wgpu::RenderPipeline>,
     depth_pipeline: wgpu::RenderPipeline,
+    /// The depth stream of models no shadow ceiling cuts: no fragment stage.
+    plain_depth_pipeline: wgpu::RenderPipeline,
     masked_pipeline: wgpu::RenderPipeline,
     instance_group: wgpu::BindGroup,
     cull_group: wgpu::BindGroup,
@@ -340,6 +366,7 @@ impl StaticsGpu {
             let casts = materials.iter().any(|m| m.casts_shadow);
             let (center, radius) = sphere(meta);
             let height = meta.rest_bounds.max[1] - meta.rest_bounds.min[1];
+            let (mut reach, mut cut_height) = (0.0f32, 0.0f32);
             for &(input, instance) in placed {
                 slot_of[input] = items.len() as u32;
                 let t = instance.transform;
@@ -355,8 +382,11 @@ impl StaticsGpu {
                         .map_or([0.0; 4], |c| [c[0], c[1], c[2], 1.0]),
                 });
                 let scale_y = t.y_axis.truncate().length();
+                let sphere = world_sphere(&t, center, radius);
+                reach = reach.max(sphere.y + sphere.w - t.w_axis.y + SWAY_REACH);
+                cut_height = cut_height.max(uniform.wind[2] * scale_y);
                 items.push(CullItem {
-                    sphere: world_sphere(&t, center, radius).to_array(),
+                    sphere: sphere.to_array(),
                     info: [
                         model_index as u32,
                         u32::from(casts && height * scale_y >= STATIC_SHADOW_MIN_HEIGHT),
@@ -389,6 +419,9 @@ impl StaticsGpu {
                 sections: meta.sections.clone(),
                 materials,
                 masked_shadow_sections,
+                canopy: uniform.wind[2] > 0.0,
+                reach,
+                cut_height,
                 region,
                 depth_index_count: meta.depth.index_count,
                 instances: count,
@@ -698,6 +731,7 @@ impl StaticsGpu {
                     (double_sided, false, Some(wgpu::BlendState::ALPHA_BLENDING))
                 }
             };
+            let opaque = matches!(variant, Variant::Opaque { .. });
             let pipeline = device.create_render_pipeline(&wgpu::RenderPipelineDescriptor {
                 label: Some("statics"),
                 layout: Some(&layout),
@@ -715,7 +749,7 @@ impl StaticsGpu {
                 multisample: targets::scene_multisample(a2c),
                 fragment: Some(wgpu::FragmentState {
                     module: &module,
-                    entry_point: Some("fs_main"),
+                    entry_point: Some(if opaque { "fs_opaque" } else { "fs_main" }),
                     compilation_options: Default::default(),
                     targets: &targets::forward_targets(blend, blend.is_none()),
                 }),
@@ -723,6 +757,58 @@ impl StaticsGpu {
                 cache: None,
             });
             pipelines.insert(variant, pipeline);
+        }
+        let mut prepass_pipelines = HashMap::new();
+        let mut cut_pipelines = HashMap::new();
+        for double_sided in [false, true] {
+            let primitive = wgpu::PrimitiveState {
+                cull_mode: (!double_sided).then_some(wgpu::Face::Back),
+                ..Default::default()
+            };
+            let pipeline =
+                |label, vertex, depth, fragment, targets: &[Option<wgpu::ColorTargetState>]| {
+                    device.create_render_pipeline(&wgpu::RenderPipelineDescriptor {
+                        label: Some(label),
+                        layout: Some(&layout),
+                        vertex: wgpu::VertexState {
+                            module: &module,
+                            entry_point: Some(vertex),
+                            compilation_options: Default::default(),
+                            buffers: &main_buffers,
+                        },
+                        primitive,
+                        depth_stencil: Some(depth),
+                        multisample: targets::scene_multisample(false),
+                        fragment: Some(wgpu::FragmentState {
+                            module: &module,
+                            entry_point: Some(fragment),
+                            compilation_options: Default::default(),
+                            targets,
+                        }),
+                        multiview_mask: None,
+                        cache: None,
+                    })
+                };
+            prepass_pipelines.insert(
+                double_sided,
+                pipeline(
+                    "statics prepass",
+                    "vs_prepass",
+                    targets::scene_depth(true),
+                    "fs_prepass_cut",
+                    &targets::depth_only_targets(),
+                ),
+            );
+            cut_pipelines.insert(
+                double_sided,
+                pipeline(
+                    "statics after prepass",
+                    "vs_lit",
+                    targets::scene_depth_equal(),
+                    "fs_lit",
+                    &targets::forward_targets(None, true),
+                ),
+            );
         }
         let depth_attributes = wgpu::vertex_attr_array![0 => Unorm16x4];
         let depth_pipeline = device.create_render_pipeline(&wgpu::RenderPipelineDescriptor {
@@ -748,6 +834,26 @@ impl StaticsGpu {
                 compilation_options: Default::default(),
                 targets: &[],
             }),
+            multiview_mask: None,
+            cache: None,
+        });
+        let plain_depth_pipeline = device.create_render_pipeline(&wgpu::RenderPipelineDescriptor {
+            label: Some("statics plain depth"),
+            layout: Some(&layout),
+            vertex: wgpu::VertexState {
+                module: &module,
+                entry_point: Some("vs_depth"),
+                compilation_options: Default::default(),
+                buffers: &[Some(wgpu::VertexBufferLayout {
+                    array_stride: 8,
+                    step_mode: wgpu::VertexStepMode::Vertex,
+                    attributes: &depth_attributes,
+                })],
+            },
+            primitive: wgpu::PrimitiveState::default(),
+            depth_stencil: Some(targets::shadow_depth()),
+            multisample: wgpu::MultisampleState::default(),
+            fragment: None,
             multiview_mask: None,
             cache: None,
         });
@@ -791,7 +897,10 @@ impl StaticsGpu {
             blend_draws,
             shadow_draws,
             pipelines,
+            prepass_pipelines,
+            cut_pipelines,
             depth_pipeline,
+            plain_depth_pipeline,
             masked_pipeline,
             instance_group,
             cull_group,
@@ -806,7 +915,7 @@ impl StaticsGpu {
     }
 
     /// Sets the culling planes of the camera and the sun.
-    pub fn prepare(&self, queue: &wgpu::Queue, camera: Mat4, sun: Mat4) {
+    pub fn prepare(&self, queue: &wgpu::Queue, camera: Mat4, sun: Mat4, casters: &CasterCull) {
         let mut planes = [[0.0; 4]; 12];
         for (i, p) in frustum_planes(camera)
             .iter()
@@ -818,6 +927,10 @@ impl StaticsGpu {
         let params = CullParams {
             planes,
             counts: [self.items, self.draws, 0, 0],
+            caster_planes: casters.planes.map(|p| p.to_array()),
+            sweep: casters.sweep.to_array(),
+            floor: [casters.floor, 0.0, 0.0, 0.0],
+            sun_depth: casters.depth.to_array(),
         };
         queue.write_buffer(&self.params, 0, bytemuck::bytes_of(&params));
     }
@@ -845,16 +958,40 @@ impl StaticsGpu {
         ]
     }
 
-    fn draw_sections(&self, pass: &mut wgpu::RenderPass<'_>, draws: &[DrawRecord]) -> u32 {
-        let mut current: Option<Variant> = None;
+    /// Whether the cutaway or the RTS ceiling may cut model `m` this frame (statics.wgsl
+    /// `cut`); `cutaway`: the frame's cutaway is open somewhere.
+    fn may_cut(&self, m: usize, cutaway: bool) -> bool {
+        let model = &self.models[m];
+        model.canopy
+            && ((cutaway && model.cut_height >= CUTAWAY_HEIGHT) || model.reach >= RTS_CEILING)
+    }
+
+    /// Draws sections; opaque sections of models that may be cut (`cut`) draw after their
+    /// prepass.
+    fn draw_sections<'a>(
+        &self,
+        pass: &mut wgpu::RenderPass<'_>,
+        draws: impl Iterator<Item = &'a DrawRecord>,
+        cutaway: bool,
+    ) -> u32 {
+        let mut current: Option<(Variant, bool)> = None;
         let mut bound_model = usize::MAX;
+        let mut count = 0;
         for draw in draws {
+            count += 1;
             let model = &self.models[draw.model];
             let section = model.sections[draw.section.expect("a section draw")];
             let material = &model.materials[section.material as usize];
-            if current != Some(material.variant) {
-                pass.set_pipeline(&self.pipelines[&material.variant]);
-                current = Some(material.variant);
+            let cut = matches!(material.variant, Variant::Opaque { .. })
+                && self.may_cut(draw.model, cutaway);
+            if current != Some((material.variant, cut)) {
+                match material.variant {
+                    Variant::Opaque { double_sided } if cut => {
+                        pass.set_pipeline(&self.cut_pipelines[&double_sided]);
+                    }
+                    variant => pass.set_pipeline(&self.pipelines[&variant]),
+                }
+                current = Some((material.variant, cut));
             }
             if bound_model != draw.model {
                 pass.set_bind_group(2, &self.instance_group, &self.offsets(draw.model, 0));
@@ -867,12 +1004,60 @@ impl StaticsGpu {
             pass.set_bind_group(1, &material.bind_group, &[]);
             pass.draw_indexed_indirect(&self.args, (draw.args * 20) as u64);
         }
-        draws.len() as u32
+        count
     }
 
-    pub fn draw_forward(&self, pass: &mut wgpu::RenderPass<'_>, frame: &wgpu::BindGroup) -> u32 {
+    /// The depth prepass of opaque sections the cutaway or the RTS ceiling may cut: record
+    /// first in the forward pass, before anything they may cover. `cutaway`: the frame's
+    /// cutaway is open somewhere.
+    pub fn draw_prepass(
+        &self,
+        pass: &mut wgpu::RenderPass<'_>,
+        frame: &wgpu::BindGroup,
+        cutaway: bool,
+    ) -> u32 {
         pass.set_bind_group(0, frame, &[]);
-        self.draw_sections(pass, &self.forward_draws)
+        let mut current = None;
+        let mut bound_model = usize::MAX;
+        let mut count = 0;
+        for draw in &self.forward_draws {
+            let model = &self.models[draw.model];
+            let section = model.sections[draw.section.expect("a section draw")];
+            let material = &model.materials[section.material as usize];
+            let Variant::Opaque { double_sided } = material.variant else {
+                continue;
+            };
+            if !self.may_cut(draw.model, cutaway) {
+                continue;
+            }
+            if current != Some(double_sided) {
+                pass.set_pipeline(&self.prepass_pipelines[&double_sided]);
+                current = Some(double_sided);
+            }
+            if bound_model != draw.model {
+                pass.set_bind_group(2, &self.instance_group, &self.offsets(draw.model, 0));
+                pass.set_vertex_buffer(0, model.vertices.slice(..));
+                pass.set_vertex_buffer(1, model.colors.slice(..));
+                pass.set_vertex_buffer(2, model.leaves.slice(..));
+                pass.set_index_buffer(model.indices.slice(..), model.index_format);
+                bound_model = draw.model;
+            }
+            // The vertex stage reads the material (foliage flutter).
+            pass.set_bind_group(1, &material.bind_group, &[]);
+            pass.draw_indexed_indirect(&self.args, (draw.args * 20) as u64);
+            count += 1;
+        }
+        count
+    }
+
+    pub fn draw_forward(
+        &self,
+        pass: &mut wgpu::RenderPass<'_>,
+        frame: &wgpu::BindGroup,
+        cutaway: bool,
+    ) -> u32 {
+        pass.set_bind_group(0, frame, &[]);
+        self.draw_sections(pass, self.forward_draws.iter(), cutaway)
     }
 
     pub fn draw_transparent(
@@ -881,10 +1066,16 @@ impl StaticsGpu {
         frame: &wgpu::BindGroup,
     ) -> u32 {
         pass.set_bind_group(0, frame, &[]);
-        self.draw_sections(pass, &self.blend_draws)
+        self.draw_sections(pass, self.blend_draws.iter(), false)
     }
 
-    pub fn draw_shadow(&self, pass: &mut wgpu::RenderPass<'_>, frame: &wgpu::BindGroup) -> u32 {
+    /// The casters' depth; `ceiling`: the biome's shadow ceiling over a giant's base.
+    pub fn draw_shadow(
+        &self,
+        pass: &mut wgpu::RenderPass<'_>,
+        frame: &wgpu::BindGroup,
+        ceiling: f32,
+    ) -> u32 {
         pass.set_bind_group(0, frame, &[]);
         let mut count = 0;
         for draw in &self.shadow_draws {
@@ -897,7 +1088,12 @@ impl StaticsGpu {
                     else {
                         continue;
                     };
-                    pass.set_pipeline(&self.depth_pipeline);
+                    // Only a canopy model reaching the ceiling needs the cutting fragment.
+                    pass.set_pipeline(if model.canopy && model.reach > ceiling {
+                        &self.depth_pipeline
+                    } else {
+                        &self.plain_depth_pipeline
+                    });
                     // The depth pipeline reads no material, but the layout wants one.
                     pass.set_bind_group(1, &model.materials[0].bind_group, &[]);
                     pass.set_vertex_buffer(0, positions.slice(..));

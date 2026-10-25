@@ -44,6 +44,29 @@ pub fn forward_targets(
     ]
 }
 
+/// The forward pass's targets for a depth-only draw (a prepass): nothing written.
+pub fn depth_only_targets() -> [Option<wgpu::ColorTargetState>; 2] {
+    [HDR_FORMAT, LINEAR_DEPTH_FORMAT].map(|format| {
+        Some(wgpu::ColorTargetState {
+            format,
+            blend: None,
+            write_mask: wgpu::ColorWrites::empty(),
+        })
+    })
+}
+
+/// Depth state of geometry shaded after its own depth prepass: only the samples the
+/// prepass left it pass, and depth is already written.
+pub fn scene_depth_equal() -> wgpu::DepthStencilState {
+    wgpu::DepthStencilState {
+        format: DEPTH_FORMAT,
+        depth_write_enabled: Some(false),
+        depth_compare: Some(wgpu::CompareFunction::Equal),
+        stencil: wgpu::StencilState::default(),
+        bias: wgpu::DepthBiasState::default(),
+    }
+}
+
 /// Depth state of scene geometry.
 pub fn scene_depth(write: bool) -> wgpu::DepthStencilState {
     wgpu::DepthStencilState {

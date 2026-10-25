@@ -208,6 +208,8 @@ struct FloorUniform {
 /// Terrain resources and pipelines.
 pub struct TerrainGpu {
     grid: ChunkGrid,
+    /// The lowest ground, the floor around the map included, less a metre.
+    lowest: f32,
     index_buffer: wgpu::Buffer,
     ranges: [(u32, u32); LODS],
     bind_group: wgpu::BindGroup,
@@ -983,8 +985,10 @@ impl TerrainGpu {
                 },
             ],
         });
+        let mut lowest = desc.heights.iter().copied().fold(f32::MAX, f32::min);
         let floor = desc.surroundings.as_ref().map(|_| {
             let mesh = floor_mesh(desc);
+            lowest = mesh.iter().fold(lowest, |low, v| low.min(v[1]));
             let buffer = device.create_buffer_init(&wgpu::util::BufferInitDescriptor {
                 label: Some("floor"),
                 contents: bytemuck::cast_slice(&mesh),
@@ -1001,6 +1005,7 @@ impl TerrainGpu {
         });
 
         Ok(Self {
+            lowest: lowest - 1.0,
             draws: Vec::with_capacity((grid.chunks * grid.chunks) as usize),
             shadow_draws: Vec::with_capacity((grid.chunks * grid.chunks) as usize),
             levels: Vec::with_capacity((grid.chunks * grid.chunks) as usize),
@@ -1026,6 +1031,12 @@ impl TerrainGpu {
     }
 
     /// Chooses chunks and levels for the camera and the shadow view and uploads them.
+    /// The lowest ground, the floor around the map included, less a metre: nothing below
+    /// it can be seen.
+    pub fn lowest(&self) -> f32 {
+        self.lowest
+    }
+
     pub fn prepare(
         &mut self,
         queue: &wgpu::Queue,
