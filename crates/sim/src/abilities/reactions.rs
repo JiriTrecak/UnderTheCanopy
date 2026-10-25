@@ -647,6 +647,7 @@ fn invoke(
             visual_origin: None,
             creation_grant: false,
             carry: None,
+            live: None,
         },
     );
 }
@@ -740,6 +741,7 @@ fn invoke_lifecycle(
             visual_origin: visual,
             creation_grant: false,
             carry: None,
+            live: None,
         },
     );
 }

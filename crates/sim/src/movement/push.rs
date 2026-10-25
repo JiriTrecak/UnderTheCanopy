@@ -162,6 +162,8 @@ impl Motion {
         let mut members: Vec<Member> = Vec::new();
         let mut slots: Vec<usize> = vec![0; bodies.len()];
         let mut cells = vec![(0i32, 0i32); bodies.len()];
+        let mut fill: Vec<u32> = Vec::new();
+        let mut delta: Vec<(i64, i64)> = Vec::new();
         // Every pair that can overlap is in neighbouring buckets once a bucket is as wide
         // as the widest reach, so any such width finds the same pairs as `BUCKET`; a crowd
         // of small bodies then tests far fewer.
@@ -211,7 +213,8 @@ impl Motion {
                     index: 0,
                 },
             );
-            let mut fill = starts.clone();
+            fill.clear();
+            fill.extend_from_slice(&starts);
             for (i, body) in bodies.iter().enumerate() {
                 let (x, y) = at(i, &moved);
                 let at = &mut fill[slots[i]];
@@ -223,23 +226,25 @@ impl Motion {
                 };
                 *at += 1;
             }
-            let mut delta = vec![(0i64, 0i64); bodies.len()];
+            delta.clear();
+            delta.resize(bodies.len(), (0, 0));
             let mut any = false;
             for i in 0..bodies.len() {
                 let (ax, ay) = at(i, &moved);
                 let (bx, by) = cells[i];
+                let (air, own_reach) = (bodies[i].air, bodies[i].radius + tuning.push_room);
                 for nx in bx - 1..=bx + 1 {
                     for ny in by - 1..=by + 1 {
-                        let b = bucket((nx, ny), bodies[i].air);
-                        let range = starts[b] as usize..starts[b + 1] as usize;
-                        for m in &members[range] {
+                        let b = bucket((nx, ny), air);
+                        // A bucket holds its bodies in index order: only those after `i`
+                        // make new pairs.
+                        let bucket = &members[starts[b] as usize..starts[b + 1] as usize];
+                        let after = bucket.partition_point(|m| m.index as usize <= i);
+                        for m in &bucket[after..] {
                             let j = m.index as usize;
-                            if j <= i {
-                                continue;
-                            }
                             let (cx, cy) = (m.x, m.y);
                             let (mut dx, mut dy) = (ax - cx, ay - cy);
-                            let reach = bodies[i].radius + m.radius + tuning.push_room;
+                            let reach = own_reach + m.radius;
                             if dx.abs() >= reach
                                 || dy.abs() >= reach
                                 || bodies[i].at.deck != bodies[j].at.deck

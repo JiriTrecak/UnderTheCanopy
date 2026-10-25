@@ -78,6 +78,16 @@ pub struct Run<'a> {
     /// Statuses granted to a unit the spell just created bypass spell immunity.
     pub creation_grant: bool,
     pub carry: Option<&'a mut Cargo>,
+    /// Snapshots the caller has just taken and knows to be current, so the run need not
+    /// take them again (checked in debug builds).
+    pub live: Option<Live>,
+}
+
+/// Current snapshots handed to a run: the caster as [`current`] takes it, and the unit
+/// the run aims at as [`actor::get`] takes it.
+pub struct Live {
+    pub caster: Actor,
+    pub target: Option<Actor>,
 }
 
 /// The operations of a run.
@@ -259,13 +269,45 @@ impl Recipient {
 /// Live bodies within `radius_milli` of `center`, as snapshots in id order (old
 /// `targets()` mapped through `get`, narrowed by the distance every user checks).
 pub fn bodies_near(ctx: &Ctx, state: &State, center: Milli, radius_milli: i64) -> Vec<Actor> {
+    bodies_near_where(ctx, state, center, radius_milli, |_| true)
+}
+
+/// [`bodies_near`] of the entities `keep` passes, tested before their snapshots are taken.
+fn bodies_near_where(
+    ctx: &Ctx,
+    state: &State,
+    center: Milli,
+    radius_milli: i64,
+    keep: impl Fn(&crate::entity::Entity) -> bool,
+) -> Vec<Actor> {
     state
         .entities
         .iter()
         .filter(|e| e.hp.is_some() && actor::alive(e))
         .filter(|e| actor::within(e.position, center, radius_milli))
+        .filter(|e| keep(e))
         .map(|e| actor::of(&ctx.senses, state, e))
         .collect()
+}
+
+/// Whether `e` stands to `caster` in one of `relations` (what [`actor::relation`] answers
+/// of its snapshot, read from the entity).
+fn related(
+    ctx: &Ctx,
+    caster: &Actor,
+    e: &crate::entity::Entity,
+    relations: &[canopy_content::conditions::Relation],
+) -> bool {
+    actor::relation_of(
+        &ctx.senses,
+        caster.id,
+        caster.owner,
+        caster.camp.as_deref(),
+        e.id,
+        e.owner,
+        actor::camp(e),
+    )
+    .is(relations)
 }
 
 /// The recipients of one operation (old `operationTargets`).
@@ -308,7 +350,15 @@ pub fn recipients(
         let candidates: &[Actor] = match pool {
             Some(list) => list,
             None => {
-                near = bodies_near(ctx, state, center, radius);
+                // What `query` tests of the entity alone, before the snapshots.
+                let primary = aim.id();
+                near = bodies_near_where(ctx, state, center, radius, |e| {
+                    actor::targetable(e)
+                        && (e.unit.is_some() || q.include_buildings)
+                        && (q.allow_self || e.id != caster.id)
+                        && (!q.exclude_primary || Some(e.id) != primary)
+                        && related(ctx, relation_caster, e, &q.relations)
+                });
                 &near
             }
         };
@@ -432,7 +482,7 @@ fn event_kind(effect: &Effect) -> EventKind {
 }
 
 /// The live caster when it still has its original owner, else the snapshot.
-fn current(ctx: &Ctx, state: &State, caster: &Actor) -> Actor {
+pub(super) fn current(ctx: &Ctx, state: &State, caster: &Actor) -> Actor {
     match actor::get(&ctx.senses, state, caster.id) {
         Some(live) if live.owner == caster.owner => live,
         _ => caster.clone(),
@@ -448,17 +498,38 @@ pub fn run(ctx: &mut Ctx, state: &mut State, mut run: Run) {
     }
     let caster = run.caster.clone();
     let mut results: Vec<(String, Record)> = Vec::new();
-    let resource_caster = current(ctx, state, &caster);
-    let resource_target = run
-        .aim
-        .id()
-        .and_then(|id| actor::get(&ctx.senses, state, id));
+    let take_target = |ctx: &Ctx, state: &State| {
+        run.aim
+            .id()
+            .and_then(|id| actor::get(&ctx.senses, state, id))
+    };
+    let (resource_caster, resource_target) = match run.live.take() {
+        Some(live) => {
+            debug_assert!(
+                live.caster == current(ctx, state, &caster),
+                "a stale caster snapshot"
+            );
+            debug_assert!(
+                live.target == take_target(ctx, state),
+                "a stale target snapshot"
+            );
+            (live.caster, live.target)
+        }
+        None => (current(ctx, state, &caster), take_target(ctx, state)),
+    };
     // The default area is captured once, so a heal does not drop a recipient from the
     // following ward.
     let defaults: Vec<Actor> = match (&spell.targeting.radius, run.area_defaults) {
         (Some(radius), true) => {
             let radius = library::value(spell, rank, radius).max(0) * 1000;
-            bodies_near(ctx, state, run.aim.position(), radius)
+            // What the default area's every use tests of the entity alone (`recipients`).
+            let t = &spell.targeting;
+            bodies_near_where(ctx, state, run.aim.position(), radius, |e| {
+                actor::targetable(e)
+                    && (e.unit.is_some() || t.include_buildings == Some(true))
+                    && (t.allow_self || e.id != caster.id)
+                    && related(ctx, &caster, e, &t.relations)
+            })
         }
         _ => Vec::new(),
     };
@@ -993,6 +1064,7 @@ pub fn grant(
                 visual_origin,
                 creation_grant: true,
                 carry: None,
+                live: None,
             },
         );
     }
@@ -1052,6 +1124,7 @@ pub fn template(
             visual_origin: Some(origin),
             creation_grant: false,
             carry: None,
+            live: None,
         },
     );
 }

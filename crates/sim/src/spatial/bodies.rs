@@ -296,6 +296,11 @@ impl Bodies {
         })
     }
 
+    /// Whether any body holds a reservation.
+    pub fn any_reserved(&self) -> bool {
+        !self.reserved.is_empty()
+    }
+
     /// Solid bodies that reserved `node` for a yield.
     pub fn reserved_at(&self, node: u32) -> impl Iterator<Item = &BodyRecord> + '_ {
         self.reserved

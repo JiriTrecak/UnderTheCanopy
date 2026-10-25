@@ -2,18 +2,22 @@
 //!
 //! ```text
 //! cargo run --release -p canopy-sim --example match_bench -- --data . --map frozen-dream \
-//!     [--crowd 50 | --ai 2] [--ticks 1600] [--warmup 0] [--no-spans] [--top 16] [--save <file>]
+//!     [--crowd 50 | --ai 2] [--ticks 1600] [--warmup 0] [--repeat 1] [--no-spans] [--top 16] \
+//!     [--worst 1] [--save <file>]
 //! ```
 //!
 //! `--crowd N` is the measured battle of `canopy shot --crowd N` (eight players with N
 //! soldiers each, `canopy_sim::crowd`); `--ai N` puts computer players on the first N
 //! starts instead. Reports the whole tick (step and observer view) as mean, p50, p99 and
-//! max, the `tick: …` step spans the world marks, and the costliest inner spans. The
+//! max, the `tick: …` step spans the world marks, and the costliest inner spans; `--worst N`
+//! lists the N costliest ticks with what made them. The
 //! span subscriber costs a little; `--no-spans` times whole ticks without it. The
 //! digest at the end covers every tick's fingerprint and the final saved state: equal
 //! digests mean identical simulations. `--save <file>` writes that final state as JSON and
 //! the report adds the fingerprints' digest alone, so a content migration that only
-//! renames references can show identical play and diff the saved state.
+//! renames references can show identical play and diff the saved state. `--repeat N` plays
+//! the same match N times and keeps each tick's (and each span's) cheapest run, which
+//! filters out the noise of a machine busy with other work; every run must digest equal.
 #![allow(clippy::disallowed_methods)] // wall-clock timing of the benchmark itself
 
 use canopy_content::{Content, map};
@@ -91,6 +95,10 @@ struct Args {
     /// Inner spans listed.
     top: usize,
     save: Option<PathBuf>,
+    /// Runs of the same match; each tick keeps its cheapest.
+    repeat: u32,
+    /// Costliest ticks listed with their spans.
+    worst: usize,
 }
 
 fn args() -> Result<Args, String> {
@@ -104,6 +112,8 @@ fn args() -> Result<Args, String> {
         no_spans: false,
         top: 16,
         save: None,
+        repeat: 1,
+        worst: 1,
     };
     let mut it = std::env::args().skip(1);
     while let Some(flag) = it.next() {
@@ -119,6 +129,8 @@ fn args() -> Result<Args, String> {
             "--no-spans" => out.no_spans = true,
             "--top" => out.top = number(value()?)? as usize,
             "--save" => out.save = Some(value()?.into()),
+            "--repeat" => out.repeat = number(value()?)?.max(1),
+            "--worst" => out.worst = number(value()?)? as usize,
             other => return Err(format!("unknown option {other}")),
         }
     }
@@ -142,6 +154,98 @@ fn fnv(mut h: u64, bytes: &[u8]) -> u64 {
         h = h.wrapping_mul(0x100_0000_01b3);
     }
     h
+}
+
+/// One run of the match: its per-tick costs and digests.
+struct Run {
+    world: World,
+    load: Duration,
+    ticks: Vec<f64>,
+    views: Vec<f64>,
+    per_step: BTreeMap<&'static str, Vec<f64>>,
+    ticks_digest: u64,
+    digest: u64,
+}
+
+impl Run {
+    /// Each tick's and each span's cheaper cost of two runs of the same match.
+    fn cheapest(mut self, other: Run) -> Result<Run, String> {
+        if other.digest != self.digest {
+            return Err(format!(
+                "runs differ: digest {:016x} then {:016x}",
+                self.digest, other.digest
+            ));
+        }
+        let min = |a: &mut Vec<f64>, b: &[f64]| {
+            a.resize(a.len().max(b.len()), 0.0);
+            for (i, x) in a.iter_mut().enumerate() {
+                *x = x.min(b.get(i).copied().unwrap_or(0.0));
+            }
+        };
+        min(&mut self.ticks, &other.ticks);
+        min(&mut self.views, &other.views);
+        for (name, mine) in self.per_step.iter_mut() {
+            min(mine, other.per_step.get(name).map_or(&[], Vec::as_slice));
+        }
+        self.load = self.load.min(other.load);
+        Ok(self)
+    }
+}
+
+fn ms(d: Duration) -> f64 {
+    d.as_secs_f64() * 1000.0
+}
+
+/// Plays the match once from a new world.
+fn play(
+    args: &Args,
+    content: &Arc<Content>,
+    map: &map::UtcMap,
+    setup: &MatchSetup,
+    spans: &'static Spans,
+) -> Result<Run, String> {
+    let started = Instant::now();
+    let mut world = World::new(content.clone(), map, setup.clone()).map_err(|e| e.to_string())?;
+    let load = started.elapsed();
+    for _ in 0..args.warmup {
+        world.step();
+    }
+    spans.inner.lock().unwrap().tick.clear();
+
+    let mut ticks: Vec<f64> = Vec::new();
+    let mut views: Vec<f64> = Vec::new();
+    let mut per_step: BTreeMap<&'static str, Vec<f64>> = BTreeMap::new();
+    let mut digest = 0xcbf2_9ce4_8422_2325;
+    for i in 0..args.ticks {
+        let started = Instant::now();
+        world.step();
+        let stepped = Instant::now();
+        let view = world.observer_view();
+        let viewed = Instant::now();
+        std::hint::black_box(&view);
+        drop(view);
+        digest = fnv(digest, &world.fingerprint().to_le_bytes());
+        ticks.push(ms(stepped - started));
+        views.push(ms(viewed - stepped));
+        let mut inner = spans.inner.lock().unwrap();
+        for (name, d) in std::mem::take(&mut inner.tick) {
+            let costs = per_step.entry(name).or_default();
+            costs.resize(i as usize, 0.0);
+            costs.push(ms(d));
+        }
+    }
+    let ticks_digest = digest;
+    let save = serde_json::to_vec(&world.save()).map_err(|e| e.to_string())?;
+    digest = fnv(digest, &save);
+    Ok(Run {
+        world,
+        load,
+        ticks,
+        views,
+        per_step,
+        ticks_digest,
+        digest,
+    })
 }
 
 fn main() -> Result<(), String> {
@@ -172,49 +276,25 @@ fn main() -> Result<(), String> {
                 .collect(),
         },
     };
-    let started = Instant::now();
-    let mut world = World::new(content, &map, setup).map_err(|e| e.to_string())?;
-    let load = started.elapsed();
-
     let spans: &'static Spans = Box::leak(Box::default());
     let _guard = (!args.no_spans).then(|| tracing::subscriber::set_default(spans));
-    for _ in 0..args.warmup {
-        world.step();
+    let mut best: Option<Run> = None;
+    for _ in 0..args.repeat {
+        let run = play(&args, &content, &map, &setup, spans)?;
+        best = Some(match best {
+            None => run,
+            Some(best) => best.cheapest(run)?,
+        });
     }
-    spans.inner.lock().unwrap().tick.clear();
-
-    let mut ticks: Vec<f64> = Vec::new();
-    let mut views: Vec<f64> = Vec::new();
-    let mut per_step: BTreeMap<&'static str, Vec<f64>> = BTreeMap::new();
-    // (cost, tick number, index of the tick in this run)
-    let mut worst = (0.0, 0, 0);
-    let mut digest = 0xcbf2_9ce4_8422_2325;
-    let ms = |d: Duration| d.as_secs_f64() * 1000.0;
-    for i in 0..args.ticks {
-        let started = Instant::now();
-        world.step();
-        let stepped = Instant::now();
-        let view = world.observer_view();
-        let viewed = Instant::now();
-        std::hint::black_box(&view);
-        drop(view);
-        digest = fnv(digest, &world.fingerprint().to_le_bytes());
-        let tick = ms(stepped - started);
-        if tick > worst.0 {
-            worst = (tick, world.tick(), i as usize);
-        }
-        ticks.push(tick);
-        views.push(ms(viewed - stepped));
-        let mut inner = spans.inner.lock().unwrap();
-        for (name, d) in std::mem::take(&mut inner.tick) {
-            let costs = per_step.entry(name).or_default();
-            costs.resize(i as usize, 0.0);
-            costs.push(ms(d));
-        }
-    }
-    let ticks_digest = digest;
-    let save = serde_json::to_vec(&world.save()).map_err(|e| e.to_string())?;
-    digest = fnv(digest, &save);
+    let Run {
+        world,
+        load,
+        ticks,
+        views,
+        per_step,
+        ticks_digest,
+        digest,
+    } = best.expect("at least one run");
     if let Some(path) = &args.save {
         let pretty = serde_json::to_vec_pretty(&world.save()).map_err(|e| e.to_string())?;
         std::fs::write(path, pretty).map_err(|e| format!("{}: {e}", path.display()))?;
@@ -253,35 +333,34 @@ fn main() -> Result<(), String> {
     println!("whole tick (ms):");
     report("step", &ticks);
     report("observer view", &views);
-    let mut at_worst: Vec<(f64, &str)> = per_step
-        .iter()
-        .filter(|(k, _)| k.starts_with("tick: "))
-        .filter_map(|(k, v)| v.get(worst.2).map(|&c| (c, &k["tick: ".len()..])))
-        .filter(|(c, _)| *c >= 0.05)
-        .collect();
-    at_worst.sort_by(|a, b| b.0.total_cmp(&a.0));
-    let at_worst: Vec<String> = at_worst
-        .iter()
-        .map(|(c, k)| format!("{k} {c:.2}"))
-        .collect();
-    println!(
-        "  worst step at tick {} ({:.2} ms): {}",
-        worst.1,
-        worst.0,
-        at_worst.join(", ")
-    );
-    let mut inner_worst: Vec<(f64, &str)> = per_step
-        .iter()
-        .filter(|(k, _)| !k.starts_with("tick: "))
-        .filter_map(|(k, v)| v.get(worst.2).map(|&c| (c, *k)))
-        .filter(|(c, _)| *c >= 0.05)
-        .collect();
-    inner_worst.sort_by(|a, b| b.0.total_cmp(&a.0));
-    let inner_worst: Vec<String> = inner_worst
-        .iter()
-        .map(|(c, k)| format!("{k} {c:.2}"))
-        .collect();
-    println!("    inner: {}", inner_worst.join(", "));
+    // The costliest ticks, costliest first, with the steps and inner spans that made them.
+    let mut order: Vec<usize> = (0..n).collect();
+    order.sort_by(|&a, &b| ticks[b].total_cmp(&ticks[a]).then(a.cmp(&b)));
+    for &index in order.iter().take(args.worst) {
+        let spans_at = |steps: bool| {
+            let mut at: Vec<(f64, &str)> = per_step
+                .iter()
+                .filter(|(k, _)| k.starts_with("tick: ") == steps)
+                .filter_map(|(k, v)| {
+                    v.get(index)
+                        .map(|&c| (c, k.strip_prefix("tick: ").unwrap_or(k)))
+                })
+                .filter(|(c, _)| *c >= 0.05)
+                .collect();
+            at.sort_by(|a, b| b.0.total_cmp(&a.0));
+            at.iter()
+                .map(|(c, k)| format!("{k} {c:.2}"))
+                .collect::<Vec<_>>()
+                .join(", ")
+        };
+        println!(
+            "  worst step at tick {} ({:.2} ms): {}",
+            args.warmup + index as u32 + 1,
+            ticks[index],
+            spans_at(true)
+        );
+        println!("    inner: {}", spans_at(false));
+    }
     println!("tick steps (ms per tick):");
     for (name, costs) in per_step.iter().filter(|(k, _)| k.starts_with("tick: ")) {
         report(&name["tick: ".len()..], costs);

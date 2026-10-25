@@ -362,6 +362,7 @@ fn hit_unit(
             visual_origin: visual,
             creation_grant: false,
             carry,
+            live: None,
         },
     );
 }
