@@ -175,6 +175,8 @@ pub struct Hud {
     /// is asked for once, so a steady frame asks for nothing).
     requests: BTreeSet<String>,
     requested: BTreeSet<String>,
+    /// The motes' quads of the frame (a list kept between frames).
+    motes: std::cell::Cell<Vec<canopy_ui::Quad>>,
     /// The portrait shows the live render target `@portrait` instead of the icon.
     pub live_portrait: bool,
     /// The minimap shows the render target `@minimap`.
@@ -225,7 +227,8 @@ impl Hud {
             return;
         }
         let t = now.as_secs_f32();
-        let mut quads = Vec::new();
+        let mut quads = self.motes.take();
+        quads.clear();
         let breath = 0.6 + 0.4 * (t * std::f32::consts::TAU / MOTE_PULSE).sin();
         for (c, card) in self.rising.iter().enumerate() {
             // A shadow quad covers the blur's reach around the card it is cast from.
@@ -284,8 +287,9 @@ impl Hud {
                 quads: 0..n,
             },
         );
-        quads.append(&mut list.quads);
-        list.quads = quads;
+        // In front of the HUD's quads, in the list's own room (kept between frames).
+        list.quads.splice(0..0, quads.drain(..));
+        self.motes.replace(quads);
     }
 
     pub fn new() -> Self {
@@ -295,6 +299,7 @@ impl Hud {
             appearance: [None, None],
             requests: BTreeSet::new(),
             requested: BTreeSet::new(),
+            motes: std::cell::Cell::new(Vec::new()),
             live_portrait: false,
             minimap: false,
             palette: Vec::new(),

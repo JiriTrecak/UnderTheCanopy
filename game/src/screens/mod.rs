@@ -184,6 +184,8 @@ pub struct Game {
     boot_error: Option<String>,
     dev: Option<DevStart>,
     skirmish: Skirmish,
+    /// The match's draw list: the UI's with the match's decorations (kept between frames).
+    decorated: canopy_ui::DrawList,
     mp: Multiplayer,
     loading: Option<Loading>,
     pub playing: Option<Playing>,
@@ -321,6 +323,7 @@ impl Game {
             boot_error: None,
             dev,
             skirmish: Skirmish::default(),
+            decorated: canopy_ui::DrawList::default(),
             mp: Multiplayer::default(),
             loading: None,
             playing: None,
@@ -1576,9 +1579,9 @@ impl Game {
         self.host.flush(gpu, layer);
         match (&self.playing, self.flow.in_match()) {
             (Some(playing), true) => {
-                let mut list = self.host.ui.frame(time).clone();
-                playing.decorate(&mut list);
-                layer.submit(gpu, &list);
+                self.decorated.clone_from(self.host.ui.frame(time));
+                playing.decorate(&mut self.decorated);
+                layer.submit(gpu, &self.decorated);
             }
             _ => layer.submit(gpu, self.host.ui.frame(time)),
         }
