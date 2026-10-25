@@ -1,0 +1,22 @@
+{
+  "id": "asset.audio.music.ants-roots-and-amber",
+  "name": "Roots and amber",
+  "kind": "audio",
+  "tags": [
+    "music"
+  ],
+  "license": "Generated with ElevenLabs for Under the Canopy (generation.json).",
+  "resources": [
+    {
+      "role": "audio",
+      "index": 1,
+      "format": "mp3"
+    },
+    {
+      "role": "generation",
+      "index": 1,
+      "format": "json"
+    }
+  ],
+  "seconds": 30.041
+}

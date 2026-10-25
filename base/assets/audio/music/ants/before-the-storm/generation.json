@@ -1,0 +1,30 @@
+{
+  "provider": "elevenlabs",
+  "kind": "music",
+  "spec": {
+    "name": "ingame-before-the-storm",
+    "kind": "music",
+    "prompt": "Quiet tension before a battle in an ancient forest: low strings holding long dark chords, a soft timpani heartbeat, distant solemn horn calls, fragments of a wooden flute melody, harp glints, the choir rising and falling like breath. C minor, slow tempo, restrained but uneasy. A 30-second instrumental piece of background music for a fantasy real-time strategy game, played under the gameplay: a real composed piece with a clear melody and harmony, calmer and more spacious than a main theme, made to loop. Live orchestral and acoustic instruments only. No nature sounds, no birds or insects, no ambient soundscape, no drum kit, no synths, no electronic sound, no sung words.",
+    "seconds": 30,
+    "takes": 1,
+    "dir": "base/assets/audio/music/ants/before-the-storm",
+    "id": "asset.audio.music.ants-before-the-storm",
+    "title": "Before the storm",
+    "event": {
+      "id": "sound.music.ants-before-the-storm",
+      "category": "music",
+      "note": "Before the storm"
+    }
+  },
+  "takes": [
+    "take-1.mp3"
+  ],
+  "picked": "take-1.mp3",
+  "request": {
+    "prompt": "Quiet tension before a battle in an ancient forest: low strings holding long dark chords, a soft timpani heartbeat, distant solemn horn calls, fragments of a wooden flute melody, harp glints, the choir rising and falling like breath. C minor, slow tempo, restrained but uneasy. A 30-second instrumental piece of background music for a fantasy real-time strategy game, played under the gameplay: a real composed piece with a clear melody and harmony, calmer and more spacious than a main theme, made to loop. Live orchestral and acoustic instruments only. No nature sounds, no birds or insects, no ambient soundscape, no drum kit, no synths, no electronic sound, no sung words.",
+    "model_id": "music_v1",
+    "force_instrumental": true,
+    "music_length_ms": 30000
+  },
+  "endpoint": "/v1/music"
+}

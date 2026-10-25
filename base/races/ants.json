@@ -108,5 +108,12 @@
     "retractUntil": 0.985,
     "dustEffect": "effect.construction.dust",
     "dustIntervalTicks": 8
+  },
+  "sounds": {
+    "music": [
+      "sound.music.ants-under-the-canopy",
+      "sound.music.ants-roots-and-amber",
+      "sound.music.ants-before-the-storm"
+    ]
   }
 }
