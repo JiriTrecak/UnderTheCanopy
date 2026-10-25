@@ -126,6 +126,8 @@ pub struct Frame<'a> {
     navigation: &'a RefCell<Option<ObservedNavigation>>,
     roster: RefCell<Option<Vec<Def>>>,
     blockers_ready: Cell<bool>,
+    /// What this frame's doorway checks found that every site shares.
+    pub(super) doors: RefCell<super::placement::DoorMemo>,
 }
 
 fn camp(e: &Entity) -> Option<&str> {
@@ -334,6 +336,7 @@ impl<'a> Frame<'a> {
             navigation,
             roster: RefCell::new(None),
             blockers_ready: Cell::new(false),
+            doors: RefCell::default(),
         }
     }
 

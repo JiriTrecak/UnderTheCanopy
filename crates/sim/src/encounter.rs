@@ -712,7 +712,7 @@ impl Take {
             .find(|e| e.placement.as_deref() == Some("caster"))
             .map(|e| e.id)
             .ok_or("the caster could not be placed")?;
-        let seen_event = world.events().all().last().map_or(0, |e| e.id);
+        let seen_event = world.events().all().next_back().map_or(0, |e| e.id);
         let seen_fact = world.state().facts.last().map_or(0, |f| f.id);
         let ability = world.catalog().spells.find(fixture.ability.id.as_str());
         let mut take = Self {
@@ -870,12 +870,12 @@ impl Take {
     fn collect(&mut self) {
         let start = self.start;
         let seen = self.seen_event;
-        for e in self.world.events().all().iter().filter(|e| e.id > seen) {
+        for e in self.world.events().all().filter(|e| e.id > seen) {
             let mut e = e.clone();
             e.tick = e.tick.saturating_sub(start);
             self.events.push(e);
         }
-        self.seen_event = self.world.events().all().last().map_or(seen, |e| e.id);
+        self.seen_event = self.world.events().all().next_back().map_or(seen, |e| e.id);
         let seen = self.seen_fact;
         for f in self.world.state().facts.iter().filter(|f| f.id > seen) {
             if f.kind == FactKind::Error && f.owner == Owner::Player(0) {

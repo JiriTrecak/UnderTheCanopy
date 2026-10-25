@@ -22,13 +22,23 @@ pub fn hypot(x: f64, y: f64) -> f64 {
 }
 
 /// Largest integer whose square is at most `n`.
+///
+/// Below 2^52 the hardware square root answers: `n` converts exactly, the root is
+/// correctly rounded (IEEE 754, so the same bits everywhere) and never falls below the
+/// true floor, and rounding can lift it to the next integer only when `n` lies just under
+/// a square, which the one correction undoes. The software root covers the rest.
 pub fn isqrt(n: u64) -> u64 {
-    n.isqrt()
+    if n < 1 << 52 {
+        let root = (n as f64).sqrt() as u64;
+        if root * root > n { root - 1 } else { root }
+    } else {
+        n.isqrt()
+    }
 }
 
 /// Smallest integer whose square is at least `n`.
 pub fn isqrt_ceil(n: u64) -> u64 {
-    let root = n.isqrt();
+    let root = isqrt(n);
     if root * root == n { root } else { root + 1 }
 }
 
@@ -67,6 +77,25 @@ mod tests {
                 high * high >= n && (high == 0 || (high - 1) * (high - 1) < n),
                 "{n}"
             );
+        }
+        // The hardware root agrees with the exact one, around every square too.
+        let mut n = 1u64;
+        while n < 1 << 31 {
+            for m in [n - 1, n, n + 1, n * n - 1, n * n, n * n + 1] {
+                assert_eq!(isqrt(m), m.isqrt(), "{m}");
+            }
+            n = n * 3 / 2 + 1;
+        }
+        for k in 26..=27u64 {
+            // Squares either side of the hardware root's 2^52 bound.
+            for r in [(1 << k) - 1, 1 << k, (1 << k) + 1] {
+                for m in [r * r - 1, r * r, r * r + 1] {
+                    assert_eq!(isqrt(m), m.isqrt(), "{m}");
+                }
+            }
+        }
+        for m in 0..100_000u64 {
+            assert_eq!(isqrt(m), m.isqrt(), "{m}");
         }
         assert_eq!(length_ceil(3, -4), 5);
         assert_eq!(length_ceil(1, 1), 2);

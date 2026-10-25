@@ -190,6 +190,7 @@ pub fn tick(ctx: &mut Ctx, state: &mut State) {
                             visual_origin: None,
                             creation_grant: false,
                             carry: None,
+                            live: None,
                         },
                     );
                 }

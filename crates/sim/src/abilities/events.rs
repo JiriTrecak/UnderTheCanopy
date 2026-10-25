@@ -88,7 +88,8 @@ pub struct AbilityEvent {
 /// Recent events (old `observedEvents`: the last 400 ticks, at most 1,024).
 #[derive(Debug, Clone, Default)]
 pub struct Events {
-    list: Vec<AbilityEvent>,
+    /// Oldest first; a queue, so dropping the oldest moves nothing.
+    list: std::collections::VecDeque<AbilityEvent>,
     sequence: u32,
     /// Recent deaths, for observers' statistics (replays). Cosmetic like the rest.
     deaths: std::collections::VecDeque<Fallen>,
@@ -121,7 +122,7 @@ impl Events {
     pub fn push(&mut self, mut event: AbilityEvent) {
         self.sequence += 1;
         event.id = self.sequence;
-        self.list.push(event);
+        self.list.push_back(event);
         if self.list.len() > MAX_EVENTS {
             let excess = self.list.len() - MAX_EVENTS;
             self.list.drain(..excess);
@@ -140,11 +141,12 @@ impl Events {
 
     /// Takes every event (tests and tools).
     pub fn drain(&mut self) -> Vec<AbilityEvent> {
-        std::mem::take(&mut self.list)
+        std::mem::take(&mut self.list).into()
     }
 
-    pub fn all(&self) -> &[AbilityEvent] {
-        &self.list
+    /// Every event kept, oldest first.
+    pub fn all(&self) -> impl DoubleEndedIterator<Item = &AbilityEvent> + '_ {
+        self.list.iter()
     }
 
     /// Notes a death (observers' statistics).

@@ -1145,7 +1145,7 @@ impl Spatial {
                 let (ux, uy) = (i64::from(unit.x), i64::from(unit.y));
                 let separation = i64::from(radius + unit.radius);
                 if (ux - x).pow(2) + (uy - y).pow(2) < separation * separation {
-                    near.bodies.push((ux, uy, separation * separation));
+                    near.bodies.push((ux, uy));
                 }
                 true
             });
@@ -1200,12 +1200,14 @@ impl Spatial {
             .and_then(|id| self.bodies.get(id))
             .is_some_and(|m| m.ignores);
         let (w, h) = ((x1 - x0 + 1) as usize, (y1 - y0 + 1) as usize);
+        let words = w.div_ceil(64);
         let mut scan = SpotScan {
             x0,
             y0,
             w,
             h,
-            touched: vec![false; w * h],
+            words,
+            touched: vec![0; words * h],
             ignores,
         };
         if ignores {
@@ -1213,7 +1215,8 @@ impl Spatial {
         }
         // What `unit_segment_clear(p, p, except, Some(body), None, None)` tests at each
         // centre `p`: solid bodies of the mover's layer other than itself, inside its reach
-        // box, whose centres stand closer than the two radii.
+        // box, whose centres stand closer than the two radii. The same bodies standing in a
+        // cell claim it too (the standing half of `claimed`; the map has no decks).
         let radius = body.radius_milli();
         let reach = i64::from(radius + self.profiles.max_radius);
         let (lo_x, lo_y) = (i64::from(x0) * 1000 - reach, i64::from(y0) * 1000 - reach);
@@ -1221,6 +1224,11 @@ impl Spatial {
         self.bodies.within(lo_x, lo_y, hi_x, hi_y, |unit| {
             if Some(unit.id) == except || !unit.solid() || unit.air != body.air {
                 return true;
+            }
+            let (gx, gy) = unit.xy();
+            if unit.deck.is_none() && gx >= x0 && gx <= x1 && gy >= y0 && gy <= y1 {
+                let (cx, cy) = ((gx - x0) as usize, (gy - y0) as usize);
+                scan.touched[cy * words + cx / 64] |= 1 << (cx % 64);
             }
             let (ux, uy) = (i64::from(unit.x), i64::from(unit.y));
             let separation = i64::from(radius + unit.radius);
@@ -1237,22 +1245,24 @@ impl Spatial {
                 let b = (u + offset).div_euclid(1000).min(i64::from(hi));
                 a..=b
             };
-            for cy in within(uy, reach.min(separation - 1), y0, y1) {
+            let rows = within(uy, reach.min(separation - 1), y0, y1);
+            for cy in *rows.start()..*rows.end() + 1 {
                 let sy = uy - cy * 1000;
                 let room = square - sy * sy - 1;
                 if room < 0 {
                     continue;
                 }
-                let offset = (room as u64).isqrt().min(reach as u64) as i64;
-                let row = (cy - i64::from(y0)) as usize * w;
+                let offset = crate::math::isqrt(room as u64).min(reach as u64) as i64;
+                let row = (cy - i64::from(y0)) as usize * words;
                 let xs = within(ux, offset, x0, x1);
                 if xs.is_empty() {
                     continue;
                 }
-                let (a, b) = (*xs.start(), *xs.end());
-                scan.touched
-                    [row + (a - i64::from(x0)) as usize..=row + (b - i64::from(x0)) as usize]
-                    .fill(true);
+                let (a, b) = (
+                    (*xs.start() - i64::from(x0)) as usize,
+                    (*xs.end() - i64::from(x0)) as usize,
+                );
+                set_bits(&mut scan.touched[row..row + words], a, b);
             }
             true
         });
@@ -1273,10 +1283,17 @@ impl Spatial {
         }
         let (cx, cy) = ((spot.x - scan.x0) as usize, (spot.y - scan.y0) as usize);
         assert!(cx < scan.w && cy < scan.h, "spot outside its scan");
-        if scan.touched[cy * scan.w + cx] {
+        if scan.touched[cy * scan.words + cx / 64] >> (cx % 64) & 1 != 0 {
             return false;
         }
-        scan.ignores || !self.claimed(spot, except, body, None)
+        // The scan holds the bodies standing there; reservations remain.
+        scan.ignores
+            || !self.bodies.any_reserved()
+            || !self.node(spot).is_some_and(|n| {
+                self.bodies.reserved_at(n).any(|e| {
+                    Some(e.id) != except && e.solid() && e.air == body.air && e.deck == spot.deck
+                })
+            })
     }
 
     /// Whether another body stands in or has reserved `spot` (the last test of
@@ -1422,27 +1439,56 @@ pub struct SpotScan {
     y0: i32,
     w: usize,
     h: usize,
-    touched: Vec<bool>,
+    /// Words of `touched` per row.
+    words: usize,
+    /// One bit per cell, rows of `words` words: a body touches a mover standing there, or
+    /// stands there.
+    touched: Vec<u64>,
     /// The mover ghosts through bodies: only the terrain decides.
     ignores: bool,
+}
+
+/// Sets bits `a..=b` of a row of words.
+fn set_bits(row: &mut [u64], a: usize, b: usize) {
+    let (first, last) = (a / 64, b / 64);
+    let low = !0u64 << (a % 64);
+    let high = !0u64 >> (63 - b % 64);
+    if first == last {
+        row[first] |= low & high;
+        return;
+    }
+    row[first] |= low;
+    for word in &mut row[first + 1..last] {
+        *word = !0;
+    }
+    row[last] |= high;
 }
 
 /// Bodies touching a mover, from [`Spatial::near_bodies`].
 pub struct NearBodies {
     from: Fixed,
-    /// Position and squared separation from the mover, milli-cells.
-    bodies: Vec<(i64, i64, i64)>,
+    /// Positions, milli-cells, of the bodies overlapping the mover at `from`.
+    bodies: Vec<(i64, i64)>,
 }
 
 impl NearBodies {
     /// True when one of these bodies blocks `from → to`, so
     /// [`Spatial::unit_segment_clear`] would say it is not clear (it tests the same
     /// bodies with the same geometry). False proves nothing.
+    ///
+    /// Every body here already overlaps the mover at `from`, so `body_blocks_segment`
+    /// reduces to its sign test: motion with no part away from a body's centre is blocked
+    /// (the segment's nearest approach is then at most the overlap at `from`, which falls
+    /// short of the separation by at least one squared milli-cell, far beyond the floating
+    /// test's rounding), and a mover that does not move is blocked by any of them.
     pub fn blocks(&self, to: Fixed) -> bool {
         let (dx, dy) = (i64::from(to.x - self.from.x), i64::from(to.y - self.from.y));
-        let square = dx * dx + dy * dy;
-        self.bodies.iter().any(|&(x, y, separation_squared)| {
-            geometry::body_blocks_segment(self.from, dx, dy, square, x, y, separation_squared)
-        })
+        if dx == 0 && dy == 0 {
+            return !self.bodies.is_empty();
+        }
+        let (fx, fy) = (i64::from(self.from.x), i64::from(self.from.y));
+        self.bodies
+            .iter()
+            .any(|&(x, y)| (x - fx) * dx + (y - fy) * dy > 0)
     }
 }

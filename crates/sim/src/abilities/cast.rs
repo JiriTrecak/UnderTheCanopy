@@ -938,6 +938,7 @@ fn apply(ctx: &mut Ctx, state: &mut State, caster: &Actor, p: &Pending) {
             visual_origin: None,
             creation_grant: false,
             carry: None,
+            live: None,
         },
     );
 }

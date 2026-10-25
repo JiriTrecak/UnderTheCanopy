@@ -314,6 +314,9 @@ impl Spatial {
         };
         let route = self.grid_search(radius, start, goal, search, false);
         if route.is_some() || corridor.is_none() {
+            if route.is_none() {
+                self.prove_unreachable(radius, start, goal, search);
+            }
             return route;
         }
         // Traffic may close every portal of the preferred corridor: search fully, once a
@@ -325,9 +328,34 @@ impl Spatial {
             .grid_search(radius, start, goal, search, true)
             .is_some()
         {
+            self.prove_unreachable(radius, start, goal, search);
             return None;
         }
         self.grid_search(radius, start, goal, search, false)
+    }
+
+    /// After a search held back by traffic exhausted a large region without the goal: a
+    /// flood without the traffic, which is remembered when it exhausts too, so the next
+    /// searches from that region to anywhere outside it are answered at once
+    /// (`proven_unreachable`; traffic only ever takes cells away). A goal it reaches
+    /// proves nothing, and the answer given stays the search's own.
+    fn prove_unreachable(&mut self, radius: i32, start: u32, goal: u32, search: Search) {
+        /// Expansions worth a flood: below this the search was cheap anyway.
+        const LARGE: u32 = 4096;
+        if search.blocked.is_none()
+            || search.corridor.is_some()
+            || search.max_cost != i64::MAX
+            || self.scratch.expanded < LARGE
+        {
+            return;
+        }
+        let free = Search {
+            blocked: None,
+            heuristic_permille: 1000,
+            remember_origin: true,
+            ..search
+        };
+        self.grid_search(radius, start, goal, free, true);
     }
 
     /// The grid search for `radius`; with `flood`, only whether it would succeed (an

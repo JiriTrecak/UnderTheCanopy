@@ -55,7 +55,10 @@ pub fn after_movement(ctx: &mut Ctx, state: &mut State) {
 /// Step 8: reactions, persistent pulses, deliveries, releases and channels, then taunts.
 pub fn resolve(ctx: &mut Ctx, state: &mut State) {
     let _span = tracing::trace_span!("ability delivery").entered();
-    reactions::resolve(ctx, state);
+    {
+        let _span = tracing::trace_span!("ability reactions").entered();
+        reactions::resolve(ctx, state);
+    }
     persistent::tick(ctx, state);
     deliveries::tick(ctx, state);
     cast::resolve_casters(ctx, state);
@@ -91,6 +94,8 @@ fn auras(ctx: &mut Ctx, state: &mut State) {
             .map(|c| c.ranks.clone())
             .unwrap_or_default();
         let mut holder: Option<actor::Actor> = None;
+        // The holder's current snapshot, while nothing has changed it since.
+        let mut holder_now: Option<actor::Actor> = None;
         for (index, b) in policy.bindings.iter().enumerate() {
             let spell = ctx.ability(b.ability);
             let rank = ranks.get(index).copied().unwrap_or(0);
@@ -133,7 +138,9 @@ fn auras(ctx: &mut Ctx, state: &mut State) {
                     b.ability,
                     rank,
                     Ops::Picked(&once),
+                    None,
                 );
+                holder_now = None;
                 if !still(&once) {
                     standing.forget();
                 }
@@ -186,6 +193,17 @@ fn auras(ctx: &mut Ctx, state: &mut State) {
                 if status_ops::aura_settled(ctx, state, b.ability, rank, h.id, target.id, &per) {
                     continue;
                 }
+                // A status run changes its own recipient alone: the snapshots of the
+                // others, and the holder's unless it is the recipient, stay current.
+                let live = (!moves).then(|| program::Live {
+                    caster: holder_now
+                        .get_or_insert_with(|| program::current(ctx, state, &h))
+                        .clone(),
+                    target: Some(target.clone()),
+                });
+                if moves || target.id == h.id {
+                    holder_now = None;
+                }
                 run(
                     ctx,
                     state,
@@ -194,6 +212,7 @@ fn auras(ctx: &mut Ctx, state: &mut State) {
                     b.ability,
                     rank,
                     Ops::Picked(&per),
+                    live,
                 );
                 if moves {
                     standing.forget();
@@ -208,6 +227,7 @@ fn auras(ctx: &mut Ctx, state: &mut State) {
     }
 }
 
+#[allow(clippy::too_many_arguments)]
 fn run(
     ctx: &mut Ctx,
     state: &mut State,
@@ -216,6 +236,7 @@ fn run(
     ability: library::AbilityId,
     rank: u8,
     ops: Ops,
+    live: Option<program::Live>,
 ) {
     program::run(
         ctx,
@@ -234,6 +255,7 @@ fn run(
             visual_origin: None,
             creation_grant: false,
             carry: None,
+            live,
         },
     );
 }
