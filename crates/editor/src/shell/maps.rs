@@ -212,10 +212,12 @@ impl Shell {
             let blocks = crate::world::blocks_of(session).ok_or("The map has no blocks")?;
             let column = |p: [f32; 2]| Blocks::column_at(&blocks, p[0], p[1]);
             let points = args.points.clone().unwrap_or_default();
+            // A single block (cut, uncut) may be given as `to` alone.
             let from = args
                 .from
                 .or_else(|| points.first().copied())
-                .ok_or("from (or points) is needed")?;
+                .or(args.to)
+                .ok_or("from (or points, or to) is needed")?;
             let to = args.to.unwrap_or(from);
             let clear = args.kind.as_deref() == Some("none");
             let kind = match args.kind.as_deref().unwrap_or("ground") {

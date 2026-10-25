@@ -254,7 +254,9 @@ impl Shell {
                     }
                 }
                 if out.is_empty() && wanted.is_some() {
-                    return Err("No such editor: maps, units, abilities, effects, buildings, races or assets.".into());
+                    let names: Vec<String> =
+                        KINDS.iter().map(|k| k.label().to_lowercase()).collect();
+                    return Err(format!("No such editor: {}.", names.join(", ")));
                 }
                 Ok(Value::Array(out))
             }
@@ -367,6 +369,13 @@ impl Shell {
                 Ok(Value::Array(uses))
             }
             Tool::Rename { document, new } => {
+                let exists = self
+                    .store
+                    .as_mut()
+                    .is_some_and(|s| matches!(s.get(&document), Ok(Some(_))));
+                if !exists {
+                    return Err(format!("{document}: no such document"));
+                }
                 let old = self.id_of(&document);
                 if old.is_empty() {
                     return Err(format!("{document}: no element id"));

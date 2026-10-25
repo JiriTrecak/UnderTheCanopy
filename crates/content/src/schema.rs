@@ -100,9 +100,37 @@ const ASSEMBLED_RULES: [&str; 6] = [
     "sounds",
 ];
 
+/// A map package's `map.json`: the map without what the loader fills in from elsewhere
+/// (the version, the manifest's name and description, scenery and terrain as authoring
+/// data, a mission's Lua scripts).
+fn map_file() -> Value {
+    let mut schema = root::<crate::map::UtcMap>();
+    drop_properties(
+        &mut schema,
+        &["v", "name", "description", "authoring", "terrain"],
+    );
+    if let Some(mission) = schema.pointer_mut("/$defs/Mission") {
+        drop_properties(mission, &["script", "autoplay"]);
+    }
+    schema
+}
+
 /// The schema of the document at `path` (`/`-separated from its package's root), when the
-/// format has one.
+/// format has one. A nested package's documents (a campaign's `campaign.json`, a map's
+/// `map.json`, a campaign's mission maps) are found by their path within it.
 pub fn of_document(path: &str) -> Option<Value> {
+    let inner = [".utcm/", ".utcc/"]
+        .iter()
+        .filter_map(|marker| path.rfind(marker).map(|at| (at, *marker)))
+        .max_by_key(|(at, _)| *at);
+    if let Some((at, marker)) = inner {
+        let rest = &path[at + marker.len()..];
+        return match (marker, rest) {
+            (".utcm/", crate::map::package::MAP_FILE) => Some(map_file()),
+            (".utcc/", crate::campaign::CAMPAIGN_FILE) => Some(root::<crate::campaign::Campaign>()),
+            _ => None,
+        };
+    }
     if path == crate::campaign::CAMPAIGN_FILE {
         return Some(root::<crate::campaign::Campaign>());
     }
@@ -144,6 +172,26 @@ pub fn of_document(path: &str) -> Option<Value> {
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn nested_packages_documents_have_schemas() {
+        let map = of_document("maps/skirmish/frozen-dream.utcm/map.json").expect("map.json");
+        let properties = map["properties"].as_object().expect("properties");
+        assert!(properties.contains_key("size") && properties.contains_key("playerStarts"));
+        for filled in ["v", "name", "authoring"] {
+            assert!(
+                !properties.contains_key(filled),
+                "{filled} is filled in by the loader"
+            );
+        }
+        let mission = &map["$defs"]["Mission"]["properties"];
+        assert!(mission.get("players").is_some() && mission.get("script").is_none());
+        for campaign in ["campaigns/vanguard.utcc/campaign.json", "campaign.json"] {
+            assert!(of_document(campaign).expect("campaign")["properties"]["steps"].is_object());
+        }
+        assert!(of_document("campaigns/vanguard.utcc/missions/founding.utcm/map.json").is_some());
+        assert!(of_document("maps/skirmish/frozen-dream.utcm/scenery.json").is_none());
+    }
 
     #[test]
     fn documents_have_file_shaped_schemas() {

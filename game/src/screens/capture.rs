@@ -1067,12 +1067,18 @@ fn editor(rig: &mut Rig, paths: &Paths) -> Result<()> {
     shoot(&mut editor, rig, "editor-abilities")?;
     // An unsaved edit: marks in the tab, the library and the header (nothing is saved).
     if let Some(document) = editor.active_document() {
+        // Its name is in the text library (D96), under its id.
+        let id = std::fs::read_to_string(paths.data.join("base").join(&document))
+            .ok()
+            .and_then(|t| serde_json::from_str::<serde_json::Value>(&t).ok())
+            .and_then(|v| v["id"].as_str().map(str::to_string))
+            .context("the ability's id")?;
         editor
             .run_step(
                 "Rename for the capture",
                 vec![canopy_editor::Command::Set {
-                    document,
-                    pointer: "/name".into(),
+                    document: "text/en/abilities.json".into(),
+                    pointer: format!("/{id}.name"),
                     value: "Renamed in the editor".into(),
                     at: None,
                 }],
@@ -1243,15 +1249,16 @@ fn editor(rig: &mut Rig, paths: &Paths) -> Result<()> {
         "undo takes every map edit back"
     );
 
-    // Test in game: the editor's checked data (a renamed race) plays a skirmish, and the
-    // game's own data is back once the match is left.
+    // Test in game: the editor's checked data (a renamed race: its name is in the text
+    // library, D96) plays a skirmish, and the game's own data is back once the match is
+    // left.
     editor.undo_all();
     editor
         .run_step(
             "Rename for the test",
             vec![canopy_editor::Command::Set {
-                document: "races/ants.json".into(),
-                pointer: "/name".into(),
+                document: "text/en/races.json".into(),
+                pointer: "/race.ants.name".into(),
                 value: "Ants (editor test)".into(),
                 at: None,
             }],

@@ -1028,27 +1028,53 @@ impl<'a> Overview<'a> {
     }
 
     fn race(&mut self, ui: &mut Ui, value: &Value) {
-        if let Some(Value::Object(roster)) = value.get("roster") {
-            for (group, ids) in roster {
-                let ids: Vec<String> = ids
-                    .as_array()
-                    .map(|l| {
-                        l.iter()
-                            .filter_map(Value::as_str)
-                            .map(str::to_string)
-                            .collect()
-                    })
-                    .unwrap_or_default();
-                let title = crate::forms::words(group);
-                let me = &mut *self;
-                Self::card(ui, &title, |ui| {
-                    ui.horizontal_wrapped(|ui| {
-                        for id in &ids {
-                            me.link(ui, id);
-                        }
-                    });
-                });
+        // The roster is one list of ids; it shows as heroes, units and buildings (a hero
+        // is a unit whose document sits under `heroes/`).
+        let roster: Vec<String> = value
+            .get("roster")
+            .and_then(Value::as_array)
+            .map(|l| {
+                l.iter()
+                    .filter_map(Value::as_str)
+                    .map(str::to_string)
+                    .collect()
+            })
+            .unwrap_or_default();
+        let hero = |id: &str| {
+            self.index
+                .get(id)
+                .is_some_and(|e| e.document.contains("/heroes/"))
+        };
+        let mut groups: [(&str, Vec<String>); 4] = [
+            ("Heroes", Vec::new()),
+            ("Units", Vec::new()),
+            ("Buildings", Vec::new()),
+            ("Other", Vec::new()),
+        ];
+        for id in roster {
+            let group = if id.starts_with("unit.") && hero(&id) {
+                0
+            } else if id.starts_with("unit.") {
+                1
+            } else if id.starts_with("building.") {
+                2
+            } else {
+                3
+            };
+            groups[group].1.push(id);
+        }
+        for (title, ids) in groups {
+            if ids.is_empty() {
+                continue;
             }
+            let me = &mut *self;
+            Self::card(ui, title, |ui| {
+                ui.horizontal_wrapped(|ui| {
+                    for id in &ids {
+                        me.link(ui, id);
+                    }
+                });
+            });
         }
         if let Some(setup) = value.get("startingSetup") {
             let me = &mut *self;

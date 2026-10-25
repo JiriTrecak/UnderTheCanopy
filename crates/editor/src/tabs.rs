@@ -491,7 +491,13 @@ impl Viewer<'_> {
             .map(|(_, pointer)| pointer);
         ScrollArea::vertical()
             .id_salt(("form", &tab.document))
-            .min_scrolled_height(height.min(ui.available_height().max(0.0)))
+            // A sheet's own height (inside a modal the space left is only what the modal has
+            // grown to so far, which kept long forms in a small box); a tab's whole panel.
+            .min_scrolled_height(if height.is_finite() {
+                height
+            } else {
+                ui.available_height().max(0.0)
+            })
             .max_height(height)
             .auto_shrink([false, false])
             .show(ui, |ui| {
