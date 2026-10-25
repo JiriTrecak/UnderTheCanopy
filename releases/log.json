@@ -4,7 +4,8 @@
     "added": [],
     "improved": [
       "Campaign forest maps render up to twice as fast on the GPU, and every map a little faster, with the same picture",
-      "Fewer hitches in large battles and while computer players plan their first moves"
+      "Fewer hitches in large battles and while computer players plan their first moves",
+      "The main menu draws in about half the GPU time, and a match's interface, health bars and building shadows cost the processor far less each frame, with the same picture"
     ],
     "fixed": [],
     "knownIssues": []
