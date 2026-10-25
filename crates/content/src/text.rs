@@ -380,13 +380,32 @@ fn collect(parts: &[Part], out: &mut Vec<String>) {
 
 /// Fills `string`'s placeholders from `args`; a missing argument stays as `{name}`.
 pub fn format(string: &str, args: &[(&str, Arg)]) -> String {
-    match parse(string) {
-        Ok(parts) => {
+    // The interface formats the same strings every frame: each is parsed once per thread
+    // (a bounded cache; strings are the text library's, so few).
+    thread_local! {
+        static PARSED: std::cell::RefCell<std::collections::HashMap<String, std::rc::Rc<Option<Vec<Part>>>>> =
+            std::cell::RefCell::new(std::collections::HashMap::new());
+    }
+    const CACHED: usize = 4096;
+    let parts = PARSED.with(|cache| {
+        if let Some(parts) = cache.borrow().get(string) {
+            return parts.clone();
+        }
+        let parts = std::rc::Rc::new(parse(string).ok());
+        let mut cache = cache.borrow_mut();
+        if cache.len() >= CACHED {
+            cache.clear();
+        }
+        cache.insert(string.to_owned(), parts.clone());
+        parts
+    });
+    match parts.as_ref() {
+        Some(parts) => {
             let mut out = String::with_capacity(string.len());
-            render(&parts, args, None, &mut out);
+            render(parts, args, None, &mut out);
             out
         }
-        Err(_) => string.to_string(),
+        None => string.to_string(),
     }
 }
 
@@ -514,12 +533,14 @@ fn parse_placeholder(chars: &[char], at: &mut usize) -> Result<Part, String> {
     }
 }
 
-fn number_text(n: f64) -> String {
-    if n.fract() == 0.0 && n.abs() < 1e15 {
-        format!("{}", n as i64)
+/// A number as text: whole numbers without a fraction.
+fn write_number(n: f64, out: &mut String) {
+    use std::fmt::Write;
+    let _ = if n.fract() == 0.0 && n.abs() < 1e15 {
+        write!(out, "{}", n as i64)
     } else {
-        format!("{n}")
-    }
+        write!(out, "{n}")
+    };
 }
 
 /// English plural categories (the source language; translations add their rules).
@@ -532,10 +553,13 @@ fn render(parts: &[Part], args: &[(&str, Arg)], number: Option<f64>, out: &mut S
     for part in parts {
         match part {
             Part::Literal(text) => out.push_str(text),
-            Part::Number => out.push_str(&number.map(number_text).unwrap_or_else(|| "#".into())),
+            Part::Number => match number {
+                Some(n) => write_number(n, out),
+                None => out.push('#'),
+            },
             Part::Arg(name) => match arg(name) {
                 Some(Arg::Text(text)) => out.push_str(text),
-                Some(Arg::Number(n)) => out.push_str(&number_text(n)),
+                Some(Arg::Number(n)) => write_number(n, out),
                 None => {
                     out.push('{');
                     out.push_str(name);
@@ -548,10 +572,14 @@ fn render(parts: &[Part], args: &[(&str, Arg)], number: Option<f64>, out: &mut S
                     Some(Arg::Text(t)) => t.parse().unwrap_or(0.0),
                     None => 0.0,
                 };
-                let exact = format!("={}", number_text(n));
+                // `=n` branches, compared without formatting `n` anew for each.
+                let start = out.len();
+                write_number(n, out);
                 let branch = branches
                     .iter()
-                    .find(|(s, _)| *s == exact)
+                    .find(|(s, _)| s.strip_prefix('=') == Some(&out[start..]));
+                out.truncate(start);
+                let branch = branch
                     .or_else(|| branches.iter().find(|(s, _)| s == category(n)))
                     .or_else(|| branches.iter().find(|(s, _)| s == "other"));
                 if let Some((_, branch)) = branch {

@@ -798,11 +798,9 @@ impl Play {
 
     /// The targeting hint above the HUD (old hint text, with the player's keys).
     pub fn hint(&self) -> Option<String> {
-        let cancel = self.keymap.label(Shortcut::Cancel);
-        let cancel = if cancel.is_empty() {
-            tr!("keys.esc")
-        } else {
-            cancel
+        let cancel = match self.keymap.label(Shortcut::Cancel) {
+            "" => tr!("keys.esc"),
+            label => label.to_owned(),
         };
         match &self.mode {
             Mode::Idle => None,
@@ -823,8 +821,8 @@ impl Play {
                     name = name.as_str(),
                     problem =
                         &problem.map_or_else(|| tr!("play.click-to-build"), |p| format!("{p}.")),
-                    clockwise = &self.keymap.label(Shortcut::RotateClockwise),
-                    counterclockwise = &self.keymap.label(Shortcut::RotateCounterclockwise),
+                    clockwise = self.keymap.label(Shortcut::RotateClockwise),
+                    counterclockwise = self.keymap.label(Shortcut::RotateCounterclockwise),
                     degrees = placement.rotation,
                     cancel = &cancel
                 ))

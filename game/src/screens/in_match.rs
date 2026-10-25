@@ -347,7 +347,7 @@ impl Playing {
         host: &mut Host<'_>,
         output: &wgpu::TextureView,
         ui_view: &wgpu::TextureView,
-    ) -> FrameReport {
+    ) -> &FrameReport {
         self.game.render(host, output, ui_view)
     }
 

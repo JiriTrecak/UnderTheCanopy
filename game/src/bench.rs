@@ -3,7 +3,7 @@
 //! ```text
 //! canopy bench-render [--data <folder>] [--frames <n>] [--sizes <w>x<h>,…]
 //!                     [--scenes default,spectator,crowd,forest-road,forest-road-east,
-//!                               forest-hollow,menu,hud]
+//!                               forest-hollow,menu,hud,match]
 //!                     [--label <name>] [shot options…]
 //! ```
 //!
@@ -146,6 +146,7 @@ pub fn run(mut args: impl Iterator<Item = String>) -> Result<()> {
         for &size in &sizes {
             let value = match name {
                 "menu" => menu(&paths, size, frames)?,
+                "match" => match_frames(&paths, size, frames)?,
                 "hud" => hud(&exe, &paths, &out_dir, size)?,
                 _ => {
                     let scene = SCENES
@@ -348,6 +349,127 @@ fn menu(paths: &Paths, size: [u32; 2], frames: u32) -> Result<Value> {
     }))
 }
 
+/// A skirmish on the first battlefield as the window plays it (the real game, headless,
+/// computers in every other seat, the human's camera at its start): the main thread's
+/// CPU per frame (update: the live scene, play, HUD and world UI; recording) and the
+/// heap allocations it makes per frame (with the `count-allocs` feature), after the match
+/// has run for a while.
+fn match_frames(paths: &Paths, size: [u32; 2], frames: u32) -> Result<Value> {
+    let gpu = Gpu::headless(DeviceOptions::default())?.context("no GPU adapter")?;
+    let user = std::env::temp_dir().join(format!("canopy-bench-match-{}", std::process::id()));
+    std::fs::create_dir_all(&user)?;
+    let paths = Paths {
+        data: paths.data.clone(),
+        user: user.clone(),
+        cache: user.join("cache"),
+        replays: user.join("replays"),
+    };
+    let look = canopy_scene::Look::load(&paths.data, canopy_content::map::BIOMES[0])?;
+    let environment = canopy_render::Environment::new(&look.lighting, &look.biome, 12.0, None);
+    let mut renderer = Renderer::new(
+        &gpu,
+        canopy_render::capture::CAPTURE_FORMAT,
+        size,
+        environment,
+    );
+    let mut game = screens::Game::new(paths, Settings::default(), &gpu, None)?;
+    game.offline_updates();
+    let target = Capture::new(&gpu.device, size[0], size[1]);
+    let frame = |game: &mut screens::Game, renderer: &mut Renderer| {
+        let mut ctx = screens::Ctx {
+            gpu: &gpu,
+            renderer,
+            window: None,
+            size,
+            scale: 1.0,
+        };
+        crate::allocs::start();
+        let start = Instant::now();
+        game.update(&mut ctx);
+        let updated = start.elapsed();
+        game.render(&mut ctx, &target.view, &target.ui_view);
+        let recorded = start.elapsed();
+        let allocated = crate::allocs::stop();
+        let _ = gpu.device.poll(wgpu::PollType::wait_indefinitely());
+        (updated, recorded, allocated)
+    };
+    let until = |game: &mut screens::Game,
+                 renderer: &mut Renderer,
+                 what: &str,
+                 limit: Duration,
+                 done: &dyn Fn(&screens::Game) -> bool|
+     -> Result<()> {
+        let end = Instant::now() + limit;
+        while !done(game) {
+            anyhow::ensure!(Instant::now() < end, "timed out waiting for {what}");
+            frame(game, renderer);
+            std::thread::sleep(Duration::from_millis(10));
+        }
+        Ok(())
+    };
+    until(
+        &mut game,
+        &mut renderer,
+        "boot",
+        Duration::from_secs(60),
+        &|g| g.booted(),
+    )?;
+    anyhow::ensure!(game.start_benchmark_skirmish(0), "no battlefield");
+    until(
+        &mut game,
+        &mut renderer,
+        "the match",
+        Duration::from_secs(180),
+        &|g| g.in_match(),
+    )?;
+    // Ten seconds of play, paced like a 60 Hz display: models load, workers set out.
+    let settle = Instant::now() + Duration::from_secs(10);
+    while Instant::now() < settle {
+        frame(&mut game, &mut renderer);
+        std::thread::sleep(Duration::from_millis(12));
+    }
+    let (mut update, mut cpu, mut allocations, mut bytes) =
+        (Vec::new(), Vec::new(), Vec::new(), Vec::new());
+    if let Some(n) = std::env::var("CANOPY_ALLOC_TRACE")
+        .ok()
+        .and_then(|v| v.parse().ok())
+    {
+        crate::allocs::trace(n);
+    }
+    for _ in 0..frames.max(3) {
+        let (u, r, a) = frame(&mut game, &mut renderer);
+        update.push(u.as_secs_f32() * 1000.0);
+        cpu.push(r.as_secs_f32() * 1000.0);
+        allocations.push(a.allocations);
+        bytes.push(a.bytes);
+        std::thread::sleep(Duration::from_millis(12));
+    }
+    drop(game);
+    let _ = std::fs::remove_dir_all(&user);
+    let median = |v: &mut Vec<f32>| {
+        v.sort_by(f32::total_cmp);
+        v[v.len() / 2]
+    };
+    let (u, c) = (median(&mut update), median(&mut cpu));
+    allocations.sort_unstable();
+    bytes.sort_unstable();
+    let counted = crate::allocs::COUNTING;
+    Ok(serde_json::json!({
+        "match": {
+            "update_ms": u,
+            "cpu_ms": c,
+            "allocations": counted.then(|| serde_json::json!({
+                "median": allocations[allocations.len() / 2],
+                "max": allocations.last(),
+                "frames_without": allocations.iter().filter(|&&n| n == 0).count(),
+                "frames": allocations.len(),
+                "median_bytes": bytes[bytes.len() / 2],
+            })),
+        },
+        "gpu": gpu.name(),
+    }))
+}
+
 /// The median submit-to-idle time of a command buffer clearing a tiny target, ms
 /// (`canopy_render::bench`'s floor).
 fn floor_ms(gpu: &Gpu, samples: u32) -> f32 {
@@ -403,6 +525,14 @@ fn summary(value: &Value) -> String {
     if value.get("hud_cpu_ms").is_some() {
         return format!("HUD {:.3} ms CPU", f(value, &["hud_cpu_ms"]));
     }
+    if value.get("match").is_some() {
+        return format!(
+            "update {:.3} ms, cpu {:.3} ms, allocations {}",
+            f(value, &["match", "update_ms"]),
+            f(value, &["match", "cpu_ms"]),
+            value["match"]["allocations"]
+        );
+    }
     if value.get("menu").is_some() {
         return format!(
             "frame {:.2} ms (cpu {:.2}; UI pass alone {:.3})",
@@ -447,6 +577,22 @@ fn table(results: &[Result1], extra: &[String], frames: u32) -> String {
             let _ = writeln!(
                 s,
                 "| hud | {size} | | | {ms:.3} | | | | | | match HUD update + bind + paint (CPU) |"
+            );
+            continue;
+        }
+        if let Some(m) = v.get("match") {
+            let allocations = match m.get("allocations").filter(|a| !a.is_null()) {
+                Some(a) => format!(
+                    "{} allocations a frame (median; max {}, {} of {} frames none, {} bytes)",
+                    a["median"], a["max"], a["frames_without"], a["frames"], a["median_bytes"]
+                ),
+                None => "allocations not counted (feature count-allocs)".to_string(),
+            };
+            let _ = writeln!(
+                s,
+                "| match | {size} | | | {:.3} | | | | | | update {:.3} ms of it; {allocations} |",
+                f(v, &["match", "cpu_ms"]),
+                f(v, &["match", "update_ms"]),
             );
             continue;
         }
@@ -511,7 +657,8 @@ fn table(results: &[Result1], extra: &[String], frames: u32) -> String {
     }
     let _ = writeln!(
         s,
-        "- `menu`: the main menu (UI only), rendered in process: paced frames (GPU = to idle − CPU, with the GPU's wake-up), and the UI pass back to back minus the floor\n- `hud`: the play capture's HUD on frozen-dream (`shot --play --input select:worker`), CPU only"
+        "- `menu`: the main menu (UI only), rendered in process: paced frames (GPU = to idle − CPU, with the GPU's wake-up), and the UI pass back to back minus the floor\n- `match` (not in the defaults): a skirmish on the first battlefield as the window plays it, after ten seconds; main-thread CPU (update + recording) and allocations a frame (build with `--features count-allocs`)
+- `hud`: the play capture's HUD on frozen-dream (`shot --play --input select:worker`), CPU only"
     );
     s
 }

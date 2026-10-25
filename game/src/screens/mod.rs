@@ -462,6 +462,28 @@ impl Game {
         self.data.is_some()
     }
 
+    /// Starts a skirmish on battlefield `map` (its index in the list) with the human in
+    /// the first seat and computers in the rest, as the skirmish screen would: for
+    /// benchmarks of the match as the window plays it. False before boot.
+    pub fn start_benchmark_skirmish(&mut self, map: usize) -> bool {
+        let Some(data) = self.data.clone() else {
+            return false;
+        };
+        self.apply(Intent::Open(Screen::Skirmish));
+        self.skirmish.choose_map(&data, map);
+        self.skirmish.set_human(0, true);
+        for slot in &mut self.skirmish.slots {
+            slot.team = None;
+        }
+        self.start_skirmish();
+        true
+    }
+
+    /// Whether a match is on screen.
+    pub fn in_match(&self) -> bool {
+        self.flow.in_match()
+    }
+
     // --- Input ---------------------------------------------------------------------
 
     /// A window event: the UI first, then the match.
@@ -3103,7 +3125,7 @@ impl Game {
         ctx: &mut Ctx<'_>,
         output: &wgpu::TextureView,
         ui_view: &wgpu::TextureView,
-    ) -> Option<canopy_render::FrameReport> {
+    ) -> Option<&canopy_render::FrameReport> {
         if let (Some(playing), true) = (&mut self.playing, self.flow.in_match()) {
             let mut host = Host {
                 window: ctx.window,

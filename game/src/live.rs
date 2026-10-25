@@ -33,6 +33,8 @@ pub struct LiveScene {
     fog: canopy_scene::fog::FogFeed,
     world_ui: Option<WorldUi>,
     world_ui_frame: canopy_render::world_ui::WorldUiFrame,
+    /// The minimap's markers (swapped with the renderer's each frame, so kept lists).
+    minimap_frame: canopy_render::minimap::MinimapFrame,
     /// What the player selected and how the world UI shows (the game fills it).
     pub world_ui_input: WorldUiInput,
     /// The bodies of the latest frame and where their models stand.
@@ -70,7 +72,7 @@ impl LiveScene {
 
     /// The minimap's markers and the camera's view quad for the latest frame.
     pub fn draw_minimap(
-        &self,
+        &mut self,
         renderer: &mut Renderer,
         camera: &canopy_render::CameraView,
         scene: &canopy_scene::MapScene,
@@ -84,7 +86,7 @@ impl LiveScene {
                 .ok()
                 .map(|i| instances[i].transform.w_axis.truncate())
         };
-        let mut frame = canopy_render::minimap::MinimapFrame::default();
+        let frame = &mut self.minimap_frame;
         canopy_scene::world_ui::minimap_frame(
             &self.ui_bodies,
             &position,
@@ -92,10 +94,10 @@ impl LiveScene {
             scene.minimap,
             pixels,
             canopy_scene::world_ui::ground_footprint(camera),
-            &mut frame,
+            frame,
         );
-        canopy_scene::world_ui::minimap_pings(pings, scene.minimap, pixels, &mut frame);
-        renderer.set_minimap(&mut frame);
+        canopy_scene::world_ui::minimap_pings(pings, scene.minimap, pixels, frame);
+        renderer.set_minimap(frame);
     }
 
     /// The portrait of body `id` as the latest frame shows it: its model at its scale,

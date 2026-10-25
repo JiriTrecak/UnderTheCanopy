@@ -171,7 +171,10 @@ pub struct Hud {
     /// motes rise behind them.
     rising: Vec<canopy_ui::Rect>,
     appearance: [Option<String>; 2],
+    /// Images used and not yet handed to the game, and every one ever handed over (each
+    /// is asked for once, so a steady frame asks for nothing).
     requests: BTreeSet<String>,
+    requested: BTreeSet<String>,
     /// The portrait shows the live render target `@portrait` instead of the icon.
     pub live_portrait: bool,
     /// The minimap shows the render target `@minimap`.
@@ -291,6 +294,7 @@ impl Hud {
             rising: Vec::new(),
             appearance: [None, None],
             requests: BTreeSet::new(),
+            requested: BTreeSet::new(),
             live_portrait: false,
             minimap: false,
             palette: Vec::new(),
@@ -309,9 +313,21 @@ impl Hud {
         }
     }
 
-    /// Image names used since the last call that the game has to register.
+    /// Image names first used since the last call, which the game has to register.
     pub fn take_image_requests(&mut self) -> Vec<String> {
-        std::mem::take(&mut self.requests).into_iter().collect()
+        if self.requests.is_empty() {
+            return Vec::new();
+        }
+        let new: Vec<String> = std::mem::take(&mut self.requests).into_iter().collect();
+        self.requested.extend(new.iter().cloned());
+        new
+    }
+
+    /// Notes that the HUD uses image `path`.
+    fn request(&mut self, path: &str) {
+        if !self.requested.contains(path) && !self.requests.contains(path) {
+            self.requests.insert(path.to_owned());
+        }
     }
 
     /// Uses the local seat's starting race, independent of selection or fog perspective.
@@ -343,9 +359,9 @@ impl Hud {
     }
 
     fn image(&mut self, ui: &mut Ui, k: &Knowledge, icon: &str) -> Option<canopy_ui::ImageKey> {
-        let path = k.icon_image(icon)?.to_owned();
-        self.requests.insert(path.clone());
-        Some(ui.image_key(&path))
+        let path = k.icon_image(icon)?;
+        self.request(path);
+        Some(ui.image_key(path))
     }
 
     /// Shows the HUD and finds its nodes (again after a hot reload).
@@ -369,7 +385,9 @@ impl Hud {
         let k = play.knowledge().clone();
         for (node, path) in [n.dock, n.resources].into_iter().zip(&self.appearance) {
             let image = path.as_ref().map(|path| {
-                self.requests.insert(path.clone());
+                if !self.requested.contains(path) {
+                    self.requests.insert(path.clone());
+                }
                 ui.image_key(path)
             });
             ui.set_background_image(node, image);
@@ -580,10 +598,10 @@ impl Hud {
             let label = if i < 3 {
                 play.keymap.label(Shortcut::Hero(i))
             } else {
-                String::new()
+                ""
             };
             if let Some(key) = ui.find_in(cell, "key") {
-                ui.set_text(key, &label);
+                ui.set_text(key, label);
             }
             let available = play.hero_available(id);
             let fallen = k.view.battle.fallen.contains(&e.id());
@@ -602,7 +620,7 @@ impl Hud {
                 cell,
                 Some(Tooltip {
                     title: tr!("hud.hero-title", name = &d.name, level = level),
-                    hotkey: (!label.is_empty()).then_some(label),
+                    hotkey: (!label.is_empty()).then(|| label.to_owned()),
                     note: (points > 0).then(|| tr!("hud.hero-skill-points", count = points)),
                     body: if available {
                         tr!("hud.hero-select-tip")
@@ -904,7 +922,8 @@ impl Hud {
                     title: d.name.clone(),
                     hotkey: can_use
                         .then(|| keymap.label(Shortcut::Inventory(i)))
-                        .filter(|l| !l.is_empty()),
+                        .filter(|l| !l.is_empty())
+                        .map(str::to_owned),
                     body: format!(
                         "{}{}{}{}",
                         d.item_tier
@@ -1418,28 +1437,35 @@ impl Hud {
             };
             let members = play.groups.get(slot);
             ui.set_visible(cell, !members.is_empty());
+            if members.is_empty() {
+                // Hidden: the rest is set again the frame it shows.
+                continue;
+            }
             if let Some(count) = ui.find_in(cell, "count") {
                 ui.set_text(count, &members.len().to_string());
             }
             let digit = (slot + 1) % 10;
             let recall = play.keymap.label(Shortcut::Recall(slot));
             if let Some(key) = ui.find_in(cell, "key") {
-                ui.set_text(key, if recall.is_empty() { "—" } else { &recall });
+                ui.set_text(key, if recall.is_empty() { "—" } else { recall });
             }
-            let mut m = members.to_vec();
-            m.sort_unstable();
-            ui.set_checked(cell, !m.is_empty() && m == selected);
+            let same = members.len() == selected.len() && {
+                let mut m = members.to_vec();
+                m.sort_unstable();
+                m == selected
+            };
+            ui.set_checked(cell, same);
             // Old group tooltip: members, the bound assign and add keys, double press.
             ui.set_tooltip(
                 cell,
                 Some(Tooltip {
                     title: tr!("hud.control-group", digit = digit),
-                    hotkey: (!recall.is_empty()).then_some(recall),
+                    hotkey: (!recall.is_empty()).then(|| recall.to_owned()),
                     body: tr!(
                         "hud.control-group-tip",
                         count = members.len(),
-                        assign = &play.keymap.label(Shortcut::Assign(slot)),
-                        add = &play.keymap.label(Shortcut::Add(slot)),
+                        assign = play.keymap.label(Shortcut::Assign(slot)),
+                        add = play.keymap.label(Shortcut::Add(slot)),
                     ),
                     ..Tooltip::default()
                 }),

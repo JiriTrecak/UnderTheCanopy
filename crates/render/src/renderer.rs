@@ -231,6 +231,26 @@ pub struct FrameReport {
     pub isolated_ms: Vec<f32>,
 }
 
+impl FrameReport {
+    /// Empties the report for a new frame, keeping its lists' room.
+    fn reset(&mut self) {
+        let mut passes = std::mem::take(&mut self.passes);
+        let mut cpu_ms = std::mem::take(&mut self.cpu_ms);
+        let mut isolated_ms = std::mem::take(&mut self.isolated_ms);
+        let gpu_ms = self.gpu_ms.take();
+        passes.clear();
+        cpu_ms.clear();
+        isolated_ms.clear();
+        *self = Self {
+            passes,
+            cpu_ms,
+            isolated_ms,
+            gpu_ms,
+            ..Self::default()
+        };
+    }
+}
+
 /// Triangles a frame submits. Statics are culled on the GPU, so their counts are known
 /// only when a benchmark reads the indirect arguments back.
 #[derive(Debug, Clone, Copy, Default, PartialEq, Eq, serde::Serialize)]
@@ -1100,6 +1120,22 @@ impl Renderer {
         output: &wgpu::TextureView,
         before_submit: Option<&dyn Fn(&mut wgpu::CommandEncoder)>,
     ) -> FrameReport {
+        let mut report = FrameReport::default();
+        self.render_into(gpu, camera, seconds, output, before_submit, &mut report);
+        report
+    }
+
+    /// [`Self::render`] reporting into `report`, whose lists it keeps (a steady frame
+    /// allocates no report).
+    pub fn render_into(
+        &mut self,
+        gpu: &Gpu,
+        camera: &CameraView,
+        seconds: f32,
+        output: &wgpu::TextureView,
+        before_submit: Option<&dyn Fn(&mut wgpu::CommandEncoder)>,
+        report: &mut FrameReport,
+    ) {
         let _span = tracing::trace_span!("render").entered();
         let start = Instant::now();
         let device = &gpu.device;
@@ -1181,10 +1217,10 @@ impl Renderer {
             bytemuck::bytes_of(&uniform.for_shadow(shadow_matrix)),
         );
         let shadow_planes = frustum_planes(shadow_matrix);
-        let mut report = FrameReport {
-            passes: self.graph.passes().iter().map(|p| p.name).collect(),
-            ..Default::default()
-        };
+        report.reset();
+        report
+            .passes
+            .extend(self.graph.passes().iter().map(|p| p.name));
         if let Some(terrain) = &mut self.terrain {
             let stats = terrain.prepare(
                 queue,
@@ -1663,10 +1699,15 @@ impl Renderer {
         }
         if let Some(timer) = &mut self.timer {
             timer.end_frame();
-            report.gpu_ms = timer.latest().map(<[f32]>::to_vec);
+            match (timer.latest(), &mut report.gpu_ms) {
+                (Some(ms), Some(kept)) => {
+                    kept.clear();
+                    kept.extend_from_slice(ms);
+                }
+                (latest, kept) => *kept = latest.map(<[f32]>::to_vec),
+            }
         }
         // Recording and submitting, without a sampled frame's waits.
         report.cpu_total_ms = recorded.as_secs_f32() * 1000.0;
-        report
     }
 }

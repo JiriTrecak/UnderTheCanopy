@@ -144,12 +144,15 @@ impl Ui {
         let content = xf.rect(content_local);
         let style_clip = node.spec.style.clip;
         let scrolls = node.spec.style.scroll;
-        let children = node.children.clone();
+        // Children are walked by position (placing never changes the tree's shape),
+        // without copying the list.
+        let children = node.children.len();
         let mut scroll = node.scroll;
         if scrolls {
             // The scrollable extent: the farthest child edge plus padding.
             let mut extent = Vec2::ZERO;
-            for &c in &children {
+            for k in 0..children {
+                let c = self.tree.node(index).children[k];
                 let cn = self.tree.node(c);
                 if !cn.visible {
                     continue;
@@ -189,7 +192,8 @@ impl Ui {
             clip
         };
         let child_scroll = if scrolls { scroll } else { Vec2::ZERO };
-        for c in children {
+        for k in 0..children {
+            let c = self.tree.node(index).children[k];
             self.place(c, Vec2::new(local.x, local.y), xf, child_clip, child_scroll);
         }
     }

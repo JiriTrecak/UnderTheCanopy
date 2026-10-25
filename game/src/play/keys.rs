@@ -117,6 +117,8 @@ pub fn code_of(name: &str) -> String {
 #[derive(Debug, Clone, PartialEq)]
 pub struct Keymap {
     entries: Vec<(Chord, Shortcut)>,
+    /// Each entry's chord as the interface shows it (made once: the HUD asks every frame).
+    labels: Vec<String>,
     /// Command entries of the catalogue (`command.<id>`) and their chords (`None`:
     /// unbound). A command missing here keeps its authored hotkey.
     commands: std::collections::BTreeMap<String, Option<Chord>>,
@@ -139,13 +141,18 @@ impl Keymap {
                     Shortcut::of(&e.id)?,
                 ))
             })
-            .collect();
+            .collect::<Vec<_>>();
+        let labels = entries.iter().map(|(chord, _)| chord.label()).collect();
         let commands = catalog
             .iter()
             .filter(|e| e.group == keys::COMMANDS)
             .map(|e| (e.id.clone(), bindings.chord(catalog, &e.id).cloned()))
             .collect();
-        Self { entries, commands }
+        Self {
+            entries,
+            labels,
+            commands,
+        }
     }
 
     /// The chord of a command card entry: the player's binding of `command.<id>`, else
@@ -158,12 +165,11 @@ impl Keymap {
     }
 
     /// The label of the first chord bound to `shortcut` (`""` when unbound).
-    pub fn label(&self, shortcut: Shortcut) -> String {
+    pub fn label(&self, shortcut: Shortcut) -> &str {
         self.entries
             .iter()
-            .find(|(_, s)| *s == shortcut)
-            .map(|(k, _)| k.label())
-            .unwrap_or_default()
+            .position(|(_, s)| *s == shortcut)
+            .map_or("", |i| &self.labels[i])
     }
 
     /// The shortcuts a key press triggers, in catalogue order (defaults may share a

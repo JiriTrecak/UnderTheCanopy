@@ -1245,7 +1245,7 @@ impl InMatch {
         host: &mut Host<'_>,
         output: &wgpu::TextureView,
         ui_view: &wgpu::TextureView,
-    ) -> FrameReport {
+    ) -> &FrameReport {
         let gpu = host.gpu;
         let aspect = host.size[0] as f32 / host.size[1].max(1) as f32;
         let camera_view = match self.camera_view {
@@ -1286,14 +1286,18 @@ impl InMatch {
                 debug.paint(encoder, ui_view);
             }
         };
-        let report = host
-            .renderer
-            .render(gpu, &camera_view, seconds, output, Some(&paint));
-        self.stats.report = report.clone();
-        if report.gpu_frame_ms.is_some() {
-            self.stats.gpu_frame_ms = report.gpu_frame_ms;
+        host.renderer.render_into(
+            gpu,
+            &camera_view,
+            seconds,
+            output,
+            Some(&paint),
+            &mut self.stats.report,
+        );
+        if self.stats.report.gpu_frame_ms.is_some() {
+            self.stats.gpu_frame_ms = self.stats.report.gpu_frame_ms;
         }
-        report
+        &self.stats.report
     }
 }
 

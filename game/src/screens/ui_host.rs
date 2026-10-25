@@ -103,6 +103,7 @@ impl UiHost {
                     uv: [0.0, 0.0, 1.0, 1.0],
                     premultiplied: false,
                     srgb_view: srgb,
+                    opaque: texture.exactly_opaque(),
                 },
             )
         });
@@ -171,6 +172,7 @@ impl UiHost {
                 uv: [0.0, 0.0, 1.0, 1.0],
                 premultiplied: false,
                 srgb_view: false,
+                opaque: false,
             },
         );
         self.images.insert(name.to_owned(), Some(key));

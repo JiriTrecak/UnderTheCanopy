@@ -44,6 +44,9 @@ pub const FLAG_GRAYSCALE: u32 = 1 << 9;
 /// Flag: the texture is bound through an sRGB view, so samples arrive linear and are
 /// re-encoded before blending.
 pub const FLAG_LINEAR_TEXELS: u32 = 1 << 10;
+/// Flag: every texel of the image is opaque ([`crate::ImageDesc::opaque`]); the shader
+/// ignores it, [`DrawList::hide_occluded`] uses it.
+pub const FLAG_OPAQUE_TEXELS: u32 = 1 << 11;
 
 /// One instance of the UI pipeline. Positions are physical pixels, origin top left.
 /// Colours are sRGB with straight alpha; the pass blends in sRGB space.
@@ -72,6 +75,22 @@ const _: () = assert!(std::mem::size_of::<Quad>() == 64);
 impl Quad {
     pub fn kind(&self) -> u32 {
         self.flags & 0xff
+    }
+
+    /// How far inside its rectangle the quad paints with an alpha of exactly 1, or `None`
+    /// when it may not ([`DrawList::hide_occluded`]).
+    fn opaque_inset(&self) -> Option<f32> {
+        let kind = self.kind();
+        if kind == QuadKind::Image as u32 {
+            // Opaque texels times an opaque tint, no rounded corners: alpha 1 everywhere.
+            (self.flags & FLAG_OPAQUE_TEXELS != 0 && self.color[3] == 255 && self.radius <= 0.0)
+                .then_some(0.0)
+        } else if kind == QuadKind::Shape as u32 {
+            // A solid fill is whole only away from its antialiased edge.
+            (self.color[3] == 255 && self.radius <= 0.0 && self.border <= 0.0).then_some(1.0)
+        } else {
+            None
+        }
     }
 
     pub fn new(kind: QuadKind, rect: Rect, color: Color) -> Self {
@@ -121,13 +140,34 @@ pub struct AtlasChanges {
 }
 
 /// One frame of UI drawing.
-#[derive(Debug, Clone, Default)]
+#[derive(Debug, Default)]
 pub struct DrawList {
     /// Target size in physical pixels.
     pub viewport: [u32; 2],
     pub quads: Vec<Quad>,
     pub batches: Vec<Batch>,
     pub atlas: AtlasChanges,
+}
+
+impl Clone for DrawList {
+    fn clone(&self) -> Self {
+        Self {
+            viewport: self.viewport,
+            quads: self.quads.clone(),
+            batches: self.batches.clone(),
+            atlas: self.atlas.clone(),
+        }
+    }
+
+    /// Copies into the lists already there (a renderer keeps each frame's list this way).
+    fn clone_from(&mut self, source: &Self) {
+        self.viewport = source.viewport;
+        self.quads.clone_from(&source.quads);
+        self.batches.clone_from(&source.batches);
+        self.atlas.size = source.atlas.size;
+        self.atlas.reset = source.atlas.reset;
+        self.atlas.updates.clone_from(&source.atlas.updates);
+    }
 }
 
 impl DrawList {
@@ -137,6 +177,60 @@ impl DrawList {
         self.batches.clear();
         self.atlas.reset = false;
         self.atlas.updates.clear();
+    }
+
+    /// Empties the quads a later opaque quad covers entirely, so the GPU never shades
+    /// them: they would be painted over with nothing of them left (the pass blends
+    /// premultiplied, and an alpha of exactly 1 replaces what is under it). Opaque are
+    /// images of [`FLAG_OPAQUE_TEXELS`] untinted by alpha with square corners, and solid
+    /// square shapes of an opaque colour without a border, over their inside at least
+    /// half a pixel from the edge (where their coverage is whole). An emptied quad keeps
+    /// its place in the list with no width.
+    pub(crate) fn hide_occluded(&mut self) {
+        /// The largest opaque regions kept while walking back to front.
+        const KEPT: usize = 4;
+        let viewport = [0.0, 0.0, self.viewport[0] as f32, self.viewport[1] as f32];
+        let mut regions = [[0.0f32; 4]; KEPT];
+        let mut count = 0;
+        for batch in self.batches.iter().rev() {
+            let clip = batch.scissor.map_or(viewport, |[x, y, w, h]| {
+                [x as f32, y as f32, (x + w) as f32, (y + h) as f32]
+            });
+            let range = batch.quads.start as usize..batch.quads.end as usize;
+            for q in self.quads[range].iter_mut().rev() {
+                let [x0, y0, x1, y1] = q.rect;
+                if x1 <= x0 || y1 <= y0 {
+                    continue;
+                }
+                let inside = |r: &[f32; 4]| x0 >= r[0] && y0 >= r[1] && x1 <= r[2] && y1 <= r[3];
+                if regions[..count].iter().any(inside) {
+                    q.rect[2] = x0;
+                    continue;
+                }
+                let Some(inset) = q.opaque_inset() else {
+                    continue;
+                };
+                let region = [
+                    (x0 + inset).max(clip[0]),
+                    (y0 + inset).max(clip[1]),
+                    (x1 - inset).min(clip[2]),
+                    (y1 - inset).min(clip[3]),
+                ];
+                let area = |r: &[f32; 4]| (r[2] - r[0]).max(0.0) * (r[3] - r[1]).max(0.0);
+                if area(&region) <= 0.0 {
+                    continue;
+                }
+                if count < KEPT {
+                    regions[count] = region;
+                    count += 1;
+                } else if let Some(smallest) = (0..KEPT)
+                    .min_by(|&a, &b| area(&regions[a]).total_cmp(&area(&regions[b])))
+                    .filter(|&i| area(&regions[i]) < area(&region))
+                {
+                    regions[smallest] = region;
+                }
+            }
+        }
     }
 
     /// Every image texture the frame uses.
@@ -232,6 +326,47 @@ impl<'a> Painter<'a> {
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    /// Only what a later opaque quad covers whole is emptied.
+    #[test]
+    fn quads_under_opaque_ones_are_emptied() {
+        let mut list = DrawList::default();
+        list.clear([100, 100]);
+        let mut p = Painter::new(&mut list);
+        let shape = |x, y, w, h, a| {
+            Quad::new(
+                QuadKind::Shape,
+                Rect::new(x, y, w, h),
+                Color::rgba(200, 100, 50, a),
+            )
+        };
+        let mut image = Quad::new(
+            QuadKind::Image,
+            Rect::new(0.0, 0.0, 100.0, 50.0),
+            Color::WHITE,
+        );
+        image.flags |= FLAG_OPAQUE_TEXELS;
+        p.push(shape(10.0, 10.0, 20.0, 20.0, 255), None); // 0: under the image
+        p.push(shape(10.0, 40.0, 20.0, 20.0, 255), None); // 1: half outside it
+        p.push(shape(60.0, 60.0, 10.0, 10.0, 255), None); // 2: under the late box
+        p.push(image, Some(TextureId(7))); // 3
+        p.push(shape(50.0, 50.0, 40.0, 40.0, 128), None); // 4: translucent
+        p.push(shape(55.0, 20.0, 5.0, 5.0, 255), None); // 5: over the image, drawn after
+        p.set_clip(Some(Rect::new(0.0, 0.0, 100.0, 64.0)));
+        p.push(shape(50.0, 50.0, 40.0, 40.0, 255), None); // 6: clipped to y < 64
+        list.hide_occluded();
+        let empty: Vec<bool> = list.quads.iter().map(|q| q.rect[2] <= q.rect[0]).collect();
+        assert_eq!(empty, [true, false, false, false, false, false, false]);
+        // The same box unclipped hides the one under it.
+        list.clear([100, 100]);
+        let mut p = Painter::new(&mut list);
+        p.push(shape(60.0, 60.0, 10.0, 10.0, 255), None);
+        p.push(shape(50.0, 50.0, 40.0, 40.0, 255), None);
+        p.push(shape(52.0, 52.0, 8.0, 8.0, 255), None);
+        list.hide_occluded();
+        let empty: Vec<bool> = list.quads.iter().map(|q| q.rect[2] <= q.rect[0]).collect();
+        assert_eq!(empty, [true, false, false]);
+    }
 
     #[test]
     fn batches_split_only_on_texture_or_scissor() {

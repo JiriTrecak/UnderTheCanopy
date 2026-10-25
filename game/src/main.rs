@@ -3,6 +3,7 @@
 // First, so `tr!` reaches every module below (D96).
 #[macro_use]
 mod text;
+mod allocs;
 mod app;
 mod bench;
 mod campaign;

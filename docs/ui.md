@@ -141,7 +141,7 @@ for (name, asset) in ui.theme_images().map(|(n, a)| (n.to_owned(), a.to_owned())
 | Busy: plus five texts change every frame and the pointer moves across commands (tooltip switches) | 0.094 ms | 0.152 ms |
 | Worst: all 100 log lines change text every frame | 1.26 ms | 1.38 ms |
 
-Display scale 2 gives the same numbers. Start-up (scanning system fonts, compiling, building) takes about 140 ms. Batches are mostly one per distinct icon texture; an icon atlas or texture array would bring them down to a handful if draw calls ever matter. Measure on the base M1 before setting budgets.
+Display scale 2 gives the same numbers. The paint empties quads a later quad covers with alpha exactly 1 (`DrawList::hide_occluded`: solid square boxes, and images whose `ImageDesc::opaque` says every texel is opaque), and a screen drawn alone turns a leading full-screen opaque box into the pass's clear colour (`UiLayer`), so the GPU never shades what nobody sees (D104). Path lookups (`child`, `find_in`), layout and the deferred layers reuse their buffers. Start-up (scanning system fonts, compiling, building) takes about 140 ms. Batches are mostly one per distinct icon texture; an icon atlas or texture array would bring them down to a handful if draw calls ever matter. Measure on the base M1 before setting budgets.
 
 ## Screens (the game)
 

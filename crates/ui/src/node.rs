@@ -834,16 +834,25 @@ impl Ui {
 
     /// The `index`th entry of a list node.
     pub fn child(&self, list: NodeId, index: usize) -> Option<NodeId> {
+        use std::fmt::Write;
         let n = self.tree.node_of(list)?;
-        let path = self.tree.node(n).path.as_ref()?;
-        self.tree.find(&format!("{path}/{index}"))
+        let base = self.tree.node(n).path.as_ref()?;
+        let mut path = self.path.borrow_mut();
+        path.clear();
+        let _ = write!(path, "{base}/{index}");
+        self.tree.find(&path)
     }
 
     /// A node by path relative to another node.
     pub fn find_in(&self, base: NodeId, relative: &str) -> Option<NodeId> {
         let n = self.tree.node_of(base)?;
-        let path = self.tree.node(n).path.as_ref()?;
-        self.tree.find(&format!("{path}/{relative}"))
+        let base = self.tree.node(n).path.as_ref()?;
+        let mut path = self.path.borrow_mut();
+        path.clear();
+        path.push_str(base);
+        path.push('/');
+        path.push_str(relative);
+        self.tree.find(&path)
     }
 
     /// A node's box from the last frame, in physical pixels (`None` if hidden or gone).
@@ -1115,14 +1124,17 @@ impl Ui {
         let Some(n) = self.tree.node_of(id) else {
             return;
         };
-        let Some(template) = self.tree.node(n).spec.repeat.clone() else {
+        if self.tree.node(n).spec.repeat.is_none() {
             return;
-        };
+        }
         let current = self.tree.node(n).count;
         self.tree.node_mut(n).set.count = Some(count);
         if current == count {
             return;
         }
+        let Some(template) = self.tree.node(n).spec.repeat.clone() else {
+            return;
+        };
         self.tree.node_mut(n).count = count;
         if count < current {
             let removed: Vec<usize> = self.tree.node(n).children[..]
