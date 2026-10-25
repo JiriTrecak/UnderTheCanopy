@@ -3,12 +3,12 @@
 //! ```text
 //! cargo run --release -p canopy-sim --example match_bench -- --data . --map frozen-dream \
 //!     [--crowd 50 | --ai 2] [--ticks 1600] [--warmup 0] [--repeat 1] [--no-spans] [--top 16] \
-//!     [--worst 1] [--save <file>]
+//!     [--worst 1] [--races ants,beetles] [--save <file>]
 //! ```
 //!
 //! `--crowd N` is the measured battle of `canopy shot --crowd N` (eight players with N
 //! soldiers each, `canopy_sim::crowd`); `--ai N` puts computer players on the first N
-//! starts instead. Reports the whole tick (step and observer view) as mean, p50, p99 and
+//! starts instead (`--races` gives them races in turn). Reports the whole tick (step and observer view) as mean, p50, p99 and
 //! max, the `tick: …` step spans the world marks, and the costliest inner spans; `--worst N`
 //! lists the N costliest ticks with what made them. The
 //! span subscriber costs a little; `--no-spans` times whole ticks without it. The
@@ -99,6 +99,8 @@ struct Args {
     repeat: u32,
     /// Costliest ticks listed with their spans.
     worst: usize,
+    /// Races of the AI players in turn (`--ai` only); empty for the rules' default.
+    races: Vec<String>,
 }
 
 fn args() -> Result<Args, String> {
@@ -114,6 +116,7 @@ fn args() -> Result<Args, String> {
         save: None,
         repeat: 1,
         worst: 1,
+        races: Vec::new(),
     };
     let mut it = std::env::args().skip(1);
     while let Some(flag) = it.next() {
@@ -131,6 +134,7 @@ fn args() -> Result<Args, String> {
             "--save" => out.save = Some(value()?.into()),
             "--repeat" => out.repeat = number(value()?)?.max(1),
             "--worst" => out.worst = number(value()?)? as usize,
+            "--races" => out.races = value()?.split(',').map(str::to_string).collect(),
             other => return Err(format!("unknown option {other}")),
         }
     }
@@ -265,13 +269,15 @@ fn main() -> Result<(), String> {
                 .player_starts
                 .iter()
                 .take(players.unwrap_or(2))
-                .map(|start| Slot {
+                .enumerate()
+                .map(|(i, start)| Slot {
                     player: start.player.saturating_sub(1),
                     kind: SlotKind::Ai,
                     name: None,
                     team: None,
                     hero: None,
-                    race: None,
+                    race: (!args.races.is_empty())
+                        .then(|| args.races[i % args.races.len()].clone()),
                 })
                 .collect(),
         },
