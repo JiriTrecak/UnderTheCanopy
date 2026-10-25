@@ -1,0 +1,40 @@
+{
+  "provider": "elevenlabs",
+  "kind": "line",
+  "spec": {
+    "name": "broods-3",
+    "kind": "line",
+    "line": "campaign.vanguard.the-broods.page-3",
+    "speaker": "speaker.narrator",
+    "model": "eleven_v3",
+    "settings": {
+      "stability": 0.0,
+      "speed": 1.08
+    },
+    "takes": 2,
+    "dir": "base/campaigns/vanguard.utcc/assets/audio/narration/the-broods-page-3",
+    "id": "asset.audio.campaign.vanguard.the-broods-page-3",
+    "title": "The Broods, page 3 (narration)"
+  },
+  "takes": [
+    "take-1.mp3",
+    "take-2.mp3"
+  ],
+  "picked": "take-1.mp3",
+  "request": {
+    "text": "Then, three nights ago, the watch-lights of the Hollow Brood went dark.\n\nNo runner came. No scout returned. Before dawn, Aurelith had chosen her escort.",
+    "model_id": "eleven_v3",
+    "voice_settings": {
+      "stability": 0.0,
+      "speed": 1.08
+    }
+  },
+  "endpoint": "/v1/text-to-speech/Z7cGt9TdS5RsAFzMkteB",
+  "text": "Then, three nights ago, the watch-lights of the Hollow Brood went dark.\n\nNo runner came. No scout returned. Before dawn, Aurelith had chosen her escort.",
+  "voice": {
+    "description": "A wise elderly woman narrator: deep, rich and velvety, calm and a little solemn, with long pauses and a hint of mystery in her voice. She speaks English with a soft, neutral accent, clearly and unhurried, close to the microphone in a quiet room, as if telling a tale to children by lantern light.",
+    "model": "eleven_ttv_v3",
+    "preview": "take-1-1.mp3",
+    "voice_id": "Z7cGt9TdS5RsAFzMkteB"
+  }
+}

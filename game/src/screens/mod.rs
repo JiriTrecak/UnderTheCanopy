@@ -55,6 +55,8 @@ use winit::{event::WindowEvent, keyboard::ModifiersState, window::Window};
 /// Fade-out and fade-in of a screen change (old `MenuTransition`), seconds.
 const FADE_OUT: f32 = 0.18;
 const FADE_IN: f32 = 0.30;
+/// Seconds a page's voice fades when the story is left.
+const NARRATION_FADE: f32 = 0.8;
 
 /// What the window gives a frame.
 pub struct Ctx<'a> {
@@ -758,6 +760,8 @@ impl Game {
                 self.campaign_play = None;
                 self.campaign_autoplay = false;
                 self.card = None;
+                self.audio
+                    .hush(canopy_audio::Category::Dialogue, NARRATION_FADE);
                 self.scroll_steps = 20;
                 self.audio.stop_music(1.5);
             }
@@ -910,6 +914,8 @@ impl Game {
     /// The step being played is done: progress moves on (straight through), then the next
     /// step runs, or the campaign screen comes back.
     fn finish_step(&mut self) {
+        self.audio
+            .hush(canopy_audio::Category::Dialogue, NARRATION_FADE);
         let Some(data) = self.data.clone() else {
             return;
         };

@@ -235,6 +235,14 @@ impl Audio {
             .is_some_and(|&h| self.sources.is_live(h))
     }
 
+    /// Ends the sound of an exclusive category, fading over `fade` seconds (a page's voice
+    /// when the story is left).
+    pub fn hush(&mut self, category: Category, fade: f32) {
+        if let Some(handle) = self.exclusive.remove(&category) {
+            self.stop(handle, Some(fade));
+        }
+    }
+
     /// Holds the loops of `group`: each `(key, event, at)` plays (started the first time
     /// its key is seen, moved after that), and every loop of the group not named any more
     /// fades out. Call once per tick or frame with the whole group.

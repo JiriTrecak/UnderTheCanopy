@@ -20,6 +20,51 @@
       "speaker": "speaker.narrator",
       "description": "A grandmotherly woman in her sixties: a bright, clear, tender voice with a gentle smile in it, warm and enchanted, softly wondering. She speaks English with a soft, neutral accent, clearly and unhurried, close to the microphone in a quiet room, as if telling a tale to children by lantern light.",
       "text": "Under the canopy, every colony keeps one law above the rest: the Queen tends the brood.\n\nAurelith had worn the crown for a single winter. From the high balconies of the Spire she could watch her whole colony wake: workers at the amber stores, soldiers at the gates, nurses carrying the young up into the light."
+    },
+    {
+      "name": "broods-1-expressive",
+      "kind": "line",
+      "line": "campaign.vanguard.the-broods.page-1",
+      "speaker": "speaker.narrator",
+      "model": "eleven_v3",
+      "settings": {
+        "stability": 0.0,
+        "speed": 1.08
+      },
+      "takes": 1,
+      "dir": "base/campaigns/vanguard.utcc/assets/audio/narration/the-broods-page-1",
+      "id": "asset.audio.campaign.vanguard.the-broods-page-1",
+      "title": "The Broods, page 1 (narration)"
+    },
+    {
+      "name": "broods-2",
+      "kind": "line",
+      "line": "campaign.vanguard.the-broods.page-2",
+      "speaker": "speaker.narrator",
+      "model": "eleven_v3",
+      "settings": {
+        "stability": 0.0,
+        "speed": 1.08
+      },
+      "takes": 2,
+      "dir": "base/campaigns/vanguard.utcc/assets/audio/narration/the-broods-page-2",
+      "id": "asset.audio.campaign.vanguard.the-broods-page-2",
+      "title": "The Broods, page 2 (narration)"
+    },
+    {
+      "name": "broods-3",
+      "kind": "line",
+      "line": "campaign.vanguard.the-broods.page-3",
+      "speaker": "speaker.narrator",
+      "model": "eleven_v3",
+      "settings": {
+        "stability": 0.0,
+        "speed": 1.08
+      },
+      "takes": 2,
+      "dir": "base/campaigns/vanguard.utcc/assets/audio/narration/the-broods-page-3",
+      "id": "asset.audio.campaign.vanguard.the-broods-page-3",
+      "title": "The Broods, page 3 (narration)"
     }
   ]
 }

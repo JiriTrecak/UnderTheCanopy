@@ -210,7 +210,7 @@ fn loops_are_held_moved_and_let_go() {
 }
 
 #[test]
-fn a_new_answer_cuts_the_one_before() {
+fn a_new_answer_cuts_the_one_before_and_a_hush_ends_it() {
     use canopy_audio::{At, Category};
     let mut audio = audio();
     let yes = audio.event("sound.test.yes").unwrap();
@@ -223,6 +223,11 @@ fn a_new_answer_cuts_the_one_before() {
     }
     assert!(!audio.is_live(first), "cut short");
     assert!(audio.is_live(second));
+    audio.hush(Category::Voice, 0.1);
+    for tick in 30..60 {
+        frame(&mut audio, f64::from(tick));
+    }
+    assert!(!audio.is_live(second), "hushed");
 }
 
 #[test]

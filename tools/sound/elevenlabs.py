@@ -34,7 +34,8 @@ A spec is {"items": [...]}; each item:
             "text": "a sample line, 100-1000 characters"}: designs previews; `voice` keeps one
             under the speaker in tools/sound/voices.json.
     line:  {"name", "kind": "line", "line": "line.founding.here-we-start-again-and",
-            "speaker": "speaker.aurelith", "tags": "[calm]", "dir", "id"}: speaks the line's
+            "speaker": "speaker.aurelith", "tags": "[calm]", "previous", "next", "dir", "id"}:
+            speaks the line's (`previous` and `next`: the keys read around it, for continuity; not with eleven_v3)
             English text (read from the text library) in the speaker's kept voice; pick
             makes the event `sound.<line key>` in the package of `dir`, which the game
             plays when the line is spoken.
@@ -168,6 +169,11 @@ def request_body(item):
         body = {'text': text, 'model_id': item.get('model', SPEECH[1])}
         if item.get('settings'):
             body['voice_settings'] = item['settings']
+        # The lines read before and after it (keys), so a run of pages sounds like one telling.
+        if item.get('previous'):
+            body['previous_text'] = text_of(item['previous'])
+        if item.get('next'):
+            body['next_text'] = text_of(item['next'])
         return SPEECH[0].format(voice=voice), {'output_format': FORMAT}, body, 'mp3'
     sys.exit(f"{item['name']}: unknown kind {kind}")
 
@@ -240,10 +246,11 @@ def pick(spec, scratch, choices):
             ffmpeg('-i', source, '-ac', '1' if item.get('mono', True) else '2', '-ar', '44100',
                    '-c:a', 'pcm_s16le', os.path.join(folder, 'audio.wav'))
         else:
-            # Copied, not re-encoded; the remux writes the length header streaming needs.
+            # Copied, not re-encoded; the remux writes the length header streaming needs and
+            # no ID3 tag (the decoder skips one as junk).
             fmt = 'mp3'
-            ffmpeg('-i', source, '-c:a', 'copy', '-write_xing', '1',
-                   os.path.join(folder, 'audio.mp3'))
+            ffmpeg('-i', source, '-c:a', 'copy', '-write_xing', '1', '-map_metadata', '-1',
+                   '-id3v2_version', '0', '-write_id3v1', '0', os.path.join(folder, 'audio.mp3'))
         asset_path = os.path.join(folder, 'asset.json')
         asset = json.load(open(asset_path)) if os.path.exists(asset_path) else {
             'id': item['id'], 'name': item.get('title', name), 'kind': 'audio',

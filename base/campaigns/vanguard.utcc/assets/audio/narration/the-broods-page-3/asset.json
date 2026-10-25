@@ -1,0 +1,21 @@
+{
+  "id": "asset.audio.campaign.vanguard.the-broods-page-3",
+  "name": "The Broods, page 3 (narration)",
+  "kind": "audio",
+  "tags": [
+    "line"
+  ],
+  "license": "Generated with ElevenLabs for Under the Canopy (generation.json).",
+  "resources": [
+    {
+      "role": "audio",
+      "index": 1,
+      "format": "mp3"
+    },
+    {
+      "role": "generation",
+      "index": 1,
+      "format": "json"
+    }
+  ]
+}

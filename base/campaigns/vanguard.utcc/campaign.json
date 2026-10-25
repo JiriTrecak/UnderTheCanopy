@@ -16,15 +16,18 @@
       "pages": [
         {
           "art": "asset.interface.campaign.vanguard.story-broods-1",
-          "text": "campaign.vanguard.the-broods.page-1"
+          "text": "campaign.vanguard.the-broods.page-1",
+          "narration": "sound.campaign.vanguard.the-broods.page-1"
         },
         {
           "art": "asset.interface.campaign.vanguard.story-broods-2",
-          "text": "campaign.vanguard.the-broods.page-2"
+          "text": "campaign.vanguard.the-broods.page-2",
+          "narration": "sound.campaign.vanguard.the-broods.page-2"
         },
         {
           "art": "asset.interface.campaign.vanguard.story-broods-3",
-          "text": "campaign.vanguard.the-broods.page-3"
+          "text": "campaign.vanguard.the-broods.page-3",
+          "narration": "sound.campaign.vanguard.the-broods.page-3"
         }
       ]
     },
