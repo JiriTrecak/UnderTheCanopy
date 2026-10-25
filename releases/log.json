@@ -2,33 +2,60 @@
   "schemaVersion": 1,
   "unreleased": {
     "added": [
-      "Choose each computer player's difficulty in skirmish, and the campaign's difficulty on the campaign screen (every level plays alike for now)",
-      "Online matches: pause (three per player), and a match waits for a player who drops; after 30 s the others can carry on without them",
-      "Online matches: rejoin a match after your game restarts or your connection drops; it catches up and you play on",
-      "Online matches: when a player leaves, their allies take over their colony and spend its goods; with no ally left, the leaver is defeated",
-      "Online lobbies: join as a spectator, watch matches already under way, set spectator places and an observer delay, remove players, and set each computer's difficulty",
-      "A Player ID in Settings (Network), shown to other players and kept with your matches and reports",
-      "Find a match: ranked and unranked 1v1 matchmaking online; choose a race or Random and veto one map; ranked results count on the ladder",
-      "The first story of the ants' campaign is now read aloud by a narrator",
-      "Music on the main menu: a forest war march",
-      "The first mission is fully voiced: every character speaks their lines, and a spoken line stays on screen until its voice ends",
-      "Sound in the forest: ambience by day and night, the bites and shots of Raiders and Needlers, the Queen's bolts, and spoken responses when you select and command them",
-      "Music in the ants' missions and skirmishes: a quiet, tense orchestral piece that plays under the battle and the dialogue",
-      "The whole first campaign is voiced: every mission's characters speak their lines, and every story page is read aloud"
+      "The first ant campaign is fully voiced and scored: every character speaks their lines, every story page is read aloud, and music plays on the menu and in battle",
+      "Sound for the forest and its armies: ambience by day and night, bites, shots and spells, and units that answer when you select and command them",
+      "Ranked and unranked 1v1 matchmaking online, with a race or Random, a map veto and a ladder",
+      "Online matches you can pause, rejoin after a crash or a dropped connection, and watch as a spectator; allies take over a leaver's colony",
+      "Online lobbies with spectator places, an observer delay, removing players and each computer's difficulty, and a Player ID in Settings",
+      "Choose each computer player's difficulty in skirmish, and the campaign's difficulty (every level plays alike for now)",
+      "The editor has an assistant in its sidebar that builds with the editor's own tools, with Claude or OpenAI and your own key",
+      "From 0.4.3: armies move in the manner of StarCraft II: your units part for each other, squeeze through chokes and close round their targets",
+      "From 0.4.3: heroes stand out, with a golden burst on a new level, a level badge, a glowing card while a skill point waits, and a pool of their player's colour",
+      "From 0.4.3: an army button (F1), building groups that share training and research, grid hotkeys for every command, windowed, borderless and fullscreen modes, and Reset campaign"
     ],
     "improved": [
-      "Large matches no longer stutter when workers cannot reach a resource",
-      "Narrated story pages turn by themselves a moment after the narrator finishes, with a soft crossfade; Space continues a story, and stray clicks or other keys no longer skip ahead",
-      "The main menu now looks out over an autumn kingdom, with the ant queen on the right and no animated fire effects.",
-      "The main-menu logo now wears red autumn oak leaves.",
-      "Your selection is kept through a cutscene and is there again when it ends",
-      "Aim an ability or attack at a unit by clicking its hero portrait or its card in the group panel",
-      "Group cards show each unit's health and mana, and hero portraits show mana"
+      "Aim an ability or attack by clicking a hero portrait or a card in the group panel; group cards show health and mana, and hero portraits mana",
+      "Story pages turn by themselves after the narrator, with a crossfade; Space continues, and stray clicks no longer skip ahead",
+      "Your selection is kept through cutscenes",
+      "A new main menu: an autumn kingdom with the ant queen, and a red autumn-leaf logo",
+      "Faster again: more GPU and simulation work cut with the same picture and results, and no stutter when workers cannot reach a resource",
+      "From 0.4.3: every unit sized to the space it takes, buildings sitting firmly with a soft shadow, faster Substance Wells, and supply taken only when training starts"
     ],
     "fixed": [
-      "Music no longer scratches when the game comes back from the background"
+      "Music no longer scratches when the game comes back from the background",
+      "From 0.4.3: neutral camps and computer players fight back together, melee units no longer jam behind allies, and the camera reaches the map's edges and corners"
     ],
-    "knownIssues": []
+    "knownIssues": [],
+    "images": [
+      {
+        "file": "bbb222b8ff764727ca6fad84e71cf4fa28eb4aef1bf6723e2f292ef0733a53d7.webp",
+        "alt": "The main menu: an autumn kingdom with the ant queen.",
+        "caption": "A new main menu, with a forest war march to go with it.",
+        "width": 1600,
+        "height": 900
+      },
+      {
+        "file": "55672c7c7746b891844077c4e0ac5ef6969456e3ea94ed782878e5d1fd07e195.webp",
+        "alt": "A hero gaining a level in the first ant mission, the army's cards showing health and mana.",
+        "caption": "The first campaign is fully voiced and scored; group cards show health and mana.",
+        "width": 1600,
+        "height": 900
+      },
+      {
+        "file": "791a7705be4ce6be7e2da44f0a984cac75393df93918e10d01a3b4cc88c8cb88.webp",
+        "alt": "The Find a match screen: ranked or unranked 1v1, a race or Random, and a map veto.",
+        "caption": "Ranked and unranked 1v1 matchmaking, with a ladder.",
+        "width": 1600,
+        "height": 900
+      },
+      {
+        "file": "9b3b093f87a03d96848f34c2da8790c914aa3b6b3e15f991201cec2c115e9b10.webp",
+        "alt": "The editor with its assistant in the sidebar, having made a unit tougher.",
+        "caption": "The editor's assistant builds with the editor's own tools.",
+        "width": 1600,
+        "height": 900
+      }
+    ]
   },
   "releases": [
     {
