@@ -1,24 +1,16 @@
 {
   "templates": {
-    "mm-glow": { "class": "mm-glow" },
-    "mm-core": { "class": "mm-core" },
     "mm-ray": { "class": "mm-ray" },
-    "mm-mote": { "class": "mm-mote" },
-    "mm-flame": { "class": "mm-flame" },
-    "mm-ember": { "class": "mm-ember" }
+    "mm-mote": { "class": "mm-mote" }
   },
   "root": {
     "class": "mm",
     "children": [
-      { "id": "art", "kind": "image", "class": "cover", "image": "menu-welcome" },
+      { "id": "art", "kind": "image", "class": "cover", "image": "menu-welcome", "style": { "image-flip-x": "true" } },
       {
         "id": "effects", "class": "mm-layer",
         "children": [
           { "id": "rays", "class": "mm-layer", "repeat": "mm-ray", "count": 5 },
-          { "id": "glows", "class": "mm-layer", "repeat": "mm-glow", "count": 3 },
-          { "id": "cores", "class": "mm-layer", "repeat": "mm-core", "count": 3 },
-          { "id": "flames", "class": "mm-layer", "repeat": "mm-flame", "count": 15 },
-          { "id": "embers", "class": "mm-layer", "repeat": "mm-ember", "count": 24 },
           { "id": "motes", "class": "mm-layer", "repeat": "mm-mote", "count": 24 }
         ]
       },

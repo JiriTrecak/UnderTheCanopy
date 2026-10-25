@@ -278,7 +278,16 @@ impl Ctx<'_, '_> {
                 if let Some(key) = n.image {
                     let tint = vis.image_tint.unwrap_or(Color::WHITE);
                     let ir = vis.image_radius.map_or(r, |l| radius(Some(l), &rect, s));
-                    self.image(key, n.content, fit, tint, ir, fx, 0);
+                    self.image(
+                        key,
+                        n.content,
+                        fit,
+                        tint,
+                        ir,
+                        fx,
+                        0,
+                        vis.image_flip_x.unwrap_or(false),
+                    );
                 }
             }
             Kind::Bar => self.bar(n, &vis, fx),
@@ -451,7 +460,16 @@ impl Ctx<'_, '_> {
             let area = rect.outset([-inset[0], -inset[1], -inset[2], -inset[3]]);
             let tint = v.image_tint.unwrap_or(Color::WHITE);
             let ir = v.image_radius.map_or(0.0, |l| radius(Some(l), &area, s));
-            self.image(key, area, img.size, tint, ir, fx, 0);
+            self.image(
+                key,
+                area,
+                img.size,
+                tint,
+                ir,
+                fx,
+                0,
+                v.image_flip_x.unwrap_or(false),
+            );
         }
         if let Some(shadows) = &v.shadows {
             for sh in shadows.iter().filter(|sh| sh.inset) {
@@ -489,6 +507,7 @@ impl Ctx<'_, '_> {
         r: f32,
         fx: Fx,
         extra: u32,
+        flip_x: bool,
     ) {
         let Some(desc) = self.images.get(key.0 as usize).copied().flatten() else {
             return;
@@ -530,6 +549,9 @@ impl Ctx<'_, '_> {
                 }
                 ImageSize::Stretch => {}
             }
+        }
+        if flip_x {
+            uv.swap(0, 2);
         }
         let mut q = Quad::new(QuadKind::Image, dest, tint);
         q.color = fx.color(tint);

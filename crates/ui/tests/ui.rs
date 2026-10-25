@@ -438,6 +438,43 @@ fn tooltips_wait_then_switch_at_once() {
 // --- Data ---------------------------------------------------------------------------
 
 #[test]
+fn image_mirroring_reverses_only_the_fitted_texture_coordinates() {
+    for fit in ["fill", "contain", "cover"] {
+        for viewport in [[300, 160], [160, 300]] {
+            let layout = |mirror| {
+                format!(
+                    r#"{{"visible":true,"templates":{{"tip":{{}}}},"root":{{"children":[{{
+                "id":"art","kind":"image","image":"art","style":{{
+                    "width":"100%","height":"100%","object-fit":"{fit}","image-flip-x":"{mirror}"
+                }}
+            }}]}}}}"#
+                )
+            };
+            let mut ui = Ui::new(config(THEME, &layout(false)), fonts()).unwrap();
+            ui.set_viewport(viewport[0], viewport[1], 1.0);
+            let mut image = ImageDesc::new(TextureId(100), 400.0, 200.0);
+            image.uv = [0.1, 0.2, 0.8, 0.9];
+            ui.register_image("art", image);
+            ui.frame(0.0);
+            let original = ui.draw_list().quads[0];
+            ui.reload(config(THEME, &layout(true))).unwrap();
+            ui.frame(0.0);
+            let mirrored = ui.draw_list().quads[0];
+            assert_eq!(mirrored.rect, original.rect);
+            assert_eq!(
+                mirrored.uv,
+                [
+                    original.uv[2],
+                    original.uv[1],
+                    original.uv[0],
+                    original.uv[3]
+                ]
+            );
+        }
+    }
+}
+
+#[test]
 fn background_texture_switches_preserve_layout_reload_and_restore_the_theme() {
     let layout = r#"{"visible":true,"templates":{"tip":{}},"root":{"children":[{"id":"panel","style":{
         "width":"240px","height":"80px","background-image":"frame",

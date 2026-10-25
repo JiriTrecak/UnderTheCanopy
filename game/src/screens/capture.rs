@@ -310,6 +310,7 @@ pub fn run(
     rig.settle(1.2);
     if let Some(group) = only {
         match group {
+            "main-menu" => rig.shoot("main-menu")?,
             "releases" => releases(&mut rig)?,
             "multiplayer" => multiplayer(&mut rig)?,
             "editor" => editor(&mut rig, &paths)?,
@@ -358,7 +359,7 @@ pub fn run(
                 feedback_match(&mut rig)?;
             }
             other => anyhow::bail!(
-                "unknown capture group {other} (releases, multiplayer, editor, blocks, lab, neutrals, cameras, settings, feedback, replays, campaign, editor-campaigns)"
+                "unknown capture group {other} (main-menu, releases, multiplayer, editor, blocks, lab, neutrals, cameras, settings, feedback, replays, campaign, editor-campaigns)"
             ),
         }
         let _ = std::fs::remove_dir_all(&user);

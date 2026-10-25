@@ -1170,3 +1170,12 @@ Supersedes D10's freeze for this one pass; the protocol freezes again once it la
 - **SQLite** through Node's built-in `node:sqlite` (`LADDER_DATA`, default `server/ladder-data/`, ignored): seasons, races, heroes, maps, players by Player ID, ratings per player, season and race (Glicko-2, `glicko.ts`), matches with their players. League rules live in `leagues.ts` alone (placeholder names Seedling, Sapling, Thicket, Elder, Canopy; three tiers each; five placement matches; 90-day replays).
 - **Seeded with invented data** (`npm run seed-ladder`): 320 players and 4,800 matches of the current season played through the real rating code; the seeded matches' replays are a labelled sample file, not replays.
 - **Open for Jiri:** the site shows MMR numbers (D107 keeps them out of the game; `SHOW_RATING` in `leagues.ts` hides them); leaderboards sort by rating, not by a cautious rating (rating less deviation). Hosting it needs an Nginx `location /ladder`, `LADDER_DATA` outside the deployed folder, and seeding or real results.
+
+## D109. Autumn kingdom main menu (2026-10-25, Jiri requested)
+
+Jiri approved the new autumn-tree illustration and asked to mirror it so the ant queen stands on the right, use it in the main menu, and remove the menu's fire effects (not anything painted into the image).
+
+- The new `asset.interface.main-menu.autumn-kingdom` preserves the approved ImageGen PNG unchanged. The main-menu art node uses `image-flip-x: true`: the UI reverses horizontal texture coordinates after fitting, so the queen is on the right and there is no regenerated or resampled artwork. The menu controls keep their existing positions.
+- Removed the main menu's fire glows, hot cores, flames and rising embers, including their templates, styles and animation work. Existing slow shafts and drifting pollen remain.
+- `image-flip-x` is an optional UI image/background style; it changes neither layout nor descendants. The capture command accepts `--only main-menu` for a focused review.
+- Verified in the native menu at 2560 × 1440: [capture](captures/autumn-menu/main-menu.png).

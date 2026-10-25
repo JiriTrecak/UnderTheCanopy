@@ -262,6 +262,8 @@ pub struct Visual {
     pub grayscale: Option<bool>,
     pub image_tint: Option<Color>,
     pub image_radius: Option<Len>,
+    /// Mirror image pixels horizontally without changing the node or its children.
+    pub image_flip_x: Option<bool>,
     /// Bar and sweep fill.
     pub fill: Option<Fill>,
     pub fill_image: Option<ImageKey>,
@@ -293,6 +295,7 @@ impl Visual {
             grayscale,
             image_tint,
             image_radius,
+            image_flip_x,
             fill,
             fill_image,
             fill_inset,
@@ -593,6 +596,7 @@ fn state_property(key: &str) -> bool {
             | "filter"
             | "color"
             | "image-tint"
+            | "image-flip-x"
             | "fill"
             | "fill-image"
             | "sweep-rest"
@@ -844,6 +848,7 @@ fn apply(style: &mut Style, key: &str, v: &str, images: &mut ImageNames) -> Resu
         }
         "image-tint" => style.visual.image_tint = Some(color(v)?),
         "image-radius" => style.visual.image_radius = Some(len(v)?),
+        "image-flip-x" => style.visual.image_flip_x = Some(parse(v)?),
         "fill" => style.visual.fill = Some(fill(v)?),
         "fill-image" => style.visual.fill_image = Some(images.intern(v)),
         "fill-inset" => style.visual.fill_inset = Some(edges4(v, px)?),

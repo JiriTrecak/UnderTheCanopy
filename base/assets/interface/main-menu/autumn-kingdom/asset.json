@@ -1,0 +1,18 @@
+{
+  "id": "asset.interface.main-menu.autumn-kingdom",
+  "name": "Autumn kingdom beneath the canopy",
+  "kind": "interface",
+  "tags": [
+    "main-menu",
+    "original",
+    "autumn"
+  ],
+  "resources": [
+    {
+      "role": "image",
+      "index": 1,
+      "format": "png"
+    }
+  ],
+  "license": "Original Under the Canopy artwork generated with built-in ImageGen, approved by Jiri. Original pixels preserved; the menu mirrors the image horizontally when drawing it."
+}

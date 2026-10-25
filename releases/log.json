@@ -17,7 +17,8 @@
     ],
     "improved": [
       "Large matches no longer stutter when workers cannot reach a resource",
-      "Narrated story pages turn by themselves a moment after the narrator finishes, with a soft crossfade; Space continues a story, and stray clicks or other keys no longer skip ahead"
+      "Narrated story pages turn by themselves a moment after the narrator finishes, with a soft crossfade; Space continues a story, and stray clicks or other keys no longer skip ahead",
+      "The main menu now looks out over an autumn kingdom, with the ant queen on the right and no animated fire effects."
     ],
     "fixed": [],
     "knownIssues": []
