@@ -993,7 +993,7 @@ impl ActorsGpu {
     pub fn prepare(
         &mut self,
         device: &wgpu::Device,
-        queue: &wgpu::Queue,
+        queue: &impl crate::upload::Writes,
         camera: Mat4,
         sun: Option<(Mat4, &crate::shadow::CasterCull)>,
         lod: Option<&LodView>,

@@ -147,7 +147,29 @@ impl CutawayMask {
     pub fn texel(&self, x: usize, y: usize) -> [f32; 2] {
         self.data[y * WIDTH + x]
     }
+
+    /// The farthest covering unit's depth in each [`BLOCK`]-texel square of the mask (0
+    /// where no unit covers it), rows from the top: what the static culling reads to
+    /// leave out of the cutaway's path every canopy instance no unit stands behind.
+    pub fn block_depths(&self) -> [f32; BLOCKS[0] * BLOCKS[1]] {
+        let mut blocks = [0.0f32; BLOCKS[0] * BLOCKS[1]];
+        let (lo, hi) = self.written;
+        for y in lo..hi {
+            for (x, texel) in self.data[y * WIDTH..(y + 1) * WIDTH].iter().enumerate() {
+                if texel[1] > 0.0 {
+                    let block = &mut blocks[(y / BLOCK) * BLOCKS[0] + x / BLOCK];
+                    *block = block.max(texel[0]);
+                }
+            }
+        }
+        blocks
+    }
 }
+
+/// Texels on a side of a block of [`CutawayMask::block_depths`].
+pub const BLOCK: usize = 8;
+/// Blocks across and down the mask.
+pub const BLOCKS: [usize; 2] = [WIDTH.div_ceil(BLOCK), HEIGHT.div_ceil(BLOCK)];
 
 /// The mask's texture.
 pub fn texture(device: &wgpu::Device) -> wgpu::Texture {
@@ -169,7 +191,7 @@ pub fn texture(device: &wgpu::Device) -> wgpu::Texture {
 
 /// Writes rows `from..to` of `mask` into `texture`.
 pub fn upload(
-    queue: &wgpu::Queue,
+    queue: &impl crate::upload::Writes,
     texture: &wgpu::Texture,
     mask: &CutawayMask,
     rows: (usize, usize),
@@ -237,6 +259,29 @@ mod tests {
         assert!(!mask.active);
         assert_eq!(mask.texel(WIDTH / 2, HEIGHT / 2), [0.0, 0.0]);
         assert_eq!(mask.update(&camera(), &[]), None);
+    }
+
+    #[test]
+    fn blocks_hold_the_farthest_unit_they_cover() {
+        let mut mask = CutawayMask::default();
+        let unit = CutawaySubject {
+            position: Vec3::ZERO,
+            height: 2.0,
+        };
+        mask.update(&camera(), &[unit]);
+        let blocks = mask.block_depths();
+        let [depth, _] = mask.texel(WIDTH / 2, HEIGHT / 2);
+        let centre = (HEIGHT / 2 / BLOCK) * BLOCKS[0] + WIDTH / 2 / BLOCK;
+        assert_eq!(blocks[centre], depth);
+        // Every texel a unit covers lies under a block holding at least its depth.
+        for y in 0..HEIGHT {
+            for x in 0..WIDTH {
+                let [d, w] = mask.texel(x, y);
+                let block = blocks[(y / BLOCK) * BLOCKS[0] + x / BLOCK];
+                assert!(w <= 0.0 || block >= d);
+            }
+        }
+        assert_eq!(blocks[0], 0.0);
     }
 
     #[test]

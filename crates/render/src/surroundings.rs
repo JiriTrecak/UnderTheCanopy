@@ -992,7 +992,7 @@ impl ForestGpu {
     /// This frame's view fade, haze and sun.
     pub fn prepare(
         &mut self,
-        queue: &wgpu::Queue,
+        queue: &impl crate::upload::Writes,
         camera: &CameraView,
         sun_color: Vec3,
         sun_intensity: f32,

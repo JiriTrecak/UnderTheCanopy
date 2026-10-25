@@ -609,7 +609,7 @@ impl EffectsGpu {
     /// Uploads a frame's emitters, parts, ribbons and paths (clipped to the budgets).
     pub fn prepare(
         &mut self,
-        queue: &wgpu::Queue,
+        queue: &impl crate::upload::Writes,
         frame: &EffectFrame,
         camera: &crate::CameraView,
     ) {

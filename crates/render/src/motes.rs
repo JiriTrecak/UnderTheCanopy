@@ -231,7 +231,7 @@ impl MotesGpu {
     /// the canopy and `elevation` the shafts' own elevation in degrees (`None`: the sun's).
     pub fn prepare(
         &mut self,
-        queue: &wgpu::Queue,
+        queue: &impl crate::upload::Writes,
         camera: &CameraView,
         seconds: f32,
         light: Vec3,

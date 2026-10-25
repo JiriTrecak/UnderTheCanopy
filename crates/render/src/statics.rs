@@ -2,7 +2,9 @@
 //!
 //! Every instance lives in one persistent buffer, sorted by model. Each frame a compute
 //! pass culls all of them against the camera and the sun and appends the visible ones
-//! to per-model lists; a second dispatch writes each draw's instance count. Draws are
+//! to per-model lists (canopy instances the cutaway or the RTS ceiling may cut this frame
+//! to a list of their own, [`CUT_LIST`]); a second dispatch writes each draw's instance
+//! count. Draws are
 //! indirect, one per model section (plus one depth-stream draw and one per alpha-tested
 //! section for shadows), so their number depends on the models in the scene, never on
 //! how many instances there are (renderer §4.5). Without `indirect-first-instance`
@@ -65,6 +67,75 @@ const RTS_CEILING: f32 = 75.0;
 /// The cutaway opens only canopy models at least this tall (statics.wgsl `cut_away`).
 const CUTAWAY_HEIGHT: f32 = 7.5;
 
+/// The visible lists of a model: the camera's, the sun's, and the camera's canopy
+/// instances that may be cut this frame (drawn after their depth prepass).
+const LISTS: usize = 3;
+const CAMERA_LIST: usize = 0;
+const SUN_LIST: usize = 1;
+const CUT_LIST: usize = 2;
+/// What may cut a canopy instance (`CullItem::info[3]`, cull.wgsl `CUT_*`): the cutaway
+/// (the instance is tall enough) and the RTS ceiling (it reaches it).
+const CUT_CUTAWAY: u32 = 1;
+const CUT_CEILING: u32 = 2;
+
+/// Side of the cells of [`ModelCells`], world units.
+const CELL: f32 = 32.0;
+
+/// Which models have instances where: the instances bucketed into square cells of the
+/// ground, each cell with the box around its instances' spheres and the set of models it
+/// holds. A model none of whose cells touch a view has no instance in that view's list,
+/// so its draws are left out instead of drawing nothing (renderer §9).
+#[derive(Debug, Clone, Default)]
+pub struct ModelCells {
+    cells: Vec<(Vec3, Vec3, Vec<u64>)>,
+    words: usize,
+}
+
+impl ModelCells {
+    /// `spheres`: each instance's model and world bounding sphere.
+    pub fn new(models: usize, spheres: impl Iterator<Item = (usize, Vec4)>) -> Self {
+        let words = models.div_ceil(64).max(1);
+        let mut map: BTreeMap<(i32, i32), (Vec3, Vec3, Vec<u64>)> = BTreeMap::new();
+        for (model, s) in spheres {
+            let key = ((s.x / CELL).floor() as i32, (s.z / CELL).floor() as i32);
+            let (lo, hi, set) = map
+                .entry(key)
+                .or_insert_with(|| (Vec3::splat(f32::MAX), Vec3::splat(f32::MIN), vec![0; words]));
+            *lo = lo.min(s.truncate() - s.w);
+            *hi = hi.max(s.truncate() + s.w);
+            set[model / 64] |= 1 << (model % 64);
+        }
+        Self {
+            cells: map.into_values().collect(),
+            words,
+        }
+    }
+
+    /// The models with a cell touching every plane's inner side (n·p + d ≥ 0), as a bit
+    /// set: a box is outside a plane only when its corner farthest along the normal is.
+    pub fn touching(&self, planes: &[Vec4]) -> Vec<u64> {
+        let mut set = vec![0; self.words];
+        for (lo, hi, models) in &self.cells {
+            let inside = planes.iter().all(|p| {
+                let n = p.truncate();
+                let corner = Vec3::select(n.cmpge(Vec3::ZERO), *hi, *lo);
+                n.dot(corner) + p.w >= -0.01
+            });
+            if inside {
+                for (s, m) in set.iter_mut().zip(models) {
+                    *s |= m;
+                }
+            }
+        }
+        set
+    }
+}
+
+fn has_model(set: &[u64], model: usize) -> bool {
+    set.get(model / 64)
+        .is_some_and(|w| w & (1 << (model % 64)) != 0)
+}
+
 /// Scenery is cut lower: low ground clutter (curled leaves, acorns, fern sprigs) needs its
 /// small shadows to read as depth from the play camera.
 pub const STATIC_SHADOW_MIN_HEIGHT: f32 = 0.2;
@@ -101,6 +172,8 @@ struct CullParams {
     sweep: [f32; 4],
     floor: [f32; 4],
     sun_depth: [f32; 4],
+    view_proj: [[f32; 4]; 4],
+    cutaway: [f32; 4],
 }
 
 /// One indirect draw.
@@ -108,6 +181,8 @@ struct DrawRecord {
     model: usize,
     /// Section index, or `None` for the depth stream.
     section: Option<usize>,
+    /// The visible list it draws ([`CAMERA_LIST`], [`SUN_LIST`] or [`CUT_LIST`]).
+    list: usize,
     args: usize,
 }
 
@@ -127,10 +202,10 @@ struct GpuModel {
     canopy: bool,
     /// Highest point of any instance over its base, world units (with the wind's reach).
     reach: f32,
-    /// Tallest instance's canopy height (`wind.z` × scale), for the cutaway's threshold.
-    cut_height: f32,
-    /// First visible slot per view.
-    region: [u32; 2],
+    /// What may cut any instance (`CUT_*`).
+    cuts: u32,
+    /// First visible slot per list.
+    region: [u32; LISTS],
     depth_index_count: u32,
     instances: u32,
 }
@@ -165,6 +240,10 @@ pub struct StaticsGpu {
     finish_pipeline: wgpu::ComputePipeline,
     params: wgpu::Buffer,
     counters: wgpu::Buffer,
+    /// The cutaway mask's farthest unit depth per block (`CutawayMask::block_depths`),
+    /// and whether it holds the current mask's.
+    cut_blocks: wgpu::Buffer,
+    cut_blocks_current: std::cell::Cell<bool>,
     args: wgpu::Buffer,
     items: u32,
     draws: u32,
@@ -172,6 +251,11 @@ pub struct StaticsGpu {
     item_buffer: wgpu::Buffer,
     item_info: Vec<[u32; 4]>,
     slot_of: Vec<u32>,
+    /// Where each model's instances are, and the models the camera's and the sun's views
+    /// may hold this frame ([`ModelCells::touching`]).
+    cells: ModelCells,
+    in_camera: Vec<u64>,
+    in_sun: Vec<u64>,
     /// Bytes of GPU memory (buffers and textures).
     pub bytes: u64,
     pub stats: StaticsStats,
@@ -366,7 +450,7 @@ impl StaticsGpu {
             let casts = materials.iter().any(|m| m.casts_shadow);
             let (center, radius) = sphere(meta);
             let height = meta.rest_bounds.max[1] - meta.rest_bounds.min[1];
-            let (mut reach, mut cut_height) = (0.0f32, 0.0f32);
+            let (mut reach, mut model_cuts) = (0.0f32, 0);
             for &(input, instance) in placed {
                 slot_of[input] = items.len() as u32;
                 let t = instance.transform;
@@ -383,23 +467,34 @@ impl StaticsGpu {
                 });
                 let scale_y = t.y_axis.truncate().length();
                 let sphere = world_sphere(&t, center, radius);
-                reach = reach.max(sphere.y + sphere.w - t.w_axis.y + SWAY_REACH);
-                cut_height = cut_height.max(uniform.wind[2] * scale_y);
+                let top = sphere.y + sphere.w - t.w_axis.y + SWAY_REACH;
+                reach = reach.max(top);
+                // What may cut it, with a margin over the shader's own tests.
+                let mut cuts = 0;
+                if meta.canopy && uniform.wind[2] > 0.0 {
+                    if uniform.wind[2] * scale_y >= CUTAWAY_HEIGHT * 0.999 {
+                        cuts |= CUT_CUTAWAY;
+                    }
+                    if top >= RTS_CEILING * 0.999 {
+                        cuts |= CUT_CEILING;
+                    }
+                }
+                model_cuts |= cuts;
                 items.push(CullItem {
                     sphere: sphere.to_array(),
                     info: [
                         model_index as u32,
                         u32::from(casts && height * scale_y >= STATIC_SHADOW_MIN_HEIGHT),
                         0,
-                        0,
+                        cuts,
                     ],
                 });
             }
             let count = placed.len() as u32;
             let padded = count.next_multiple_of(SLOT_ALIGN).max(SLOT_ALIGN);
             largest = largest.max(padded);
-            let region = [slots, slots + padded];
-            slots += padded * 2;
+            let region = [slots, slots + padded, slots + padded * 2];
+            slots += padded * LISTS as u32;
             let masked_shadow_sections = meta
                 .depth
                 .masked
@@ -421,7 +516,7 @@ impl StaticsGpu {
                 masked_shadow_sections,
                 canopy: uniform.wind[2] > 0.0,
                 reach,
-                cut_height,
+                cuts: model_cuts,
                 region,
                 depth_index_count: meta.depth.index_count,
                 instances: count,
@@ -435,29 +530,39 @@ impl StaticsGpu {
         let mut blend_draws = Vec::new();
         let mut shadow_draws = Vec::new();
         for (m, model) in models.iter().enumerate() {
+            // Canopy models also draw the instances that may be cut, from their own list.
+            let lists: &[usize] = if model.canopy {
+                &[CAMERA_LIST, CUT_LIST]
+            } else {
+                &[CAMERA_LIST]
+            };
             for (s, section) in model.sections.iter().enumerate() {
-                let record = DrawRecord {
-                    model: m,
-                    section: Some(s),
-                    args: args.len(),
-                };
-                args.push(wgpu::util::DrawIndexedIndirectArgs {
-                    index_count: section.index_count,
-                    instance_count: 0,
-                    first_index: section.first_index,
-                    base_vertex: section.base_vertex as i32,
-                    first_instance: 0,
-                });
-                draw_info.push([m as u32, 0, 0, 0]);
-                match model.materials[section.material as usize].variant {
-                    Variant::Blend { .. } => blend_draws.push(record),
-                    _ => forward_draws.push(record),
+                for &list in lists {
+                    let record = DrawRecord {
+                        model: m,
+                        section: Some(s),
+                        list,
+                        args: args.len(),
+                    };
+                    args.push(wgpu::util::DrawIndexedIndirectArgs {
+                        index_count: section.index_count,
+                        instance_count: 0,
+                        first_index: section.first_index,
+                        base_vertex: section.base_vertex as i32,
+                        first_instance: 0,
+                    });
+                    draw_info.push([m as u32, list as u32, 0, 0]);
+                    match model.materials[section.material as usize].variant {
+                        Variant::Blend { .. } => blend_draws.push(record),
+                        _ => forward_draws.push(record),
+                    }
                 }
             }
             if model.depth_index_count > 0 {
                 shadow_draws.push(DrawRecord {
                     model: m,
                     section: None,
+                    list: SUN_LIST,
                     args: args.len(),
                 });
                 args.push(wgpu::util::DrawIndexedIndirectArgs {
@@ -474,6 +579,7 @@ impl StaticsGpu {
                 shadow_draws.push(DrawRecord {
                     model: m,
                     section: Some(s),
+                    list: SUN_LIST,
                     args: args.len(),
                 });
                 args.push(wgpu::util::DrawIndexedIndirectArgs {
@@ -490,7 +596,11 @@ impl StaticsGpu {
         forward_draws.sort_by_key(|d| {
             let model = &models[d.model];
             let section = model.sections[d.section.unwrap_or(0)];
-            (model.materials[section.material as usize].variant, d.model)
+            (
+                model.materials[section.material as usize].variant,
+                d.list,
+                d.model,
+            )
         });
 
         let storage_init = |label: &str, contents: &[u8], extra| {
@@ -517,7 +627,7 @@ impl StaticsGpu {
         );
         let regions: Vec<[u32; 4]> = models
             .iter()
-            .map(|m| [m.region[0], m.region[1], 0, 0])
+            .map(|m| [m.region[0], m.region[1], m.region[2], 0])
             .collect();
         let region_buffer = storage_init(
             "static regions",
@@ -537,7 +647,7 @@ impl StaticsGpu {
         );
         let counters = device.create_buffer(&wgpu::BufferDescriptor {
             label: Some("static counters"),
-            size: (models.len().max(1) * 8) as u64,
+            size: (models.len().max(1) * LISTS * 4) as u64,
             usage: wgpu::BufferUsages::STORAGE | wgpu::BufferUsages::COPY_DST,
             mapped_at_creation: false,
         });
@@ -556,6 +666,12 @@ impl StaticsGpu {
             label: Some("static models"),
             contents: &model_uniforms,
             usage: wgpu::BufferUsages::UNIFORM,
+        });
+        let cut_blocks = device.create_buffer(&wgpu::BufferDescriptor {
+            label: Some("cutaway blocks"),
+            size: (crate::cutaway::BLOCKS[0] * crate::cutaway::BLOCKS[1] * 4) as u64,
+            usage: wgpu::BufferUsages::STORAGE | wgpu::BufferUsages::COPY_DST,
+            mapped_at_creation: false,
         });
         let params = device.create_buffer(&wgpu::BufferDescriptor {
             label: Some("cull params"),
@@ -616,6 +732,7 @@ impl StaticsGpu {
                 storage(4, false, comp, false),
                 storage(5, false, comp, true),
                 storage(6, false, comp, false),
+                storage(7, false, comp, true),
             ],
         });
         let cull_group = device.create_bind_group(&wgpu::BindGroupDescriptor {
@@ -649,6 +766,10 @@ impl StaticsGpu {
                 wgpu::BindGroupEntry {
                     binding: 6,
                     resource: args_buffer.as_entire_binding(),
+                },
+                wgpu::BindGroupEntry {
+                    binding: 7,
+                    resource: cut_blocks.as_entire_binding(),
                 },
             ],
         });
@@ -886,7 +1007,16 @@ impl StaticsGpu {
             shadow_draws: shadow_draws.len() as u32,
         };
         tracing::info!(?stats, "statics");
+        let cells = ModelCells::new(
+            models.len(),
+            items
+                .iter()
+                .map(|i| (i.info[0] as usize, Vec4::from_array(i.sphere))),
+        );
         Ok(Self {
+            in_camera: vec![!0; cells.words],
+            in_sun: vec![!0; cells.words],
+            cells,
             items: items.len() as u32,
             draws: args.len() as u32,
             item_info: items.iter().map(|i| i.info).collect(),
@@ -908,14 +1038,27 @@ impl StaticsGpu {
             finish_pipeline,
             params,
             counters,
+            cut_blocks,
+            cut_blocks_current: std::cell::Cell::new(false),
             args: args_buffer,
             bytes,
             stats,
         })
     }
 
-    /// Sets the culling planes of the camera and the sun.
-    pub fn prepare(&self, queue: &wgpu::Queue, camera: Mat4, sun: Mat4, casters: &CasterCull) {
+    /// Sets the culling planes of the camera and the sun, and the cutaway's units (`None`
+    /// while the cutaway is shut; `changed`: the mask changed since the last frame).
+    pub fn prepare(
+        &mut self,
+        queue: &impl crate::upload::Writes,
+        camera: Mat4,
+        sun: Mat4,
+        casters: &CasterCull,
+        cutaway: Option<&crate::cutaway::CutawayMask>,
+        changed: bool,
+    ) {
+        self.in_camera = self.cells.touching(&frustum_planes(camera));
+        self.in_sun = self.cells.touching(&frustum_planes(sun));
         let mut planes = [[0.0; 4]; 12];
         for (i, p) in frustum_planes(camera)
             .iter()
@@ -931,8 +1074,27 @@ impl StaticsGpu {
             sweep: casters.sweep.to_array(),
             floor: [casters.floor, 0.0, 0.0, 0.0],
             sun_depth: casters.depth.to_array(),
+            view_proj: camera.to_cols_array_2d(),
+            cutaway: [
+                if cutaway.is_some() { 1.0 } else { 0.0 },
+                crate::cutaway::BLOCKS[0] as f32,
+                crate::cutaway::BLOCKS[1] as f32,
+                0.0,
+            ],
         };
         queue.write_buffer(&self.params, 0, bytemuck::bytes_of(&params));
+        match cutaway {
+            Some(mask) if changed || !self.cut_blocks_current.get() => {
+                queue.write_buffer(
+                    &self.cut_blocks,
+                    0,
+                    bytemuck::cast_slice(&mask.block_depths()),
+                );
+                self.cut_blocks_current.set(true);
+            }
+            Some(_) => {}
+            None => self.cut_blocks_current.set(false),
+        }
     }
 
     /// Clears the counters (record before the culling pass).
@@ -951,9 +1113,9 @@ impl StaticsGpu {
         pass.dispatch_workgroups(self.draws.div_ceil(64), 1, 1);
     }
 
-    fn offsets(&self, model: usize, view: usize) -> [u32; 2] {
+    fn offsets(&self, model: usize, list: usize) -> [u32; 2] {
         [
-            self.models[model].region[view] * 4,
+            self.models[model].region[list] * 4,
             (model as u64 * MODEL_STRIDE) as u32,
         ]
     }
@@ -963,10 +1125,10 @@ impl StaticsGpu {
     fn may_cut(&self, m: usize, cutaway: bool) -> bool {
         let model = &self.models[m];
         model.canopy
-            && ((cutaway && model.cut_height >= CUTAWAY_HEIGHT) || model.reach >= RTS_CEILING)
+            && ((cutaway && model.cuts & CUT_CUTAWAY != 0) || model.cuts & CUT_CEILING != 0)
     }
 
-    /// Draws sections; opaque sections of models that may be cut (`cut`) draw after their
+    /// Draws sections; opaque sections of the instances that may be cut draw after their
     /// prepass.
     fn draw_sections<'a>(
         &self,
@@ -975,15 +1137,21 @@ impl StaticsGpu {
         cutaway: bool,
     ) -> u32 {
         let mut current: Option<(Variant, bool)> = None;
-        let mut bound_model = usize::MAX;
+        let mut bound_model = (usize::MAX, usize::MAX);
         let mut count = 0;
         for draw in draws {
+            // No instance of a model nothing can cut this frame is in its cut list, nor of
+            // a model out of view in any list.
+            if (draw.list == CUT_LIST && !self.may_cut(draw.model, cutaway))
+                || !has_model(&self.in_camera, draw.model)
+            {
+                continue;
+            }
             count += 1;
             let model = &self.models[draw.model];
             let section = model.sections[draw.section.expect("a section draw")];
             let material = &model.materials[section.material as usize];
-            let cut = matches!(material.variant, Variant::Opaque { .. })
-                && self.may_cut(draw.model, cutaway);
+            let cut = matches!(material.variant, Variant::Opaque { .. }) && draw.list == CUT_LIST;
             if current != Some((material.variant, cut)) {
                 match material.variant {
                     Variant::Opaque { double_sided } if cut => {
@@ -993,13 +1161,19 @@ impl StaticsGpu {
                 }
                 current = Some((material.variant, cut));
             }
-            if bound_model != draw.model {
-                pass.set_bind_group(2, &self.instance_group, &self.offsets(draw.model, 0));
+            if bound_model.0 != draw.model {
                 pass.set_vertex_buffer(0, model.vertices.slice(..));
                 pass.set_vertex_buffer(1, model.colors.slice(..));
                 pass.set_vertex_buffer(2, model.leaves.slice(..));
                 pass.set_index_buffer(model.indices.slice(..), model.index_format);
-                bound_model = draw.model;
+            }
+            if bound_model != (draw.model, draw.list) {
+                pass.set_bind_group(
+                    2,
+                    &self.instance_group,
+                    &self.offsets(draw.model, draw.list),
+                );
+                bound_model = (draw.model, draw.list);
             }
             pass.set_bind_group(1, &material.bind_group, &[]);
             pass.draw_indexed_indirect(&self.args, (draw.args * 20) as u64);
@@ -1027,7 +1201,10 @@ impl StaticsGpu {
             let Variant::Opaque { double_sided } = material.variant else {
                 continue;
             };
-            if !self.may_cut(draw.model, cutaway) {
+            if draw.list != CUT_LIST
+                || !self.may_cut(draw.model, cutaway)
+                || !has_model(&self.in_camera, draw.model)
+            {
                 continue;
             }
             if current != Some(double_sided) {
@@ -1035,7 +1212,7 @@ impl StaticsGpu {
                 current = Some(double_sided);
             }
             if bound_model != draw.model {
-                pass.set_bind_group(2, &self.instance_group, &self.offsets(draw.model, 0));
+                pass.set_bind_group(2, &self.instance_group, &self.offsets(draw.model, CUT_LIST));
                 pass.set_vertex_buffer(0, model.vertices.slice(..));
                 pass.set_vertex_buffer(1, model.colors.slice(..));
                 pass.set_vertex_buffer(2, model.leaves.slice(..));
@@ -1079,8 +1256,11 @@ impl StaticsGpu {
         pass.set_bind_group(0, frame, &[]);
         let mut count = 0;
         for draw in &self.shadow_draws {
+            if !has_model(&self.in_sun, draw.model) {
+                continue;
+            }
             let model = &self.models[draw.model];
-            pass.set_bind_group(2, &self.instance_group, &self.offsets(draw.model, 1));
+            pass.set_bind_group(2, &self.instance_group, &self.offsets(draw.model, SUN_LIST));
             match draw.section {
                 None => {
                     let (Some(positions), Some((indices, format))) =
@@ -1177,6 +1357,28 @@ impl StaticsGpu {
 mod tests {
     use super::*;
     use crate::camera::{FlatGround, RtsCamera};
+
+    #[test]
+    fn models_out_of_view_have_no_cell_in_it() {
+        let view = RtsCamera::new([100.0, 100.0], None).view(16.0 / 9.0, &FlatGround);
+        let planes = view.frustum();
+        let spheres = [
+            (0, Vec4::new(100.0, 0.0, 100.0, 2.0)),
+            (1, Vec4::new(900.0, 0.0, 900.0, 2.0)),
+            (1, Vec4::new(901.0, 0.0, 905.0, 2.0)),
+            (70, Vec4::new(100.0, 0.0, 30.0, 40.0)),
+        ];
+        let cells = ModelCells::new(71, spheres.into_iter());
+        let set = cells.touching(&planes);
+        for (model, sphere) in spheres {
+            // Every model with a visible instance is in the set.
+            if sphere_visible(&planes, sphere) {
+                assert!(has_model(&set, model), "{model}");
+            }
+        }
+        assert!(has_model(&set, 0) && has_model(&set, 70));
+        assert!(!has_model(&set, 1));
+    }
 
     #[test]
     fn spheres_follow_the_transform_and_the_frustum() {

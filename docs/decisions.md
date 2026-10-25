@@ -1106,6 +1106,8 @@ Units came in ten collision radii from 0.8 to 3.0 that matched neither each othe
 - **No discard where nothing is cut**: opaque scenery and fully opaque live models draw with pipelines without a discard, so Apple's hidden-surface removal shades only visible surfaces; only canopy scenery the cutaway or the RTS ceiling may cut this frame takes a depth prepass that carries the discards, then an equal-depth lit pass with invariant positions.
 - **Shadow casters are culled to what they can shade** (`shadow::CasterCull`): a caster's sphere, grown by every offset a shadow read takes, swept away from the sun to the map's far plane or below the lowest ground, must touch the camera's view; casters that fail it change no texel any visible pixel reads.
 - **Point lights through a ground grid**: each cell lists the lights that reach it; the sum over a cell's lights, in order, equals the sum over all.
+- **The cutaway's prepass per instance** (second pass): the culling pass sends a canopy instance to the prepass only when a unit stands behind it in the cutaway mask or it reaches the RTS ceiling; the others draw as plain opaque scenery. Their positions are no longer invariant with a prepass, so a few edge pixels move by float noise (at most 0.002 % of pixels by more than 2/255).
+- **No empty draws**: the CPU leaves out the draws of models with no instance cell in a view; frame buffer writes share a staging belt; passes that record nothing are not begun outside timed frames.
 
 ## D104. Frame costs without changing the picture (2026-10-25, technical; Jiri: "we just need to improve how we do stuff")
 
