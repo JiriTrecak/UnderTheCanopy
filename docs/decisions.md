@@ -1179,3 +1179,4 @@ Jiri approved the new autumn-tree illustration and asked to mirror it so the ant
 - Removed the main menu's fire glows, hot cores, flames and rising embers, including their templates, styles and animation work. Existing slow shafts and drifting pollen remain.
 - `image-flip-x` is an optional UI image/background style; it changes neither layout nor descendants. The capture command accepts `--only main-menu` for a focused review.
 - Verified in the native menu at 2560 × 1440: [capture](captures/autumn-menu/main-menu.png).
+- Jiri also approved and requested installation of the red autumn-leaf logo. The existing logo asset now uses the generated transparent PNG, with the same menu placement and gold lettering: [updated capture](captures/autumn-menu/red-leaf-logo.png).

@@ -1,6 +1,6 @@
 {
   "id": "asset.interface.main-menu.logo-oak",
-  "name": "logo oak",
+  "name": "Red autumn oak logo",
   "kind": "interface",
   "tags": [
     "main-menu",
@@ -10,8 +10,8 @@
     {
       "role": "image",
       "index": 1,
-      "format": "webp"
+      "format": "png"
     }
   ],
-  "license": "Original Under the Canopy menu artwork, generated from approved concept."
+  "license": "Original Under the Canopy logo, red autumn-leaf variant generated with built-in ImageGen and approved by Jiri."
 }
