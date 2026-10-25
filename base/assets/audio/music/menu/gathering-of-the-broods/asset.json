@@ -1,0 +1,21 @@
+{
+  "id": "asset.audio.music.menu-gathering-of-the-broods",
+  "name": "Gathering of the broods",
+  "kind": "audio",
+  "tags": [
+    "music"
+  ],
+  "license": "Generated with ElevenLabs for Under the Canopy (generation.json).",
+  "resources": [
+    {
+      "role": "audio",
+      "index": 1,
+      "format": "mp3"
+    },
+    {
+      "role": "generation",
+      "index": 1,
+      "format": "json"
+    }
+  ]
+}

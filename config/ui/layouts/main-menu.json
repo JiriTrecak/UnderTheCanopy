@@ -42,6 +42,14 @@
         ]
       },
       {
+        "id": "music", "class": "mm-music",
+        "children": [
+          { "id": "prev", "kind": "button", "class": "mm-music-step", "action": "menu.music-prev", "children": [{ "kind": "label", "text": "‹" }] },
+          { "id": "name", "kind": "label", "class": "mm-music-name" },
+          { "id": "next", "kind": "button", "class": "mm-music-step", "action": "menu.music-next", "children": [{ "kind": "label", "text": "›" }] }
+        ]
+      },
+      {
         "id": "release", "class": "mm-release",
         "children": [
           {

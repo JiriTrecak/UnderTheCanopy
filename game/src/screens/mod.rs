@@ -1019,6 +1019,53 @@ impl Game {
         }
     }
 
+    /// Which of the menu's tracks plays now (an index into `rules/sounds.json` → `menu`).
+    fn menu_track(&self, data: &GameData) -> Option<usize> {
+        let playing = self.audio.current_music()?;
+        data.content.rules.sounds.menu.iter().position(|id| {
+            self.audio
+                .event(id.as_str())
+                .is_some_and(|e| self.audio.bank().clips(e).contains(&playing))
+        })
+    }
+
+    /// The menu's track switcher: the track playing by name, shown while there are several.
+    fn show_menu_music(&mut self, data: &GameData) {
+        let menu = &data.content.rules.sounds.menu;
+        widgets::visible(&mut self.host.ui, "main-menu/music", menu.len() > 1);
+        let name = self
+            .menu_track(data)
+            .and_then(|i| data.content.sounds.get(menu[i].as_str()))
+            .and_then(|event| event.clips.first())
+            .and_then(|clip| {
+                data.content
+                    .manifest
+                    .records
+                    .iter()
+                    .find(|r| r.id == *clip.as_str())
+            })
+            .map_or_else(String::new, |r| r.name.replace('[', "[["));
+        widgets::text(&mut self.host.ui, "main-menu/music/name", &name);
+    }
+
+    /// Plays the menu's track `step` places from the one playing, alone and looping.
+    fn step_menu_music(&mut self, step: isize) {
+        let Some(data) = self.data.clone() else {
+            return;
+        };
+        let menu = &data.content.rules.sounds.menu;
+        if menu.is_empty() {
+            return;
+        }
+        let at = self.menu_track(&data).unwrap_or(0) as isize;
+        let next = (at + step).rem_euclid(menu.len() as isize) as usize;
+        if let Some(mut playlist) = self.audio.playlist([menu[next].as_str()]) {
+            playlist.shuffle = false;
+            playlist.crossfade = 1.5;
+            self.audio.play_music(playlist);
+        }
+    }
+
     /// A step's music, when it names one (a music sound event).
     fn play_step_music(&mut self, data: &GameData, step: &canopy_content::campaign::Step) {
         let Some(music) = step.music() else {
@@ -1909,6 +1956,8 @@ impl Game {
             "menu.multiplayer" if clicked => self.navigate(Intent::Open(Screen::Multiplayer)),
             "menu.load" if clicked => self.open_saves(),
             "menu.settings" if clicked => self.open_settings(),
+            "menu.music-prev" if clicked => self.step_menu_music(-1),
+            "menu.music-next" if clicked => self.step_menu_music(1),
             "menu.editor" if clicked && self.paths.repository().is_some() => {
                 self.requests.editor = true
             }
@@ -2943,6 +2992,9 @@ impl Game {
             Screen::MainMenu => {
                 menu::animate(&mut self.host, t, self.view);
                 self.releases.show_plaque(&mut self.host.ui, &self.updater);
+                if let Some(data) = &data {
+                    self.show_menu_music(data);
+                }
             }
             Screen::Campaigns => {
                 if let Some(data) = &data {

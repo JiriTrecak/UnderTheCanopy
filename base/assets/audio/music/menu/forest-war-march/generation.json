@@ -1,0 +1,30 @@
+{
+  "provider": "elevenlabs",
+  "kind": "music",
+  "spec": {
+    "name": "menu-forest-war-march",
+    "kind": "music",
+    "prompt": "A war march through an ancient enchanted forest: proud, determined, a little mysterious. Steady deep war drums and frame drums, a driving low string ostinato, a noble French horn melody answered by a wooden flute, harp glints and a wordless choir rising at the swell. Moderate march tempo, D minor. A 30-second instrumental piece for a fantasy real-time strategy game's main menu, made to loop: its last bars lead back into its opening so the restart is seamless. Live orchestral and acoustic instruments only: no drum kit, no synth leads, no electronic or modern pop sound, no sung words.",
+    "seconds": 30,
+    "takes": 1,
+    "dir": "base/assets/audio/music/menu/forest-war-march",
+    "id": "asset.audio.music.menu-forest-war-march",
+    "title": "Forest war march",
+    "event": {
+      "id": "sound.music.menu-forest-war-march",
+      "category": "music",
+      "note": "Forest war march"
+    }
+  },
+  "takes": [
+    "take-1.mp3"
+  ],
+  "picked": "take-1.mp3",
+  "request": {
+    "prompt": "A war march through an ancient enchanted forest: proud, determined, a little mysterious. Steady deep war drums and frame drums, a driving low string ostinato, a noble French horn melody answered by a wooden flute, harp glints and a wordless choir rising at the swell. Moderate march tempo, D minor. A 30-second instrumental piece for a fantasy real-time strategy game's main menu, made to loop: its last bars lead back into its opening so the restart is seamless. Live orchestral and acoustic instruments only: no drum kit, no synth leads, no electronic or modern pop sound, no sung words.",
+    "model_id": "music_v1",
+    "force_instrumental": true,
+    "music_length_ms": 30000
+  },
+  "endpoint": "/v1/music"
+}

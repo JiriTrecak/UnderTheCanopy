@@ -1,0 +1,30 @@
+{
+  "provider": "elevenlabs",
+  "kind": "music",
+  "spec": {
+    "name": "menu-gathering-of-the-broods",
+    "kind": "music",
+    "prompt": "Armies gathering beneath a giant magical forest before a battle: tension building to an epic swell. Pounding taiko and timpani, urgent staccato strings, low brass stabs, a solemn wordless choir, glittering harp and celesta for the forest's magic, a heroic trumpet and horn line at the climax. Fast tempo, C minor, cinematic fantasy orchestra. A 30-second instrumental piece for a fantasy real-time strategy game's main menu, made to loop: its last bars lead back into its opening so the restart is seamless. Live orchestral and acoustic instruments only: no drum kit, no synth leads, no electronic or modern pop sound, no sung words.",
+    "seconds": 30,
+    "takes": 1,
+    "dir": "base/assets/audio/music/menu/gathering-of-the-broods",
+    "id": "asset.audio.music.menu-gathering-of-the-broods",
+    "title": "Gathering of the broods",
+    "event": {
+      "id": "sound.music.menu-gathering-of-the-broods",
+      "category": "music",
+      "note": "Gathering of the broods"
+    }
+  },
+  "takes": [
+    "take-1.mp3"
+  ],
+  "picked": "take-1.mp3",
+  "request": {
+    "prompt": "Armies gathering beneath a giant magical forest before a battle: tension building to an epic swell. Pounding taiko and timpani, urgent staccato strings, low brass stabs, a solemn wordless choir, glittering harp and celesta for the forest's magic, a heroic trumpet and horn line at the climax. Fast tempo, C minor, cinematic fantasy orchestra. A 30-second instrumental piece for a fantasy real-time strategy game's main menu, made to loop: its last bars lead back into its opening so the restart is seamless. Live orchestral and acoustic instruments only: no drum kit, no synth leads, no electronic or modern pop sound, no sung words.",
+    "model_id": "music_v1",
+    "force_instrumental": true,
+    "music_length_ms": 30000
+  },
+  "endpoint": "/v1/music"
+}
