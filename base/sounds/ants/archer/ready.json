@@ -1,0 +1,7 @@
+{
+  "id": "sound.ants.archer.ready",
+  "category": "voice",
+  "clips": [
+    "asset.audio.voice.ants-archer-ready-1"
+  ]
+}

@@ -1,0 +1,18 @@
+{
+  "id": "sound.ants.archer.shoot",
+  "category": "world",
+  "volume": [
+    0.8,
+    1.0
+  ],
+  "pitch": [
+    0.94,
+    1.06
+  ],
+  "limit": 6,
+  "clips": [
+    "asset.audio.units.ants-needler-shoot-1",
+    "asset.audio.units.ants-needler-shoot-2",
+    "asset.audio.units.ants-needler-shoot-3"
+  ]
+}

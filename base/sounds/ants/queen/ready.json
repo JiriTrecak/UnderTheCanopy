@@ -1,0 +1,7 @@
+{
+  "id": "sound.ants.queen.ready",
+  "category": "voice",
+  "clips": [
+    "asset.audio.voice.ants-queen-ready-1"
+  ]
+}

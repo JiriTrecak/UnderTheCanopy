@@ -77,6 +77,19 @@
     "projectile": "effect.weapon.thorn",
     "projectileSocket": "socket_projectile",
     "impactEffect": "effect.ants.kit.hit-needle",
-    "launchEffect": "effect.weapons.thorn-flight"
+    "launchEffect": "effect.weapons.thorn-flight",
+    "sounds": [
+      {
+        "sound": "sound.ants.archer.shoot",
+        "event": "release"
+      }
+    ],
+    "voice": {
+      "select": "sound.ants.archer.select",
+      "order": "sound.ants.archer.order",
+      "attack": "sound.ants.archer.attack",
+      "annoyed": "sound.ants.archer.annoyed",
+      "ready": "sound.ants.archer.ready"
+    }
   }
 }

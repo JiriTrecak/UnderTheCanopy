@@ -283,7 +283,20 @@
     "projectileSocket": "socket_projectile",
     "castContact": 0.5,
     "impactEffect": "effect.ants.kit.nectar-hit",
-    "launchEffect": "effect.ants.kit.royal-nectar-flight"
+    "launchEffect": "effect.ants.kit.royal-nectar-flight",
+    "sounds": [
+      {
+        "sound": "sound.ants.queen.bolt",
+        "event": "hit"
+      }
+    ],
+    "voice": {
+      "select": "sound.ants.queen.select",
+      "order": "sound.ants.queen.order",
+      "attack": "sound.ants.queen.attack",
+      "annoyed": "sound.ants.queen.annoyed",
+      "ready": "sound.ants.queen.ready"
+    }
   },
   "displayOrder": 1
 }

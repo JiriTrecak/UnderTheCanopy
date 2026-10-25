@@ -1,0 +1,39 @@
+{
+  "provider": "elevenlabs",
+  "kind": "effect",
+  "spec": {
+    "name": "sfx-raider-bite-1",
+    "kind": "effect",
+    "prompt": "A sharp insect mandible bite: a crisp chitin snap and crunch, close, short, dry, no voice",
+    "seconds": 0.6,
+    "takes": 1,
+    "dir": "base/assets/audio/units/ants/raider-bite-1",
+    "id": "asset.audio.units.ants-raider-bite-1",
+    "title": "Raider bite 1",
+    "event": {
+      "id": "sound.ants.warrior.bite",
+      "category": "world",
+      "volume": [
+        0.85,
+        1.0
+      ],
+      "pitch": [
+        0.93,
+        1.07
+      ],
+      "limit": 6
+    },
+    "influence": 0.6
+  },
+  "takes": [
+    "take-1.mp3"
+  ],
+  "picked": "take-1.mp3",
+  "request": {
+    "text": "A sharp insect mandible bite: a crisp chitin snap and crunch, close, short, dry, no voice",
+    "model_id": "eleven_text_to_sound_v2",
+    "prompt_influence": 0.6,
+    "duration_seconds": 0.6
+  },
+  "endpoint": "/v1/sound-generation"
+}

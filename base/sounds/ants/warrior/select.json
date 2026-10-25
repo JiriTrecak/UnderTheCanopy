@@ -1,0 +1,9 @@
+{
+  "id": "sound.ants.warrior.select",
+  "category": "voice",
+  "clips": [
+    "asset.audio.voice.ants-warrior-select-1",
+    "asset.audio.voice.ants-warrior-select-2",
+    "asset.audio.voice.ants-warrior-select-3"
+  ]
+}

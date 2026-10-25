@@ -1,0 +1,18 @@
+{
+  "id": "sound.ants.warrior.bite",
+  "category": "world",
+  "volume": [
+    0.85,
+    1.0
+  ],
+  "pitch": [
+    0.93,
+    1.07
+  ],
+  "limit": 6,
+  "clips": [
+    "asset.audio.units.ants-raider-bite-1",
+    "asset.audio.units.ants-raider-bite-2",
+    "asset.audio.units.ants-raider-bite-3"
+  ]
+}

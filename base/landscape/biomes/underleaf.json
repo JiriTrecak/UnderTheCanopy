@@ -630,5 +630,9 @@
         "edge": 10
       }
     ]
+  },
+  "ambience": {
+    "day": "sound.ambience.underleaf-day",
+    "night": "sound.ambience.underleaf-night"
   }
 }

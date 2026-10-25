@@ -1,0 +1,39 @@
+{
+  "provider": "elevenlabs",
+  "kind": "effect",
+  "spec": {
+    "name": "sfx-queen-bolt-1",
+    "kind": "effect",
+    "prompt": "A small bolt of glowing amber magic cast from a hand: a warm resonant shimmer swelling into a quick bright whoosh, magical, short, no voice",
+    "seconds": 1.0,
+    "takes": 1,
+    "dir": "base/assets/audio/units/ants/queen-bolt-1",
+    "id": "asset.audio.units.ants-queen-bolt-1",
+    "title": "Queen amber bolt 1",
+    "event": {
+      "id": "sound.ants.queen.bolt",
+      "category": "world",
+      "volume": [
+        0.85,
+        1.0
+      ],
+      "pitch": [
+        0.95,
+        1.05
+      ],
+      "limit": 4
+    },
+    "influence": 0.6
+  },
+  "takes": [
+    "take-1.mp3"
+  ],
+  "picked": "take-1.mp3",
+  "request": {
+    "text": "A small bolt of glowing amber magic cast from a hand: a warm resonant shimmer swelling into a quick bright whoosh, magical, short, no voice",
+    "model_id": "eleven_text_to_sound_v2",
+    "prompt_influence": 0.6,
+    "duration_seconds": 1.0
+  },
+  "endpoint": "/v1/sound-generation"
+}

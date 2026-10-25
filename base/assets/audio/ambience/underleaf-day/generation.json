@@ -1,0 +1,35 @@
+{
+  "provider": "elevenlabs",
+  "kind": "effect",
+  "spec": {
+    "name": "amb-underleaf-day",
+    "kind": "effect",
+    "prompt": "Ambience of an enchanted giant forest floor in late afternoon, heard from the ground among huge leaves and roots: a soft breeze high in giant leaves, distant gentle insect chirps and buzzing, an occasional far-off bird, a faint trickle of water, and a barely audible shimmering ethereal tone like distant glass chimes, mysterious and calm. No music, no voices, steady and even.",
+    "seconds": 30,
+    "takes": 1,
+    "dir": "base/assets/audio/ambience/underleaf-day",
+    "id": "asset.audio.ambience.underleaf-day",
+    "title": "Underleaf ambience (day)",
+    "event": {
+      "id": "sound.ambience.underleaf-day",
+      "category": "ambience",
+      "loop": true,
+      "fade": 2.0
+    },
+    "loop": true,
+    "mono": false,
+    "influence": 0.5
+  },
+  "takes": [
+    "take-1.mp3"
+  ],
+  "picked": "take-1.mp3",
+  "request": {
+    "text": "Ambience of an enchanted giant forest floor in late afternoon, heard from the ground among huge leaves and roots: a soft breeze high in giant leaves, distant gentle insect chirps and buzzing, an occasional far-off bird, a faint trickle of water, and a barely audible shimmering ethereal tone like distant glass chimes, mysterious and calm. No music, no voices, steady and even.",
+    "model_id": "eleven_text_to_sound_v2",
+    "prompt_influence": 0.5,
+    "duration_seconds": 30.0,
+    "loop": true
+  },
+  "endpoint": "/v1/sound-generation"
+}

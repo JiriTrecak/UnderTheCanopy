@@ -1,0 +1,35 @@
+{
+  "provider": "elevenlabs",
+  "kind": "effect",
+  "spec": {
+    "name": "amb-underleaf-night",
+    "kind": "effect",
+    "prompt": "Night ambience of an enchanted giant forest floor: deep calm darkness, slow soft wind in giant leaves, crickets and night insects far and near, a distant owl-like call, a faint trickle of water, and a low ethereal shimmering hum with occasional soft glassy chimes, mysterious and a little eerie. No music, no voices, steady and even.",
+    "seconds": 30,
+    "takes": 1,
+    "dir": "base/assets/audio/ambience/underleaf-night",
+    "id": "asset.audio.ambience.underleaf-night",
+    "title": "Underleaf ambience (night)",
+    "event": {
+      "id": "sound.ambience.underleaf-night",
+      "category": "ambience",
+      "loop": true,
+      "fade": 2.0
+    },
+    "loop": true,
+    "mono": false,
+    "influence": 0.5
+  },
+  "takes": [
+    "take-1.mp3"
+  ],
+  "picked": "take-1.mp3",
+  "request": {
+    "text": "Night ambience of an enchanted giant forest floor: deep calm darkness, slow soft wind in giant leaves, crickets and night insects far and near, a distant owl-like call, a faint trickle of water, and a low ethereal shimmering hum with occasional soft glassy chimes, mysterious and a little eerie. No music, no voices, steady and even.",
+    "model_id": "eleven_text_to_sound_v2",
+    "prompt_influence": 0.5,
+    "duration_seconds": 30.0,
+    "loop": true
+  },
+  "endpoint": "/v1/sound-generation"
+}

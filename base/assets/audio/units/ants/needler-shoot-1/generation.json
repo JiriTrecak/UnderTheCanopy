@@ -1,0 +1,39 @@
+{
+  "provider": "elevenlabs",
+  "kind": "effect",
+  "spec": {
+    "name": "sfx-needler-shoot-1",
+    "kind": "effect",
+    "prompt": "A thin sharp needle dart shot from a small organic launcher: a quick airy 'thwip' with a tight whoosh, close, short, no voice",
+    "seconds": 0.7,
+    "takes": 1,
+    "dir": "base/assets/audio/units/ants/needler-shoot-1",
+    "id": "asset.audio.units.ants-needler-shoot-1",
+    "title": "Needler shot 1",
+    "event": {
+      "id": "sound.ants.archer.shoot",
+      "category": "world",
+      "volume": [
+        0.8,
+        1.0
+      ],
+      "pitch": [
+        0.94,
+        1.06
+      ],
+      "limit": 6
+    },
+    "influence": 0.6
+  },
+  "takes": [
+    "take-1.mp3"
+  ],
+  "picked": "take-1.mp3",
+  "request": {
+    "text": "A thin sharp needle dart shot from a small organic launcher: a quick airy 'thwip' with a tight whoosh, close, short, no voice",
+    "model_id": "eleven_text_to_sound_v2",
+    "prompt_influence": 0.6,
+    "duration_seconds": 0.7
+  },
+  "endpoint": "/v1/sound-generation"
+}

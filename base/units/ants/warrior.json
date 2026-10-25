@@ -68,6 +68,19 @@
   },
   "modelScale": 1.47,
   "presentation": {
-    "impactEffect": "effect.ants.kit.hit-bite"
+    "impactEffect": "effect.ants.kit.hit-bite",
+    "sounds": [
+      {
+        "sound": "sound.ants.warrior.bite",
+        "event": "hit"
+      }
+    ],
+    "voice": {
+      "select": "sound.ants.warrior.select",
+      "order": "sound.ants.warrior.order",
+      "attack": "sound.ants.warrior.attack",
+      "annoyed": "sound.ants.warrior.annoyed",
+      "ready": "sound.ants.warrior.ready"
+    }
   }
 }

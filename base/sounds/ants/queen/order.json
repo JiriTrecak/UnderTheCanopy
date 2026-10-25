@@ -1,0 +1,9 @@
+{
+  "id": "sound.ants.queen.order",
+  "category": "voice",
+  "clips": [
+    "asset.audio.voice.ants-queen-order-1",
+    "asset.audio.voice.ants-queen-order-2",
+    "asset.audio.voice.ants-queen-order-3"
+  ]
+}

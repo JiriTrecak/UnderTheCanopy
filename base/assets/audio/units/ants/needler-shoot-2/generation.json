@@ -1,0 +1,39 @@
+{
+  "provider": "elevenlabs",
+  "kind": "effect",
+  "spec": {
+    "name": "sfx-needler-shoot-2",
+    "kind": "effect",
+    "prompt": "A spined insect firing a sharp needle: a soft pneumatic puff and a fast whistling zip, close and crisp, short, no voice",
+    "seconds": 0.7,
+    "takes": 1,
+    "dir": "base/assets/audio/units/ants/needler-shoot-2",
+    "id": "asset.audio.units.ants-needler-shoot-2",
+    "title": "Needler shot 2",
+    "event": {
+      "id": "sound.ants.archer.shoot",
+      "category": "world",
+      "volume": [
+        0.8,
+        1.0
+      ],
+      "pitch": [
+        0.94,
+        1.06
+      ],
+      "limit": 6
+    },
+    "influence": 0.6
+  },
+  "takes": [
+    "take-1.mp3"
+  ],
+  "picked": "take-1.mp3",
+  "request": {
+    "text": "A spined insect firing a sharp needle: a soft pneumatic puff and a fast whistling zip, close and crisp, short, no voice",
+    "model_id": "eleven_text_to_sound_v2",
+    "prompt_influence": 0.6,
+    "duration_seconds": 0.7
+  },
+  "endpoint": "/v1/sound-generation"
+}

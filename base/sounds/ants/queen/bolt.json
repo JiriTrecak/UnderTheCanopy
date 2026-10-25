@@ -1,0 +1,17 @@
+{
+  "id": "sound.ants.queen.bolt",
+  "category": "world",
+  "volume": [
+    0.85,
+    1.0
+  ],
+  "pitch": [
+    0.95,
+    1.05
+  ],
+  "limit": 4,
+  "clips": [
+    "asset.audio.units.ants-queen-bolt-1",
+    "asset.audio.units.ants-queen-bolt-2"
+  ]
+}

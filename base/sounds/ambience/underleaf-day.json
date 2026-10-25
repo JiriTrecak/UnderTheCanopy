@@ -1,0 +1,9 @@
+{
+  "id": "sound.ambience.underleaf-day",
+  "category": "ambience",
+  "loop": true,
+  "fade": 2.0,
+  "clips": [
+    "asset.audio.ambience.underleaf-day"
+  ]
+}

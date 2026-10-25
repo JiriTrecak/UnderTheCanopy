@@ -1,0 +1,44 @@
+{
+  "provider": "elevenlabs",
+  "kind": "line",
+  "spec": {
+    "name": "v-warrior-order-2",
+    "kind": "line",
+    "line": "voice.ants.warrior.order-2",
+    "speaker": "speaker.hollow-raider",
+    "tags": "[brisk]",
+    "model": "eleven_v3",
+    "settings": {
+      "stability": 0.5,
+      "speed": 1.0
+    },
+    "takes": 1,
+    "dir": "base/assets/audio/voices/ants/warrior/order-2",
+    "id": "asset.audio.voice.ants-warrior-order-2",
+    "title": "Ants warrior: On the trail.",
+    "event": {
+      "id": "sound.ants.warrior.order",
+      "category": "voice"
+    }
+  },
+  "takes": [
+    "take-1.mp3"
+  ],
+  "picked": "take-1.mp3",
+  "request": {
+    "text": "[brisk] On the trail.",
+    "model_id": "eleven_v3",
+    "voice_settings": {
+      "stability": 0.5,
+      "speed": 1.0
+    }
+  },
+  "endpoint": "/v1/text-to-speech/h7WhIMYgIy1LbKeLMIUt",
+  "text": "On the trail.",
+  "voice": {
+    "description": "A battle-scarred male warrior survivor in his thirties: a deep, gruff, low voice, grim and resolute, few words, grief held back by anger and duty. He speaks English with a soft, neutral accent, close to the microphone in a quiet room, performing a character in a fantasy game.",
+    "model": "eleven_ttv_v3",
+    "preview": "take-1-1.mp3",
+    "voice_id": "h7WhIMYgIy1LbKeLMIUt"
+  }
+}
