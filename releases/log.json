@@ -2,7 +2,9 @@
   "schemaVersion": 1,
   "unreleased": {
     "added": [],
-    "improved": [],
+    "improved": [
+      "Large matches no longer stutter when workers cannot reach a resource"
+    ],
     "fixed": [],
     "knownIssues": []
   },
