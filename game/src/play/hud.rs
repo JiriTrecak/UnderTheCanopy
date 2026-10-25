@@ -588,6 +588,7 @@ impl Hud {
                 ui.set_value(bar, ratio);
                 ui.set_color(bar, Some(health_color(ratio)));
             }
+            set_mana(ui, cell, e);
             // Its level on the badge; an unspent skill point makes the card glow and
             // motes rise behind it.
             let level = e.combat.as_ref().map_or(1, |c| c.stats.level);
@@ -666,6 +667,7 @@ impl Hud {
                     ui.set_value(bar, ratio);
                     ui.set_color(bar, Some(health_color(ratio)));
                 }
+                set_mana(ui, cell, e);
                 ui.set_checked(cell, i == 0);
                 ui.set_tooltip(
                     cell,
@@ -1785,11 +1787,19 @@ impl Hud {
                         modifiers, count, ..
                     },
                 ) => {
-                    if let Some(&id) = play.selection.ids().get(index) {
+                    if let Some(&id) = play.selection.ids().get(index)
+                        && !play.target_unit(id)
+                    {
                         play.card_click(id, modifiers.shift, *count >= 2);
                     }
                 }
                 ("hero", ActionKind::Click { count, .. }) => {
+                    // While aiming, the hero is the target.
+                    if let Some(&id) = play.heroes().get(index)
+                        && play.target_unit(id)
+                    {
+                        continue;
+                    }
                     play.hero_key(index);
                     if *count >= 2
                         && let Some(&id) = play.heroes().get(index)
@@ -2104,6 +2114,20 @@ pub(super) fn revival(k: &Knowledge, hero: u32) -> Option<Option<u32>> {
         let left = total.saturating_sub(entry.progress);
         Some(Some((f64::from(left) * 0.025).ceil() as u32))
     })
+}
+
+/// A card's small mana bar: shown for casters, hidden otherwise.
+fn set_mana(ui: &mut Ui, cell: NodeId, e: &EntityView) {
+    let Some(bar) = ui.find_in(cell, "mana") else {
+        return;
+    };
+    let magic = e.magic.as_ref();
+    let max = magic.map_or(0, |m| m.max_mana);
+    ui.set_visible(bar, max > 0);
+    if max > 0 {
+        let mana = magic.and_then(|m| m.caster.as_ref()).map_or(0, |c| c.mana);
+        ui.set_value(bar, mana as f32 / max as f32);
+    }
 }
 
 #[cfg(test)]

@@ -426,6 +426,31 @@ fn control_groups_assign_recall_and_centre_on_a_double_press() {
 }
 
 #[test]
+fn an_aim_completes_on_a_clicked_group_card_or_hero_button() {
+    let mut h = Harness::new(vec![]);
+    let hero = h.mine(fx::HERO)[0];
+    let worker = h.mine(fx::WORKER)[0];
+    h.play.select(vec![hero, worker], None);
+    // Nothing aimed: a card click selects as before.
+    assert!(!h.play.target_unit(worker));
+    h.play.activate_id("attack", false);
+    assert!(matches!(h.play.mode, Mode::Target { .. }));
+    // A card (or the hero button) clicked while aiming is the target.
+    assert!(h.play.target_unit(worker));
+    let sent = h.take();
+    assert!(
+        matches!(sent.as_slice(), [Action::Attack { target, .. }] if *target == worker),
+        "{sent:?}"
+    );
+    assert_eq!(h.play.mode, Mode::Idle);
+    assert_eq!(
+        h.play.selection.ids(),
+        [hero, worker],
+        "the selection stays"
+    );
+}
+
+#[test]
 fn attack_mode_issues_attack_move_and_escape_cancels() {
     let mut h = Harness::new(vec![]);
     let hero = h.mine(fx::HERO)[0];

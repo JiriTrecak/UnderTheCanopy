@@ -4,7 +4,8 @@
       "kind": "button", "class": "unit-card", "action": "unit-card",
       "children": [
         { "id": "icon", "kind": "image", "class": "unit-card-icon" },
-        { "id": "health", "kind": "bar", "class": "unit-card-health", "value": 1 }
+        { "id": "health", "kind": "bar", "class": "unit-card-health", "value": 1 },
+        { "id": "mana", "kind": "bar", "class": "unit-card-mana", "value": 1, "visible": false }
       ]
     },
     "queue-tile": {

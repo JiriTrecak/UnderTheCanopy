@@ -1299,6 +1299,31 @@ impl Play {
         }
     }
 
+    /// Completes the aim on unit `id`: a hero button or a group card clicked while an
+    /// ability or an attack is aimed targets that unit, as in Warcraft III. Whether an aim
+    /// took the click (the selection then stays as it is).
+    pub fn target_unit(&mut self, id: u32) -> bool {
+        let Mode::Target { targeting, .. } = self.mode.clone() else {
+            return false;
+        };
+        let k = self.know.clone();
+        let Some(target) = Target::of(&k, id) else {
+            return false;
+        };
+        let cell = CellPoint {
+            x: target.position[0].round().max(0.0) as u32,
+            y: target.position[1].round().max(0.0) as u32,
+            surface: None,
+        };
+        let (commands, keep) =
+            orders::complete(&k, &targeting, Some(&target), Some(&cell), self.mods.shift);
+        self.send(commands);
+        if !keep {
+            self.mode = Mode::Idle;
+        }
+        true
+    }
+
     fn left_click(&mut self, px: Vec2, ground: &dyn Ground) {
         match self.mode.clone() {
             Mode::Place { placement, .. } => {
