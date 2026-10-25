@@ -270,6 +270,18 @@ fn main() -> Result<(), String> {
         worst.0,
         at_worst.join(", ")
     );
+    let mut inner_worst: Vec<(f64, &str)> = per_step
+        .iter()
+        .filter(|(k, _)| !k.starts_with("tick: "))
+        .filter_map(|(k, v)| v.get(worst.2).map(|&c| (c, *k)))
+        .filter(|(c, _)| *c >= 0.05)
+        .collect();
+    inner_worst.sort_by(|a, b| b.0.total_cmp(&a.0));
+    let inner_worst: Vec<String> = inner_worst
+        .iter()
+        .map(|(c, k)| format!("{k} {c:.2}"))
+        .collect();
+    println!("    inner: {}", inner_worst.join(", "));
     println!("tick steps (ms per tick):");
     for (name, costs) in per_step.iter().filter(|(k, _)| k.starts_with("tick: ")) {
         report(&name["tick: ".len()..], costs);
