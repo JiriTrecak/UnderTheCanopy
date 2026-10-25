@@ -94,6 +94,8 @@ fn a_lobby_joined_from_the_screen_plays_a_networked_match() {
             map_revision: "1".into(),
             slot_count: 2,
             guest_name: "Ann".into(),
+            player_id: "Ann1".into(),
+            protocol: canopy_net::wire::PROTOCOL,
         })
         .wait()
         .expect("create a room");
@@ -115,7 +117,7 @@ fn a_lobby_joined_from_the_screen_plays_a_networked_match() {
     assert_eq!(mp.reachable, Some(true), "{}", mp.health_text);
     mp.tab = Tab::Find;
     mp.selected_room = mp.rooms.iter().position(|r| r.id == joined.room.id);
-    mp.go(&[], "Bo");
+    mp.go(&[], "Bo", "Bo1", canopy_net::wire::Role::Player);
     let wait = deadline(20);
     loop {
         wait("the lobby");

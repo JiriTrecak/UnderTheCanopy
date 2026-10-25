@@ -7,6 +7,20 @@
         "children": [ { "id": "text", "kind": "label", "class": "mo-pill" } ]
       },
       {
+        "id": "net", "class": "mo-net", "visible": false,
+        "children": [
+          {
+            "class": "gm mo-net-box",
+            "children": [
+              { "id": "title", "kind": "label", "class": "gm-title mo-net-title" },
+              { "id": "body", "kind": "label", "class": "gm-sub" },
+              { "id": "resume", "kind": "button", "class": "gm-button", "text": "@ui.match-overlay.resume", "action": "overlay.resume" },
+              { "id": "drop", "kind": "button", "class": "gm-button", "text": "@ui.match-overlay.drop", "action": "overlay.drop" }
+            ]
+          }
+        ]
+      },
+      {
         "id": "problem", "class": "scrim mo-panel", "visible": false,
         "children": [
           {

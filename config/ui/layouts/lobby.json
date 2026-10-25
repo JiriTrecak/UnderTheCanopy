@@ -1,5 +1,12 @@
 {
   "templates": {
+    "lb-observer": {
+      "class": "lb-observer",
+      "children": [
+        { "id": "name", "kind": "label", "class": "sk-player-name lb-observer-name" },
+        { "id": "kick", "kind": "button", "class": "mp-link", "text": "@ui.lobby.remove", "action": "lobby.kick-observer" }
+      ]
+    },
     "lb-seat": {
       "class": "lb-seat",
       "children": [
@@ -84,6 +91,17 @@
                 "children": [
                   { "kind": "label", "class": "sk-section", "text": "@ui.lobby.players" },
                   { "id": "seats", "class": "mp-roster", "repeat": "lb-seat" },
+                  { "kind": "label", "class": "sk-section", "text": "@ui.lobby.spectators" },
+                  { "id": "observers", "class": "lb-observers", "repeat": "lb-observer" },
+                  { "id": "observers-empty", "kind": "label", "class": "sk-hint" },
+                  {
+                    "class": "sk-selects",
+                    "children": [
+                      { "id": "places", "kind": "dropdown", "class": "sk-select", "action": "lobby.places", "options": [] },
+                      { "id": "delay", "kind": "dropdown", "class": "sk-select", "action": "lobby.delay", "options": [] }
+                    ]
+                  },
+                  { "id": "move", "kind": "button", "class": "sk-ghost", "text": "@ui.multiplayer.spectate", "action": "lobby.move" },
                   { "id": "status", "kind": "label", "class": "mp-status" }
                 ]
               }

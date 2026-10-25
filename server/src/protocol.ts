@@ -1,14 +1,39 @@
 /**
- * The frozen lobby and lockstep protocol (D10): wire messages, the match config, the
- * client-writable action shapes, chat clean-up and the parts of a multiplayer save the
- * host reads. Copied from the old game's `src/shared/{net,match,types,chat,save}` with
- * everything the server does not use left out; the game client in `crates/net` mirrors it.
+ * The lobby and lockstep protocol (D10, reopened once by D107 as protocol 2,
+ * docs/server.md#protocol-2): wire messages, the match config, the action shapes, chat
+ * clean-up and the parts of a multiplayer save the host reads. The game client in
+ * `crates/net` mirrors it.
  */
 import { z } from "zod";
 
 export const COMMAND_DELAY = 8;
 export const CHECKSUM_EVERY = 8;
 export const TICK_MS = 25;
+
+/** The protocol this server speaks; create and join bodies must name it. */
+export const PROTOCOL = 2;
+/** A player's chosen identifier (D107): letters, digits, `.`, `_`, `-`, up to 32. */
+export const validPlayerId = (x: unknown): x is string => typeof x === "string" && /^[A-Za-z0-9._-]{1,32}$/.test(x);
+
+/** Whether a create or join body may enter: the right protocol and a well-formed player id. */
+export function admit(body: unknown): { status: number; body: { error: string; message?: string } } | null {
+  const o = body && typeof body === "object" ? (body as Record<string, unknown>) : {};
+  if (o.protocol !== PROTOCOL)
+    return { status: 426, body: { error: "update_required", message: "Update Under the Canopy to play online." } };
+  if (!validPlayerId(o.playerId)) return { status: 400, body: { error: "bad_player_id" } };
+  return null;
+}
+
+/** A computer seat's difficulty; Normal travels as no difficulty at all. */
+export type Difficulty = "easy" | "hard";
+export const DIFFICULTIES = ["easy", "normal", "hard"] as const;
+
+/** Spectator places a lobby may offer, and the observer delays it may set (seconds). */
+export const MAX_SPECTATOR_PLACES = 4;
+export const DEFAULT_SPECTATOR_PLACES = 2;
+export const OBSERVER_DELAYS = [0, 60, 120, 180] as const;
+/** Beats of `seconds` of match time. */
+export const beatsOf = (seconds: number) => (seconds * 1000) / TICK_MS;
 
 export type Slot = {
   player: number;
@@ -17,6 +42,8 @@ export type Slot = {
   team?: number;
   hero?: string;
   race?: string;
+  /** Computer seats only; absent for Normal. */
+  difficulty?: Difficulty;
 };
 
 /** Teams and palette colours a lobby offers. */
@@ -27,7 +54,7 @@ export const COLORS = 8;
 export type Seat = "open" | "closed" | "ai";
 
 export type MatchConfig = {
-  v: 1;
+  v: 2;
   roomId: string;
   mapId: string;
   mapRevision: string;
@@ -36,6 +63,8 @@ export type MatchConfig = {
   checksumEvery: number;
   tickMs: typeof TICK_MS;
   slots: Slot[];
+  /** How far spectators stay behind the players, in beats. */
+  observerDelay: number;
   /** Palette colour of each slot, in slot order (presentation only). Kept out of `Slot`,
    * which game versions up to 0.3.1 read strictly. */
   colors?: number[];
@@ -63,7 +92,8 @@ const actors = z
   .max(160)
   .refine((xs) => new Set(xs).size === xs.length, "Duplicate actors");
 
-/** The only client-writable gameplay intentions. */
+/** Every action a commit may hold: the client-writable gameplay intentions, and `away` and
+ * `back`, which only the server writes (a seat dropped from and taken back into the lockstep). */
 export const actionSchema = z.discriminatedUnion("type", [
   z.object({ type: z.literal("abilityAutocast"), actor, binding: z.string().max(64), enabled: z.boolean() }).strict(),
   z.object({
@@ -110,9 +140,16 @@ export const actionSchema = z.discriminatedUnion("type", [
   z.object({ type: z.literal("noop") }).strict(),
   // A map ping for the sender's team; without a position (older games) it marks nothing.
   z.object({ type: z.literal("ping"), position: pointSchema.optional() }).strict(),
+  z.object({ type: z.literal("away") }).strict(),
+  z.object({ type: z.literal("back") }).strict(),
 ]);
 export type Action = z.infer<typeof actionSchema>;
 export const validAction = (value: unknown): value is Action => actionSchema.safeParse(value).success;
+/** Actions only the server writes into commits. */
+const SERVER_ACTIONS = new Set(["away", "back"]);
+/** An action a client may send: any valid one except the server's own. */
+export const validClientAction = (value: unknown): value is Action =>
+  validAction(value) && !SERVER_ACTIONS.has(value.type);
 
 export type WireOutcome = { winner: number | null; defeated: number[] };
 export type Bundle = { tick: number; actions: Action[] };
@@ -120,6 +157,8 @@ export type CommitSlot = { player: number; actions: Action[] };
 export type Commit = { tick: number; slots: CommitSlot[] };
 export type ClientIdentity = { role: "player" | "spectator"; player?: number; name: string };
 export type RoomState = "waiting" | "playing" | "ended" | "desynced";
+
+export type Observer = { id: string; name: string; playerId: string };
 
 export type RoomView = {
   id: string;
@@ -137,14 +176,25 @@ export type RoomView = {
     kind?: Seat | "human";
     team?: number;
     color?: number;
+    /** Human seats: the player's chosen id. */
+    playerId?: string;
+    /** Computer seats: `easy` or `hard`; absent for Normal. */
+    difficulty?: Difficulty;
+    /** During a match: the seat's player was dropped or left. */
+    away?: true;
   }[];
+  /** How many spectators there are (older games read only this). */
   spectators: number;
+  spectatorPlaces: number;
+  observers: Observer[];
+  /** Seconds. */
+  observerDelay: number;
   tick?: number;
   inputDelayMs?: number;
 };
 
-export type CreateRoom = { name: string; mapId: string; mapRevision: string; slotCount: number; guestName: string };
-export type JoinRoom = { guestName: string; role: "player" | "spectator" };
+export type CreateRoom = { name: string; mapId: string; mapRevision: string; slotCount: number; guestName: string; playerId: string; protocol?: number };
+export type JoinRoom = { guestName: string; role: "player" | "spectator"; playerId: string; protocol?: number };
 export type ChatMessage = { name: string; player: number | null; text: string };
 
 export type ClientMsg =
@@ -152,7 +202,15 @@ export type ClientMsg =
   | { type: "chat"; text: string }
   | { type: "selectHero"; hero: string; player?: number }
   | { type: "selectRace"; race: string; player?: number }
-  | { type: "setSeat"; player: number; seat: Seat }
+  | { type: "setSeat"; player: number; seat: Seat; difficulty?: (typeof DIFFICULTIES)[number] }
+  | { type: "setSpectatorPlaces"; count: number }
+  | { type: "setObserverDelay"; seconds: number }
+  | { type: "kick"; player?: number; observer?: string }
+  | { type: "takeSeat"; player: number }
+  | { type: "spectate" }
+  | { type: "dropPlayer"; player: number }
+  | { type: "pause" }
+  | { type: "resume" }
   | { type: "selectTeam"; team: number; player?: number }
   | { type: "selectColor"; color: number; player?: number }
   | { type: "startMatch" }
@@ -173,6 +231,13 @@ export type ServerMsg =
   | { type: "restart"; config: MatchConfig; you: ClientIdentity }
   | { type: "go"; tick: number }
   | { type: "commit"; tick: number; slots: CommitSlot[] }
+  | { type: "history"; through: number; commits: Commit[] }
+  | { type: "waiting"; players: number[]; seconds: number }
+  | { type: "dropped" }
+  | { type: "kicked" }
+  | { type: "paused"; player: number; name: string; pausesLeft: number }
+  | { type: "resuming"; seconds: number }
+  | { type: "resumed" }
   | { type: "hashOk"; tick: number }
   | { type: "desync"; tick: number; hashes: { player: number; checksum: number }[] }
   | { type: "ended"; outcome: WireOutcome; replayId: string }
@@ -213,7 +278,8 @@ const pipelineSchema = z
 function parseMatchConfig(raw: unknown): MatchConfig | null {
   if (!raw || typeof raw !== "object") return null;
   const o = raw as Record<string, unknown>;
-  if (o.v !== 1) return null;
+  // Saves from protocol 1 carry `v: 1`; their config reads the same, without a delay.
+  if (o.v !== 1 && o.v !== 2) return null;
   if (typeof o.roomId !== "string" || typeof o.mapId !== "string" || typeof o.mapRevision !== "string") return null;
   if (typeof o.seed !== "number" || typeof o.delay !== "number" || typeof o.checksumEvery !== "number") return null;
   if (typeof o.tickMs !== "number" || !Array.isArray(o.slots) || o.slots.length < 1) return null;
@@ -233,11 +299,12 @@ function parseMatchConfig(raw: unknown): MatchConfig | null {
       ...(typeof r.race === "string" ? { race: r.race } : {}),
       ...(typeof r.hero === "string" ? { hero: r.hero } : {}),
       ...(typeof r.team === "number" ? { team: r.team } : {}),
+      ...(r.kind === "ai" && (r.difficulty === "easy" || r.difficulty === "hard") ? { difficulty: r.difficulty } : {}),
       name: typeof r.name === "string" ? r.name : undefined,
     });
   }
   return {
-    v: 1,
+    v: 2,
     roomId: o.roomId,
     mapId: o.mapId,
     mapRevision: o.mapRevision,
@@ -246,6 +313,7 @@ function parseMatchConfig(raw: unknown): MatchConfig | null {
     checksumEvery: o.checksumEvery,
     tickMs: o.tickMs as MatchConfig["tickMs"],
     slots,
+    observerDelay: typeof o.observerDelay === "number" && Number.isInteger(o.observerDelay) && o.observerDelay >= 0 ? o.observerDelay : 0,
     ...(Array.isArray(o.colors) && o.colors.length === slots.length && o.colors.every((c) => Number.isInteger(c) && c >= 0 && c < COLORS)
       ? { colors: o.colors as number[] }
       : {}),

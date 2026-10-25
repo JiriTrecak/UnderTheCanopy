@@ -21,6 +21,7 @@ use crate::{
 };
 use canopy_content::{Content, map::UtcMap, placement::Owner};
 use serde::{Deserialize, Serialize};
+use std::collections::{BTreeMap, BTreeSet};
 use std::sync::Arc;
 
 /// A command scheduled for a tick by a player. Sequence numbers order a player's commands
@@ -741,10 +742,18 @@ impl World {
         let _s = step!("victory");
         if self.rules == victory::Rules::Skirmish {
             let teams = self.vision.teams().clone();
+            let present: BTreeSet<u8> = self
+                .setup
+                .slots
+                .iter()
+                .filter(|s| s.kind == crate::setup::SlotKind::Human)
+                .map(|s| s.player)
+                .filter(|p| !self.state.away.contains(p))
+                .collect();
             let mut ctx =
                 self.economy
                     .ctx(&mut self.state, &self.catalog, &mut self.motion.spatial);
-            if victory::advance(&mut ctx, &teams) {
+            if victory::advance(&mut ctx, &teams, &present) {
                 self.motion.spatial.sync_static(&self.state);
                 self.observe();
             }
@@ -778,7 +787,17 @@ impl World {
         self.applied.clear();
         for command in due {
             let owner = Owner::Player(command.player);
-            let result = self.apply(owner, &command.action);
+            let result = match &command.action {
+                Action::Away => {
+                    self.state.away.insert(command.player);
+                    Ok(())
+                }
+                Action::Back => {
+                    self.state.away.remove(&command.player);
+                    Ok(())
+                }
+                action => self.apply_controlled(owner, action),
+            };
             let accepted = result.is_ok();
             if let Err(reason) = result {
                 self.state.fact(owner, FactKind::Error, reason);
@@ -797,6 +816,61 @@ impl World {
                 accepted,
             });
         }
+    }
+
+    /// The away allies whose colonies `owner` commands (D107 shared control): every away
+    /// player of its team, while `owner` is a human playing on.
+    pub fn commanded(&self, owner: Owner) -> Vec<Owner> {
+        let Owner::Player(player) = owner else {
+            return Vec::new();
+        };
+        let human = self
+            .setup
+            .slots
+            .iter()
+            .any(|s| s.player == player && s.kind == crate::setup::SlotKind::Human);
+        if !human || self.state.away.contains(&player) {
+            return Vec::new();
+        }
+        self.state
+            .away
+            .iter()
+            .map(|&p| Owner::Player(p))
+            .filter(|&o| self.combat.teams.relation(owner, o) == crate::teams::Relation::Ally)
+            .collect()
+    }
+
+    /// Applies `owner`'s command, acting for the away allies it commands: the actors of
+    /// each such ally as that ally's command (paid from its stock), the rest as `owner`'s.
+    fn apply_controlled(&mut self, owner: Owner, action: &Action) -> Result<(), String> {
+        let commanded = self.commanded(owner);
+        if commanded.is_empty() {
+            return self.apply(owner, action);
+        }
+        let mut parts: BTreeMap<Owner, Vec<crate::action::Actor>> = BTreeMap::new();
+        for actor in action.actors() {
+            let acting = self
+                .state
+                .entities
+                .get(EntityId(actor))
+                .map(|e| e.owner)
+                .filter(|o| commanded.contains(o))
+                .unwrap_or(owner);
+            parts.entry(acting).or_default().push(actor);
+        }
+        if parts.len() <= 1 {
+            let acting = parts.keys().next().copied().unwrap_or(owner);
+            return self.apply(acting, action);
+        }
+        let mut result = Ok(());
+        for (acting, actors) in parts {
+            if let Some(part) = action.with_actors(actors)
+                && let Err(reason) = self.apply(acting, &part)
+            {
+                result = Err(reason);
+            }
+        }
+        result
     }
 
     fn apply(&mut self, owner: Owner, action: &Action) -> Result<(), String> {
@@ -1032,6 +1106,7 @@ impl World {
 
     /// What `owner` sees.
     pub fn view(&self, owner: Owner) -> View {
+        let commanded = self.commanded(owner);
         let mut view = View::build(
             &self.state,
             &self.catalog,
@@ -1040,9 +1115,19 @@ impl World {
             &self.sight,
             &self.economy,
             owner,
+            &commanded,
         );
         self.add_combat(&mut view, Some(owner));
         view.defeated = self.defeated_players();
+        view.away = self.state.away.iter().map(|&p| Owner::Player(p)).collect();
+        view.commanded = commanded
+            .into_iter()
+            .map(|o| {
+                let colony =
+                    crate::economy::view::colony(&self.state, &self.catalog, &self.economy, o);
+                (o, colony)
+            })
+            .collect();
         view
     }
 
@@ -1075,6 +1160,7 @@ impl World {
         );
         self.add_combat(&mut view, None);
         view.defeated = self.defeated_players();
+        view.away = self.state.away.iter().map(|&p| Owner::Player(p)).collect();
         view.ai = self.ai_summaries();
         view
     }

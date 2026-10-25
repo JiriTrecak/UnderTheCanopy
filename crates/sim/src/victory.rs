@@ -52,12 +52,27 @@ pub fn defeated(
 
 /// Step 11 (skirmish): defeated colonies are cleared away and the match ends when at most
 /// one team is left. Returns whether anything changed (sight needs another pass).
-pub fn advance(ctx: &mut Ctx, teams: &Teams) -> bool {
+///
+/// A player who left a networked match (`State::away`) is defeated too unless a human
+/// ally still plays on (`present`: the human players not away), who then commands the
+/// colony (D107).
+pub fn advance(ctx: &mut Ctx, teams: &Teams, present: &BTreeSet<u8>) -> bool {
     let owners = teams.owners().to_vec();
+    let standing = |o: Owner| has_buildings(ctx.state, ctx.catalog, ctx.index, o);
+    let deserted = |o: Owner| {
+        let Owner::Player(p) = o else {
+            return false;
+        };
+        ctx.state.away.contains(&p)
+            && !present.iter().any(|&h| {
+                let ally = Owner::Player(h);
+                h != p && teams.relation(o, ally) == crate::teams::Relation::Ally && standing(ally)
+            })
+    };
     let defeated: Vec<Owner> = owners
         .iter()
         .copied()
-        .filter(|&o| !has_buildings(ctx.state, ctx.catalog, ctx.index, o))
+        .filter(|&o| !standing(o) || deserted(o))
         .collect();
     if defeated.is_empty() {
         return false;

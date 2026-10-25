@@ -1,4 +1,5 @@
-//! The frozen wire format of the match server (docs/decisions.md D10).
+//! The wire format of the match server: the old game's protocol (docs/decisions.md D10),
+//! reopened once as protocol 2 (D107, docs/server.md "Protocol 2").
 //!
 //! Every type mirrors the old game's `src/shared/net/wire.ts` and `src/shared/match/match.ts`.
 //! Client messages serialize to exactly the JSON the TypeScript client sends, key order
@@ -18,12 +19,21 @@
 //!   in room views only while the room waits; `tick` is absent from a room view until a
 //!   match starts; probes go to players only and are echoed only for nonces of at most
 //!   128 UTF-16 units.
-//! - A seat that connects to a running match (spectator or reconnect) receives `start`
-//!   but no earlier commits, so it cannot rebuild the match.
+//! - Protocol 2: a seat that connects to a running match (spectator or reconnect)
+//!   receives `start`, then `history` with the commits it missed, and catches up.
 
 use canopy_sim::{Action, Slot};
 use serde::{Deserialize, Deserializer, Serialize, Serializer};
 use serde_json::Value;
+
+/// The protocol this client speaks (D107); the server refuses rooms to older games.
+pub const PROTOCOL: u32 = 2;
+/// Most spectator places a lobby offers.
+pub const SPECTATOR_PLACES: u32 = 4;
+/// The observer delays a host may choose, seconds.
+pub const OBSERVER_DELAYS: [u32; 4] = [0, 60, 120, 180];
+/// Pauses each player has in a match.
+pub const PAUSES: u32 = 3;
 
 /// Milliseconds per lockstep beat (`TICK_MS`); the simulation's 40 Hz tick (D3).
 pub const TICK_MS: u32 = 25;
@@ -158,6 +168,26 @@ pub struct Seat {
     /// Server-measured round trip of this seat's connection.
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub round_trip_ms: Option<u32>,
+    /// A computer seat's level (Normal when absent).
+    #[serde(default, skip_serializing_if = "canopy_sim::Difficulty::is_normal")]
+    pub difficulty: canopy_sim::Difficulty,
+    /// A human seat's Player ID (D107).
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub player_id: Option<String>,
+    /// The player left the match under way (D107).
+    #[serde(default, skip_serializing_if = "std::ops::Not::not")]
+    pub away: bool,
+}
+
+/// A spectator in a room view.
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct Observer {
+    /// A short public id (never the token), for `kick`.
+    pub id: String,
+    pub name: String,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub player_id: Option<String>,
 }
 
 /// What the lobby shows of a room (`RoomView`).
@@ -178,13 +208,22 @@ pub struct RoomView {
     /// The input buffer the match uses (or would use if started now).
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub input_delay_ms: Option<u32>,
+    /// How many spectators the lobby takes (0 to 4).
+    #[serde(default)]
+    pub spectator_places: u32,
+    /// The spectators, in joining order.
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    pub observers: Vec<Observer>,
+    /// How far spectators see behind the players, seconds.
+    #[serde(default)]
+    pub observer_delay: u32,
 }
 
 /// The frozen start of a networked match (`MatchConfig`), identical on every peer.
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub struct MatchConfig {
-    /// Always 1.
+    /// 2 from protocol 2 on.
     pub v: u32,
     pub room_id: String,
     pub map_id: String,
@@ -202,6 +241,9 @@ pub struct MatchConfig {
     /// Campaign carry-over of the old game; never set by the match server.
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub company: Option<Box<Value>>,
+    /// Beats spectators stay behind the players.
+    #[serde(default)]
+    pub observer_delay: u32,
 }
 
 impl MatchConfig {
@@ -224,6 +266,9 @@ pub struct CreateRoom {
     /// 2 to 8 seats (the server clamps).
     pub slot_count: u32,
     pub guest_name: String,
+    pub player_id: String,
+    /// [`PROTOCOL`].
+    pub protocol: u32,
 }
 
 /// Body of `POST /api/rooms/:id/join` (`JoinRoom`).
@@ -232,6 +277,9 @@ pub struct CreateRoom {
 pub struct JoinRoom {
     pub guest_name: String,
     pub role: Role,
+    pub player_id: String,
+    /// [`PROTOCOL`].
+    pub protocol: u32,
 }
 
 /// Reply to creating or joining a room (`JoinResult`).
@@ -247,6 +295,9 @@ pub struct Joined {
 pub struct Health {
     pub ok: bool,
     pub version: String,
+    /// The protocol the server speaks; absent before protocol 2.
+    #[serde(default)]
+    pub protocol: Option<u32>,
 }
 
 /// What a client reports when it is loaded: the engine build and content it simulates
@@ -328,10 +379,42 @@ pub enum ClientMsg {
         #[serde(default, skip_serializing_if = "Option::is_none")]
         player: Option<u8>,
     },
-    /// Host: open, close or hand a seat to the computer (never `Human`).
+    /// Host: open, close or hand a seat to the computer (never `Human`), with the
+    /// computer's level.
     SetSeat {
         player: u8,
         seat: SeatKind,
+        #[serde(default, skip_serializing_if = "canopy_sim::Difficulty::is_normal")]
+        difficulty: canopy_sim::Difficulty,
+    },
+    /// Host: how many spectators the lobby takes.
+    SetSpectatorPlaces {
+        count: u32,
+    },
+    /// Host: how far spectators see behind (one of [`OBSERVER_DELAYS`]).
+    SetObserverDelay {
+        seconds: u32,
+    },
+    /// Host: removes a seated player or a spectator from the lobby.
+    Kick {
+        #[serde(default, skip_serializing_if = "Option::is_none")]
+        player: Option<u8>,
+        #[serde(default, skip_serializing_if = "Option::is_none")]
+        observer: Option<String>,
+    },
+    /// Moves the sender to an open seat (while the lobby waits).
+    TakeSeat {
+        player: u8,
+    },
+    /// Moves the sender to a free spectator place (while the lobby waits).
+    Spectate {},
+    /// Pauses the match (each player has [`PAUSES`]).
+    Pause {},
+    /// Resumes a paused match.
+    Resume {},
+    /// Drops a seat the match has waited 30 s for.
+    DropPlayer {
+        player: u8,
     },
     StartMatch,
     /// Declared by the protocol; the server ignores it and the old client never sends it.
@@ -415,6 +498,32 @@ pub enum ServerMsg {
         code: String,
         message: String,
     },
+    /// The commits after the socket's `since` that hold actions, up to `through`; the beats
+    /// between them were empty for every slot. Sent after `start` to a seat that binds
+    /// during a match.
+    History {
+        through: u32,
+        commits: Vec<Commit>,
+    },
+    /// The beats wait for these seats (`[]` once they flow again).
+    Waiting {
+        players: Vec<u8>,
+        seconds: u32,
+    },
+    #[serde(rename_all = "camelCase")]
+    Paused {
+        player: Option<u8>,
+        name: String,
+        pauses_left: u32,
+    },
+    Resuming {
+        seconds: u32,
+    },
+    Resumed {},
+    /// The host removed this connection from the lobby.
+    Kicked {},
+    /// The others dropped this seat; it may rejoin.
+    Dropped {},
 }
 
 impl ClientMsg {
@@ -540,8 +649,50 @@ mod tests {
                 ClientMsg::SetSeat {
                     player: 1,
                     seat: SeatKind::Ai,
+                    difficulty: canopy_sim::Difficulty::Normal,
                 },
                 r#"{"type":"setSeat","player":1,"seat":"ai"}"#,
+            ),
+            (
+                ClientMsg::SetSeat {
+                    player: 2,
+                    seat: SeatKind::Ai,
+                    difficulty: canopy_sim::Difficulty::Hard,
+                },
+                r#"{"type":"setSeat","player":2,"seat":"ai","difficulty":"hard"}"#,
+            ),
+            (
+                ClientMsg::SetSpectatorPlaces { count: 3 },
+                r#"{"type":"setSpectatorPlaces","count":3}"#,
+            ),
+            (
+                ClientMsg::SetObserverDelay { seconds: 120 },
+                r#"{"type":"setObserverDelay","seconds":120}"#,
+            ),
+            (
+                ClientMsg::Kick {
+                    player: Some(1),
+                    observer: None,
+                },
+                r#"{"type":"kick","player":1}"#,
+            ),
+            (
+                ClientMsg::Kick {
+                    player: None,
+                    observer: Some("o2".into()),
+                },
+                r#"{"type":"kick","observer":"o2"}"#,
+            ),
+            (
+                ClientMsg::TakeSeat { player: 2 },
+                r#"{"type":"takeSeat","player":2}"#,
+            ),
+            (ClientMsg::Spectate {}, r#"{"type":"spectate"}"#),
+            (ClientMsg::Pause {}, r#"{"type":"pause"}"#),
+            (ClientMsg::Resume {}, r#"{"type":"resume"}"#),
+            (
+                ClientMsg::DropPlayer { player: 1 },
+                r#"{"type":"dropPlayer","player":1}"#,
             ),
             (ClientMsg::StartMatch, r#"{"type":"startMatch"}"#),
             (
@@ -627,22 +778,29 @@ mod tests {
         json!({
             "id": "1", "state": "waiting", "name": "Ann's room", "mapId": "map.a", "host": "Ann",
             "slots": [
-                {"player": 0, "name": "Ann", "race": "race.a", "hero": "unit.h1", "roundTripMs": 31},
+                {"player": 0, "name": "Ann", "race": "race.a", "hero": "unit.h1", "roundTripMs": 31, "playerId": "Ann1"},
                 {"player": 1, "name": null},
+                {"player": 2, "name": "Computer", "kind": "ai", "difficulty": "hard"},
+                {"player": 3, "name": "Bo", "kind": "human", "away": true},
             ],
-            "spectators": 0,
+            "spectators": 1,
             "inputDelayMs": 200,
+            "spectatorPlaces": 2,
+            "observers": [{"id": "o1", "name": "Cy", "playerId": "cy"}],
+            "observerDelay": 120,
         })
     }
 
     fn config_json() -> Value {
         json!({
-            "v": 1, "roomId": "1", "mapId": "map.a", "mapRevision": "r1", "seed": 3_000_000_000u32,
+            "v": 2, "roomId": "1", "mapId": "map.a", "mapRevision": "r1", "seed": 3_000_000_000u32,
             "delay": 8, "checksumEvery": 8, "tickMs": 25,
             "slots": [
                 {"player": 0, "kind": "human", "name": "Ann", "race": "race.a", "hero": "unit.h1"},
                 {"player": 1, "kind": "human", "name": "Bo", "race": "race.a"},
+                {"player": 2, "kind": "ai", "difficulty": "easy"},
             ],
+            "observerDelay": 4800,
         })
     }
 
@@ -671,6 +829,17 @@ mod tests {
             json!({"type": "load", "save": {"v": 9}, "you": player}),
             json!({"type": "error", "code": "CONTENT_MISMATCH", "message": "Players have different engine or published ability content."}),
             json!({"type": "error", "code": "bad_json", "message": "bad json"}),
+            json!({"type": "history", "through": 40, "commits": [
+                {"tick": 12, "slots": [{"player": 0, "actions": [{"type": "noop"}]}, {"player": 1, "actions": []}]},
+                {"tick": 30, "slots": [{"player": 0, "actions": []}, {"player": 1, "actions": [{"type": "away"}]}]},
+            ]}),
+            json!({"type": "waiting", "players": [1], "seconds": 7}),
+            json!({"type": "paused", "player": 0, "name": "Ann", "pausesLeft": 2}),
+            json!({"type": "paused", "player": null, "name": "Referee", "pausesLeft": 0}),
+            json!({"type": "resuming", "seconds": 3}),
+            json!({"type": "resumed"}),
+            json!({"type": "kicked"}),
+            json!({"type": "dropped"}),
         ];
         for case in cases {
             let message: ServerMsg =
@@ -694,6 +863,8 @@ mod tests {
         assert_eq!(setup.slots[0].kind, SlotKind::Human);
         assert_eq!(setup.slots[0].hero.as_deref(), Some("unit.h1"));
         assert_eq!(setup.slots[1].hero, None);
+        assert_eq!(setup.slots[2].difficulty, canopy_sim::Difficulty::Easy);
+        assert_eq!(config.observer_delay, 4800);
     }
 
     #[test]
@@ -717,18 +888,22 @@ mod tests {
             map_revision: "r1".into(),
             slot_count: 2,
             guest_name: "Ann".into(),
+            player_id: "Ann1".into(),
+            protocol: PROTOCOL,
         };
         assert_eq!(
             serde_json::to_string(&create).unwrap(),
-            r#"{"name":"Ann's room","mapId":"map.a","mapRevision":"r1","slotCount":2,"guestName":"Ann"}"#
+            r#"{"name":"Ann's room","mapId":"map.a","mapRevision":"r1","slotCount":2,"guestName":"Ann","playerId":"Ann1","protocol":2}"#
         );
         let join = JoinRoom {
             guest_name: "Bo".into(),
             role: Role::Spectator,
+            player_id: "Bo".into(),
+            protocol: PROTOCOL,
         };
         assert_eq!(
             serde_json::to_string(&join).unwrap(),
-            r#"{"guestName":"Bo","role":"spectator"}"#
+            r#"{"guestName":"Bo","role":"spectator","playerId":"Bo","protocol":2}"#
         );
         let joined: Joined = serde_json::from_value(
             json!({"token": "t", "room": room_json(), "you": {"role": "player", "player": 0, "name": "Ann"}}),

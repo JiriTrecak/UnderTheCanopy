@@ -1,6 +1,6 @@
 //! Rust clients against the match server (`server/`, docs/server.md), run locally:
 //! lobby, start, lockstep with simulations driven from the server's commits, desync
-//! hashes, chat, spectators, disconnects and the end of a match.
+//! hashes, chat, spectators, leaving, rejoining, late spectators and the end of a match.
 //!
 //! Needs node and the server's `node_modules` (`npm ci` in `server/`); skipped otherwise.
 
@@ -49,7 +49,22 @@ impl Peer {
         wait_for(&mut peer.session, &mut peer.events, "welcome", |e| {
             matches!(e, Event::Room(_)).then_some(())
         });
+        // A match under way starts at once (protocol 2): `start` came with `welcome`.
+        let started = peer.events.iter().find_map(|e| match e {
+            Event::Started { config, .. } => Some(config.setup()),
+            _ => None,
+        });
+        if let Some(setup) = started {
+            peer.start(&setup);
+        }
         peer
+    }
+
+    fn start(&mut self, setup: &canopy_sim::MatchSetup) {
+        let world = fixture::world(setup);
+        self.session
+            .ready(self.content.clone(), BUILD, world.tick());
+        self.world = Some(world);
     }
 
     /// Takes events; builds the world on `start` and reports ready; simulates every beat
@@ -57,10 +72,7 @@ impl Peer {
     fn pump(&mut self, limit: u32) {
         for event in self.session.poll() {
             if let Event::Started { config, .. } = &event {
-                let world = fixture::world(&config.setup());
-                self.session
-                    .ready(self.content.clone(), BUILD, world.tick());
-                self.world = Some(world);
+                self.start(&config.setup());
             }
             self.events.push(event);
         }
@@ -139,6 +151,8 @@ fn create(net: &Net, name: &str) -> Joined {
         map_revision: "1".into(),
         slot_count: 2,
         guest_name: name.into(),
+        player_id: "test".into(),
+        protocol: canopy_net::wire::PROTOCOL,
     })
     .wait()
     .expect("create a room")
@@ -150,6 +164,8 @@ fn join(net: &Net, room: &str, name: &str, role: Role) -> Joined {
         &JoinRoom {
             guest_name: name.into(),
             role,
+            player_id: name.into(),
+            protocol: canopy_net::wire::PROTOCOL,
         },
     )
     .wait()
@@ -181,14 +197,16 @@ fn two_players_and_two_computers_play_a_team_match() {
             map_revision: "1".into(),
             slot_count: 4,
             guest_name: "Ann".into(),
+            player_id: "test".into(),
+            protocol: canopy_net::wire::PROTOCOL,
         })
         .wait()
         .unwrap();
     let id = host.room.id.clone();
     let mut a = Peer::new("Ann", &net, &host);
     // Seats 1 and 2 go to the computer before Bo arrives, so Bo takes seat 3.
-    a.session.set_seat(1, SeatKind::Ai);
-    a.session.set_seat(2, SeatKind::Ai);
+    a.session.set_seat(1, SeatKind::Ai, Default::default());
+    a.session.set_seat(2, SeatKind::Ai, Default::default());
     wait_for(
         &mut a.session,
         &mut a.events,
@@ -423,7 +441,7 @@ fn two_players_and_a_spectator_play_in_lockstep() {
 }
 
 #[test]
-fn a_dropped_player_no_longer_holds_the_match() {
+fn a_player_who_leaves_is_away_and_the_match_goes_on() {
     let Some(server) = MatchServer::start() else {
         return;
     };
@@ -434,29 +452,52 @@ fn a_dropped_player_no_longer_holds_the_match() {
     let mut b = Peer::new("Bo", &net, &guest);
     start(&mut [&mut a, &mut b]);
     run(&mut [&mut a, &mut b], 40, |_| {});
-    b.session.close();
-    wait_for(&mut b.session, &mut b.events, "closed", |e| {
-        matches!(e, Event::Closed { .. }).then_some(())
-    });
-    assert_eq!(b.session.phase(), Phase::Closed);
-    assert!(b.session.next_turn(b.tick()).is_none());
-    // The server stops waiting for Bo; Ann plays on, still hashed and confirmed.
+    // Leaving on purpose (protocol 2): dropped at once, `away` in Bo's slot.
+    let Peer { session, .. } = b;
+    session.leave();
     run(&mut [&mut a], 160, |_| {});
     let deadline = Instant::now() + Duration::from_secs(10);
     while !a.hash_oks().contains(&160) {
         a.pump(160);
-        assert!(Instant::now() < deadline, "no hashOk after the drop");
+        assert!(Instant::now() < deadline, "no hashOk after the leave");
         std::thread::sleep(Duration::from_millis(2));
     }
     a.assert_no_trouble();
-    assert!(
-        a.turns.values().flatten().all(|q| q.player == 0),
-        "Bo's slot stays in commits, empty"
-    );
+    let bo: Vec<_> = a
+        .turns
+        .values()
+        .flatten()
+        .filter(|q| q.player == 1)
+        .map(|q| q.action.clone())
+        .collect();
+    assert_eq!(bo, [canopy_sim::Action::Away], "only the server's notice");
+    assert!(a.world().state().away.contains(&1));
+}
+
+/// Pumps `peers` until each has simulated `beats` beats, then checks they agree.
+fn agree(peers: &mut [&mut Peer], beats: u32) {
+    run(peers, beats, |_| {});
+    for pair in peers.windows(2) {
+        let (x, y) = (&pair[0], &pair[1]);
+        let shared: Vec<u32> = x
+            .fingerprints
+            .keys()
+            .filter(|t| y.fingerprints.contains_key(t))
+            .copied()
+            .collect();
+        assert!(!shared.is_empty(), "{} and {} share beats", x.name, y.name);
+        for t in shared {
+            assert_eq!(
+                x.fingerprints[&t], y.fingerprints[&t],
+                "{} and {} at beat {t}",
+                x.name, y.name
+            );
+        }
+    }
 }
 
 #[test]
-fn a_spectator_joining_a_running_match_cannot_catch_up() {
+fn a_player_whose_game_restarts_rejoins_and_catches_up() {
     let Some(server) = MatchServer::start() else {
         return;
     };
@@ -466,23 +507,47 @@ fn a_spectator_joining_a_running_match_cannot_catch_up() {
     let mut a = Peer::new("Ann", &net, &host);
     let mut b = Peer::new("Bo", &net, &guest);
     start(&mut [&mut a, &mut b]);
-    run(&mut [&mut a, &mut b], 30, |_| {});
+    run(&mut [&mut a, &mut b], 60, |_| {});
+    // Bo's game goes away without leaving (a crash): the beats wait for Bo.
+    b.session.close();
+    drop(b);
+    // A new game rejoins with the kept seat, replays every commit and plays on.
+    let mut again = Peer {
+        name: "Bo again",
+        session: net.rejoin(&host.room.id, &guest.token),
+        world: None,
+        events: Vec::new(),
+        turns: BTreeMap::new(),
+        fingerprints: BTreeMap::new(),
+        content: identity("fixture"),
+    };
+    agree(&mut [&mut a, &mut again], 300);
+    a.assert_no_trouble();
+    again.assert_no_trouble();
+    assert!(again.world().state().away.is_empty(), "Bo never left");
+}
+
+#[test]
+fn a_spectator_joining_a_running_match_catches_up() {
+    let Some(server) = MatchServer::start() else {
+        return;
+    };
+    let net = server.net();
+    let host = create(&net, "Ann");
+    let guest = join(&net, &host.room.id, "Bo", Role::Player);
+    let mut a = Peer::new("Ann", &net, &host);
+    let mut b = Peer::new("Bo", &net, &guest);
+    start(&mut [&mut a, &mut b]);
+    run(&mut [&mut a, &mut b], 80, |_| {});
     let late = join(&net, &host.room.id, "Cy", Role::Spectator);
     let mut c = Peer::new("Cy", &net, &late);
-    let deadline = Instant::now() + Duration::from_secs(20);
-    while !c.events.iter().any(|e| matches!(e, Event::Stopped { .. })) {
-        for peer in [&mut a, &mut b, &mut c] {
-            peer.pump(400);
-        }
-        assert!(
-            Instant::now() < deadline,
-            "the late spectator was not stopped"
-        );
-        std::thread::sleep(Duration::from_millis(2));
-    }
-    assert_eq!(c.session.phase(), Phase::Stopped);
-    assert_eq!(c.tick(), 0, "nothing simulated from an incomplete history");
+    agree(&mut [&mut a, &mut b, &mut c], 240);
+    assert!(
+        c.fingerprints.contains_key(&1),
+        "Cy simulated from the first beat"
+    );
     a.assert_no_trouble();
+    c.assert_no_trouble();
 }
 
 #[test]

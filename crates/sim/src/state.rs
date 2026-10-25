@@ -135,6 +135,10 @@ pub struct State {
     /// What each owner may not build, train or research (`campaign`).
     #[serde(default, skip_serializing_if = "std::collections::BTreeMap::is_empty")]
     pub tech: crate::campaign::TechLimits,
+    /// Players who left a networked match and have not come back (D107, `Action::Away`):
+    /// their human allies command their colony.
+    #[serde(default, skip_serializing_if = "std::collections::BTreeSet::is_empty")]
+    pub away: std::collections::BTreeSet<u8>,
 }
 
 /// A player's ping on the map, seen by their team.
@@ -174,6 +178,7 @@ impl State {
             tunnels: Default::default(),
             campaign: None,
             tech: BTreeMap::new(),
+            away: Default::default(),
         }
     }
 

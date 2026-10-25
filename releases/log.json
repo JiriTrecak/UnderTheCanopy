@@ -2,7 +2,12 @@
   "schemaVersion": 1,
   "unreleased": {
     "added": [
-      "Choose each computer player's difficulty in skirmish, and the campaign's difficulty on the campaign screen (every level plays alike for now)"
+      "Choose each computer player's difficulty in skirmish, and the campaign's difficulty on the campaign screen (every level plays alike for now)",
+      "Online matches: pause (three per player), and a match waits for a player who drops; after 30 s the others can carry on without them",
+      "Online matches: rejoin a match after your game restarts or your connection drops; it catches up and you play on",
+      "Online matches: when a player leaves, their allies take over their colony and spend its goods; with no ally left, the leaver is defeated",
+      "Online lobbies: join as a spectator, watch matches already under way, set spectator places and an observer delay, remove players, and set each computer's difficulty",
+      "A Player ID in Settings (Network), shown to other players and kept with your matches and reports"
     ],
     "improved": [
       "Large matches no longer stutter when workers cannot reach a resource"

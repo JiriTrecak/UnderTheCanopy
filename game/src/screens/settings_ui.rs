@@ -196,6 +196,11 @@ impl SettingsUi {
                 "settings/network/server",
                 settings.multiplayer.server.as_deref().unwrap_or(""),
             );
+            widgets::text(
+                ui,
+                "settings/network/player-id",
+                &settings.multiplayer.player_id,
+            );
             self.fresh = false;
         }
         let server_note =
@@ -470,6 +475,14 @@ impl SettingsUi {
                     let t = t.trim();
                     settings.multiplayer.server = (!t.is_empty()).then(|| t.to_string());
                     c.server = true;
+                }
+            }
+            "settings.player-id" => {
+                if let Some(t) = text(&action.kind) {
+                    let id = crate::settings::clean_player_id(&t);
+                    if !id.is_empty() {
+                        settings.multiplayer.player_id = id;
+                    }
                 }
             }
             "settings.server-default" => {

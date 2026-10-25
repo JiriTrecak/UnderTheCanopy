@@ -5,11 +5,11 @@ import { test } from "node:test";
 import { MatchHost } from "../src/host";
 import type { ClientMsg, ServerMsg } from "../src/protocol";
 
-const draft = { name: "room", mapId: "map", mapRevision: "1", slotCount: 4, guestName: "Ann" };
+const draft = { name: "room", mapId: "map", mapRevision: "1", slotCount: 4, guestName: "Ann", playerId: "ann" };
 
 /** A room with its host connected; `inbox` collects what each token receives. */
 function lobby() {
-  const host = new MatchHost();
+  const host = new MatchHost(undefined, { log: () => {} });
   const created = host.create(draft);
   const match = host.get(created.room.id)!;
   const inbox = new Map<string, ServerMsg[]>();
@@ -27,14 +27,14 @@ test("the host sets seats; a joining player takes the first open one", () => {
   const { match, hostToken, say } = lobby();
   say(hostToken, { type: "setSeat", player: 1, seat: "ai" });
   say(hostToken, { type: "setSeat", player: 2, seat: "closed" });
-  const guest = match.join("Bob", "player");
+  const guest = match.join("Bob", "player", "bob");
   assert.ok("token" in guest);
   assert.equal(guest.you.player, 3);
   assert.deepEqual(
     match.view().slots.map((s) => [s.kind, s.name]),
     [["human", "Ann"], ["ai", "Computer"], ["closed", null], ["human", "Bob"]],
   );
-  assert.deepEqual(match.join("Cid", "player"), { error: "full" });
+  assert.deepEqual(match.join("Cid", "player", "cid"), { error: "full" });
 });
 
 test("only seats someone plays enter the match, with their team and colour", () => {
@@ -54,7 +54,7 @@ test("only seats someone plays enter the match, with their team and colour", () 
 test("players change only their own seat; the host also changes computers'", () => {
   const { match, hostToken, connect, say, errors } = lobby();
   say(hostToken, { type: "setSeat", player: 1, seat: "ai" });
-  const guest = match.join("Bob", "player");
+  const guest = match.join("Bob", "player", "bob");
   assert.ok("token" in guest);
   connect(guest.token);
   say(guest.token, { type: "selectTeam", team: 5, player: 0 });

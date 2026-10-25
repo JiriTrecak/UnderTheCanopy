@@ -196,7 +196,15 @@
                   { "id": "server-note", "kind": "label", "class": "settings-note" }
                 ]
               },
-              { "kind": "button", "class": "settings-button", "text": "@ui.settings.use-the-default-server", "action": "settings.server-default" }
+              { "kind": "button", "class": "settings-button", "text": "@ui.settings.use-the-default-server", "action": "settings.server-default" },
+              {
+                "class": "settings-row",
+                "children": [
+                  { "kind": "label", "class": "settings-label", "text": "@ui.settings.player-id" },
+                  { "id": "player-id", "kind": "text_field", "class": "field", "placeholder": "Jiri1", "max_length": 32, "action": "settings.player-id" },
+                  { "kind": "label", "class": "settings-note", "text": "@ui.settings.player-id-note" }
+                ]
+              }
             ]
           },
           {

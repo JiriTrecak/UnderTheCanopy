@@ -2,7 +2,7 @@
 
 `server/` is the multiplayer match server: the lobby (`/api/…`) and the lockstep relay (`/match/:id`, WebSocket). It also takes players' feedback reports and files them as issues in Linear ([Feedback](#feedback), D59). It never runs the game; it collects each player's commands and sends every tick's commands to all players. Players need the same game version (`ContentIdentity`), which the server checks before a match starts.
 
-It is the old game's TypeScript server moved here in the smallest form (D48): its own code (`index.ts`, `host.ts`, `room.ts`, `latency.ts`) unchanged apart from imports, plus `protocol.ts` and `rules.ts` with the few pieces of the old game it used. The protocol is frozen (D10); `crates/net` is its client.
+It is the old game's TypeScript server moved here in the smallest form (D48): its own code (`index.ts`, `host.ts`, `room.ts`, `latency.ts`) unchanged apart from imports, plus `protocol.ts` and `rules.ts` with the few pieces of the old game it used. The protocol was frozen (D10) and is reopened once by D107 ([Protocol 2](#protocol-2)); `crates/net` is its client.
 
 | File | What |
 |---|---|
@@ -12,6 +12,7 @@ It is the old game's TypeScript server moved here in the smallest form (D48): it
 | `src/latency.ts` | measured round trips and the command delay chosen from them |
 | `src/protocol.ts` | wire messages, match config, action shapes, chat clean-up, the parts of a save the host reads |
 | `src/feedback.ts` | feedback reports: checks, rate limits, the spool, screenshots, replays and saves uploaded to Linear, Linear issues |
+| `src/ladder/` | the ladder website: pages, JSON API, replay downloads, SQLite, Glicko-2 and leagues ([Ladder](#ladder)) |
 | `deploy/` | deploy script, systemd service, Nginx config |
 
 ## Running and testing
@@ -45,6 +46,79 @@ The room view gives each seat `kind` (`open`, `closed`, `ai` or `human`), `team`
 - **Maintenance is local.** `POST /api/rooms/clear` (ends every session) answers 403 unless it comes from the host itself: loopback, and not forwarded by Nginx. Before, anyone on the internet could call it. Use it on the host with `curl -X POST http://127.0.0.1:8787/api/rooms/clear`.
 
 `npm test` in `server/` covers these (`test/`).
+
+## Protocol 2
+
+D107 reopened the protocol for one pass; this is its contract. The Rust client is `crates/net` (`wire.rs`, `session.rs`); the server is `src/`. Everything not named here stays as it was.
+
+**Version and identity**
+- `POST /api/rooms` and `POST /api/rooms/:id/join` bodies carry `protocol: 2` and `playerId` (1–32 of `A–Z a–z 0–9 . _ -`). A body without `protocol: 2` is refused with **426** `{"error": "update_required", "message": "Update Under the Canopy to play online."}`; a bad `playerId` with 400 `bad_player_id`. `GET /api/health` adds `protocol: 2`.
+- The server logs the player id with every create, join, leave, drop and result. Room views show it on human seats (`playerId`).
+
+**Lobby**
+- `GET /api/rooms` lists matches under way too (`state: "playing"`), so they can be spectated; ended and desynced rooms stay out.
+- `join` with `role: "spectator"` takes a spectator place while the lobby waits (refused `full` when none is free) and is always allowed while a match plays.
+- Room view additions: `spectatorPlaces` (0–4, default 2), `observers: [{id, name, playerId}]` (`id` a short public id, never the token; `spectators` stays their count), `observerDelay` (seconds), and on seats: `difficulty` (`easy`, `hard`; Normal absent) for computer seats, `away: true` for a player who is away during a match.
+- Host only, while waiting: `setSeat {player, seat, difficulty?}` (difficulty for `ai` seats; the seat's slot carries it), `setSpectatorPlaces {count}` (0–4; not below the spectators present), `setObserverDelay {seconds}` (0, 60, 120 or 180), `kick {player}` or `kick {observer}` (the member is removed and its socket receives `kicked` then closes; its token is void).
+- Anyone, while waiting: `takeSeat {player}` moves the sender (player or spectator) to an open seat; `spectate {}` moves a player to a free spectator place (the host too; starting needs at least one seated human, as before).
+
+**Match config:** `v: 2`; `observerDelay` (beats); slots may carry `difficulty`.
+
+**Commits and rejoining**
+- The server keeps every commit of the match. The match socket takes `?token=…&since=N` (default 0). When a member binds during a match it receives `start {config, you}` and then `history {through, commits}`: every commit after `since` up to `through` that holds an action (beats not listed were empty for every slot), and live `commit`s after it. For a spectator `through` (and every live commit it receives) stays `observerDelay` beats behind; when the match ends the rest is sent before `ended`.
+- A player who binds during a match catches up and then sends `ready` again. If the player was **away**, the server takes them back into the lockstep at the next beat (their `through` counts from the last commit) and inserts `{"type": "back"}` into their slot of that beat; `go` follows as for any late `ready`.
+- `away` and `back` are actions only the server writes: clients' bundles holding them are refused whole.
+
+**Leaving, waiting, dropping**
+- A socket that closes during a match no longer drops the seat: the beats wait for it.
+- While the mailbox has waited for one or more human seats for 5 s, the server sends `waiting {players, seconds}` every second (`players` the waited-for seats, `seconds` how long), and `waiting {players: [], seconds: 0}` once beats flow again. Not while paused.
+- `dropPlayer {player}` from a connected player of the match, once that seat has been waited for 30 s: the seat is dropped. `POST …/leave` during a match drops the sender at once and voids its token.
+- A dropped seat no longer holds beats back, and the next commit carries `{"type": "away"}` in its slot. A dropped member keeps its token (unless it left) and may rejoin as above; its socket, if still open, receives `dropped` and closes.
+
+**Pause**
+- `pause {}` from a player with pauses left (3 a match) while the match plays and is not paused: no further beats commit; everyone receives `paused {player, name, pausesLeft}`.
+- `resume {}` from the player who paused at any time, from any other player 30 s after the pause: everyone receives `resuming {seconds: 3}`, and 3 s later `resumed {}` and the beats flow again.
+- The waiting notices pause with the match.
+
+**Chat:** a spectator's line reaches spectators only; a player's reaches everyone.
+
+**As built** (where the contract left room):
+- Any `ready` after `go` is a rejoin: the seat's `through` becomes the last commit and anything it held is discarded, so a reconnecting client confirms from there.
+- The waiting clock starts at the last commit (or `go`) and stands still while paused; the waited-for seats share it, so a 30 s `dropPlayer` is refused while paused. With no beat committed the all-clear goes on the next pulse.
+- `away` and `back` lead their slot's actions. A seat dropped and back before any beat commits gets neither.
+- Pausing needs `go`; the pause lasts until `resumed` (no second pause or resume in the countdown). Restart and load give back every pause and cancel one.
+- A spectator's remainder at the end comes as `commit`s before `ended`; `history.through` for a spectator is the later of the load point and the tick less the delay.
+- Kick, `takeSeat` and `spectate` are lobby-only; the mover gets a fresh `welcome`. The host cannot kick themselves; a spectating host still sets up computer seats. `setSeat` without a difficulty keeps a computer's level and its race and hero.
+- Leaving during a match also sends `dropped` and closes the leaver's socket; drops and returns send a `room` view, so `away` shows.
+- A hash arriving after its beat was agreed (a rejoin replaying) is checked against the agreement; a mismatch is a desync.
+- Refusals are `error` messages: `INVALID_SEAT`, `INVALID_SPECTATOR_PLACES`, `INVALID_OBSERVER_DELAY`, `INVALID_KICK`, `SPECTATORS_FULL`, `DROP_REFUSED`, `PAUSE_REFUSED`, `RESUME_REFUSED`.
+- The game keeps the seat of a match under way in the user folder (`multiplayer-seat.json`) and offers **Rejoin your match** in Multiplayer while that match still plays; a deliberate leave or the match's end forgets it.
+
+## Ladder
+
+The public face of ranked play ([D107](decisions.md)): a website under `/ladder` with the season, the best players of each race, the league distribution, per-race leaderboards, player profiles and recent matches with their replays. The pages are rendered on the server (no scripts) and styled with Tailwind's zinc palette; race accents come from the races table, leagues have cool neutral colours.
+
+| Route | What |
+|---|---|
+| `GET /ladder` | the season, its numbers, the top 10 of each race, the league distribution, heroes' pick and win rates, recent matches |
+| `GET /ladder/race/:race` | a race's leaderboard, 50 a page (`?page=`), `?league=` (0 lowest … 4) filters it |
+| `GET /ladder/player/:playerId` | a player's rating, league, rank and record per race this season, and their matches (`?page=`); Player IDs match without case |
+| `GET /ladder/matches` | the season's matches, newest first, 30 a page; `?race=` filters |
+| `GET /ladder/search?q=` | players whose Player ID or name contains `q`; an exact Player ID redirects to its profile |
+| `GET /ladder/replays/:match` | the match's replay as `<map> <date> <player> vs <player>.utcr` (`application/vnd.canopy.replay`); 410 once older than 90 days, 404 without one. Seeded matches download a text file labelled as a sample, not a replay |
+| `GET /ladder/api/season` | JSON: the season, leagues, races, numbers, distribution and top 10s |
+| `GET /ladder/api/leaderboard/:race`, `/api/players/:playerId`, `/api/players?q=`, `/api/matches?player=&race=&page=` | JSON of the pages above |
+| `GET /ladder/static/…`, `/ladder/media/…` | the built CSS, the site's images and the sample file (`src/ladder/public/`); hero portraits and map previews copied from the content (`$LADDER_DATA/media/`) |
+
+**Rules** live in `src/ladder/leagues.ts` and nowhere else: the league names (placeholders: Seedling, Sapling, Thicket, Elder, Canopy) and the ratings they start at, three tiers each (I highest), 5 placement matches, 3-month seasons starting in January, April, July and October (season 1 began on 1 October 2026), replays kept 90 days, and `SHOW_RATING`, whether the site shows ratings as numbers (it does; the game never does). Rename a league there: the database stores leagues by index. `src/ladder/glicko.ts` is Glicko-2 as Glickman's paper gives it (τ 0.5, new players 1500 ± 350, σ 0.06); every ranked match is its own rating period, and a soft reset for the next season moves ratings a quarter of the way back to 1500 and raises deviations to at least 200.
+
+**Data**: SQLite through Node's built-in `node:sqlite` (Node 24; no dependency). `LADDER_DATA` (default `ladder-data` in the working directory, ignored by Git) holds `ladder.sqlite`, `replays/` and `media/`; `LADDER_DB` may put the database elsewhere. Tables (`src/ladder/db.ts`): `seasons`; `races`, `heroes` and `maps` (names and pictures the pages show, written from the content, since the server knows no content, D53); `players` (Player ID, display name); `ratings` (one per player, season and race: Glicko-2 rating, deviation, volatility, games, wins, losses, league and tier once placed); `matches` (season, time, map, duration, winning slot, replay file name or `sample`); `match_players` (both sides: player, race, hero, rating before and after). `LadderDb.recordMatch` records and rates a ranked 1v1; the seed is its only caller until ranked play lands. The server opens the database at start; a Node without `node:sqlite` still runs matches and answers `/ladder` with 503.
+
+**Seeding**: `npm run seed-ladder` fills an empty database with 320 random players, the current season and 4,800 matches between them, paired by rating and rated through `recordMatch`, so ratings, records and leagues agree. Races, heroes, portraits and maps come from `base/` (`--base`); the map pool is 5 random two-player skirmish maps, or `--maps frozen-dream,sc2-oxide,…`. `--players`, `--matches` and `--seed` change the rest; `--reset` replaces a database that already has players. Seeded matches' replays are the labelled sample file.
+
+**Styles**: `npm run build-ladder` compiles `src/ladder/styles.css` (Tailwind v4, a dev dependency, scanning `pages.ts`) into `src/ladder/public/ladder.css`, which is committed so the host needs no build. Rebuild it after changing classes in `pages.ts`. The images in `public/img/` are generated with gpt-image-2 from the art direction's references (hero banner, one header per race named `race-<race id>.webp`, the empty state); a race without its image shows the banner.
+
+**Running it locally**: `cd server && npm run seed-ladder && npm start`, then open `http://127.0.0.1:8787/ladder`. On the host, Nginx needs a `location /ladder` proxied like `/api/`, and `LADDER_DATA` should point outside the deployed folder (for example `/var/lib/canopy-matchhost/ladder`); neither is set up yet.
 
 ## Feedback
 

@@ -9,6 +9,8 @@
 /assets/graphics/*
 !/assets/graphics/.gitkeep
 /server/feedback-spool.jsonl*
+# The ladder's local database, replays and media (docs/server.md#ladder).
+/server/ladder-data/
 
 # Blender backups
 *.blend1

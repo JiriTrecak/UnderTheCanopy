@@ -1140,3 +1140,32 @@ The render thread's live scene, world UI, HUD and menu are optimised under one r
 ## 2026-10-25 — Neighboring Understaffed relay routes
 
 The user approved deploying a separate Understaffed room-code relay on the existing EC2 alongside Canopy. Added an optional `/etc/nginx/understaffed-routes/*.conf` include inside the TLS server in `server/deploy/nginx.conf`, so future Canopy deployments preserve those routes. Understaffed runs its own systemd service on loopback port 8788; Canopy remains on 8787. No Canopy game protocol or gameplay changes. Understaffed deployment and validation are maintained in the adjacent Understaffed repository.
+
+## D107. The multiplayer pass: protocol 2 (2026-10-25, Jiri: "we can unfreeze the protocol … build everything that we really want from the multiplayer … then the protocol again freezes"; every recommendation accepted: "Sounds good for all of it"; identity: "Identity will be steam account, but right now, a unique player identifier in the settings")
+
+Supersedes D10's freeze for this one pass; the protocol freezes again once it lands. The server stays TypeScript (D48); its protocol types are to be generated from the Rust ones. Lockstep stays. The wire contract is [server §Protocol 2](server.md#protocol-2).
+
+**In a match**
+- **Rejoining** as StarCraft II does: the server keeps every commit of the match; a returning player's game replays them at full speed ("Rejoining… 63%") while the others play on, then confirms again. A seat stays the player's for the whole match. (A fresh save from another player instead of the whole replay is a later speed-up.)
+- **Waiting:** a socket that closes no longer drops the player at once. While the server waits for a player, everyone sees "Waiting for Ana" after 5 s; after 30 s the others may drop her (she may rejoin later). A deliberate Leave drops at once.
+- **Pause:** 3 per player per match; the one who paused resumes at any time, anyone else after 30 s; a 3-second countdown before play continues; chat works while paused.
+- **A player who leaves** (Leave, or dropped) becomes **away** at a beat every peer agrees on (`away` and `back` commands the server inserts). With human allies still playing: **shared control**, their allies command the away colony's units and buildings and pay from its own stock, which its workers keep filling; it shows as "Ana (left)"; if Ana rejoins (`back`) she has it again. With no human ally present (1v1, free for all, only computer allies): **defeated** at once, and as any defeated colony its units leave the match.
+- **Surrender** is leaving; no team vote. **A desync** still ends the match; the server keeps its commands for the report.
+
+**Lobby and spectating**
+- Joining a lobby offers **Play or Spectate**; the host sets the spectator places (0–4, default 2) and the **observer delay** (off, 1, 2 or 3 minutes; ranked and tournament games use 2); people move between seats and spectator places while the lobby waits; the host can **kick** anyone. **Computer seats take a difficulty** (D105).
+- **Spectators may join a match under way** (casual lobbies), through the same replay as rejoining. They see everything, with the replay viewer's vision switcher and statistics. **Spectator chat** reaches spectators only; players' chat reaches everyone.
+
+**Identity:** Steam accounts later. Until then every game has a **Player ID** the player sets in Settings ("Jiri1"; letters, digits, `.`, `_`, `-`, up to 32), sent with every room it creates or joins, shown on lobby seats and logged by the server, so reports and matches can be traced. Nothing checks it is unique yet.
+
+**Ranked and tournaments** (built after the above):
+- Ranked 1v1 and an unranked queue first, 2v2 later; Glicko-2, one rating per race, never shown as a number; five placement matches, then leagues and tiers (forest-themed names to be decided); 3-month seasons with a soft reset; a pool of about 5 maps with one veto each; a race or Random; matching by rating, widening with the wait; one region (London). Leaving a ranked match is a loss. Results count when every game agrees; disputes are replayed by the server with `canopy replay --verify`.
+- Private tournament lobbies by code with the observer delay, the pause rules and referee spectators who may pause; every online match's replay kept on the server 90 days, downloadable by link; a results API of our own (a webhook to the organiser) with start.gg and Challonge adapters when a tournament needs one; no brackets of our own.
+- SQLite on the server for profiles, ratings and history; replays in the S3 release bucket's account; a profile screen in the game; an outdated game is told to update; friends and parties come with ranked 2v2.
+
+## D108. The ladder website (2026-10-25, Jiri: "Make a website using tailwind zinc schema and some nice imagegen images … hosted MMR page that shows downloadable replays, best players for each race etc; Pre-fill the database with some random information"; built by Claude, review: visible)
+
+- **Served by the match server** under `/ladder` (pages rendered on the server, no scripts; JSON under `/ladder/api/`; replays under `/ladder/replays/<match>`), from `server/src/ladder/` ([server §Ladder](server.md#ladder)). Tailwind's zinc palette, compiled at build time (`npm run build-ladder`) and committed; ants rose, beetles violet; no green, olive or gold. Images made with gpt-image-2 in the game's moonlit style.
+- **SQLite** through Node's built-in `node:sqlite` (`LADDER_DATA`, default `server/ladder-data/`, ignored): seasons, races, heroes, maps, players by Player ID, ratings per player, season and race (Glicko-2, `glicko.ts`), matches with their players. League rules live in `leagues.ts` alone (placeholder names Seedling, Sapling, Thicket, Elder, Canopy; three tiers each; five placement matches; 90-day replays).
+- **Seeded with invented data** (`npm run seed-ladder`): 320 players and 4,800 matches of the current season played through the real rating code; the seeded matches' replays are a labelled sample file, not replays.
+- **Open for Jiri:** the site shows MMR numbers (D107 keeps them out of the game; `SHOW_RATING` in `leagues.ts` hides them); leaderboards sort by rating, not by a cautious rating (rating less deviation). Hosting it needs an Nginx `location /ladder`, `LADDER_DATA` outside the deployed folder, and seeding or real results.

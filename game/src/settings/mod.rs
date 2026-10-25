@@ -324,6 +324,33 @@ impl Default for Gameplay {
 pub struct Multiplayer {
     /// Overrides the deployed match server (`CANOPY_MATCH_SERVER` overrides this).
     pub server: Option<String>,
+    /// The player's identity online until Steam accounts (D107): set by the player
+    /// ("Jiri1"), sent with every room, shown on lobby seats and in the server's logs.
+    pub player_id: String,
+}
+
+/// Longest Player ID.
+pub const MAX_PLAYER_ID: usize = 32;
+
+/// A Player ID as typed, kept to what the server accepts: letters, digits, `.`, `_` and
+/// `-`, at most [`MAX_PLAYER_ID`].
+pub fn clean_player_id(text: &str) -> String {
+    text.chars()
+        .filter(|c| c.is_ascii_alphanumeric() || matches!(c, '.' | '_' | '-'))
+        .take(MAX_PLAYER_ID)
+        .collect()
+}
+
+impl Multiplayer {
+    /// The Player ID to send: the chosen one, else one made from `seed` the first time
+    /// (the game saves it, so it stays).
+    pub fn ensure_player_id(&mut self, seed: u64) -> bool {
+        if !clean_player_id(&self.player_id).is_empty() {
+            return false;
+        }
+        self.player_id = format!("player-{:06x}", seed & 0xff_ffff);
+        true
+    }
 }
 
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]

@@ -126,13 +126,18 @@ impl ServerAddress {
         format!("{scheme}://{}{path}", self.authority)
     }
 
-    /// `matchUrl(roomId, token)`: the room's WebSocket.
-    pub fn match_url(&self, room: &str, token: &str) -> String {
-        self.ws(&format!(
+    /// `matchUrl(roomId, token)`: the room's WebSocket; `since` asks a match under way
+    /// for the commits after that beat (protocol 2).
+    pub fn match_url(&self, room: &str, token: &str, since: u32) -> String {
+        let mut url = self.ws(&format!(
             "/match/{}?token={}",
             encode_uri_component(room),
             encode_uri_component(token)
-        ))
+        ));
+        if since > 0 {
+            url.push_str(&format!("&since={since}"));
+        }
+        url
     }
 }
 
@@ -151,7 +156,7 @@ mod tests {
         let server = ServerAddress::default();
         assert_eq!(server.http("/api/rooms"), "https://18.134.138.1/api/rooms");
         assert_eq!(
-            server.match_url("1", "a b"),
+            server.match_url("1", "a b", 0),
             "wss://18.134.138.1/match/1?token=a%20b"
         );
     }

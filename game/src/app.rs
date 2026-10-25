@@ -124,6 +124,16 @@ impl App {
         if let Some(error) = note.error {
             tracing::warn!(%error, moved = ?note.moved_aside, "settings could not be read; defaults used");
         }
+        // Every game has a Player ID from its first start (D107); the player may change it.
+        let seed = std::time::SystemTime::now()
+            .duration_since(std::time::UNIX_EPOCH)
+            .map_or(0, |d| d.as_nanos() as u64);
+        if settings.multiplayer.ensure_player_id(seed)
+            && let Err(error) = settings.save(&self.paths.user)
+        {
+            tracing::warn!(%error, "cannot save the new Player ID");
+        }
+        tracing::info!(player_id = %settings.multiplayer.player_id, "player");
         let mut attributes = Window::default_attributes()
             .with_title(tr!("app.title"))
             .with_inner_size(LogicalSize::new(1600, 900))

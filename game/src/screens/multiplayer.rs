@@ -6,18 +6,56 @@
 //!
 //! The protocol has no lobby chat or ready flags (chat flows only while a match plays),
 //! so the room shows seats, races, heroes and measured latency, and the host starts.
+//!
+//! Protocol 2 (D107): a room is joined to play or to spectate (a match under way only to
+//! spectate); the lobby lists its spectators, whose places and delay the host sets; the
+//! host can remove anyone and sets each computer's level; people move between seats and
+//! spectator places. The seat of a match under way is kept in the user folder, so a game
+//! that restarted can rejoin it.
 
 use super::{ui_host::UiHost, widgets, widgets::Palette};
 use crate::data::{GameData, MapEntry};
 use canopy_net::{
     Event, Net, Pending, Phase, ServerAddress, Session,
     wire::{
-        CreateRoom, Health, JoinRoom, Joined, MatchConfig, Role, RoomState, RoomView, Seat,
-        SeatKind,
+        CreateRoom, Health, JoinRoom, Joined, MatchConfig, OBSERVER_DELAYS, PROTOCOL, Role,
+        RoomState, RoomView, SPECTATOR_PLACES, Seat, SeatKind,
     },
 };
 use canopy_render::Gpu;
+use canopy_sim::Difficulty;
+use serde::{Deserialize, Serialize};
 use std::time::{Duration, Instant};
+
+/// The seat of a networked match under way, kept so a game that restarted can rejoin it
+/// (D107). Removed once that match is over.
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+pub struct SavedSeat {
+    /// The server's address (`http://…`), so another server's rooms are not asked.
+    pub server: String,
+    pub room: String,
+    pub token: String,
+}
+
+impl SavedSeat {
+    pub fn load(paths: &crate::paths::Paths) -> Option<Self> {
+        let bytes = std::fs::read(paths.multiplayer_seat()).ok()?;
+        serde_json::from_slice(&bytes).ok()
+    }
+
+    pub fn save(&self, paths: &crate::paths::Paths) {
+        let written = serde_json::to_vec(self)
+            .map_err(anyhow::Error::from)
+            .and_then(|bytes| crate::settings::write_atomic(&paths.multiplayer_seat(), &bytes));
+        if let Err(error) = written {
+            tracing::warn!(%error, "cannot keep the match's seat");
+        }
+    }
+
+    pub fn clear(paths: &crate::paths::Paths) {
+        let _ = std::fs::remove_file(paths.multiplayer_seat());
+    }
+}
 
 /// Rooms refresh this often while the list shows.
 const REFRESH: Duration = Duration::from_secs(5);
@@ -60,6 +98,13 @@ pub struct Multiplayer {
     joining: Option<Pending<Joined>>,
     pub session: Option<Session>,
     pub status: String,
+    /// This connection created the room (the host may also spectate).
+    hosting: bool,
+    /// A kept seat of a match under way, and the check whether it still plays.
+    pub saved: Option<SavedSeat>,
+    saved_check: Option<Pending<RoomView>>,
+    /// The kept seat's match plays on: it can be rejoined.
+    pub rejoinable: Option<RoomView>,
 }
 
 impl Default for Multiplayer {
@@ -81,6 +126,10 @@ impl Default for Multiplayer {
             joining: None,
             session: None,
             status: String::new(),
+            hosting: false,
+            saved: None,
+            saved_check: None,
+            rejoinable: None,
         }
     }
 }
@@ -115,6 +164,29 @@ impl Multiplayer {
         self.server = address.http("").trim_end_matches('/').to_string();
         self.status.clear();
         self.refresh();
+    }
+
+    /// Looks whether the kept seat's match still plays (`saved` read from the user folder).
+    pub fn check_saved(&mut self, saved: Option<SavedSeat>) {
+        self.rejoinable = None;
+        self.saved = saved.filter(|s| s.server == self.server);
+        self.saved_check = match (&self.net, &self.saved) {
+            (Some(net), Some(s)) => Some(net.room(&s.room)),
+            _ => None,
+        };
+    }
+
+    /// Rejoins the kept seat's match: the server sends the match and the session catches
+    /// up with it.
+    pub fn rejoin(&mut self) -> Option<Outcome> {
+        let (Some(net), Some(saved)) = (&self.net, &self.saved) else {
+            return None;
+        };
+        self.session = Some(net.rejoin(&saved.room, &saved.token));
+        self.hosting = false;
+        self.rejoinable = None;
+        self.status = tr!("mp.contacting-host");
+        None
     }
 
     pub fn refresh(&mut self) {
@@ -173,6 +245,14 @@ impl Multiplayer {
         {
             self.refresh();
         }
+        if let Some(reply) = self.saved_check.as_ref().and_then(Pending::poll) {
+            self.saved_check = None;
+            match reply {
+                Ok(room) if room.state == RoomState::Playing => self.rejoinable = Some(room),
+                // Over, or gone: nothing to rejoin.
+                _ => self.saved = None,
+            }
+        }
         if let Some(reply) = self.joining.as_ref().and_then(Pending::poll) {
             self.joining = None;
             match reply {
@@ -195,6 +275,10 @@ impl Multiplayer {
                 Event::Started { config, .. } => started = Some(config),
                 Event::Error { code, message } => {
                     self.status = if message.is_empty() { code } else { message };
+                }
+                Event::Kicked => {
+                    self.status = tr!("mp.kicked");
+                    left = true;
                 }
                 Event::Stopped { reason } => {
                     self.status = reason;
@@ -229,8 +313,9 @@ impl Multiplayer {
         self.joining.is_some()
     }
 
-    /// Joins the selected room or creates one on `maps[selected_map]`, as the tab says.
-    pub fn go(&mut self, maps: &[&MapEntry], name: &str) {
+    /// Joins the selected room (to play, or as a spectator) or creates one on
+    /// `maps[selected_map]`, as the tab says.
+    pub fn go(&mut self, maps: &[&MapEntry], name: &str, player_id: &str, role: Role) {
         let Some(net) = &self.net else {
             self.status = tr!("mp.not-connected");
             return;
@@ -244,11 +329,14 @@ impl Multiplayer {
                 let Some(room) = self.selected_room.and_then(|i| self.rooms.get(i)) else {
                     return;
                 };
+                self.hosting = false;
                 self.joining = Some(net.join_room(
                     &room.id,
                     &JoinRoom {
                         guest_name: name.into(),
-                        role: Role::Player,
+                        role,
+                        player_id: player_id.into(),
+                        protocol: PROTOCOL,
                     },
                 ));
             }
@@ -264,7 +352,10 @@ impl Multiplayer {
                     map_revision: map_revision(&bytes),
                     slot_count: seats,
                     guest_name: name.into(),
+                    player_id: player_id.into(),
+                    protocol: PROTOCOL,
                 }));
+                self.hosting = true;
             }
         }
         self.status = tr!("mp.contacting-host");
@@ -282,7 +373,7 @@ impl Multiplayer {
     }
 
     pub fn is_host(&self) -> bool {
-        self.session.as_ref().and_then(Session::player) == Some(0)
+        self.session.is_some() && self.hosting
     }
 
     /// Discovery screen.
@@ -405,7 +496,7 @@ impl Multiplayer {
             let free = room.is_some_and(|r| r.slots.iter().any(|s| s.name.is_none()));
             let (hint, ok) = match room {
                 None => (String::new(), false),
-                Some(r) if r.state == RoomState::Playing => (tr!("mp.underway"), false),
+                Some(r) if r.state == RoomState::Playing => (tr!("mp.underway-spectate"), false),
                 Some(_) if map.is_none() => (tr!("mp.map-unavailable"), false),
                 Some(_) if !free => (tr!("mp.lobby-full"), false),
                 Some(r) => (tr!("mp.hosted-by-join", host = r.host.as_str()), true),
@@ -451,6 +542,26 @@ impl Multiplayer {
             "multiplayer/go",
             can_go && self.net.is_some() && !self.busy(),
         );
+        // Spectating: a lobby with a free spectator place, or a match under way.
+        let room = self.selected_room.and_then(|i| self.rooms.get(i));
+        let watchable = room.is_some_and(|r| {
+            r.state == RoomState::Playing
+                || (r.state == RoomState::Waiting
+                    && (r.observers.len() as u32) < r.spectator_places)
+        });
+        widgets::visible(ui, "multiplayer/spectate", !creating);
+        widgets::enabled(
+            ui,
+            "multiplayer/spectate",
+            watchable && map_known(data, room) && self.net.is_some() && !self.busy(),
+        );
+        widgets::visible(ui, "multiplayer/rejoin", self.rejoinable.is_some());
+        if let Some(r) = &self.rejoinable {
+            let map_name = data
+                .map(&r.map_id)
+                .map_or(r.map_id.as_str(), |m| m.name.as_str());
+            widgets::text(ui, "multiplayer/rejoin", &tr!("mp.rejoin", map = map_name));
+        }
     }
 
     /// The room before its match.
@@ -573,7 +684,10 @@ impl Multiplayer {
                         ),
                     )
                 }
-                SeatKind::Ai => (tr!("mp.seat-computer"), tr!("mp.played-by-computer")),
+                SeatKind::Ai => (
+                    crate::text::tr(&format!("skirmish.ai-{}", seat.difficulty.name())),
+                    tr!("mp.played-by-computer"),
+                ),
                 SeatKind::Open => (tr!("mp.seat-open"), tr!("mp.waiting-for-player")),
                 SeatKind::Closed => (tr!("mp.seat-closed"), tr!("mp.nobody-plays")),
             };
@@ -582,16 +696,18 @@ impl Multiplayer {
             // The seat: a joined player's name, locked; otherwise open, closed or computer.
             let field = |f: &str| format!("{base}/choices/{f}");
             match kind {
+                SeatKind::Human if host_seat && !mine => widgets::options(
+                    ui,
+                    &field("seat"),
+                    &[name.clone(), tr!("mp.remove-from-lobby")],
+                    0,
+                ),
                 SeatKind::Human => {
                     widgets::options(ui, &field("seat"), std::slice::from_ref(&name), 0)
                 }
-                _ => widgets::options(ui, &field("seat"), &seat_options(), seat_option(kind)),
+                _ => widgets::options(ui, &field("seat"), &seat_options(), seat_option(seat)),
             }
-            widgets::enabled(
-                ui,
-                &field("seat"),
-                host_seat && waiting && kind != SeatKind::Human,
-            );
+            widgets::enabled(ui, &field("seat"), host_seat && waiting && !mine);
             for f in ["team", "race", "hero", "color"] {
                 widgets::visible(ui, &field(f), plays);
             }
@@ -621,6 +737,67 @@ impl Multiplayer {
             widgets::enabled(ui, &field("hero"), editable && hero_names.len() > 1);
             widgets::enabled(ui, &field("color"), editable && color_names.len() > 1);
         }
+        // Spectators: who watches, the places and delay (the host's), moving between a seat
+        // and a spectator place.
+        let observers = room.map_or(&[][..], |r| &r.observers[..]);
+        if let Some(list) = ui.find("lobby/observers") {
+            ui.set_count(list, observers.len());
+        }
+        for (i, o) in observers.iter().enumerate() {
+            let base = format!("lobby/observers/{i}");
+            widgets::text(ui, &format!("{base}/name"), &o.name);
+            widgets::visible(ui, &format!("{base}/kick"), host_seat && waiting);
+        }
+        let places = room.map_or(0, |r| r.spectator_places);
+        widgets::text(
+            ui,
+            "lobby/observers-empty",
+            &if observers.is_empty() {
+                tr!("mp.no-spectators", places = places)
+            } else {
+                tr!("mp.spectators-of", count = observers.len(), places = places)
+            },
+        );
+        let place_options: Vec<String> = (0..=SPECTATOR_PLACES)
+            .map(|n| tr!("mp.spectator-places", count = n))
+            .collect();
+        widgets::options(ui, "lobby/places", &place_options, places as usize);
+        let delays: Vec<String> = OBSERVER_DELAYS
+            .iter()
+            .map(|&s| {
+                if s == 0 {
+                    tr!("mp.observer-delay-off")
+                } else {
+                    tr!("mp.observer-delay", minutes = s / 60)
+                }
+            })
+            .collect();
+        let delay = room.map_or(0, |r| r.observer_delay);
+        let delay = OBSERVER_DELAYS
+            .iter()
+            .position(|&s| s == delay)
+            .unwrap_or(0);
+        widgets::options(ui, "lobby/delay", &delays, delay);
+        for id in ["lobby/places", "lobby/delay"] {
+            widgets::enabled(ui, id, host_seat && waiting);
+        }
+        let spectating = me.is_none();
+        let open_seat = seats.iter().any(|s| seat_kind(s) == SeatKind::Open);
+        let free_place = (observers.len() as u32) < places;
+        widgets::text(
+            ui,
+            "lobby/move",
+            &if spectating {
+                tr!("mp.take-seat")
+            } else {
+                tr!("mp.spectate")
+            },
+        );
+        widgets::enabled(
+            ui,
+            "lobby/move",
+            waiting && if spectating { open_seat } else { free_place },
+        );
         widgets::text(ui, "lobby/status", &self.status);
         widgets::visible(ui, "lobby/status", !self.status.is_empty());
         widgets::visible(ui, "lobby/start", host_seat);
@@ -654,9 +831,13 @@ impl Multiplayer {
         let races = widgets::races(data);
         match field {
             "seat" if seat_kind(seat) != SeatKind::Human => {
-                if let Some(&kind) = SEAT_OPTIONS.get(option) {
-                    session.set_seat(seat.player, kind);
+                if let Some(&(kind, level)) = SEAT_OPTIONS.get(option) {
+                    session.set_seat(seat.player, kind, level);
                 }
+            }
+            // The host's dropdown on another player's seat: their name, or remove them.
+            "seat" if option == 1 && self.hosting && session.player() != Some(seat.player) => {
+                session.kick_player(seat.player);
             }
             "team" => session.select_team(target, option.min(usize::from(TEAMS) - 1) as u8 + 1),
             "race" => {
@@ -680,6 +861,42 @@ impl Multiplayer {
         }
     }
 
+    /// A spectator-places or observer-delay choice (host), or removing spectator `row`.
+    pub fn lobby_setting(&self, field: &str, option: usize) {
+        let Some(session) = &self.session else {
+            return;
+        };
+        match field {
+            "places" => session.set_spectator_places(option as u32),
+            "delay" => {
+                if let Some(&seconds) = OBSERVER_DELAYS.get(option) {
+                    session.set_observer_delay(seconds);
+                }
+            }
+            "kick-observer" => {
+                if let Some(o) = session.room().and_then(|r| r.observers.get(option)) {
+                    session.kick_observer(&o.id);
+                }
+            }
+            _ => {}
+        }
+    }
+
+    /// Moves this connection between a seat and a spectator place.
+    pub fn move_seat(&self) {
+        let Some(session) = &self.session else {
+            return;
+        };
+        if session.player().is_some() {
+            session.spectate();
+        } else if let Some(seat) = session
+            .room()
+            .and_then(|r| r.slots.iter().find(|s| seat_kind(s) == SeatKind::Open))
+        {
+            session.take_seat(seat.player);
+        }
+    }
+
     pub fn start(&self) {
         if let Some(session) = &self.session {
             session.start_match();
@@ -687,23 +904,45 @@ impl Multiplayer {
     }
 }
 
+/// Whether this game has the room's battlefield.
+fn map_known(data: &GameData, room: Option<&RoomView>) -> bool {
+    room.is_some_and(|r| data.map(&r.map_id).is_some())
+}
+
 /// Teams and colours a lobby offers (the server's `TEAMS`, `COLORS`).
 const TEAMS: u8 = 8;
 const COLORS: usize = 8;
 
-/// The host's seat dropdown, in order.
-const SEAT_OPTIONS: [SeatKind; 3] = [SeatKind::Open, SeatKind::Closed, SeatKind::Ai];
+/// The host's seat dropdown, in order: open, closed, then a computer of each level.
+const SEAT_OPTIONS: [(SeatKind, Difficulty); 5] = [
+    (SeatKind::Open, Difficulty::Normal),
+    (SeatKind::Closed, Difficulty::Normal),
+    (SeatKind::Ai, Difficulty::Easy),
+    (SeatKind::Ai, Difficulty::Normal),
+    (SeatKind::Ai, Difficulty::Hard),
+];
 
 fn seat_options() -> Vec<String> {
-    vec![
-        tr!("mp.seat-open"),
-        tr!("mp.seat-closed"),
-        tr!("mp.seat-computer"),
-    ]
+    let mut options = vec![tr!("mp.seat-open"), tr!("mp.seat-closed")];
+    options.extend(
+        Difficulty::ALL
+            .iter()
+            .map(|d| crate::text::tr(&format!("skirmish.ai-{}", d.name()))),
+    );
+    options
 }
 
-fn seat_option(kind: SeatKind) -> usize {
-    SEAT_OPTIONS.iter().position(|&k| k == kind).unwrap_or(0)
+fn seat_option(seat: &Seat) -> usize {
+    let kind = seat_kind(seat);
+    let level = if kind == SeatKind::Ai {
+        seat.difficulty
+    } else {
+        Difficulty::Normal
+    };
+    SEAT_OPTIONS
+        .iter()
+        .position(|&o| o == (kind, level))
+        .unwrap_or(0)
 }
 
 /// What holds a seat; servers before lobby seats only name the joined ones.

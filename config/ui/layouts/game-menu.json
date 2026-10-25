@@ -11,6 +11,7 @@
             "id": "main", "class": "gm-page",
             "children": [
               { "id": "resume", "kind": "button", "class": "gm-button", "text": "@ui.game-menu.resume", "action": "gm.resume" },
+              { "id": "pause", "kind": "button", "class": "gm-button", "text": "@ui.game-menu.pause-match", "action": "gm.pause", "visible": false },
               { "id": "save", "kind": "button", "class": "gm-button", "text": "@ui.game-menu.save-game", "action": "gm.save" },
               { "id": "load", "kind": "button", "class": "gm-button", "text": "@ui.game-menu.load-game", "action": "gm.load" },
               { "id": "restart", "kind": "button", "class": "gm-button", "text": "@ui.game-menu.restart-scenario", "action": "gm.restart" },

@@ -358,9 +358,7 @@ fn check(
 fn affordable(k: &Knowledge, d: &Definition) -> Option<String> {
     let items = d.creation.as_ref().map_or(&[][..], |c| c.items());
     let affordable = items.iter().all(|c| {
-        k.view
-            .colony
-            .as_ref()
+        k.colony()
             .and_then(|col| col.goods.iter().find(|g| g.item == c.item))
             .is_some_and(|g| g.available >= c.amount)
     });

@@ -39,6 +39,8 @@ pub const DOWNLOADED_MAPS: &str = "downloads";
 pub const FEEDBACK_OUTBOX: &str = "feedback";
 /// This installation's anonymous id (feedback reports), in the user folder.
 pub const INSTALL_ID: &str = "install-id";
+/// The seat of a networked match under way, kept to rejoin it after a restart (D107).
+pub const MULTIPLAYER_SEAT: &str = "multiplayer-seat.json";
 /// The player's progress through each campaign (`<campaign id>.json`), in the user folder.
 pub const CAMPAIGN_PROGRESS: &str = "campaigns";
 
@@ -72,6 +74,11 @@ impl Paths {
     /// The player's progress through campaign `id`.
     pub fn campaign_progress(&self, id: &str) -> PathBuf {
         self.user.join(CAMPAIGN_PROGRESS).join(format!("{id}.json"))
+    }
+
+    /// The kept seat of a networked match under way.
+    pub fn multiplayer_seat(&self) -> PathBuf {
+        self.user.join(MULTIPLAYER_SEAT)
     }
 
     /// The repository checkout the data folder is, if it is one. The editor edits its

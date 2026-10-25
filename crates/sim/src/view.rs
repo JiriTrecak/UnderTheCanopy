@@ -221,12 +221,18 @@ pub struct View {
     pub pings: Vec<crate::state::Ping>,
     /// Players out of the match so far, for everyone (filled by the world).
     pub defeated: Vec<Owner>,
+    /// Players who left a networked match and have not come back (D107), for everyone.
+    pub away: Vec<Owner>,
+    /// The away allies whose colonies the viewer commands, with their goods and supply
+    /// (D107 shared control; filled by the world).
+    pub commanded: Vec<(Owner, Colony)>,
     /// The viewer's power network (D66).
     pub network: NetworkView,
 }
 
 impl View {
-    /// What `owner` knows.
+    /// What `owner` knows; the private state of `commanded` owners' entities too (the
+    /// away allies whose colonies it commands, D107).
     #[allow(clippy::too_many_arguments)]
     pub fn build(
         state: &State,
@@ -236,6 +242,7 @@ impl View {
         rules: &dyn SightRules,
         economy: &Economy,
         owner: Owner,
+        commanded: &[Owner],
     ) -> Self {
         let _span = tracing::trace_span!("view").entered();
         let works = WorkViews::new(state, catalog, economy);
@@ -258,7 +265,8 @@ impl View {
                 public: Sighting::of(e),
                 relation: relation(e.owner),
                 remembered: false,
-                private: (e.owner == owner).then(|| private(state, catalog, economy, &works, e)),
+                private: (e.owner == owner || commanded.contains(&e.owner))
+                    .then(|| private(state, catalog, economy, &works, e)),
                 motion: MotionView::of(e, state.tick),
                 work: crate::economy::view::public(
                     state,
@@ -347,6 +355,8 @@ impl View {
         Self {
             pings,
             defeated: Vec::new(),
+            away: Vec::new(),
+            commanded: Vec::new(),
             network: NetworkView {
                 fields: economy.network().fields(owner).copied().collect(),
                 hint: economy.network_hint(owner).map(str::to_owned),
@@ -427,6 +437,8 @@ impl View {
             .collect();
         Self {
             defeated: Vec::new(),
+            away: Vec::new(),
+            commanded: Vec::new(),
             network: NetworkView {
                 fields: economy.network().all_fields().to_vec(),
                 hint: None,

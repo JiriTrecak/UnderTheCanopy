@@ -671,6 +671,12 @@ impl Game {
     }
 
     fn apply(&mut self, intent: Intent) {
+        // Leaving a networked match on purpose leaves it for good (D107).
+        if matches!(intent, Intent::LeaveMatch | Intent::Quit)
+            && self.playing.as_ref().is_some_and(|p| p.networked)
+        {
+            multiplayer::SavedSeat::clear(&self.paths);
+        }
         let before = self.flow.screen().clone();
         let effects = self.flow.apply(intent);
         for effect in effects {
@@ -730,6 +736,8 @@ impl Game {
             }
             Screen::Multiplayer => {
                 self.mp.open(self.settings.multiplayer.server.as_deref());
+                self.mp
+                    .check_saved(multiplayer::SavedSeat::load(&self.paths));
                 widgets::text(
                     &mut self.host.ui,
                     "multiplayer/name",
@@ -1644,6 +1652,15 @@ impl Game {
                 }
                 let me = session.player();
                 self.last_match = None;
+                // Kept so a restarted game can rejoin (D107).
+                if let Some((room, token)) = session.seat() {
+                    multiplayer::SavedSeat {
+                        server: self.mp.server.clone(),
+                        room: room.into(),
+                        token: token.into(),
+                    }
+                    .save(&self.paths);
+                }
                 // The lobby's colours, by player number; the others keep their own.
                 let colors = config.colors.as_ref().map(|colors| {
                     let mut by_player: Vec<usize> = (0..8).collect();
@@ -1745,6 +1762,10 @@ impl Game {
 
     /// Shows the result (an outcome, or a surrender).
     fn decided(&mut self, outcome: Option<canopy_sim::state::Outcome>, surrendered: bool) {
+        // A networked match that is over cannot be rejoined (D107).
+        if self.playing.as_ref().is_some_and(|p| p.networked) {
+            multiplayer::SavedSeat::clear(&self.paths);
+        }
         let (Some(playing), Some(data)) = (&self.playing, self.data.clone()) else {
             return;
         };
@@ -2082,11 +2103,32 @@ impl Game {
                     self.mp.seats = i;
                 }
             }
-            "mp.go" if clicked => {
-                let name = self.settings.display_name();
+            "mp.go" | "mp.spectate" if clicked => {
+                let role = if name == "mp.spectate" {
+                    canopy_net::wire::Role::Spectator
+                } else {
+                    canopy_net::wire::Role::Player
+                };
+                let player = self.settings.display_name();
                 let maps: Vec<&crate::data::MapEntry> = data.skirmish_maps().collect();
-                self.mp.go(&maps, &name);
+                let id = self.settings.multiplayer.player_id.clone();
+                self.mp.go(&maps, &player, &id, role);
             }
+            "mp.rejoin" if clicked => {
+                self.mp.rejoin();
+            }
+            "lobby.places" | "lobby.delay" => {
+                if let Some(option) = selected {
+                    self.mp
+                        .lobby_setting(name.trim_start_matches("lobby."), option);
+                }
+            }
+            "lobby.kick-observer" if clicked => {
+                if let Some(row) = action.index {
+                    self.mp.lobby_setting("kick-observer", row);
+                }
+            }
+            "lobby.move" if clicked => self.mp.move_seat(),
             "lobby.leave" if clicked => self.navigate(Intent::Back),
             "lobby.seat" | "lobby.team" | "lobby.race" | "lobby.hero" | "lobby.color" => {
                 if let (Some(row), Some(option)) = (action.index, selected) {
@@ -2111,6 +2153,24 @@ impl Game {
             }
             // Game menu.
             "gm.resume" if clicked => self.apply(Intent::Back),
+            "gm.pause" if clicked => {
+                if let Some(playing) = &self.playing {
+                    playing.pause_match();
+                }
+                self.apply(Intent::Back);
+            }
+            "overlay.resume" if clicked => {
+                if let Some(playing) = &self.playing
+                    && playing.may_resume()
+                {
+                    playing.resume_match();
+                }
+            }
+            "overlay.drop" if clicked => {
+                if let Some(playing) = &self.playing {
+                    playing.drop_waited();
+                }
+            }
             "gm.save" if clicked => {
                 self.menu_page = MenuPage::Save;
                 let default = self.playing.as_ref().map_or_else(String::new, |p| {

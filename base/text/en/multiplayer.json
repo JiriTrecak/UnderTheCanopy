@@ -50,5 +50,16 @@
   "mp.underway": "This match is already underway.",
   "mp.waiting-for-player": "Waiting for a player",
   "mp.you-host": "You are the host",
-  "mp.you-joined": "You have joined"
+  "mp.you-joined": "You have joined",
+  "mp.underway-spectate": "This match is under way: you can spectate it.",
+  "mp.rejoin": "Rejoin your match on {map}",
+  "mp.kicked": "The host removed you from the lobby.",
+  "mp.remove-from-lobby": "Remove from lobby",
+  "mp.no-spectators": "No spectators yet · {places, plural, =0 {no places} one {# place} other {# places}}",
+  "mp.spectators-of": "{count} of {places} spectator places taken",
+  "mp.spectator-places": "{count, plural, =0 {No spectators} one {# spectator place} other {# spectator places}}",
+  "mp.observer-delay-off": "No observer delay",
+  "mp.observer-delay": "{minutes} min observer delay",
+  "mp.take-seat": "Take a seat",
+  "mp.spectate": "Spectate instead"
 }

@@ -8,7 +8,7 @@ import { resolve as resolvePath } from "node:path";
 import { WebSocketServer } from "ws";
 import { Feedback, MAX_BODY, RETRY_MS, SWEEP_MS } from "./feedback";
 import { MatchHost } from "./host";
-import type { CreateRoom, JoinRoom } from "./protocol";
+import { PROTOCOL, admit, type CreateRoom, type JoinRoom } from "./protocol";
 
 const PORT = Number(process.env.PORT ?? 8787);
 const BIND = process.env.BIND ?? "127.0.0.1";
@@ -19,6 +19,15 @@ const CORS = {
   "access-control-allow-headers": "content-type, authorization",
   "access-control-allow-methods": "GET, POST, OPTIONS",
 };
+
+// The ladder website (docs/server.md#ladder). Loaded on its own so that a Node without
+// node:sqlite still runs matches; the ladder then answers 503.
+const ladder = await import("./ladder/routes")
+  .then((m) => m.createLadder())
+  .catch((e: unknown) => {
+    console.error(`ladder disabled: ${e instanceof Error ? e.message : e}`);
+    return null;
+  });
 
 const host = new MatchHost();
 const probes=setInterval(()=>host.pulse(),1000);
@@ -52,15 +61,18 @@ server.on("upgrade", (req, socket, head) => {
   const url = new URL(req.url ?? "", "http://match");
   const m = /^\/match\/([^/]+)$/.exec(url.pathname);
   const token = url.searchParams.get("token") ?? "";
+  // The last commit the client has; history starts after it.
+  const since = Number(url.searchParams.get("since") ?? 0);
   const room = m ? host.get(decodeURIComponent(m[1]!)) : undefined;
   if (!room || !token) {
     socket.destroy();
     return;
   }
   wss.handleUpgrade(req, socket, head, (ws) => {
-    const bound = room.bind(token, (msg) => {
+    const send = (msg: unknown) => {
       if (ws.readyState === ws.OPEN) ws.send(JSON.stringify(msg));
-    });
+    };
+    const bound = room.bind(token, send, { since: Number.isSafeInteger(since) && since > 0 ? since : 0, close: () => ws.close() });
     if ("error" in bound) {
       ws.close();
       return;
@@ -73,7 +85,7 @@ server.on("upgrade", (req, socket, head) => {
         ws.send(JSON.stringify({ type: "error", code: "bad_json", message: "bad json" }));
       }
     });
-    ws.on("close", () => room.unbind(token));
+    ws.on("close", () => room.unbind(token, send));
   });
 });
 
@@ -91,7 +103,7 @@ async function handle(req: IncomingMessage, res: ServerResponse): Promise<void> 
   const path = url.pathname;
   try {
     if (req.method === "GET" && path === "/api/health") {
-      send(res, 200, { ok: true, version: VERSION });
+      send(res, 200, { ok: true, version: VERSION, protocol: PROTOCOL });
       return;
     }
     if (req.method === "POST" && path === "/api/feedback") {
@@ -135,6 +147,11 @@ async function handle(req: IncomingMessage, res: ServerResponse): Promise<void> 
     }
     if (req.method === "POST" && path === "/api/rooms") {
       const body = (await readJson(req)) as CreateRoom;
+      const refused = admit(body);
+      if (refused) {
+        send(res, refused.status, refused.body);
+        return;
+      }
       if (!body?.mapId || !body?.guestName) {
         send(res, 400, { error: "bad_body" });
         return;
@@ -144,13 +161,19 @@ async function handle(req: IncomingMessage, res: ServerResponse): Promise<void> 
     }
     const join = /^\/api\/rooms\/([^/]+)\/join$/.exec(path);
     if (req.method === "POST" && join) {
+      const body = (await readJson(req)) as JoinRoom;
+      // An outdated game is told to update before anything else.
+      const refused = admit(body);
+      if (refused) {
+        send(res, refused.status, refused.body);
+        return;
+      }
       const room = host.get(decodeURIComponent(join[1]!));
       if (!room) {
         send(res, 404, { error: "not_found" });
         return;
       }
-      const body = (await readJson(req)) as JoinRoom;
-      const out = room.join(body.guestName ?? "guest", body.role === "spectator" ? "spectator" : "player");
+      const out = room.join(body.guestName ?? "guest", body.role === "spectator" ? "spectator" : "player", body.playerId);
       if ("error" in out) {
         send(res, 400, out);
         return;
@@ -225,6 +248,11 @@ async function handle(req: IncomingMessage, res: ServerResponse): Promise<void> 
       }
       host.discard(room.id);
       send(res, 200, { ok: true });
+      return;
+    }
+    if (path === "/ladder" || path.startsWith("/ladder/")) {
+      if (ladder) await ladder.handle(req, res, url);
+      else send(res, 503, { error: "ladder_unavailable" });
       return;
     }
     send(res, 404, { error: "not_found" });

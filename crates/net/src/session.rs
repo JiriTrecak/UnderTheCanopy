@@ -6,6 +6,11 @@
 //! mailbox in-process with an input delay of one beat, so local and networked play feed the
 //! simulation identically.
 //!
+//! Protocol 2 (D107): a seat that binds to a match under way (a rejoin after a crash, a
+//! spectator arriving late, or this session reconnecting by itself after its socket
+//! closed) receives the missed commits in `history`, plays them as fast as the game steps,
+//! and only then reports `ready` and confirms again.
+//!
 //! Threading: a `Session` lives on the simulation thread and never blocks. Socket I/O runs
 //! on the network thread ([`crate::Net`]); [`Commands`] lets any thread (input, UI) hand
 //! commands in without waiting for the simulation.
@@ -56,8 +61,10 @@ pub enum Phase {
     Desynced,
     /// The match cannot continue on this client (see [`Event::Stopped`]).
     Stopped,
-    /// The socket closed. A closed seat cannot rejoin a running match: the server does
-    /// not replay the commits it missed.
+    /// The socket closed during the match; the session is opening it again (it keeps its
+    /// world and continues from the commits it missed).
+    Reconnecting,
+    /// The socket closed for good.
     Closed,
 }
 
@@ -97,6 +104,30 @@ pub enum Event {
         code: String,
         message: String,
     },
+    /// The socket closed during the match; the session reconnects by itself.
+    Reconnecting {
+        reason: String,
+    },
+    /// The socket is back: the match continues where this seat left it.
+    Reconnected,
+    /// The beats wait for these seats (`[]` once they flow again), for `seconds`.
+    Waiting {
+        players: Vec<u8>,
+        seconds: u32,
+    },
+    /// A player (`None`: a referee) paused the match.
+    Paused {
+        player: Option<u8>,
+        name: String,
+        pauses_left: u32,
+    },
+    /// The match resumes in `seconds`.
+    Resuming {
+        seconds: u32,
+    },
+    Resumed,
+    /// The host removed this connection from the lobby.
+    Kicked,
     /// A committed command no peer can apply (unreadable or malformed); every Rust peer
     /// skips it identically.
     Skipped {
@@ -148,6 +179,12 @@ pub struct Status {
     pub stalled: Option<Duration>,
     pub last_hash_ok: Option<u32>,
     pub desync: Option<u32>,
+    /// Catching up with a match under way: how far, 0 to 1 (a rejoin or a late spectator).
+    pub catching_up: Option<f32>,
+    /// Who paused the match, while it is paused.
+    pub paused: Option<String>,
+    /// The seats the beats wait for, and for how long (seconds).
+    pub waiting: (Vec<u8>, u32),
 }
 
 impl Status {
@@ -192,7 +229,18 @@ struct Remote {
     link: Link,
     room: String,
     token: String,
+    /// The session closed the socket itself: no reconnecting.
+    closing: bool,
+    /// Reconnection attempts since the socket closed, and when the next one is due.
+    attempts: u32,
+    retry_at: Option<Instant>,
 }
+
+/// How long a session keeps trying to reconnect, and how often.
+const RECONNECT_ATTEMPTS: u32 = 60;
+const RECONNECT_EVERY: Duration = Duration::from_secs(2);
+/// A seat this many beats behind the last commit is still catching up.
+const CAUGHT_UP_BEATS: u32 = 8;
 
 enum Transport {
     Local(Local),
@@ -213,6 +261,17 @@ pub struct Session {
     last_hash_ok: Option<u32>,
     desync: Option<u32>,
     events: Vec<Event>,
+    /// Beats up to this one that have no stored commit were empty for every slot
+    /// (`history` lists only commits with actions).
+    empty_through: u32,
+    /// The engine build and content `ready` reports, once the world is built.
+    identity: Option<(ContentIdentity, String)>,
+    /// `ready` went to the server for this connection.
+    ready_sent: bool,
+    /// The clock when a catch-up began.
+    catch_up_from: Option<u32>,
+    paused: Option<String>,
+    waiting: (Vec<u8>, u32),
 }
 
 impl Session {
@@ -269,6 +328,9 @@ impl Session {
             link,
             room: joined.room.id.clone(),
             token: joined.token.clone(),
+            closing: false,
+            attempts: 0,
+            retry_at: None,
         };
         Self::new(
             Transport::Remote(remote),
@@ -277,6 +339,34 @@ impl Session {
             None,
             Phase::Connecting,
         )
+    }
+
+    /// A seat kept from an earlier session: who it is and the room arrive with `welcome`.
+    pub(crate) fn rejoining(net: Net, link: Link, room: &str, token: &str) -> Self {
+        let remote = Remote {
+            net,
+            link,
+            room: room.into(),
+            token: token.into(),
+            closing: false,
+            attempts: 0,
+            retry_at: None,
+        };
+        Self::new(
+            Transport::Remote(remote),
+            None,
+            None,
+            None,
+            Phase::Connecting,
+        )
+    }
+
+    /// The room id and this seat's token (networked sessions), to rejoin after a restart.
+    pub fn seat(&self) -> Option<(&str, &str)> {
+        match &self.transport {
+            Transport::Remote(remote) => Some((&remote.room, &remote.token)),
+            Transport::Local(_) => None,
+        }
     }
 
     fn new(
@@ -300,6 +390,12 @@ impl Session {
             last_hash_ok: None,
             desync: None,
             events: Vec::new(),
+            empty_through: 0,
+            identity: None,
+            ready_sent: false,
+            catch_up_from: None,
+            paused: None,
+            waiting: (Vec::new(), 0),
         }
     }
 
@@ -397,9 +493,65 @@ impl Session {
         });
     }
 
-    /// `setSeat` (host): opens, closes or hands seat `player` to the computer.
-    pub fn set_seat(&self, player: u8, seat: SeatKind) {
-        self.message(ClientMsg::SetSeat { player, seat });
+    /// `setSeat` (host): opens, closes or hands seat `player` to the computer of
+    /// `difficulty`.
+    pub fn set_seat(&self, player: u8, seat: SeatKind, difficulty: canopy_sim::Difficulty) {
+        self.message(ClientMsg::SetSeat {
+            player,
+            seat,
+            difficulty,
+        });
+    }
+
+    /// `setSpectatorPlaces` (host): how many spectators the lobby takes (0 to 4).
+    pub fn set_spectator_places(&self, count: u32) {
+        self.message(ClientMsg::SetSpectatorPlaces { count });
+    }
+
+    /// `setObserverDelay` (host): how far spectators see behind, seconds.
+    pub fn set_observer_delay(&self, seconds: u32) {
+        self.message(ClientMsg::SetObserverDelay { seconds });
+    }
+
+    /// `kick` (host): removes the player in seat `player` from the lobby.
+    pub fn kick_player(&self, player: u8) {
+        self.message(ClientMsg::Kick {
+            player: Some(player),
+            observer: None,
+        });
+    }
+
+    /// `kick` (host): removes spectator `observer` (its public id) from the lobby.
+    pub fn kick_observer(&self, observer: &str) {
+        self.message(ClientMsg::Kick {
+            player: None,
+            observer: Some(observer.into()),
+        });
+    }
+
+    /// `takeSeat`: moves this connection to open seat `player`.
+    pub fn take_seat(&self, player: u8) {
+        self.message(ClientMsg::TakeSeat { player });
+    }
+
+    /// `spectate`: moves this connection to a free spectator place.
+    pub fn spectate(&self) {
+        self.message(ClientMsg::Spectate {});
+    }
+
+    /// `pause`: pauses the match (each player has three pauses).
+    pub fn pause(&self) {
+        self.message(ClientMsg::Pause {});
+    }
+
+    /// `resume`: resumes a paused match (the one who paused at once, others after 30 s).
+    pub fn resume(&self) {
+        self.message(ClientMsg::Resume {});
+    }
+
+    /// `dropPlayer`: drops a seat the match has waited 30 s for.
+    pub fn drop_player(&self, player: u8) {
+        self.message(ClientMsg::DropPlayer { player });
     }
 
     /// `startMatch` (host): over the socket, behind this seat's last selection.
@@ -421,10 +573,11 @@ impl Session {
         }
     }
 
-    /// Closes the socket (the old match screen's Leave). The server drops this seat and
-    /// the others play on.
+    /// Closes the socket for good (no reconnecting). During a match the beats wait for
+    /// this seat until the others drop it; [`Session::leave`] leaves at once.
     pub fn close(&mut self) {
-        if let Transport::Remote(remote) = &self.transport {
+        if let Transport::Remote(remote) = &mut self.transport {
+            remote.closing = true;
             let _ = remote.link.to_io.send(ToIo::Close);
         }
     }
@@ -435,25 +588,47 @@ impl Session {
     /// it simulates, and the world's clock (`World::tick()`). Players with different
     /// identities are refused by the server (`CONTENT_MISMATCH`). Confirmations start
     /// here. Spectators send nothing.
+    ///
+    /// A seat that joined a match under way reports `ready` only once it has caught up
+    /// with the commits it missed ([`Session::stepped`] sends it then).
     pub fn ready(&mut self, content: ContentIdentity, build: &str, clock: u32) {
         self.clock = clock;
+        if !matches!(self.transport, Transport::Remote(_)) || self.phase != Phase::Loading {
+            return;
+        }
+        self.identity = Some((content, build.into()));
+        self.phase = Phase::Starting;
+        self.try_ready(clock);
+    }
+
+    /// Whether this seat has caught up with the commits it received.
+    fn caught_up(&self, clock: u32) -> bool {
+        self.received <= clock + CAUGHT_UP_BEATS
+    }
+
+    /// Sends `ready` (and starts confirming) once the world is built and caught up.
+    fn try_ready(&mut self, clock: u32) {
+        if self.ready_sent || !self.caught_up(clock) {
+            return;
+        }
+        self.catch_up_from = None;
         let Transport::Remote(remote) = &self.transport else {
             return;
         };
-        if self.phase != Phase::Loading {
+        let Some((content, build)) = self.identity.clone() else {
             return;
-        }
+        };
+        self.ready_sent = true;
         if self.player().is_some() {
-            let _ = remote.link.to_io.send(ToIo::Send(ClientMsg::Ready {
-                content,
-                build: build.into(),
-            }));
+            let _ = remote
+                .link
+                .to_io
+                .send(ToIo::Send(ClientMsg::Ready { content, build }));
             let _ = remote.link.to_io.send(ToIo::Clock {
                 tick: clock,
                 hash: None,
             });
         }
-        self.phase = Phase::Starting;
     }
 
     /// The committed commands for the beat after `clock` (`World::tick()`), or `None`
@@ -491,6 +666,14 @@ impl Session {
             return None;
         }
         let Some(commit) = self.commits.remove(&next) else {
+            if next <= self.empty_through {
+                // A beat `history` left out: nobody did anything.
+                self.stalled_since = None;
+                return Some(Turn {
+                    beat: next,
+                    commands: Vec::new(),
+                });
+            }
             if !ended {
                 self.stalled_since.get_or_insert_with(Instant::now);
             }
@@ -538,6 +721,13 @@ impl Session {
     /// `hash`); the confirmations then move on.
     pub fn stepped(&mut self, clock: u32, fingerprint: impl FnOnce() -> u32) {
         self.clock = clock;
+        if !matches!(self.transport, Transport::Remote(_)) {
+            return;
+        }
+        if !self.ready_sent {
+            self.try_ready(clock);
+            return;
+        }
         let Transport::Remote(remote) = &self.transport else {
             return;
         };
@@ -578,6 +768,12 @@ impl Session {
         });
     }
 
+    /// Committed beats not simulated yet: a seat catching up with a match under way is
+    /// far behind; one playing along stays within its input delay.
+    pub fn behind(&self) -> u32 {
+        self.received.saturating_sub(self.clock)
+    }
+
     pub fn status(&self) -> Status {
         let me = self.player();
         Status {
@@ -597,6 +793,12 @@ impl Session {
                 .map(|since| since.elapsed()),
             last_hash_ok: self.last_hash_ok,
             desync: self.desync,
+            catching_up: self.catch_up_from.map(|from| {
+                let total = self.received.saturating_sub(from).max(1);
+                (self.clock.saturating_sub(from) as f32 / total as f32).clamp(0.0, 1.0)
+            }),
+            paused: self.paused.clone(),
+            waiting: self.waiting.clone(),
         }
     }
 
@@ -607,6 +809,7 @@ impl Session {
     }
 
     fn pump(&mut self) {
+        self.retry();
         let Transport::Remote(remote) = &self.transport else {
             return;
         };
@@ -623,17 +826,53 @@ impl Session {
                 FromIo::Malformed { text, error } => {
                     self.events.push(Event::Malformed { text, error })
                 }
-                FromIo::Closed(reason) => {
-                    if !matches!(
-                        self.phase,
-                        Phase::Ended | Phase::Desynced | Phase::Stopped | Phase::Closed
-                    ) {
-                        self.phase = Phase::Closed;
-                    }
-                    self.events.push(Event::Closed { reason });
-                }
+                FromIo::Closed(reason) => self.closed(reason),
             }
         }
+    }
+
+    /// The socket closed: during a match it is opened again (unless this session closed
+    /// it), otherwise the session is over.
+    fn closed(&mut self, reason: String) {
+        let during = matches!(
+            self.phase,
+            Phase::Loading | Phase::Starting | Phase::Playing | Phase::Reconnecting
+        );
+        if let Transport::Remote(remote) = &mut self.transport
+            && during
+            && !remote.closing
+            && remote.attempts < RECONNECT_ATTEMPTS
+        {
+            remote.attempts += 1;
+            remote.retry_at = Some(Instant::now() + RECONNECT_EVERY);
+            if self.phase != Phase::Reconnecting {
+                self.phase = Phase::Reconnecting;
+                self.events.push(Event::Reconnecting { reason });
+            }
+            return;
+        }
+        if !matches!(
+            self.phase,
+            Phase::Ended | Phase::Desynced | Phase::Stopped | Phase::Closed
+        ) {
+            self.phase = Phase::Closed;
+        }
+        self.events.push(Event::Closed { reason });
+    }
+
+    /// Opens the socket again when a reconnection attempt is due, asking for the commits
+    /// after the last one received.
+    fn retry(&mut self) {
+        let since = self.received;
+        let Transport::Remote(remote) = &mut self.transport else {
+            return;
+        };
+        if self.phase != Phase::Reconnecting || remote.retry_at.is_none_or(|at| Instant::now() < at)
+        {
+            return;
+        }
+        remote.retry_at = None;
+        remote.link = remote.net.link(&remote.room, &remote.token, since);
     }
 
     fn stop(&mut self, reason: String) {
@@ -662,10 +901,26 @@ impl Session {
                     );
                 }
                 self.you = Some(you.clone());
+                self.ready_sent = false;
+                self.paused = None;
+                self.waiting = (Vec::new(), 0);
+                if self.phase == Phase::Reconnecting && self.config.as_ref() == Some(&config) {
+                    // The same match: the world goes on from where it was.
+                    if let Transport::Remote(remote) = &mut self.transport {
+                        remote.attempts = 0;
+                    }
+                    self.phase = Phase::Starting;
+                    self.events.push(Event::Reconnected);
+                    let clock = self.clock;
+                    self.try_ready(clock);
+                    return;
+                }
                 self.setup = Some(config.setup());
                 self.config = Some(config.clone());
                 self.commits.clear();
                 self.received = 0;
+                self.empty_through = 0;
+                self.identity = None;
                 self.phase = Phase::Loading;
                 self.events.push(Event::Started { config, you });
             }
@@ -675,6 +930,52 @@ impl Session {
                 }
                 self.events.push(Event::Go { tick });
             }
+            ServerMsg::History { through, commits } => {
+                if self.config.is_none() {
+                    return;
+                }
+                for commit in commits {
+                    if commit.tick > self.received && commit.tick <= through {
+                        self.commits.insert(commit.tick, commit);
+                    }
+                }
+                if through > self.received {
+                    self.received = through;
+                    self.empty_through = self.empty_through.max(through);
+                }
+                if !self.caught_up(self.clock) {
+                    self.catch_up_from.get_or_insert(self.clock);
+                }
+            }
+            ServerMsg::Waiting { players, seconds } => {
+                self.waiting = (players.clone(), seconds);
+                self.events.push(Event::Waiting { players, seconds });
+            }
+            ServerMsg::Paused {
+                player,
+                name,
+                pauses_left,
+            } => {
+                self.paused = Some(name.clone());
+                self.events.push(Event::Paused {
+                    player,
+                    name,
+                    pauses_left,
+                });
+            }
+            ServerMsg::Resuming { seconds } => self.events.push(Event::Resuming { seconds }),
+            ServerMsg::Resumed {} => {
+                self.paused = None;
+                self.events.push(Event::Resumed);
+            }
+            ServerMsg::Kicked {} => {
+                if let Transport::Remote(remote) = &mut self.transport {
+                    remote.closing = true;
+                }
+                self.events.push(Event::Kicked);
+            }
+            // The others dropped this seat; the socket closes and the session rejoins.
+            ServerMsg::Dropped {} => {}
             ServerMsg::Commit { tick, slots } => {
                 if self.config.is_none() || tick <= self.received {
                     return;
@@ -725,7 +1026,19 @@ impl Session {
 }
 
 impl Drop for Session {
+    /// A session given up during a match leaves it (protocol 2: the seat is dropped at
+    /// once and cannot rejoin); a game that crashes leaves its seat waiting instead.
     fn drop(&mut self) {
+        let during = matches!(
+            self.phase,
+            Phase::Loading | Phase::Starting | Phase::Playing | Phase::Reconnecting
+        );
+        if let Transport::Remote(remote) = &self.transport
+            && during
+            && !remote.closing
+        {
+            drop(remote.net.leave_room(&remote.room, &remote.token));
+        }
         self.close();
     }
 }
@@ -816,6 +1129,9 @@ mod tests {
             link: Link { to_io, from_io },
             room: "room".into(),
             token: "token".into(),
+            closing: false,
+            attempts: 0,
+            retry_at: None,
         };
         let you = ClientIdentity {
             role: Role::Player,
@@ -841,6 +1157,7 @@ mod tests {
             slots: setup(2).slots,
             colors: None,
             company: None,
+            observer_delay: 0,
         };
         let send = |message: ServerMsg| from.send(FromIo::Message(Box::new(message))).unwrap();
         send(ServerMsg::Start {
@@ -882,6 +1199,77 @@ mod tests {
                 .any(|e| matches!(e, Event::Ended { .. })),
             "the end is still reported"
         );
+    }
+
+    #[test]
+    fn a_seat_joining_a_match_under_way_catches_up_before_it_is_ready() {
+        let net = Net::new(crate::ServerAddress::parse("http://127.0.0.1:9").unwrap()).unwrap();
+        let (to_io, mut sent) = tokio::sync::mpsc::unbounded_channel();
+        let (from, from_io) = mpsc::channel();
+        let mut session = Session::rejoining(net, Link { to_io, from_io }, "room", "token");
+        let you = ClientIdentity {
+            role: Role::Player,
+            player: Some(1),
+            name: "Back".into(),
+        };
+        let config = MatchConfig {
+            v: 2,
+            room_id: "room".into(),
+            map_id: "map".into(),
+            map_revision: "1".into(),
+            seed: 1,
+            delay: 2,
+            checksum_every: 0,
+            tick_ms: TICK_MS,
+            slots: setup(2).slots,
+            colors: None,
+            company: None,
+            observer_delay: 0,
+        };
+        let send = |message: ServerMsg| from.send(FromIo::Message(Box::new(message))).unwrap();
+        send(ServerMsg::Start {
+            config,
+            you,
+            save: None,
+        });
+        let commit: Commit = serde_json::from_value(serde_json::json!({"tick": 20, "slots": [
+            {"player": 0, "actions": [{"type": "stop", "actors": [4]}]},
+        ]}))
+        .unwrap();
+        send(ServerMsg::History {
+            through: 50,
+            commits: vec![commit],
+        });
+        session.poll();
+        session.ready(
+            ContentIdentity::digest("test", [b"x".as_slice()]),
+            "test",
+            0,
+        );
+        let is_ready = |sent: &mut tokio::sync::mpsc::UnboundedReceiver<ToIo>| {
+            std::iter::from_fn(|| sent.try_recv().ok())
+                .any(|m| matches!(m, ToIo::Send(ClientMsg::Ready { .. })))
+        };
+        assert!(!is_ready(&mut sent), "still 50 beats behind");
+        assert_eq!(session.status().catching_up, Some(0.0));
+        let mut commands = Vec::new();
+        for clock in 0..45 {
+            let turn = session
+                .next_turn(clock)
+                .expect("history beats are all there");
+            assert_eq!(turn.beat, clock + 1);
+            commands.extend(turn.commands.iter().map(|c| c.tick));
+            session.stepped(clock + 1, || 0);
+            if clock + 1 < 42 {
+                assert!(!is_ready(&mut sent), "not caught up at {}", clock + 1);
+            }
+        }
+        assert_eq!(commands, [19], "the one commit with actions, at its beat");
+        assert!(
+            is_ready(&mut sent) || session.ready_sent,
+            "ready once caught up"
+        );
+        assert_eq!(session.status().catching_up, None);
     }
 
     #[test]

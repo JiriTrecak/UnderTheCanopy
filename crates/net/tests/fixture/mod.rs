@@ -221,12 +221,16 @@ pub fn wait_for<T>(
 ) -> T {
     let deadline = Instant::now() + Duration::from_secs(20);
     loop {
+        // The whole batch is kept, also what came after the event looked for.
+        let mut hit = None;
         for event in session.poll() {
-            let hit = found(&event);
-            seen.push(event);
-            if let Some(hit) = hit {
-                return hit;
+            if hit.is_none() {
+                hit = found(&event);
             }
+            seen.push(event);
+        }
+        if let Some(hit) = hit {
+            return hit;
         }
         assert!(
             Instant::now() < deadline,

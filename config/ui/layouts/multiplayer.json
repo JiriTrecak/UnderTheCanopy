@@ -109,7 +109,14 @@
             "class": "sk-footer",
             "children": [
               { "id": "footnote", "kind": "label", "class": "sk-footnote" },
-              { "id": "go", "kind": "button", "class": "sk-launch", "text": "@ui.multiplayer.join-lobby", "action": "mp.go" }
+              {
+                "class": "mp-actions",
+                "children": [
+                  { "id": "rejoin", "kind": "button", "class": "sk-ghost", "text": "@ui.multiplayer.rejoin", "action": "mp.rejoin", "visible": false },
+                  { "id": "spectate", "kind": "button", "class": "sk-ghost", "text": "@ui.multiplayer.spectate", "action": "mp.spectate" },
+                  { "id": "go", "kind": "button", "class": "sk-launch", "text": "@ui.multiplayer.join-lobby", "action": "mp.go" }
+                ]
+              }
             ]
           }
         ]

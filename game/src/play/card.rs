@@ -272,9 +272,7 @@ pub fn fulfilled_buildings(k: &Knowledge) -> Vec<String> {
 /// Whether a campaign mission keeps `id` from the player (docs/campaign.md "Tech"): the
 /// card leaves locked tech out, as Warcraft III's campaigns do.
 fn locked(k: &Knowledge, id: &str) -> bool {
-    k.view
-        .colony
-        .as_ref()
+    k.colony()
         .is_some_and(|c| c.locked.iter().any(|l| l.as_str() == id))
 }
 
@@ -328,9 +326,7 @@ fn chain_head<'a>(
 
 /// Spendable amount of each good.
 fn available(k: &Knowledge, item: &str) -> u32 {
-    k.view
-        .colony
-        .as_ref()
+    k.colony()
         .and_then(|c| c.goods.iter().find(|g| g.item.as_str() == item))
         .map_or(0, |g| g.available)
 }
@@ -373,7 +369,7 @@ fn supply_hint(k: &Knowledge) -> Option<String> {
 
 /// Why a unit costing `cost` supply cannot be queued (old `supplyAdmission`).
 fn supply_admission(k: &Knowledge, cost: u32) -> Option<String> {
-    let colony = k.view.colony.as_ref()?;
+    let colony = k.colony()?;
     canopy_sim::economy::supply::admission(&colony.supply, cost, supply_hint(k).as_deref())
         .map(|m| crate::text::message(&m))
 }
@@ -478,6 +474,9 @@ pub fn commands(k: &Knowledge, selection: &[u32]) -> Vec<Command> {
     let Some(focus) = selection.first().and_then(|&id| k.entity(id)) else {
         return Vec::new();
     };
+    // An away ally's colony (D107): its card, its goods.
+    let acting = k.acting_for(focus.public.owner);
+    let k = acting.as_ref().unwrap_or(k);
     let ended = k.view.outcome.is_some();
     if let Some(wares) = focus.shop.as_ref().filter(|_| !focus.remembered) {
         return finish(shop(k, focus, wares), ended);
@@ -601,9 +600,7 @@ pub fn commands(k: &Knowledge, selection: &[u32]) -> Vec<Command> {
                 .and_then(|w| w.research.as_ref())
                 .map_or(0, |q| q.queue.len());
             let researched: Vec<&str> = k
-                .view
-                .colony
-                .as_ref()
+                .colony()
                 .map(|c| c.research.iter().map(|r| r.as_str()).collect())
                 .unwrap_or_default();
             // Chains (`follows`) show one level at a time, in their first level's slot.

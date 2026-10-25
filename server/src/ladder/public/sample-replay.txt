@@ -1,0 +1,7 @@
+SAMPLE FILE - NOT A REPLAY
+
+This match was made up by the ladder's seed script (npm run seed-ladder) to fill the
+Under the Canopy ladder with example data. No game was played, so there is no replay.
+
+Real ranked matches keep their replay (a .utcr file) on the server for 90 days, and this
+link then downloads that file, which Under the Canopy opens in its replay viewer.

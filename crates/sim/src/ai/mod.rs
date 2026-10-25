@@ -75,54 +75,13 @@ pub struct Summary {
 
 /// The actors a command addresses: its units, or the building or unit it acts through.
 pub fn actors(action: &Action) -> Vec<u32> {
-    match action {
-        Action::Garrison { actors, .. }
-        | Action::Gather { actors, .. }
-        | Action::Construct { actors, .. }
-        | Action::Move { actors, .. }
-        | Action::Attack { actors, .. }
-        | Action::Stop { actors }
-        | Action::Hold { actors, .. }
-        | Action::Patrol { actors, .. }
-        | Action::Follow { actors, .. }
-        | Action::Build { actors, .. } => actors.clone(),
-        Action::AbilityAutocast { actor, .. }
-        | Action::CastAbility { actor, .. }
-        | Action::Unload { actor }
-        | Action::Research { actor, .. }
-        | Action::CancelResearch { actor, .. }
-        | Action::Upgrade { actor }
-        | Action::CancelUpgrade { actor }
-        | Action::Revive { actor, .. }
-        | Action::CancelRevival { actor, .. }
-        | Action::LearnAbility { actor, .. }
-        | Action::Pickup { actor, .. }
-        | Action::DropItem { actor, .. }
-        | Action::UseItem { actor, .. }
-        | Action::Produce { actor, .. }
-        | Action::Cancel { actor, .. }
-        | Action::Rally { actor, .. }
-        | Action::Pause { actor, .. } => vec![*actor],
-        Action::Noop | Action::Ping { .. } | Action::SkipScene | Action::Clicked { .. } => {
-            Vec::new()
-        }
-    }
+    action.actors()
 }
 
 /// Replaces the units a group command addresses.
 fn set_actors(action: &mut Action, ids: Vec<u32>) {
-    match action {
-        Action::Garrison { actors, .. }
-        | Action::Gather { actors, .. }
-        | Action::Construct { actors, .. }
-        | Action::Move { actors, .. }
-        | Action::Attack { actors, .. }
-        | Action::Stop { actors }
-        | Action::Hold { actors, .. }
-        | Action::Patrol { actors, .. }
-        | Action::Follow { actors, .. }
-        | Action::Build { actors, .. } => *actors = ids,
-        _ => {}
+    if let Some(changed) = action.with_actors(ids) {
+        *action = changed;
     }
 }
 

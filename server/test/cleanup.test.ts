@@ -1,14 +1,14 @@
-// Rooms nobody can come back to are discarded, and only open lobbies are listed.
+// Rooms nobody can come back to are discarded; lobbies and matches under way are listed.
 import assert from "node:assert/strict";
 import { test } from "node:test";
 import { ABANDONED_AFTER_MS, MatchHost } from "../src/host";
 import type { ServerMsg } from "../src/protocol";
 
-const draft = { name: "room", mapId: "map", mapRevision: "1", slotCount: 2, guestName: "Ann" };
+const draft = { name: "room", mapId: "map", mapRevision: "1", slotCount: 2, guestName: "Ann", playerId: "ann" };
 
 function host() {
   const clock = { t: 0 };
-  return { clock, host: new MatchHost(() => clock.t) };
+  return { clock, host: new MatchHost(() => clock.t, { log: () => {} }) };
 }
 
 /** Advances the clock and runs the server's once-a-second pulse. */
@@ -28,22 +28,24 @@ test("a lobby whose host never connects or closed the game goes after the grace 
   assert.equal(h.host.get(room.id), undefined);
 });
 
-test("a connected lobby stays, and is listed until it starts", () => {
+test("a connected lobby stays, and is listed while it waits and plays, not once it ends", () => {
   const h = host();
   const { token, room } = h.host.create(draft);
   h.host.get(room.id)!.bind(token, sink);
   wait(h, ABANDONED_AFTER_MS * 3);
-  assert.deepEqual(h.host.list().map((r) => r.id), [room.id]);
+  assert.deepEqual(h.host.list().map((r) => [r.id, r.state]), [[room.id, "waiting"]]);
   h.host.get(room.id)!.start(token);
-  assert.deepEqual(h.host.list(), []);
+  assert.deepEqual(h.host.list().map((r) => [r.id, r.state]), [[room.id, "playing"]]);
   assert.ok(h.host.get(room.id));
+  h.host.get(room.id)!.shutdown({ winner: 0, defeated: [] });
+  assert.deepEqual(h.host.list(), []);
 });
 
 test("a match every player left waits for them to reconnect, then goes", () => {
   const h = host();
   const { token, room } = h.host.create(draft);
   const match = h.host.get(room.id)!;
-  const guest = match.join("Bob", "player");
+  const guest = match.join("Bob", "player", "bob");
   assert.ok("token" in guest);
   match.bind(token, sink);
   match.bind(guest.token, sink);

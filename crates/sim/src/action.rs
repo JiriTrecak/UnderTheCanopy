@@ -217,6 +217,13 @@ pub enum Action {
     Clicked {
         actor: Actor,
     },
+    /// The match server's notice that this player has left the match (D107: left, or
+    /// dropped after the others waited): their allies take control of their colony, or
+    /// without a human ally playing on it is defeated. Only the server writes it.
+    Away,
+    /// The match server's notice that this away player is back: their colony is theirs
+    /// again. Only the server writes it.
+    Back,
 }
 
 /// Serializes `None` as `null` and requires the key when reading.
@@ -238,6 +245,67 @@ mod required_nullable {
 }
 
 impl Action {
+    /// The units and buildings the command addresses: its units, or the building or unit
+    /// it acts through.
+    pub fn actors(&self) -> Vec<Actor> {
+        match self {
+            Self::Garrison { actors, .. }
+            | Self::Gather { actors, .. }
+            | Self::Construct { actors, .. }
+            | Self::Move { actors, .. }
+            | Self::Attack { actors, .. }
+            | Self::Stop { actors }
+            | Self::Hold { actors, .. }
+            | Self::Patrol { actors, .. }
+            | Self::Follow { actors, .. }
+            | Self::Build { actors, .. } => actors.clone(),
+            Self::AbilityAutocast { actor, .. }
+            | Self::CastAbility { actor, .. }
+            | Self::Unload { actor }
+            | Self::Research { actor, .. }
+            | Self::CancelResearch { actor, .. }
+            | Self::Upgrade { actor }
+            | Self::CancelUpgrade { actor }
+            | Self::Revive { actor, .. }
+            | Self::CancelRevival { actor, .. }
+            | Self::LearnAbility { actor, .. }
+            | Self::Pickup { actor, .. }
+            | Self::DropItem { actor, .. }
+            | Self::UseItem { actor, .. }
+            | Self::Produce { actor, .. }
+            | Self::Cancel { actor, .. }
+            | Self::Rally { actor, .. }
+            | Self::Pause { actor, .. } => vec![*actor],
+            // A click names what was clicked, not who acts.
+            Self::Noop
+            | Self::Ping { .. }
+            | Self::SkipScene
+            | Self::Clicked { .. }
+            | Self::Away
+            | Self::Back => Vec::new(),
+        }
+    }
+
+    /// The command for `actors` instead, when it addresses a list of them; `None` for a
+    /// command of one actor or none.
+    pub fn with_actors(&self, actors: Vec<Actor>) -> Option<Self> {
+        let mut action = self.clone();
+        match &mut action {
+            Self::Garrison { actors: a, .. }
+            | Self::Gather { actors: a, .. }
+            | Self::Construct { actors: a, .. }
+            | Self::Move { actors: a, .. }
+            | Self::Attack { actors: a, .. }
+            | Self::Stop { actors: a }
+            | Self::Hold { actors: a, .. }
+            | Self::Patrol { actors: a, .. }
+            | Self::Follow { actors: a, .. }
+            | Self::Build { actors: a, .. } => *a = actors,
+            _ => return None,
+        }
+        Some(action)
+    }
+
     /// The structural rules of the protocol beyond field types: what the match server and
     /// every peer reject. Returns the first violation.
     pub fn problem(&self) -> Option<&'static str> {

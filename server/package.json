@@ -7,7 +7,9 @@
   "scripts": {
     "start": "tsx src/index.ts",
     "check": "tsc --noEmit",
-    "test": "node --import tsx --test test/*.test.ts"
+    "test": "node --import tsx --test test/*.test.ts",
+    "build-ladder": "tailwindcss -i src/ladder/styles.css -o src/ladder/public/ladder.css --minify",
+    "seed-ladder": "tsx src/ladder/seed.ts"
   },
   "dependencies": {
     "tsx": "^4.23.12",
@@ -15,8 +17,10 @@
     "zod": "^4.5.4"
   },
   "devDependencies": {
+    "@tailwindcss/cli": "^4.3.3",
     "@types/node": "^26.2.0",
     "@types/ws": "^8.18.1",
+    "tailwindcss": "^4.3.3",
     "typescript": "^7.0.2"
   }
 }

@@ -421,12 +421,82 @@ pub fn show_overlay(host: &mut UiHost, playing: &Playing, problem: Option<&(Stri
             .status
             .stalled
             .is_some_and(|s| s > super::in_match::STALL_NOTICE);
-    let banner = if waiting {
+    let net = &playing.net;
+    let percent = |p: f32| (p * 100.0).round() as u32;
+    let open = problem.is_none() && playing.outcome.is_none();
+    let resuming = net.resuming_at.map(|at| {
+        at.saturating_duration_since(std::time::Instant::now())
+            .as_secs()
+            + 1
+    });
+    let banner = if !playing.networked || !open {
+        None
+    } else if net.reconnecting {
+        Some(tr!("match.reconnecting"))
+    } else if let Some(p) = status.status.catching_up {
+        Some(if playing.me.is_some() {
+            tr!("match.rejoining", percent = percent(p))
+        } else {
+            tr!("match.catching-up", percent = percent(p))
+        })
+    } else if let Some(seconds) = resuming {
+        Some(tr!("match.resuming", seconds = seconds))
+    } else if waiting && net.waiting.is_empty() && net.paused.is_none() {
         let seconds = status.status.stalled.map_or(0, |s| s.as_secs());
         Some(tr!("match.waiting-for-players", seconds = seconds))
     } else {
         None
     };
+    // The pause, or the players the match waits for (5 s on), with Resume or Drop.
+    let names = |players: &[u8]| {
+        players
+            .iter()
+            .map(|&p| playing.name_of(p))
+            .collect::<Vec<_>>()
+            .join(", ")
+    };
+    let panel = match (&net.paused, resuming) {
+        _ if !playing.networked || !open || net.reconnecting => None,
+        (Some(p), None) => Some((
+            tr!("match.paused-by", name = &p.name),
+            tr!("match.pauses-left", name = &p.name, count = p.pauses_left),
+            true,
+            false,
+        )),
+        (None, _) if !net.waiting.is_empty() && net.waited >= 5 => Some((
+            tr!("match.waiting-for", names = &names(&net.waiting)),
+            tr!("match.waited", seconds = net.waited),
+            false,
+            playing.me.is_some() && u64::from(net.waited) >= super::in_match::NET_GRACE.as_secs(),
+        )),
+        _ => None,
+    };
+    widgets::visible(ui, "match-overlay/net", panel.is_some());
+    if let Some((title, body, resume, drop)) = panel {
+        widgets::text(ui, "match-overlay/net/title", &title);
+        widgets::text(ui, "match-overlay/net/body", &body);
+        let shown = resume && playing.me.is_some();
+        widgets::visible(ui, "match-overlay/net/resume", shown);
+        if shown {
+            let wait = net.paused.as_ref().map_or(0, |p| {
+                super::in_match::NET_GRACE
+                    .saturating_sub(p.since.elapsed())
+                    .as_secs()
+            });
+            let mine = net.paused.as_ref().is_some_and(|p| p.player == playing.me);
+            widgets::text(
+                ui,
+                "match-overlay/net/resume",
+                &if mine || wait == 0 {
+                    tr!("match.resume")
+                } else {
+                    tr!("match.resume-in", seconds = wait)
+                },
+            );
+            widgets::enabled(ui, "match-overlay/net/resume", playing.may_resume());
+        }
+        widgets::visible(ui, "match-overlay/net/drop", drop);
+    }
     widgets::visible(ui, "match-overlay/banner", banner.is_some());
     if let Some(text) = banner {
         widgets::text(ui, "match-overlay/banner/text", &text);
@@ -765,6 +835,23 @@ pub fn show_game_menu(host: &mut UiHost, playing: &Playing, page: MenuPage, stat
         ui,
         "game-menu/main/surrender",
         playing.me.is_some() && !decided,
+    );
+    // A networked match pauses for everyone (three times per player, D107).
+    let pauses_left = canopy_net::wire::PAUSES.saturating_sub(playing.net.pauses_used);
+    widgets::visible(
+        ui,
+        "game-menu/main/pause",
+        playing.networked && playing.me.is_some(),
+    );
+    widgets::text(
+        ui,
+        "game-menu/main/pause",
+        &tr!("match.pause-match", count = pauses_left),
+    );
+    widgets::enabled(
+        ui,
+        "game-menu/main/pause",
+        !decided && pauses_left > 0 && playing.net.paused.is_none(),
     );
     widgets::text(ui, "game-menu/status", status);
     widgets::visible(ui, "game-menu/status", !status.is_empty());

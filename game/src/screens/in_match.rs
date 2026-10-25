@@ -22,11 +22,38 @@ use crate::{
 use canopy_render::FrameReport;
 use canopy_ui::{DrawList, Ui};
 use std::sync::Arc;
-use std::time::Duration;
+use std::time::{Duration, Instant};
 use winit::{event::WindowEvent, window::Window};
 
 /// How long the next beat may be missing before "waiting for players" shows.
 pub const STALL_NOTICE: Duration = Duration::from_millis(1500);
+
+/// How long others wait before they may resume a pause or drop a waited-for player.
+pub const NET_GRACE: Duration = Duration::from_secs(30);
+
+/// A networked match's pause, waits and connection as this seat heard them (D107).
+#[derive(Debug, Clone, Default)]
+pub struct NetState {
+    pub paused: Option<NetPause>,
+    /// When the match resumes after a pause's countdown.
+    pub resuming_at: Option<Instant>,
+    /// The seats the beats wait for, and for how long (seconds).
+    pub waiting: Vec<u8>,
+    pub waited: u32,
+    pub reconnecting: bool,
+    /// Pauses this seat has used.
+    pub pauses_used: u32,
+    /// Players away at the last look (for the chat's notices).
+    away: Vec<u8>,
+}
+
+#[derive(Debug, Clone)]
+pub struct NetPause {
+    pub player: Option<u8>,
+    pub name: String,
+    pub pauses_left: u32,
+    pub since: Instant,
+}
 
 /// What kind of match runs (titles, what the game menu offers).
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
@@ -110,6 +137,8 @@ pub struct Playing {
     pub info: Option<crate::replay::MatchInfo>,
     /// The replay being watched.
     pub watching: Option<Watching>,
+    /// Pause, waits and connection (networked matches).
+    pub net: NetState,
 }
 
 /// How a match starts.
@@ -223,6 +252,7 @@ impl Playing {
             outcome: None,
             events: Vec::new(),
             problem: false,
+            net: NetState::default(),
             recorder,
             setup,
             info: start.info,
@@ -273,6 +303,86 @@ impl Playing {
         }
     }
 
+    /// Tells the chat who left the match and who came back (D107).
+    fn comings_and_goings(&mut self) {
+        if !self.networked {
+            return;
+        }
+        let Some(newest) = self.game.live().newest().cloned() else {
+            return;
+        };
+        let away: Vec<u8> = newest
+            .view
+            .away
+            .iter()
+            .filter_map(|o| match *o {
+                canopy_content::placement::Owner::Player(p) => Some(p),
+                _ => None,
+            })
+            .collect();
+        if away == self.net.away {
+            return;
+        }
+        let left: Vec<u8> = away
+            .iter()
+            .copied()
+            .filter(|p| !self.net.away.contains(p))
+            .collect();
+        let back: Vec<u8> = self
+            .net
+            .away
+            .iter()
+            .copied()
+            .filter(|p| !away.contains(p))
+            .collect();
+        for p in left {
+            let line = tr!("match.player-left", name = &self.name_of(p));
+            self.game
+                .play
+                .hear(String::new(), [0xcc, 0xcc, 0xcc], &line);
+        }
+        for p in back {
+            let line = tr!("match.player-back", name = &self.name_of(p));
+            self.game
+                .play
+                .hear(String::new(), [0xcc, 0xcc, 0xcc], &line);
+        }
+        self.net.away = away;
+    }
+
+    /// Pauses the networked match (each player has three pauses).
+    pub fn pause_match(&self) {
+        self.game
+            .sim()
+            .control(Control::Net(crate::sim::NetControl::Pause));
+    }
+
+    /// Resumes a paused networked match.
+    pub fn resume_match(&self) {
+        self.game
+            .sim()
+            .control(Control::Net(crate::sim::NetControl::Resume));
+    }
+
+    /// Drops the seats the match waits for.
+    pub fn drop_waited(&self) {
+        for &player in &self.net.waiting {
+            self.game
+                .sim()
+                .control(Control::Net(crate::sim::NetControl::Drop(player)));
+        }
+    }
+
+    /// Whether this seat may resume the pause now: its own pause at once, another's after
+    /// [`NET_GRACE`].
+    pub fn may_resume(&self) -> bool {
+        self.net.paused.as_ref().is_some_and(|p| {
+            self.me.is_some()
+                && self.net.resuming_at.is_none()
+                && (p.player == self.me || p.since.elapsed() >= NET_GRACE)
+        })
+    }
+
     /// Player `player`'s colour (sRGB).
     pub fn color_of(&self, player: u8) -> [u8; 3] {
         self.colors
@@ -312,6 +422,7 @@ impl Playing {
             self.notice(notice);
         }
         self.good_game();
+        self.comings_and_goings();
         if self.game.stopped() && !self.problem {
             self.problem = true;
             self.events.push(MatchEvent::Problem {
@@ -371,6 +482,46 @@ impl Playing {
             }
 
             Notice::Net(Event::Chat(message)) => self.hear(&message),
+            Notice::Net(Event::Paused {
+                player,
+                name,
+                pauses_left,
+            }) => {
+                if player.is_some() && player == self.me {
+                    self.net.pauses_used += 1;
+                }
+                self.net.paused = Some(NetPause {
+                    player,
+                    name,
+                    pauses_left,
+                    since: Instant::now(),
+                });
+                self.net.resuming_at = None;
+            }
+            Notice::Net(Event::Resuming { seconds }) => {
+                self.net.resuming_at =
+                    Some(Instant::now() + Duration::from_secs(u64::from(seconds)));
+            }
+            Notice::Net(Event::Resumed) => {
+                self.net.paused = None;
+                self.net.resuming_at = None;
+            }
+            Notice::Net(Event::Waiting { players, seconds }) => {
+                self.net.waiting = players;
+                self.net.waited = seconds;
+            }
+            Notice::Net(Event::Reconnecting { reason }) => {
+                tracing::warn!(%reason, "match connection lost; reconnecting");
+                self.net.reconnecting = true;
+            }
+            Notice::Net(Event::Reconnected) => {
+                tracing::info!("match connection back");
+                self.net.reconnecting = false;
+                let line = tr!("match.reconnected");
+                self.game
+                    .play
+                    .hear(String::new(), [0xcc, 0xcc, 0xcc], &line);
+            }
             Notice::Net(Event::Desync { tick, .. }) => {
                 self.problem = true;
                 self.events.push(MatchEvent::Problem {

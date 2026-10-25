@@ -217,9 +217,22 @@ impl Net {
 
     /// Opens the room's socket with a seat from [`Net::create_room`] or [`Net::join_room`].
     pub fn enter(&self, joined: &Joined) -> Session {
-        let url = self.inner.server.match_url(&joined.room.id, &joined.token);
-        let link = link::spawn(self, url);
+        let link = self.link(&joined.room.id, &joined.token, 0);
         Session::remote(self.clone(), link, joined)
+    }
+
+    /// Opens the room's socket again with a seat kept from an earlier session (the game
+    /// restarted during a match): the server sends the match and every commit, and the
+    /// session catches up (D107).
+    pub fn rejoin(&self, room: &str, token: &str) -> Session {
+        let link = self.link(room, token, 0);
+        Session::rejoining(self.clone(), link, room, token)
+    }
+
+    /// The room's socket, asking for the commits after beat `since`.
+    pub(crate) fn link(&self, room: &str, token: &str, since: u32) -> link::Link {
+        let url = self.inner.server.match_url(room, token, since);
+        link::spawn(self, url)
     }
 
     fn get(&self, path: &str) -> reqwest::RequestBuilder {

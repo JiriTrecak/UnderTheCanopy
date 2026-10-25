@@ -52,5 +52,19 @@
   "match.victory-line": "Your side has won the match.",
   "match.waiting-for-players": "Waiting for players…  {seconds} s",
   "match.you": "{name} (you)",
-  "match.you-surrendered": "You surrendered."
+  "match.you-surrendered": "You surrendered.",
+  "match.reconnecting": "Connection lost — reconnecting…",
+  "match.reconnected": "Reconnected.",
+  "match.rejoining": "Rejoining the match… {percent}%",
+  "match.catching-up": "Catching up with the match… {percent}%",
+  "match.resuming": "Resuming in {seconds}…",
+  "match.paused-by": "Paused by {name}",
+  "match.pauses-left": "{name} has {count, plural, one {# pause} other {# pauses}} left.",
+  "match.waiting-for": "Waiting for {names}",
+  "match.waited": "{seconds} s. After 30 s the match can go on without them; they can rejoin later.",
+  "match.resume": "Resume",
+  "match.resume-in": "Resume in {seconds} s",
+  "match.player-left": "{name} has left the match.",
+  "match.player-back": "{name} is back.",
+  "match.pause-match": "Pause match ({count} left)"
 }

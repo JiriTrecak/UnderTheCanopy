@@ -177,7 +177,6 @@ impl<'a> Ui<'a> {
         true
     }
 
-
     pub fn escape(&mut self) {
         self.key(egui::Key::Escape, egui::Modifiers::NONE);
     }
@@ -221,7 +220,6 @@ impl<'a> Ui<'a> {
         self.send(vec![press(to, false)]);
         self.frames(2);
     }
-
 
     pub fn check(&mut self, ok: bool, what: &str) -> bool {
         if ok {

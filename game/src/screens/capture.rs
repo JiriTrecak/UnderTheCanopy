@@ -1953,6 +1953,8 @@ fn multiplayer(rig: &mut Rig) -> Result<()> {
                 map_revision: super::multiplayer::map_revision(&bytes),
                 slot_count: 3,
                 guest_name: "Bo".into(),
+                player_id: "Bo".into(),
+                protocol: canopy_net::wire::PROTOCOL,
             })
             .wait()?;
         let session = net.enter(&joined);
@@ -1968,9 +1970,12 @@ fn multiplayer(rig: &mut Rig) -> Result<()> {
     rig.settle(0.2);
     if server.is_some() && !rig.game.mp.rooms.is_empty() {
         let data = rig.game.data.clone().context("booted")?;
-        rig.game
-            .mp
-            .go(&data.skirmish_maps().collect::<Vec<_>>(), "Jiri");
+        rig.game.mp.go(
+            &data.skirmish_maps().collect::<Vec<_>>(),
+            "Jiri",
+            "Jiri1",
+            canopy_net::wire::Role::Player,
+        );
         rig.until("the lobby", Duration::from_secs(20), |g| {
             *g.flow.screen() == Screen::Lobby
         })?;
@@ -2002,7 +2007,7 @@ fn lobby_host(rig: &mut Rig, net: &canopy_net::Net) -> Result<()> {
     rig.game.mp.tab = super::multiplayer::Tab::Create;
     rig.game.mp.selected_map = index;
     rig.game.mp.seats = map.starts.len().saturating_sub(2);
-    rig.game.mp.go(&maps, "Jiri");
+    rig.game.mp.go(&maps, "Jiri", "Jiri1", Role::Player);
     rig.until("the hosted lobby", Duration::from_secs(20), |g| {
         *g.flow.screen() == Screen::Lobby && g.mp.room().is_some()
     })?;
@@ -2018,6 +2023,8 @@ fn lobby_host(rig: &mut Rig, net: &canopy_net::Net) -> Result<()> {
             &JoinRoom {
                 guest_name: "Bo".into(),
                 role: Role::Player,
+                player_id: "Bo".into(),
+                protocol: canopy_net::wire::PROTOCOL,
             },
         )
         .wait()?;

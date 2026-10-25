@@ -36,6 +36,9 @@ pub struct Knowledge {
     /// Known resources a known building stands on (`View::covered`): only the building is
     /// drawn, picked and selected.
     pub covered: Arc<std::collections::BTreeSet<canopy_sim::entity::EntityId>>,
+    /// The away ally whose colony the command card is acting for (D107 shared control):
+    /// "own" and the colony then mean that ally's.
+    pub acting: Option<Owner>,
 }
 
 impl Knowledge {
@@ -53,6 +56,34 @@ impl Knowledge {
             me,
             held: Arc::new(Vec::new()),
             covered,
+            acting: None,
+        }
+    }
+
+    /// The same knowledge acting for `owner`, when it is an away ally the viewer commands
+    /// (D107); `None` otherwise.
+    pub fn acting_for(&self, owner: Owner) -> Option<Self> {
+        (self.owner() != Some(owner) && self.commands(owner)).then(|| Self {
+            acting: Some(owner),
+            ..self.clone()
+        })
+    }
+
+    /// Whether the viewer commands `owner`'s colony: its own, or an away ally's (D107).
+    pub fn commands(&self, owner: Owner) -> bool {
+        self.owner() == Some(owner) || self.view.commanded.iter().any(|(o, _)| *o == owner)
+    }
+
+    /// The goods, supply and research the command card spends: the acting colony's.
+    pub fn colony(&self) -> Option<&canopy_sim::economy::view::Colony> {
+        match self.acting {
+            Some(owner) => self
+                .view
+                .commanded
+                .iter()
+                .find(|(o, _)| *o == owner)
+                .map(|(_, c)| c),
+            None => self.view.colony.as_ref(),
         }
     }
 
@@ -80,9 +111,16 @@ impl Knowledge {
         self.held.binary_search(&id).is_ok()
     }
 
-    /// The viewer's own entity, seen (not a memory).
+    /// The viewer's own entity, seen (not a memory); while acting for an away ally, that
+    /// ally's. Away allies' entities are commanded too ([`Knowledge::commands`]).
     pub fn own(&self, e: &EntityView) -> bool {
-        !e.remembered && self.owner().is_some_and(|o| e.public.owner == o)
+        if e.remembered {
+            return false;
+        }
+        match self.acting {
+            Some(owner) => e.public.owner == owner,
+            None => self.commands(e.public.owner),
+        }
     }
 
     /// Own, alive, under player control and not inside anything (old "controlled").

@@ -39,6 +39,10 @@ pub const TICK: Duration = Duration::from_millis(25);
 pub const LEAD: u32 = 1;
 /// Ticks of backlog the thread catches up at full speed before it moves the schedule.
 pub const MAX_BACKLOG: u32 = 8;
+/// A networked seat this many committed beats behind catches up (D107: a rejoin, a late
+/// spectator, a reconnect): it simulates them as fast as it can, a slice at a time.
+const CATCH_UP_BEATS: u32 = 16;
+const CATCH_UP_SLICE: Duration = Duration::from_millis(30);
 /// Snapshots the render thread can reach.
 pub const RING: usize = 4;
 
@@ -189,8 +193,11 @@ pub struct SimThread {
 
 /// What the window thread asks of a running match.
 pub enum Control {
-    /// Holds the match still (single-player; multiplayer has no pause, D32).
+    /// Holds the match still (single-player; a networked match pauses through the
+    /// server: [`Control::Net`]).
     Pause(bool),
+    /// A networked match's pause, resume or drop (D107).
+    Net(NetControl),
     /// Replies with the world's save between two ticks.
     Save(mpsc::Sender<canopy_sim::Save>),
     /// A chat line (networked matches).
@@ -208,6 +215,15 @@ pub enum Control {
     Hold(bool),
     /// Autoplay's speed, or the player taking over.
     Autoplay(AutoplayControl),
+}
+
+/// What a networked seat asks of the match server during the match (D107).
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum NetControl {
+    Pause,
+    Resume,
+    /// Drops a seat the match has waited 30 s for.
+    Drop(u8),
 }
 
 /// What feeds the world its commands: the session (recorded when a recorder is given),
@@ -1059,6 +1075,11 @@ impl SimThread {
                                     let _ = reply.send(world.save());
                                 }
                                 Control::Chat(text) => session.chat(&text),
+                                Control::Net(NetControl::Pause) => session.pause(),
+                                Control::Net(NetControl::Resume) => session.resume(),
+                                Control::Net(NetControl::Drop(player)) => {
+                                    session.drop_player(player)
+                                }
                                 Control::Speed(s) if !networked && s > 0.0 => speed = s,
                                 Control::Shown(seat) if !networked => shown = seat,
                                 Control::Seek(tick) if replaying => seek = Some(tick),
@@ -1188,6 +1209,55 @@ impl SimThread {
                         }
                         if paused_at.is_some() {
                             std::thread::sleep(Duration::from_millis(5));
+                            continue;
+                        }
+                        // Catching up with a match under way: the committed beats run
+                        // as fast as they can, unpresented, a slice at a time; then the
+                        // picture starts over from the newest one, as after a seek.
+                        if networked && session.behind() > CATCH_UP_BEATS {
+                            let started = Instant::now();
+                            while started.elapsed() < CATCH_UP_SLICE
+                                && session.behind() > CATCH_UP_BEATS / 2
+                            {
+                                let Some(turn) = session.advance(&mut world) else {
+                                    break;
+                                };
+                                if let Driver::Live {
+                                    recorder: Some(recorder),
+                                    ..
+                                } = &mut driver
+                                {
+                                    recorder.stepped(&turn.commands, &world);
+                                }
+                                if observing {
+                                    tally.observe(&world);
+                                }
+                            }
+                            presenter.reset();
+                            generation += 1;
+                            mailbox.reset();
+                            let now = Instant::now();
+                            let a = present_step(&world, &mut presenter, seat, shown, now, now);
+                            epoch = now;
+                            origin = world.tick();
+                            if observing {
+                                colony_list = Some(rows(&world, &driver, &tally));
+                            }
+                            mailbox.publish(Arc::new(Snapshot {
+                                presentation: a.presentation,
+                                view: a.view,
+                                ai: None,
+                                held: a.held,
+                                scene: a.scene,
+                                colonies: colony_list.clone(),
+                                epoch,
+                                origin,
+                                tick_length: pace,
+                                cost: a.cost,
+                                slowdowns,
+                                decided: a.decided,
+                                generation,
+                            }));
                             continue;
                         }
                         let next = world.tick() + 1;
@@ -1377,6 +1447,8 @@ mod tests {
             spells: Default::default(),
             pings: Vec::new(),
             defeated: Vec::new(),
+            away: Vec::new(),
+            commanded: Vec::new(),
             network: Default::default(),
         }
     }
