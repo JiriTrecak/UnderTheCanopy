@@ -1,7 +1,11 @@
 //! Shot presets (`mission.shot`, docs/campaign.md "Scenes"): the camera of a single, an
 //! over-the-shoulder, a two shot or a wide shot, found from the actors as the picture
-//! draws them (where they stand, which way they face, their face as posed and their
-//! height), so a line is seen on its speaker wherever a walk left them.
+//! draws them (where they stand, which way they face, their face as posed and the size of
+//! their body), so a line is seen on its speaker wherever a walk left them.
+//!
+//! Every preset shows its actors whole, with room around them, centred (Jiri,
+//! 2026-10-27: "always see the entire unit, and ideally a bit more"): the units read
+//! from a distance, not from a close-up.
 //!
 //! The simulation keeps only what the script asked for ([`super::shots::Preset`]); this
 //! is a pure function of the drawn actors, the ground and what stops a line of sight, so
@@ -20,6 +24,10 @@ use std::collections::BTreeMap;
 /// height: a shot frames its subject in the picture between them.
 const BAR_TOP: f32 = 0.10;
 const BAR_BOTTOM: f32 = 0.21;
+/// How much room a shot leaves round a whole actor: its height and its length times
+/// these show between the bars.
+const ROOM_TALL: f32 = 1.55;
+const ROOM_LONG: f32 = 1.35;
 /// How far a single's camera turns from the face toward the side, radians.
 const SINGLE_TURN: f32 = 0.61;
 /// How far a wide shot on a unit turns from its front, radians.
@@ -43,6 +51,11 @@ pub struct Actor {
     /// Its face's height above its feet standing: the shot's measure, so a kneeling
     /// speaker is framed as close as a standing one.
     pub stature: f32,
+    /// The middle of its drawn body, and the body's height and horizontal length (its
+    /// model's bounds as drawn): what a shot keeps whole in the picture.
+    pub center: Vec3,
+    pub height: f32,
+    pub length: f32,
     /// The side its face reads best from, radians from its front toward its right: its
     /// model's portrait turn (`display.portrait.turn`), when it gives one.
     pub best: Option<f32>,
@@ -56,6 +69,11 @@ pub trait Stage {
     /// How far a ray from `origin` along unit `dir` runs before scenery, a building or a
     /// unit other than `except` stops it, up to `far`.
     fn clear(&self, origin: Vec3, dir: Vec3, far: f32, except: &[u32]) -> f32;
+    /// The same with scenery and buildings only: units may stand in a shot, a wall may
+    /// not.
+    fn clear_of_scenery(&self, origin: Vec3, dir: Vec3, far: f32) -> f32 {
+        self.clear(origin, dir, far, &[])
+    }
     /// Whether a camera may stand at `point`: over the map, not out in the forest that
     /// frames it.
     fn inside(&self, _point: Vec3) -> bool {
@@ -184,14 +202,25 @@ pub fn place(
         }
     };
     let mut shot = candidate(sign, spread)?;
-    // Something still in the way of a close shot: the eye comes in front of it.
+    // Scenery or a building still in the way: the eye comes in front of it, though never
+    // closer than a third of the way (units may stand in a shot).
     let offset = shot.eye - shot.subject;
     let length = offset.length();
     if length > 0.01 && preset.kind != PresetKind::Wide {
         let dir = offset / length;
-        let open = stage.clear(shot.subject, dir, length, &except);
+        let open = stage.clear_of_scenery(shot.subject, dir, length);
         if open < length {
-            shot.eye = shot.subject + dir * (open - 0.5).max(length * 0.2);
+            shot.eye = shot.subject + dir * (open - 0.5).max(length / 3.0);
+        }
+        // Still something in front of the subject (a crowd, a tall prop): the camera
+        // cranes up and looks over it.
+        for _ in 0..3 {
+            let offset = shot.eye - shot.subject;
+            let length = offset.length();
+            if stage.clear(shot.subject, offset / length, length, &except) >= length * 0.97 {
+                break;
+            }
+            shot.eye.y += length * 0.3;
         }
     }
     Some(shot.saved(preset.roll, aspect, stage.ground()))
@@ -296,8 +325,17 @@ fn frame(
     ground: &dyn Ground,
 ) -> Option<Framed> {
     match preset.kind {
-        PresetKind::Single => Some(single(preset, &actors[0]?, sign, spread)),
-        PresetKind::Over => Some(over(preset, &actors[0]?, &actors[1]?, sign, spread, aspect)),
+        PresetKind::Single => Some(single(preset, &actors[0]?, sign, spread, aspect)),
+        PresetKind::Over => {
+            let (from, to) = (&actors[0]?, &actors[1]?);
+            let shot = over(preset, from, to, sign, spread, aspect);
+            // A listener big enough to hide the speaker: both of them, side by side.
+            if hides(from, shot.eye, shot.subject) {
+                Some(two(preset, from, to, sign, spread, aspect))
+            } else {
+                Some(shot)
+            }
+        }
         PresetKind::Two => Some(two(preset, &actors[0]?, &actors[1]?, sign, spread, aspect)),
         PresetKind::Wide => match (preset.radius, actors[0]) {
             (Some(radius), _) => Some(wide_region(preset, radius, sign, spread, ground)),
@@ -307,21 +345,46 @@ fn frame(
     }
 }
 
-/// Head and shoulders to the waist, from the front `sign` side.
-fn single(p: &Preset, a: &Actor, sign: f32, spread: f32) -> Framed {
-    let h = a.stature.max(0.1);
+/// Whether `a`'s body stands across the line from `eye` to `subject`, covering it.
+fn hides(a: &Actor, eye: Vec3, subject: Vec3) -> bool {
+    let view = subject - eye;
+    let length = view.length();
+    if length <= 0.01 {
+        return false;
+    }
+    let radius = (0.5 * a.length).max(0.3 * a.height);
+    upright(eye, view / length, a.feet, radius * 0.8, a.height).is_some_and(|t| t < length * 0.9)
+}
+
+/// The span (between the bars) that shows `a` whole with room round it, at `aspect`.
+fn whole(a: &Actor, aspect: f32) -> f32 {
+    let wide = aspect / visible();
+    (ROOM_TALL * a.height.max(a.stature)).max(ROOM_LONG * a.length / wide)
+}
+
+/// The eye's height for a whole actor `distance` away: a little above its face, looking
+/// gently down.
+fn eye_height(a: &Actor, distance: f32) -> f32 {
+    a.feet.y + a.height.max(a.stature) * 0.8 + distance * 0.12
+}
+
+/// The whole actor, centred, from the front `sign` side.
+fn single(p: &Preset, a: &Actor, sign: f32, spread: f32, aspect: f32) -> Framed {
     let fov = p.fov.unwrap_or(30f32.to_radians());
-    // The face in the picture's upper third: the waist at the lower bar.
-    let subject = a.face - Vec3::Y * (0.12 * h);
-    let distance = p.distance.unwrap_or_else(|| distance_for(0.7 * h, fov));
-    let y = a.feet.y + p.height.unwrap_or(0.92 * (a.face.y - a.feet.y));
+    let subject = a.center;
+    let distance = p
+        .distance
+        .unwrap_or_else(|| distance_for(whole(a, aspect), fov));
+    let y = p
+        .height
+        .map_or_else(|| eye_height(a, distance), |h| a.feet.y + h);
     let turn = sign * SINGLE_TURN * spread;
     let eye = eye_at(subject, turned(a.forward, turn), distance, y);
     Framed {
         eye,
         subject,
         fov,
-        across: look_room(eye, subject, a.forward, 0.3),
+        across: look_room(eye, subject, a.forward, 0.12),
         raise: 0.0,
     }
 }
@@ -330,7 +393,9 @@ fn single(p: &Preset, a: &Actor, sign: f32, spread: f32) -> Framed {
 fn over(p: &Preset, from: &Actor, to: &Actor, sign: f32, spread: f32, aspect: f32) -> Framed {
     let u = horizontal(to.feet - from.feet).unwrap_or(from.forward);
     let h = from.stature.max(0.1);
-    let subject = to.face - Vec3::Y * (0.12 * to.stature.max(0.1));
+    // The speaker whole; the listener's shoulder at the edge.
+    let subject = to.center;
+    let span = whole(to, aspect);
     let aside = OVER_ASIDE * spread * h;
     // The line of sight passes beside the listener's head, so the head stands just off
     // it, toward the picture's edge.
@@ -338,20 +403,21 @@ fn over(p: &Preset, from: &Actor, to: &Actor, sign: f32, spread: f32, aspect: f3
     let dir = (past - subject).normalize_or(-u);
     let lens = |distance: f32| {
         p.fov.unwrap_or_else(|| {
-            fov_for(0.9 * to.stature.max(0.1), distance)
-                .clamp(14f32.to_radians(), 42f32.to_radians())
+            fov_for(span, distance).clamp(14f32.to_radians(), 48f32.to_radians())
         })
     };
     // Back from there until the head lands at the edge: further for a long lens (a
     // speaker far away), closer for a wide one. The lens follows the distance.
     let reach = past.distance(subject);
-    let across = 0.3 * sign;
+    let across = 0.2 * sign;
     let mut back = 0.5 * h;
     for _ in 0..3 {
         let half = aspect * (lens(reach + back) * 0.5).tan();
-        back = (aside / ((OVER_EDGE + across.abs()) * half)).clamp(0.3 * h, 4.0 * h);
+        back = (aside / ((OVER_EDGE + across.abs()) * half)).clamp(0.3 * h, 6.0 * h);
     }
-    let mut eye = past + dir * back;
+    // Never closer than the speaker shows whole at a natural lens.
+    let total = (reach + back).max(distance_for(span, 38f32.to_radians()));
+    let mut eye = subject + dir * total;
     if let Some(height) = p.height {
         eye.y = from.feet.y + height;
     }
@@ -367,18 +433,25 @@ fn over(p: &Preset, from: &Actor, to: &Actor, sign: f32, spread: f32, aspect: f3
     }
 }
 
-/// Both from the `sign` side of the line between them, from the thighs up.
+/// Both whole, from the `sign` side of the line between them.
 fn two(p: &Preset, a: &Actor, b: &Actor, sign: f32, spread: f32, aspect: f32) -> Framed {
     let u = horizontal(b.feet - a.feet).unwrap_or(a.forward);
-    let h = a.stature.max(b.stature).max(0.1);
+    let tallest = if a.height.max(a.stature) >= b.height.max(b.stature) {
+        a
+    } else {
+        b
+    };
     let fov = p.fov.unwrap_or(36f32.to_radians());
-    let faces = (a.face + b.face) * 0.5;
-    let subject = faces - Vec3::Y * (0.3 * h);
+    let subject = (a.center + b.center) * 0.5;
     let apart = Vec3::new(b.feet.x - a.feet.x, 0.0, b.feet.z - a.feet.z).length();
-    let tall = distance_for(0.85 * h, fov);
-    let wide = (apart + 0.9 * h) / (2.0 * aspect * (fov * 0.5).tan());
+    let tall = distance_for(ROOM_TALL * tallest.height.max(tallest.stature), fov);
+    let long = a.length.max(b.length);
+    let wide = (apart + ROOM_LONG * long) / (2.0 * aspect * (fov * 0.5).tan());
     let distance = p.distance.unwrap_or(tall.max(wide));
-    let y = (a.feet.y + b.feet.y) * 0.5 + p.height.unwrap_or(0.95 * h);
+    let y = p.height.map_or_else(
+        || eye_height(tallest, distance) - tallest.feet.y + (a.feet.y + b.feet.y) * 0.5,
+        |h| (a.feet.y + b.feet.y) * 0.5 + h,
+    );
     let dir = turned(right(u) * sign, (spread - 1.0) * 0.6);
     Framed {
         eye: eye_at(subject, dir, distance, y),
@@ -393,8 +466,10 @@ fn two(p: &Preset, a: &Actor, b: &Actor, sign: f32, spread: f32, aspect: f32) ->
 fn wide_unit(p: &Preset, a: &Actor, sign: f32, spread: f32) -> Framed {
     let h = a.stature.max(0.1);
     let fov = p.fov.unwrap_or(40f32.to_radians());
-    let subject = a.feet + Vec3::Y * (0.5 * h);
-    let distance = p.distance.unwrap_or(6.5 * h);
+    let subject = a.center;
+    let distance = p
+        .distance
+        .unwrap_or((6.5 * h).max(5.0 * a.height.max(a.length)));
     let y = a.feet.y + p.height.unwrap_or(distance * 0.3);
     let turn = sign * WIDE_TURN * spread;
     Framed {
@@ -452,6 +527,19 @@ pub fn actor(
             (point(face), point(face))
         }
     };
+    // The body's drawn bounds: their corners placed in the world.
+    let (lo, hi) = rest;
+    let corners = (0..8).map(|i| {
+        point(Vec3::new(
+            if i & 1 == 0 { lo.x } else { hi.x },
+            if i & 2 == 0 { lo.y } else { hi.y },
+            if i & 4 == 0 { lo.z } else { hi.z },
+        ))
+    });
+    let (min, max) = corners.fold(
+        (Vec3::splat(f32::MAX), Vec3::splat(f32::MIN)),
+        |(a, b), c| (a.min(c), b.max(c)),
+    );
     Actor {
         feet,
         forward,
@@ -459,6 +547,9 @@ pub fn actor(
         stature: (standing.y - feet.y).max(0.1),
         // A portrait turns its model the other way to show that side.
         best: portrait.and_then(|p| p.turn),
+        center: (min + max) * 0.5,
+        height: (max.y - feet.y).max(0.1),
+        length: (max.x - min.x).max(max.z - min.z).max(0.1),
     }
 }
 
@@ -490,6 +581,11 @@ impl Stage for Live<'_> {
         let margin = 2.0;
         let span = margin..=self.size - margin;
         span.contains(&point.x) && span.contains(&point.z)
+    }
+
+    fn clear_of_scenery(&self, origin: Vec3, dir: Vec3, far: f32) -> f32 {
+        self.live
+            .camera_obstruction(self.obstacles, origin, dir, far)
     }
 
     fn clear(&self, origin: Vec3, dir: Vec3, far: f32, except: &[u32]) -> f32 {
@@ -573,6 +669,9 @@ mod tests {
             face: Vec3::new(x, 10.0, z) + facing * 0.5,
             stature: 10.0,
             best: None,
+            center: Vec3::new(x, 5.5, z),
+            height: 11.0,
+            length: 4.0,
         }
     }
 
@@ -608,10 +707,10 @@ mod tests {
         y < top && y > bottom
     }
 
-    /// A single finds its speaker wherever it stands, its face in the picture's upper
-    /// half between the bars, seen from its front.
+    /// A single finds its speaker wherever it stands, whole and centred between the bars
+    /// with room round it, seen from its front.
     #[test]
-    fn a_single_frames_the_face_from_the_front() {
+    fn a_single_frames_the_whole_unit_from_the_front() {
         for (x, z, facing) in [
             (10.0, 20.0, Vec3::Z),
             (-40.0, 5.0, Vec3::X),
@@ -626,16 +725,18 @@ mod tests {
             let saved = place(&p, &field, 16.0 / 9.0, None).unwrap();
             let view = saved.view(16.0 / 9.0, &FlatGround);
             let (fx, fy, front) = project(&saved, a.face);
-            assert!(front && fx.abs() < 0.5, "{fx}");
-            assert!(
-                between_bars(fy) && fy > 0.0,
-                "the face high in the picture: {fy}"
-            );
-            // The waist low in the picture, the feet out of it.
-            let (_, wy, _) = project(&saved, a.feet + Vec3::Y * 6.0);
-            assert!(between_bars(wy) && wy < 0.0, "{wy}");
+            assert!(front && fx.abs() < 0.35 && between_bars(fy), "{fx} {fy}");
+            // Feet and head both in the picture, with room to spare.
+            let (cx, _, _) = project(&saved, a.center);
+            assert!(cx.abs() < 0.3, "centred: {cx}");
             let (_, feet, _) = project(&saved, a.feet);
-            assert!(!between_bars(feet), "{feet}");
+            let (_, top, _) = project(&saved, a.feet + Vec3::Y * a.height);
+            assert!(between_bars(feet) && between_bars(top), "{feet} {top}");
+            let room = 1.0 - 2.0 * BAR_TOP - top;
+            assert!(
+                room > 0.05 && feet > -1.0 + 2.0 * BAR_BOTTOM + 0.05,
+                "{feet} {top}"
+            );
             // From the front: the eye stands where the face looks.
             assert!((view.eye - a.feet).dot(facing) > 0.0);
         }
@@ -659,9 +760,10 @@ mod tests {
         assert!(front && bx.abs() < 0.6 && between_bars(by), "{bx} {by}");
         // Behind the listener, beside the line, the listener's head at the other edge.
         assert!(eye.z < 0.0 && eye.x.abs() > 1.0, "{eye}");
+        // The listener toward the other side, the speaker whole in front of them.
         let (lx, _, front) = project(&saved, a.face);
         assert!(
-            front && lx * bx < 0.0 && (0.5..1.2).contains(&lx.abs()),
+            front && lx * bx < 0.0 && (0.15..1.2).contains(&lx.abs()),
             "{lx} {bx}"
         );
         // A speaker far off (on a wall across a yard): a longer lens from further back,
@@ -675,7 +777,7 @@ mod tests {
         let (fx, fy, front) = project(&long, far.face);
         let (lx, _, _) = project(&long, a.face);
         assert!(front && fx.abs() < 0.6 && between_bars(fy), "{fx} {fy}");
-        assert!(lx * fx < 0.0 && (0.5..1.2).contains(&lx.abs()), "{lx}");
+        assert!(lx * fx < 0.0 && (0.15..1.2).contains(&lx.abs()), "{lx}");
         assert!(long.fov < saved.fov && long.view(16.0 / 9.0, &FlatGround).eye.z < eye.z);
         // The reverse: from behind the speaker, on the same side of the line.
         let onto_a = Preset {
@@ -698,10 +800,11 @@ mod tests {
     #[test]
     fn the_side_with_the_clearer_view_wins() {
         let a = standing(0.0, 0.0, Vec3::Z);
-        // A tall wall on the unit's right front (−x, for a unit facing +z).
+        // A tall wall on the unit's right front (−x, for a unit facing +z), further than a
+        // third of the shot's distance.
         let walled = Field {
             actors: vec![a],
-            wall: Some((-3.0, 50.0)),
+            wall: Some((-12.0, 50.0)),
         };
         let p = preset(PresetKind::Single, [Some(0), None]);
         let eye = |field: &Field, p: &Preset| {
@@ -721,7 +824,7 @@ mod tests {
             ..p
         };
         let pulled = eye(&walled, &told);
-        assert!(pulled.x >= -3.0 && pulled.x < 0.0, "{pulled}");
+        assert!(pulled.x >= -12.0 && pulled.x < 0.0, "{pulled}");
     }
 
     /// A two shot shows both faces; a wide shot of a region shows all of it.
