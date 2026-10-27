@@ -36,6 +36,10 @@
   "objective.founding.burrows.title": "Destroy the feral burrows",
   "objective.founding.colony.description": "Raise a Brood Mound and a Soldier Burrow in the glade.",
   "objective.founding.colony.title": "Build the colony",
+  "objective.founding.hoard.description": "Drive the hornets from their plateau north of the stream and take their hoard: amber for the colony, and their war standard.",
+  "objective.founding.hoard.title": "The hornets' hoard",
   "objective.founding.spring.description": "Build a Substance Siphon on the spring at the glade's east edge.",
-  "objective.founding.spring.title": "The substance spring"
+  "objective.founding.spring.title": "The substance spring",
+  "objective.founding.strays.description": "Some of the Hollow's survivors fled into the fern gullies south-west of the glade. Find them and bring them home to the colony.",
+  "objective.founding.strays.title": "The Hollow's stragglers"
 }
