@@ -88,10 +88,10 @@ Moving parts are made separately (step 2) so they can be separate nodes.
 
 ### 2. Tripo base model and segments
 
-Tripo runs in the built-in browser pane, which is signed in to tripo3d.ai.
+Tripo runs in the built-in browser pane, which is signed in to tripo3d.ai. Every model comes from Tripo, props and map pieces included: never build one from primitives. When Tripo isn't signed in, ask Jiri to sign in on the pane; don't fall back to procedural models.
 
-1. Open `https://www.tripo3d.ai/workspace/generate`.
-2. **Image to 3D.** The built-in browser cannot upload local files: localhost fetch, the clipboard and file pickers are blocked. Ask Jiri once to drop the Tripo reference into the image tab and start the generation, and give its path. Use the newest model, textured.
+1. Open Tripo Studio, `https://studio.tripo3d.ai` (its front page has image to 3D; the old `www.tripo3d.ai/workspace/generate` address answers 404).
+2. **Image to 3D.** The built-in browser cannot upload local files: localhost fetch, the clipboard and file pickers are blocked. Ask Jiri once to drop the Tripo reference into the image tab and start the generation, and give its path. Copy the references to a visible folder (e.g. `target/tripo-<name>/`) first: worktrees sit under the hidden `.claude/`. Use the newest model, textured, with **quad topology** (the generate panel's **Mesh settings**; Jiri's rule, 2026-10-27) and a face target that fits it: props about 5–10k, buildings and big set pieces more. Quads rig and deform cleanly and keep static models crisp; Blender then fixes, scales and fits blockers without a heavy decimation.
 3. **Segment.** On the finished model, choose the Segment tool in the left toolbar. It opens `/workspace/segmentation/<id>`. Use Balanced (8–15 parts, 40 credits), then Save.
 4. **Export** each model as GLB to the receiver:
    - start `python3 tools/buildings/tripo_receiver.py <scratchpad>/models`, unless something already listens on 8766 (`lsof -iTCP:8766 -sTCP:LISTEN`); that receiver saves into its own folder, so look there;
