@@ -59,8 +59,8 @@
     {
       "id": "dress.7",
       "asset": "scenery.giants-parasol",
-      "x": 226,
-      "z": 46,
+      "x": 256,
+      "z": 22,
       "yaw": 0.9,
       "scale": 1.0
     },
@@ -115,7 +115,7 @@
     {
       "id": "dress.14",
       "asset": "scenery.glade-mushroom-ring",
-      "x": 130,
+      "x": 124,
       "z": 300,
       "yaw": 0.4,
       "scale": 1.3
@@ -123,8 +123,8 @@
     {
       "id": "dress.15",
       "asset": "scenery.underleaf-patch-moss-b",
-      "x": 160,
-      "z": 270,
+      "x": 150,
+      "z": 272,
       "yaw": 0.4,
       "scale": 1.1
     },
@@ -219,8 +219,8 @@
     {
       "id": "dress.27",
       "asset": "scenery.underleaf-patch-blossoms",
-      "x": 356,
-      "z": 330,
+      "x": 360,
+      "z": 340,
       "yaw": 1.4,
       "scale": 0.8
     },
@@ -259,8 +259,8 @@
     {
       "id": "dress.32",
       "asset": "scenery.underleaf-patch-leaves-a",
-      "x": 330,
-      "z": 240,
+      "x": 342,
+      "z": 246,
       "yaw": 3.0,
       "scale": 0.9
     },
@@ -451,8 +451,8 @@
     {
       "id": "dress.56",
       "asset": "scenery.giants-hornet-nest",
-      "x": 186,
-      "z": 94,
+      "x": 208,
+      "z": 54,
       "yaw": 0.5,
       "scale": 1.0
     },
@@ -483,8 +483,8 @@
     {
       "id": "dress.60",
       "asset": "scenery.giants-moss",
-      "x": 165,
-      "z": 138,
+      "x": 150,
+      "z": 143,
       "yaw": 1.313,
       "scale": 0.8
     },
@@ -571,56 +571,56 @@
     {
       "id": "dress.71",
       "asset": "scenery.giants-moss",
-      "x": 227.07,
-      "z": 268.1,
+      "x": 224.72,
+      "z": 267.24,
       "yaw": 3.975,
       "scale": 0.9
     },
     {
       "id": "dress.72",
       "asset": "scenery.giants-moss",
-      "x": 230.62,
-      "z": 264.0,
+      "x": 229.2,
+      "z": 261.94,
       "yaw": 3.344,
       "scale": 1.0
     },
     {
       "id": "dress.73",
       "asset": "scenery.giants-moss",
-      "x": 236.17,
-      "z": 262.5,
+      "x": 236.21,
+      "z": 260.0,
       "yaw": 1.786,
       "scale": 1.1
     },
     {
       "id": "dress.74",
       "asset": "scenery.giants-moss",
-      "x": 241.66,
-      "z": 264.17,
+      "x": 243.14,
+      "z": 262.16,
       "yaw": 3.873,
       "scale": 0.9
     },
     {
       "id": "dress.75",
       "asset": "scenery.giants-moss",
-      "x": 245.04,
-      "z": 268.38,
+      "x": 247.42,
+      "z": 267.61,
       "yaw": 4.058,
       "scale": 1.0
     },
     {
       "id": "dress.76",
       "asset": "scenery.giants-moss",
-      "x": 245.06,
-      "z": 273.57,
+      "x": 247.44,
+      "z": 274.32,
       "yaw": 1.538,
       "scale": 1.1
     },
     {
       "id": "dress.77",
       "asset": "scenery.giants-moss",
-      "x": 241.7,
-      "z": 277.8,
+      "x": 243.2,
+      "z": 279.8,
       "yaw": 3.518,
       "scale": 0.9
     },
@@ -643,8 +643,8 @@
     {
       "id": "dress.80",
       "asset": "scenery.glade-root-span",
-      "x": 104,
-      "z": 170,
+      "x": 111,
+      "z": 168,
       "yaw": 1.571,
       "scale": 1.0,
       "elevation": -3.5,
@@ -653,7 +653,7 @@
     {
       "id": "dress.81",
       "asset": "scenery.glade-root-span",
-      "x": 87,
+      "x": 81,
       "z": 166,
       "yaw": -1.571,
       "scale": 0.9,
@@ -703,247 +703,215 @@
       "scale": 7.0
     },
     {
-      "id": "dress.87",
+      "id": "dress.new.0",
+      "asset": "scenery.giants-snail-shell",
+      "x": 44,
+      "z": 366,
+      "yaw": 2.4,
+      "scale": 1.0
+    },
+    {
+      "id": "dress.new.1",
+      "asset": "scenery.underleaf-patch-blossoms",
+      "x": 64,
+      "z": 352,
+      "yaw": 0.6,
+      "scale": 0.9
+    },
+    {
+      "id": "dress.new.2",
+      "asset": "scenery.underleaf-patch-moss-a",
+      "x": 76,
+      "z": 340,
+      "yaw": 2.0,
+      "scale": 1.0
+    },
+    {
+      "id": "dress.new.3",
+      "asset": "scenery.giants-fiddleheads",
+      "x": 82,
+      "z": 372,
+      "yaw": 1.1,
+      "scale": 0.9
+    },
+    {
+      "id": "dress.new.4",
+      "asset": "scenery.giants-beechnut",
+      "x": 238,
+      "z": 50,
+      "yaw": 0.7,
+      "scale": 1.0
+    },
+    {
+      "id": "dress.new.5",
+      "asset": "scenery.giants-hazelnut",
+      "x": 244,
+      "z": 56,
+      "yaw": 2.0,
+      "scale": 1.0
+    },
+    {
+      "id": "dress.new.6",
+      "asset": "scenery.giants-beechnut",
+      "x": 236,
+      "z": 58,
+      "yaw": 3.6,
+      "scale": 0.9
+    },
+    {
+      "id": "dress.new.7",
+      "asset": "scenery.underleaf-patch-leaves-b",
+      "x": 222,
+      "z": 82,
+      "yaw": 1.2,
+      "scale": 1.0
+    },
+    {
+      "id": "dress.new.8",
+      "asset": "scenery.underleaf-patch-blossoms",
+      "x": 168,
+      "z": 236,
+      "yaw": 1.4,
+      "scale": 1.0
+    },
+    {
+      "id": "dress.new.9",
+      "asset": "scenery.underleaf-patch-blossoms",
+      "x": 250,
+      "z": 252,
+      "yaw": 2.6,
+      "scale": 0.9
+    },
+    {
+      "id": "dress.new.10",
+      "asset": "scenery.underleaf-patch-moss-a",
+      "x": 230,
+      "z": 228,
+      "yaw": 0.4,
+      "scale": 1.1
+    },
+    {
+      "id": "dress.new.11",
+      "asset": "scenery.underleaf-patch-moss-b",
+      "x": 196,
+      "z": 284,
+      "yaw": 2.2,
+      "scale": 1.0
+    },
+    {
+      "id": "dress.new.12",
+      "asset": "scenery.underleaf-patch-blossoms",
+      "x": 300,
+      "z": 176,
+      "yaw": 0.9,
+      "scale": 0.9
+    },
+    {
+      "id": "dress.new.13",
+      "asset": "scenery.underleaf-patch-moss-a",
+      "x": 330,
+      "z": 178,
+      "yaw": 1.9,
+      "scale": 1.0
+    },
+    {
+      "id": "dress.new.14",
+      "asset": "scenery.underleaf-patch-blossoms",
+      "x": 112,
+      "z": 200,
+      "yaw": 2.9,
+      "scale": 0.8
+    },
+    {
+      "id": "dress.new.15",
+      "asset": "scenery.underleaf-patch-moss-b",
+      "x": 60,
+      "z": 196,
+      "yaw": 0.2,
+      "scale": 1.0
+    },
+    {
+      "id": "dress.new.16",
+      "asset": "scenery.underleaf-patch-blossoms",
+      "x": 132,
+      "z": 352,
+      "yaw": 1.0,
+      "scale": 0.8
+    },
+    {
+      "id": "dress.new.17",
+      "asset": "scenery.underleaf-patch-leaves-b",
+      "x": 270,
+      "z": 346,
+      "yaw": 1.6,
+      "scale": 0.9
+    },
+    {
+      "id": "dress.new.18",
+      "asset": "scenery.underleaf-patch-moss-a",
+      "x": 356,
+      "z": 214,
+      "yaw": 2.8,
+      "scale": 1.0
+    },
+    {
+      "id": "dress.new.stone.1",
+      "asset": "scenery.giants-pebbles",
+      "x": 242.96,
+      "z": 145.47,
+      "yaw": 3.183,
+      "scale": 0.425
+    },
+    {
+      "id": "dress.new.stone.2",
       "asset": "scenery.giants-mossy-stone",
-      "x": 218.42,
-      "z": 135.74,
-      "yaw": 4.201,
-      "scale": 0.291
+      "x": 329.21,
+      "z": 154.0,
+      "yaw": 1.695,
+      "scale": 0.403
     },
     {
-      "id": "dress.88",
+      "id": "dress.new.stone.3",
       "asset": "scenery.giants-pebbles",
-      "x": 239.6,
-      "z": 158.35,
-      "yaw": 4.416,
-      "scale": 0.43
+      "x": 306.0,
+      "z": 171.43,
+      "yaw": 1.143,
+      "scale": 0.333
     },
     {
-      "id": "dress.89",
-      "asset": "scenery.giants-pebbles",
-      "x": 363.39,
-      "z": 169.15,
-      "yaw": 2.96,
-      "scale": 0.415
-    },
-    {
-      "id": "dress.90",
-      "asset": "scenery.giants-pebbles",
-      "x": 377.82,
-      "z": 156.32,
-      "yaw": 1.146,
-      "scale": 0.334
-    },
-    {
-      "id": "dress.91",
-      "asset": "scenery.giants-pebbles",
-      "x": 187.54,
-      "z": 120.73,
-      "yaw": 3.842,
-      "scale": 0.254
-    },
-    {
-      "id": "dress.92",
-      "asset": "scenery.giants-pebbles",
-      "x": 268.88,
-      "z": 162.62,
-      "yaw": 3.558,
-      "scale": 0.433
-    },
-    {
-      "id": "dress.93",
-      "asset": "scenery.giants-pebbles",
-      "x": 282.44,
-      "z": 149.97,
-      "yaw": 4.559,
-      "scale": 0.362
-    },
-    {
-      "id": "dress.94",
+      "id": "dress.new.stone.4",
       "asset": "scenery.giants-mossy-stone",
       "x": 378.39,
-      "z": 171.66,
+      "z": 173.66,
       "yaw": 1.608,
       "scale": 0.275
     },
     {
-      "id": "dress.95",
+      "id": "dress.new.stone.5",
       "asset": "scenery.giants-pebbles",
-      "x": 245.01,
-      "z": 144.39,
-      "yaw": 2.175,
-      "scale": 0.269
+      "x": 172.91,
+      "z": 131.25,
+      "yaw": 1.349,
+      "scale": 0.443
     },
     {
-      "id": "dress.96",
-      "asset": "scenery.giants-mossy-stone",
-      "x": 311.34,
-      "z": 154.99,
-      "yaw": 1.749,
-      "scale": 0.344
-    },
-    {
-      "id": "dress.97",
+      "id": "dress.new.stone.6",
       "asset": "scenery.giants-pebbles",
-      "x": 333.73,
-      "z": 165.55,
-      "yaw": 5.147,
-      "scale": 0.371
+      "x": 267.66,
+      "z": 165.28,
+      "yaw": 3.902,
+      "scale": 0.385
     },
     {
-      "id": "dress.98",
+      "id": "dress.new.stone.7",
       "asset": "scenery.giants-mossy-stone",
-      "x": 193.87,
-      "z": 121.94,
-      "yaw": 1.67,
-      "scale": 0.352
+      "x": 200.51,
+      "z": 126.45,
+      "yaw": 0.171,
+      "scale": 0.448
     },
     {
-      "id": "dress.99",
-      "asset": "scenery.giants-pebbles",
-      "x": 234.72,
-      "z": 142.33,
-      "yaw": 5.657,
-      "scale": 0.35
-    },
-    {
-      "id": "dress.100",
-      "asset": "scenery.giants-mossy-stone",
-      "x": 173.61,
-      "z": 131.64,
-      "yaw": 5.958,
-      "scale": 0.413
-    },
-    {
-      "id": "dress.101",
-      "asset": "scenery.giants-mossy-stone",
-      "x": 329.24,
-      "z": 151.86,
-      "yaw": 3.106,
-      "scale": 0.275
-    },
-    {
-      "id": "dress.102",
-      "asset": "scenery.giants-pebbles",
-      "x": 337.54,
-      "z": 151.53,
-      "yaw": 0.624,
-      "scale": 0.344
-    },
-    {
-      "id": "dress.103",
-      "asset": "scenery.giants-mossy-stone",
-      "x": 190.94,
-      "z": 137.34,
-      "yaw": 3.183,
-      "scale": 0.4
-    },
-    {
-      "id": "dress.104",
-      "asset": "scenery.giants-pebbles",
-      "x": 193.74,
-      "z": 140.6,
-      "yaw": 1.376,
-      "scale": 0.285
-    },
-    {
-      "id": "dress.105",
-      "asset": "scenery.giants-mossy-stone",
-      "x": 341.61,
-      "z": 167.31,
-      "yaw": 4.595,
-      "scale": 0.392
-    },
-    {
-      "id": "dress.106",
-      "asset": "scenery.giants-mossy-stone",
-      "x": 250.36,
-      "z": 143.75,
-      "yaw": 1.838,
-      "scale": 0.295
-    },
-    {
-      "id": "dress.107",
-      "asset": "scenery.giants-pebbles",
-      "x": 364.53,
-      "z": 155.4,
-      "yaw": 2.542,
-      "scale": 0.424
-    },
-    {
-      "id": "dress.108",
-      "asset": "scenery.giants-mossy-stone",
-      "x": 227.24,
-      "z": 154.61,
-      "yaw": 4.47,
-      "scale": 0.305
-    },
-    {
-      "id": "dress.109",
-      "asset": "scenery.giants-pebbles",
-      "x": 175.27,
-      "z": 115.31,
-      "yaw": 4.029,
-      "scale": 0.345
-    },
-    {
-      "id": "dress.110",
-      "asset": "scenery.giants-pebbles",
-      "x": 347.05,
-      "z": 167.48,
-      "yaw": 0.397,
-      "scale": 0.413
-    },
-    {
-      "id": "dress.111",
-      "asset": "scenery.giants-pebbles",
-      "x": 221.24,
-      "z": 152.55,
-      "yaw": 1.395,
-      "scale": 0.268
-    },
-    {
-      "id": "dress.112",
-      "asset": "scenery.giants-pebbles",
-      "x": 350.98,
-      "z": 152.52,
-      "yaw": 2.581,
-      "scale": 0.366
-    },
-    {
-      "id": "dress.113",
-      "asset": "scenery.giants-pebbles",
-      "x": 216.0,
-      "z": 132.88,
-      "yaw": 5.184,
-      "scale": 0.26
-    },
-    {
-      "id": "dress.114",
-      "asset": "scenery.giants-mossy-stone",
-      "x": 204.92,
-      "z": 146.19,
-      "yaw": 0.337,
-      "scale": 0.411
-    },
-    {
-      "id": "dress.115",
-      "asset": "scenery.giants-mossy-stone",
-      "x": 272.54,
-      "z": 147.29,
-      "yaw": 3.68,
-      "scale": 0.374
-    },
-    {
-      "id": "dress.116",
-      "asset": "scenery.giants-mossy-stone",
-      "x": 372.87,
-      "z": 155.37,
-      "yaw": 4.121,
-      "scale": 0.431
-    },
-    {
-      "id": "dress.117",
+      "id": "dress.new.stone.8",
       "asset": "scenery.giants-mossy-stone",
       "x": 209.82,
       "z": 149.18,
@@ -951,68 +919,12 @@
       "scale": 0.403
     },
     {
-      "id": "dress.118",
+      "id": "dress.new.stone.9",
       "asset": "scenery.giants-mossy-stone",
       "x": 351.5,
-      "z": 167.16,
+      "z": 169.16,
       "yaw": 4.256,
       "scale": 0.338
-    },
-    {
-      "id": "dress.119",
-      "asset": "scenery.giants-pebbles",
-      "x": 254.49,
-      "z": 160.89,
-      "yaw": 2.049,
-      "scale": 0.299
-    },
-    {
-      "id": "dress.120",
-      "asset": "scenery.giants-mossy-stone",
-      "x": 205.68,
-      "z": 128.92,
-      "yaw": 5.358,
-      "scale": 0.414
-    },
-    {
-      "id": "dress.121",
-      "asset": "scenery.giants-pebbles",
-      "x": 366.17,
-      "z": 171.76,
-      "yaw": 3.586,
-      "scale": 0.419
-    },
-    {
-      "id": "dress.122",
-      "asset": "scenery.giants-mossy-stone",
-      "x": 233.73,
-      "z": 157.67,
-      "yaw": 2.892,
-      "scale": 0.33
-    },
-    {
-      "id": "dress.123",
-      "asset": "scenery.giants-pebbles",
-      "x": 310.01,
-      "z": 169.37,
-      "yaw": 5.522,
-      "scale": 0.419
-    },
-    {
-      "id": "dress.124",
-      "asset": "scenery.giants-pebbles",
-      "x": 240.7,
-      "z": 142.24,
-      "yaw": 1.104,
-      "scale": 0.382
-    },
-    {
-      "id": "dress.125",
-      "asset": "scenery.giants-mossy-stone",
-      "x": 302.91,
-      "z": 154.09,
-      "yaw": 0.854,
-      "scale": 0.389
     }
   ]
 }
