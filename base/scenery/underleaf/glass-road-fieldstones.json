@@ -1,0 +1,12 @@
+{
+  "id": "scenery.glass-road-fieldstones",
+  "name": "Glass Road: fieldstone heap",
+  "category": "landmark",
+  "type": "prop",
+  "model": "asset.models.environment.glass-road-fieldstones",
+  "blocker": {
+    "width": 5.6,
+    "depth": 4.6,
+    "shape": "ellipse"
+  }
+}

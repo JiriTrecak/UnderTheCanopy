@@ -1,0 +1,42 @@
+{
+  "id": "asset.models.environment.glass-road-tank-small",
+  "name": "Glass Road: substance tank, small",
+  "kind": "prop",
+  "tags": [
+    "underleaf",
+    "glass-road",
+    "beetles",
+    "natural",
+    "tripo",
+    "substance"
+  ],
+  "resources": [
+    {
+      "role": "geometry",
+      "index": 1,
+      "format": "glb"
+    },
+    {
+      "role": "source",
+      "index": 1,
+      "format": "blend"
+    }
+  ],
+  "transform": {
+    "scale": 1,
+    "pivot": [
+      0,
+      0,
+      0
+    ],
+    "up": "Y",
+    "forward": "+Z"
+  },
+  "capabilities": {
+    "groundContact": {
+      "mode": "pivot"
+    },
+    "vegetationClearance": 2
+  },
+  "license": "Generated with Tripo (image to 3D, quad topology) from gpt-image-2 concepts for Under the Canopy (art/styles/glass-road-*-tripo.png); scaled and toned by tools/props/import_tripo.py (tools/props/glass_road_tripo.json)."
+}

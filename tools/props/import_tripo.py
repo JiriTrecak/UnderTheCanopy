@@ -5,7 +5,8 @@
 spec.json: {"out": "<base/assets/environment>", "tags": [...] (optional, replaces the default
 ["lookdev", "tripo"]), "license": "..." (optional), "items": [{"name", "glb", "height" | "width"
 (metres after scaling), "title" (optional display name), "triangles" (budget), "texture" (pixels, square), "tone", "saturation", "tint" ([r, g, b] multiplier),
-"kind": "prop"|"foliage"|"tree", "tags": [...]}]}.
+"kind": "prop"|"foliage"|"tree"|"building", "tags": [...], "asset": {top-level asset.json fields such as
+`shading` and `display`} (optional)}]}.
 
 Optional per item, applied in this order before sizing:
 - "flat": true turns a flat piece (leaf, feather) that Tripo stood up at the concept's camera
@@ -210,6 +211,8 @@ def process(item):
         'license': spec.get('license', 'Generated with Tripo (text to 3D) for Under the Canopy; decimated and toned by tools/props/import_tripo.py.'),
     }
     asset['capabilities'].update(item.get('capabilities', {}))
+    # Other top-level fields as given (a building's `shading` and `display`).
+    asset.update(item.get('asset', {}))
     with open(os.path.join(folder, 'asset.json'), 'w') as f:
         json.dump(asset, f, indent=2, ensure_ascii=False)
         f.write('\n')

@@ -1,0 +1,10 @@
+{
+  "items": [
+    {"name": "glass-road-track-a", "image": "art/styles/glass-road-track-a.png", "size": 22, "title": "Glass Road: worn track with stones A",
+     "tags": ["underleaf", "glass-road", "road", "imagegen"], "tone": 0.82, "saturation": 0.85, "folder": "underleaf", "seed": 3},
+    {"name": "glass-road-track-b", "image": "art/styles/glass-road-track-b.png", "size": 22, "title": "Glass Road: worn track with stones B",
+     "tags": ["underleaf", "glass-road", "road", "imagegen"], "tone": 0.82, "saturation": 0.85, "folder": "underleaf", "seed": 5},
+    {"name": "glass-road-stony-ground", "image": "art/styles/glass-road-stony-ground.png", "size": 16, "title": "Glass Road: stony ground",
+     "tags": ["underleaf", "glass-road", "stone", "imagegen"], "tone": 0.82, "saturation": 0.85, "folder": "underleaf", "seed": 9}
+  ]
+}

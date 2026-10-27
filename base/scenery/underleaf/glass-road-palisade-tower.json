@@ -1,0 +1,19 @@
+{
+  "id": "scenery.glass-road-palisade-tower",
+  "name": "Glass Road: timber watchtower",
+  "category": "landmark",
+  "type": "prop",
+  "model": "asset.models.environment.glass-road-palisade-tower",
+  "light": {
+    "x": 0,
+    "y": 9.9,
+    "z": 3.1,
+    "color": "#9b70ff",
+    "intensity": 1.8,
+    "range": 10
+  },
+  "blocker": {
+    "width": 6.4,
+    "depth": 6.4
+  }
+}

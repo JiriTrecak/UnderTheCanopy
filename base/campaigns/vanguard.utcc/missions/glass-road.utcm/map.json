@@ -2,16 +2,15 @@
   "biome": "underleaf",
   "camps": [
     {
-      "id": "ring",
+      "id": "glade",
       "members": [
-        "ring.0",
-        "ring.1",
-        "ring.2",
-        "ring.3"
+        "glade.0",
+        "glade.1",
+        "glade.2"
       ],
       "home": {
-        "x": 146.0,
-        "y": 264.0
+        "x": 66.0,
+        "y": 66.0
       },
       "aggroRange": 10,
       "leash": 24,
@@ -19,34 +18,32 @@
       "lootPool": "loot.camp.easy"
     },
     {
-      "id": "canal",
+      "id": "hornets",
       "members": [
-        "canal.0",
-        "canal.1",
-        "canal.2",
-        "canal.3"
+        "hornets.0",
+        "hornets.1"
       ],
       "home": {
         "x": 196.0,
-        "y": 128.0
+        "y": 62.0
       },
       "aggroRange": 10,
       "leash": 24,
       "aggression": "players",
-      "lootPool": "loot.camp.easy"
+      "fixedDrops": [
+        "item.warcaller-standard"
+      ]
     },
     {
       "id": "bog",
       "members": [
         "bog.0",
         "bog.1",
-        "bog.2",
-        "bog.3",
-        "bog.4"
+        "bog.2"
       ],
       "home": {
-        "x": 208.0,
-        "y": 362.0
+        "x": 214.0,
+        "y": 348.0
       },
       "aggroRange": 10,
       "leash": 24,
@@ -59,14 +56,11 @@
       "id": "briar",
       "members": [
         "briar.0",
-        "briar.1",
-        "briar.2",
-        "briar.3",
-        "briar.4"
+        "briar.1"
       ],
       "home": {
-        "x": 360.0,
-        "y": 248.0
+        "x": 368.0,
+        "y": 250.0
       },
       "aggroRange": 12,
       "leash": 26,
@@ -78,13 +72,11 @@
       "members": [
         "stag.0",
         "stag.1",
-        "stag.2",
-        "stag.3",
-        "stag.4"
+        "stag.2"
       ],
       "home": {
-        "x": 366.0,
-        "y": 370.0
+        "x": 362.0,
+        "y": 364.0
       },
       "aggroRange": 12,
       "leash": 28,
@@ -92,42 +84,6 @@
       "fixedDrops": [
         "item.royal-crest"
       ]
-    },
-    {
-      "id": "hornets",
-      "members": [
-        "hornets.0",
-        "hornets.1",
-        "hornets.2",
-        "hornets.3",
-        "hornets.4"
-      ],
-      "home": {
-        "x": 232.0,
-        "y": 74.0
-      },
-      "aggroRange": 10,
-      "leash": 24,
-      "aggression": "players",
-      "fixedDrops": [
-        "item.warcaller-standard"
-      ]
-    },
-    {
-      "id": "glade",
-      "members": [
-        "glade.0",
-        "glade.1",
-        "glade.2"
-      ],
-      "home": {
-        "x": 64.0,
-        "y": 76.0
-      },
-      "aggroRange": 10,
-      "leash": 24,
-      "aggression": "players",
-      "lootPool": "loot.camp.easy"
     }
   ],
   "entities": [
@@ -322,7 +278,7 @@
       "owner": "player.1",
       "position": {
         "x": 98.0,
-        "y": 246.0
+        "y": 286.0
       },
       "rotation": 0.0
     },
@@ -331,8 +287,8 @@
       "id": "camp.guard.1",
       "owner": "player.1",
       "position": {
-        "x": 104.0,
-        "y": 244.0
+        "x": 106.0,
+        "y": 284.0
       },
       "rotation": 0.0
     },
@@ -341,8 +297,8 @@
       "id": "camp.guard.2",
       "owner": "player.1",
       "position": {
-        "x": 110.0,
-        "y": 246.0
+        "x": 114.0,
+        "y": 286.0
       },
       "rotation": 0.0
     },
@@ -352,7 +308,7 @@
       "owner": "player.1",
       "position": {
         "x": 95.0,
-        "y": 252.0
+        "y": 292.0
       },
       "rotation": 0.0
     },
@@ -361,8 +317,8 @@
       "id": "camp.guard.4",
       "owner": "player.1",
       "position": {
-        "x": 113.0,
-        "y": 252.0
+        "x": 117.0,
+        "y": 292.0
       },
       "rotation": 0.0
     },
@@ -442,8 +398,8 @@
       "id": "tunnel.rubble",
       "owner": "none",
       "position": {
-        "x": 61.5,
-        "y": 261.5
+        "x": 57.5,
+        "y": 297.5
       },
       "rotation": 90.0,
       "initialState": {
@@ -456,7 +412,7 @@
       "owner": "player.1",
       "position": {
         "x": 43.5,
-        "y": 263.5
+        "y": 295.5
       },
       "rotation": 90.0,
       "initialState": {
@@ -469,8 +425,8 @@
       "id": "tunnel.out",
       "owner": "player.1",
       "position": {
-        "x": 303.5,
-        "y": 59.5
+        "x": 267.5,
+        "y": 63.5
       },
       "rotation": 0.0,
       "initialState": {
@@ -484,7 +440,7 @@
       "owner": "player.2",
       "position": {
         "x": 377.5,
-        "y": 53.5
+        "y": 57.5
       },
       "rotation": 0.0,
       "initialState": {
@@ -497,7 +453,7 @@
       "owner": "player.2",
       "position": {
         "x": 383.5,
-        "y": 79.5
+        "y": 91.5
       },
       "rotation": 0.0,
       "initialState": {
@@ -509,8 +465,8 @@
       "id": "station.deposit.0",
       "owner": "none",
       "position": {
-        "x": 315.5,
-        "y": 79.5
+        "x": 307.5,
+        "y": 59.5
       },
       "rotation": 0.0,
       "initialState": {
@@ -522,8 +478,8 @@
       "id": "station.well.0",
       "owner": "player.2",
       "position": {
-        "x": 315.5,
-        "y": 79.5
+        "x": 307.5,
+        "y": 59.5
       },
       "rotation": 0.0,
       "initialState": {
@@ -535,8 +491,8 @@
       "id": "station.deposit.1",
       "owner": "none",
       "position": {
-        "x": 363.5,
-        "y": 79.5
+        "x": 307.5,
+        "y": 91.5
       },
       "rotation": 0.0,
       "initialState": {
@@ -548,8 +504,8 @@
       "id": "station.well.1",
       "owner": "player.2",
       "position": {
-        "x": 363.5,
-        "y": 79.5
+        "x": 307.5,
+        "y": 91.5
       },
       "rotation": 0.0,
       "initialState": {
@@ -561,12 +517,31 @@
       "id": "station.gate",
       "owner": "player.5",
       "position": {
-        "x": 339.5,
-        "y": 133.5
+        "x": 331.5,
+        "y": 121.5
       },
       "rotation": 0.0,
       "initialState": {
         "construction": "complete"
+      },
+      "appearance": {
+        "asset": "asset.models.environment.glass-road-timber-gate"
+      }
+    },
+    {
+      "definition": "building.neutral.beetle-gate",
+      "id": "station.gate.1",
+      "owner": "player.5",
+      "position": {
+        "x": 347.5,
+        "y": 121.5
+      },
+      "rotation": 0.0,
+      "initialState": {
+        "construction": "complete"
+      },
+      "appearance": {
+        "asset": "asset.models.environment.glass-road-timber-gate"
       }
     },
     {
@@ -574,8 +549,8 @@
       "id": "station.tower.0",
       "owner": "player.2",
       "position": {
-        "x": 327.5,
-        "y": 87.5
+        "x": 315.5,
+        "y": 107.5
       },
       "rotation": 0.0,
       "initialState": {
@@ -587,8 +562,8 @@
       "id": "station.tower.1",
       "owner": "player.2",
       "position": {
-        "x": 355.5,
-        "y": 87.5
+        "x": 367.5,
+        "y": 107.5
       },
       "rotation": 0.0,
       "initialState": {
@@ -601,7 +576,7 @@
       "owner": "player.2",
       "position": {
         "x": 344.0,
-        "y": 86.0
+        "y": 84.0
       },
       "rotation": 180.0,
       "initialState": {
@@ -613,8 +588,8 @@
       "id": "station.shield.0",
       "owner": "player.2",
       "position": {
-        "x": 334.0,
-        "y": 80.0
+        "x": 332.0,
+        "y": 88.0
       },
       "rotation": 180.0
     },
@@ -623,8 +598,8 @@
       "id": "station.shield.1",
       "owner": "player.2",
       "position": {
-        "x": 346.0,
-        "y": 80.0
+        "x": 348.0,
+        "y": 90.0
       },
       "rotation": 180.0
     },
@@ -633,8 +608,8 @@
       "id": "station.shield.2",
       "owner": "player.2",
       "position": {
-        "x": 354.0,
-        "y": 70.0
+        "x": 356.0,
+        "y": 74.0
       },
       "rotation": 180.0
     },
@@ -643,8 +618,8 @@
       "id": "station.bolter.0",
       "owner": "player.2",
       "position": {
-        "x": 362.0,
-        "y": 62.0
+        "x": 360.0,
+        "y": 72.0
       },
       "rotation": 180.0
     },
@@ -653,8 +628,8 @@
       "id": "station.bolter.1",
       "owner": "player.2",
       "position": {
-        "x": 356.0,
-        "y": 64.0
+        "x": 322.0,
+        "y": 74.0
       },
       "rotation": 180.0
     },
@@ -663,8 +638,8 @@
       "id": "station.bolter.2",
       "owner": "player.2",
       "position": {
-        "x": 392.0,
-        "y": 68.0
+        "x": 396.0,
+        "y": 74.0
       },
       "rotation": 180.0
     },
@@ -673,8 +648,8 @@
       "id": "station.tinker.0",
       "owner": "player.2",
       "position": {
-        "x": 395.0,
-        "y": 60.0
+        "x": 398.0,
+        "y": 44.0
       },
       "rotation": 200.0
     },
@@ -684,7 +659,7 @@
       "owner": "player.2",
       "position": {
         "x": 396.0,
-        "y": 90.0
+        "y": 112.0
       },
       "rotation": 200.0
     },
@@ -694,7 +669,7 @@
       "owner": "none",
       "position": {
         "x": 187.5,
-        "y": 211.5
+        "y": 255.5
       },
       "rotation": 0.0,
       "initialState": {
@@ -707,7 +682,7 @@
       "owner": "player.5",
       "position": {
         "x": 187.5,
-        "y": 211.5
+        "y": 255.5
       },
       "rotation": 0.0,
       "initialState": {
@@ -719,8 +694,8 @@
       "id": "outpost.west.tower.0",
       "owner": "player.5",
       "position": {
-        "x": 187.5,
-        "y": 195.5
+        "x": 163.5,
+        "y": 215.5
       },
       "rotation": 0.0,
       "initialState": {
@@ -732,8 +707,8 @@
       "id": "outpost.west.tower.1",
       "owner": "player.5",
       "position": {
-        "x": 187.5,
-        "y": 227.5
+        "x": 163.5,
+        "y": 255.5
       },
       "rotation": 0.0,
       "initialState": {
@@ -745,8 +720,8 @@
       "id": "outpost.west.shieldbearer.0",
       "owner": "player.5",
       "position": {
-        "x": 168.0,
-        "y": 202.0
+        "x": 152.0,
+        "y": 226.0
       },
       "rotation": 270.0
     },
@@ -755,8 +730,8 @@
       "id": "outpost.west.shieldbearer.1",
       "owner": "player.5",
       "position": {
-        "x": 162.0,
-        "y": 222.0
+        "x": 152.0,
+        "y": 246.0
       },
       "rotation": 270.0
     },
@@ -765,8 +740,8 @@
       "id": "outpost.west.bolter.2",
       "owner": "player.5",
       "position": {
-        "x": 158.0,
-        "y": 208.0
+        "x": 172.0,
+        "y": 228.0
       },
       "rotation": 270.0
     },
@@ -775,8 +750,8 @@
       "id": "outpost.west.bolter.3",
       "owner": "player.5",
       "position": {
-        "x": 178.0,
-        "y": 222.0
+        "x": 172.0,
+        "y": 244.0
       },
       "rotation": 270.0
     },
@@ -785,8 +760,8 @@
       "id": "outpost.east.deposit",
       "owner": "none",
       "position": {
-        "x": 287.5,
-        "y": 179.5
+        "x": 351.5,
+        "y": 191.5
       },
       "rotation": 0.0,
       "initialState": {
@@ -798,8 +773,8 @@
       "id": "outpost.east.well",
       "owner": "player.5",
       "position": {
-        "x": 287.5,
-        "y": 179.5
+        "x": 351.5,
+        "y": 191.5
       },
       "rotation": 0.0,
       "initialState": {
@@ -811,8 +786,8 @@
       "id": "outpost.east.tower.0",
       "owner": "player.5",
       "position": {
-        "x": 271.5,
-        "y": 179.5
+        "x": 263.5,
+        "y": 183.5
       },
       "rotation": 0.0,
       "initialState": {
@@ -824,8 +799,8 @@
       "id": "outpost.east.tower.1",
       "owner": "player.5",
       "position": {
-        "x": 303.5,
-        "y": 179.5
+        "x": 331.5,
+        "y": 183.5
       },
       "rotation": 0.0,
       "initialState": {
@@ -837,40 +812,40 @@
       "id": "outpost.east.shieldbearer.0",
       "owner": "player.5",
       "position": {
-        "x": 280.0,
-        "y": 160.0
+        "x": 288.0,
+        "y": 182.0
       },
-      "rotation": 270.0
+      "rotation": 180.0
     },
     {
       "definition": "unit.beetles.shieldbearer",
       "id": "outpost.east.shieldbearer.1",
       "owner": "player.5",
       "position": {
-        "x": 296.0,
-        "y": 160.0
+        "x": 306.0,
+        "y": 182.0
       },
-      "rotation": 270.0
+      "rotation": 180.0
     },
     {
       "definition": "unit.beetles.bolter",
       "id": "outpost.east.bolter.2",
       "owner": "player.5",
       "position": {
-        "x": 279.0,
+        "x": 290.0,
         "y": 170.0
       },
-      "rotation": 270.0
+      "rotation": 180.0
     },
     {
       "definition": "unit.beetles.bolter",
       "id": "outpost.east.bolter.3",
       "owner": "player.5",
       "position": {
-        "x": 296.0,
+        "x": 304.0,
         "y": 170.0
       },
-      "rotation": 270.0
+      "rotation": 180.0
     },
     {
       "definition": "unit.beetles.supply-cart",
@@ -878,18 +853,7 @@
       "owner": "player.3",
       "position": {
         "x": 38.0,
-        "y": 213.0
-      },
-      "rotation": 90.0,
-      "activation": "script"
-    },
-    {
-      "definition": "unit.beetles.supply-cart",
-      "id": "caravan.0.cart.1",
-      "owner": "player.3",
-      "position": {
-        "x": 45.0,
-        "y": 219.0
+        "y": 233.0
       },
       "rotation": 90.0,
       "activation": "script"
@@ -900,7 +864,18 @@
       "owner": "player.3",
       "position": {
         "x": 31.0,
-        "y": 213.0
+        "y": 233.0
+      },
+      "rotation": 90.0,
+      "activation": "script"
+    },
+    {
+      "definition": "unit.beetles.supply-cart",
+      "id": "caravan.0.cart.1",
+      "owner": "player.3",
+      "position": {
+        "x": 45.0,
+        "y": 239.0
       },
       "rotation": 90.0,
       "activation": "script"
@@ -911,7 +886,7 @@
       "owner": "player.3",
       "position": {
         "x": 31.0,
-        "y": 219.0
+        "y": 239.0
       },
       "rotation": 90.0,
       "activation": "script"
@@ -922,18 +897,7 @@
       "owner": "player.3",
       "position": {
         "x": 38.0,
-        "y": 213.0
-      },
-      "rotation": 90.0,
-      "activation": "script"
-    },
-    {
-      "definition": "unit.beetles.supply-cart",
-      "id": "caravan.1.cart.1",
-      "owner": "player.3",
-      "position": {
-        "x": 45.0,
-        "y": 219.0
+        "y": 233.0
       },
       "rotation": 90.0,
       "activation": "script"
@@ -944,7 +908,18 @@
       "owner": "player.3",
       "position": {
         "x": 31.0,
-        "y": 213.0
+        "y": 233.0
+      },
+      "rotation": 90.0,
+      "activation": "script"
+    },
+    {
+      "definition": "unit.beetles.supply-cart",
+      "id": "caravan.1.cart.1",
+      "owner": "player.3",
+      "position": {
+        "x": 45.0,
+        "y": 239.0
       },
       "rotation": 90.0,
       "activation": "script"
@@ -955,7 +930,7 @@
       "owner": "player.3",
       "position": {
         "x": 31.0,
-        "y": 219.0
+        "y": 239.0
       },
       "rotation": 90.0,
       "activation": "script"
@@ -966,18 +941,7 @@
       "owner": "player.3",
       "position": {
         "x": 38.0,
-        "y": 213.0
-      },
-      "rotation": 90.0,
-      "activation": "script"
-    },
-    {
-      "definition": "unit.beetles.supply-cart",
-      "id": "caravan.2.cart.1",
-      "owner": "player.3",
-      "position": {
-        "x": 45.0,
-        "y": 219.0
+        "y": 233.0
       },
       "rotation": 90.0,
       "activation": "script"
@@ -988,7 +952,18 @@
       "owner": "player.3",
       "position": {
         "x": 31.0,
-        "y": 213.0
+        "y": 233.0
+      },
+      "rotation": 90.0,
+      "activation": "script"
+    },
+    {
+      "definition": "unit.beetles.supply-cart",
+      "id": "caravan.2.cart.1",
+      "owner": "player.3",
+      "position": {
+        "x": 45.0,
+        "y": 239.0
       },
       "rotation": 90.0,
       "activation": "script"
@@ -999,7 +974,7 @@
       "owner": "player.3",
       "position": {
         "x": 31.0,
-        "y": 219.0
+        "y": 239.0
       },
       "rotation": 90.0,
       "activation": "script"
@@ -1010,18 +985,7 @@
       "owner": "player.3",
       "position": {
         "x": 38.0,
-        "y": 213.0
-      },
-      "rotation": 90.0,
-      "activation": "script"
-    },
-    {
-      "definition": "unit.beetles.supply-cart",
-      "id": "caravan.3.cart.1",
-      "owner": "player.3",
-      "position": {
-        "x": 45.0,
-        "y": 219.0
+        "y": 233.0
       },
       "rotation": 90.0,
       "activation": "script"
@@ -1032,7 +996,18 @@
       "owner": "player.3",
       "position": {
         "x": 31.0,
-        "y": 213.0
+        "y": 233.0
+      },
+      "rotation": 90.0,
+      "activation": "script"
+    },
+    {
+      "definition": "unit.beetles.supply-cart",
+      "id": "caravan.3.cart.1",
+      "owner": "player.3",
+      "position": {
+        "x": 45.0,
+        "y": 239.0
       },
       "rotation": 90.0,
       "activation": "script"
@@ -1043,7 +1018,7 @@
       "owner": "player.3",
       "position": {
         "x": 31.0,
-        "y": 219.0
+        "y": 239.0
       },
       "rotation": 90.0,
       "activation": "script"
@@ -1054,18 +1029,7 @@
       "owner": "player.3",
       "position": {
         "x": 38.0,
-        "y": 213.0
-      },
-      "rotation": 90.0,
-      "activation": "script"
-    },
-    {
-      "definition": "unit.beetles.supply-cart",
-      "id": "caravan.4.cart.1",
-      "owner": "player.3",
-      "position": {
-        "x": 45.0,
-        "y": 219.0
+        "y": 233.0
       },
       "rotation": 90.0,
       "activation": "script"
@@ -1076,7 +1040,18 @@
       "owner": "player.3",
       "position": {
         "x": 31.0,
-        "y": 213.0
+        "y": 233.0
+      },
+      "rotation": 90.0,
+      "activation": "script"
+    },
+    {
+      "definition": "unit.beetles.supply-cart",
+      "id": "caravan.4.cart.1",
+      "owner": "player.3",
+      "position": {
+        "x": 45.0,
+        "y": 239.0
       },
       "rotation": 90.0,
       "activation": "script"
@@ -1087,7 +1062,7 @@
       "owner": "player.3",
       "position": {
         "x": 31.0,
-        "y": 219.0
+        "y": 239.0
       },
       "rotation": 90.0,
       "activation": "script"
@@ -1098,18 +1073,7 @@
       "owner": "player.3",
       "position": {
         "x": 38.0,
-        "y": 213.0
-      },
-      "rotation": 90.0,
-      "activation": "script"
-    },
-    {
-      "definition": "unit.beetles.supply-cart",
-      "id": "caravan.5.cart.1",
-      "owner": "player.3",
-      "position": {
-        "x": 45.0,
-        "y": 219.0
+        "y": 233.0
       },
       "rotation": 90.0,
       "activation": "script"
@@ -1120,7 +1084,18 @@
       "owner": "player.3",
       "position": {
         "x": 31.0,
-        "y": 213.0
+        "y": 233.0
+      },
+      "rotation": 90.0,
+      "activation": "script"
+    },
+    {
+      "definition": "unit.beetles.supply-cart",
+      "id": "caravan.5.cart.1",
+      "owner": "player.3",
+      "position": {
+        "x": 45.0,
+        "y": 239.0
       },
       "rotation": 90.0,
       "activation": "script"
@@ -1131,7 +1106,7 @@
       "owner": "player.3",
       "position": {
         "x": 31.0,
-        "y": 219.0
+        "y": 239.0
       },
       "rotation": 90.0,
       "activation": "script"
@@ -1141,8 +1116,8 @@
       "id": "spill.0",
       "owner": "none",
       "position": {
-        "x": 45.0,
-        "y": 213.0
+        "x": 47.0,
+        "y": 231.0
       },
       "rotation": 0.0,
       "activation": "script"
@@ -1152,8 +1127,8 @@
       "id": "spill.1",
       "owner": "none",
       "position": {
-        "x": 69.0,
-        "y": 221.0
+        "x": 68.0,
+        "y": 241.0
       },
       "rotation": 0.0,
       "activation": "script"
@@ -1164,7 +1139,7 @@
       "owner": "none",
       "position": {
         "x": 89.0,
-        "y": 213.0
+        "y": 231.0
       },
       "rotation": 0.0,
       "activation": "script"
@@ -1174,8 +1149,8 @@
       "id": "spill.3",
       "owner": "none",
       "position": {
-        "x": 109.0,
-        "y": 213.0
+        "x": 111.0,
+        "y": 231.0
       },
       "rotation": 0.0,
       "activation": "script"
@@ -1185,8 +1160,8 @@
       "id": "spill.4",
       "owner": "none",
       "position": {
-        "x": 133.0,
-        "y": 221.0
+        "x": 132.0,
+        "y": 241.0
       },
       "rotation": 0.0,
       "activation": "script"
@@ -1196,8 +1171,8 @@
       "id": "spill.5",
       "owner": "none",
       "position": {
-        "x": 157.0,
-        "y": 213.0
+        "x": 153.0,
+        "y": 231.0
       },
       "rotation": 0.0,
       "activation": "script"
@@ -1207,8 +1182,8 @@
       "id": "spill.6",
       "owner": "none",
       "position": {
-        "x": 165.0,
-        "y": 201.0
+        "x": 175.0,
+        "y": 231.0
       },
       "rotation": 0.0,
       "activation": "script"
@@ -1218,8 +1193,8 @@
       "id": "spill.7",
       "owner": "none",
       "position": {
-        "x": 173.0,
-        "y": 173.0
+        "x": 198.0,
+        "y": 241.0
       },
       "rotation": 0.0,
       "activation": "script"
@@ -1229,8 +1204,8 @@
       "id": "spill.8",
       "owner": "none",
       "position": {
-        "x": 181.0,
-        "y": 157.0
+        "x": 221.0,
+        "y": 231.0
       },
       "rotation": 0.0,
       "activation": "script"
@@ -1240,8 +1215,8 @@
       "id": "spill.9",
       "owner": "none",
       "position": {
-        "x": 205.0,
-        "y": 165.0
+        "x": 243.0,
+        "y": 231.0
       },
       "rotation": 0.0,
       "activation": "script"
@@ -1251,8 +1226,8 @@
       "id": "spill.10",
       "owner": "none",
       "position": {
-        "x": 229.0,
-        "y": 157.0
+        "x": 264.0,
+        "y": 241.0
       },
       "rotation": 0.0,
       "activation": "script"
@@ -1262,8 +1237,8 @@
       "id": "spill.11",
       "owner": "none",
       "position": {
-        "x": 261.0,
-        "y": 165.0
+        "x": 285.0,
+        "y": 231.0
       },
       "rotation": 0.0,
       "activation": "script"
@@ -1273,8 +1248,8 @@
       "id": "spill.12",
       "owner": "none",
       "position": {
-        "x": 285.0,
-        "y": 157.0
+        "x": 291.0,
+        "y": 225.0
       },
       "rotation": 0.0,
       "activation": "script"
@@ -1284,8 +1259,8 @@
       "id": "spill.13",
       "owner": "none",
       "position": {
-        "x": 309.0,
-        "y": 165.0
+        "x": 301.0,
+        "y": 203.0
       },
       "rotation": 0.0,
       "activation": "script"
@@ -1295,8 +1270,30 @@
       "id": "spill.14",
       "owner": "none",
       "position": {
-        "x": 329.0,
-        "y": 157.0
+        "x": 295.0,
+        "y": 182.0
+      },
+      "rotation": 0.0,
+      "activation": "script"
+    },
+    {
+      "definition": "item.quickstep-spurs",
+      "id": "spill.15",
+      "owner": "none",
+      "position": {
+        "x": 313.0,
+        "y": 166.0
+      },
+      "rotation": 0.0,
+      "activation": "script"
+    },
+    {
+      "definition": "item.resin-salve",
+      "id": "spill.16",
+      "owner": "none",
+      "position": {
+        "x": 331.0,
+        "y": 176.0
       },
       "rotation": 0.0,
       "activation": "script"
@@ -1306,8 +1303,8 @@
       "id": "toll.peddler",
       "owner": "none",
       "position": {
-        "x": 237.5,
-        "y": 181.5
+        "x": 245.5,
+        "y": 277.5
       },
       "rotation": 0.0,
       "initialState": {
@@ -1398,8 +1395,8 @@
       "id": "engineer",
       "owner": "player.4",
       "position": {
-        "x": 219.0,
-        "y": 190.0
+        "x": 226.0,
+        "y": 284.0
       },
       "rotation": 30.0
     },
@@ -1408,8 +1405,8 @@
       "id": "toll.crate.0",
       "owner": "none",
       "position": {
-        "x": 217.5,
-        "y": 185.5
+        "x": 221.5,
+        "y": 277.5
       },
       "rotation": 0.0,
       "initialState": {
@@ -1424,8 +1421,8 @@
       "id": "toll.crate.1",
       "owner": "none",
       "position": {
-        "x": 213.5,
-        "y": 189.5
+        "x": 217.5,
+        "y": 285.5
       },
       "rotation": 0.0,
       "initialState": {
@@ -1439,7 +1436,7 @@
       "owner": "none",
       "position": {
         "x": 97.5,
-        "y": 161.5
+        "y": 141.5
       },
       "rotation": 0.0,
       "initialState": {
@@ -1451,8 +1448,8 @@
       "id": "spring.dew",
       "owner": "none",
       "position": {
-        "x": 301.5,
-        "y": 341.5
+        "x": 305.5,
+        "y": 353.5
       },
       "rotation": 0.0,
       "initialState": {
@@ -1464,7 +1461,7 @@
       "id": "briar.amber.0",
       "owner": "none",
       "position": {
-        "x": 377.5,
+        "x": 389.5,
         "y": 237.5
       },
       "rotation": 0.0,
@@ -1478,7 +1475,7 @@
       "id": "briar.amber.1",
       "owner": "none",
       "position": {
-        "x": 381.5,
+        "x": 393.5,
         "y": 245.5
       },
       "rotation": 0.0,
@@ -1492,7 +1489,7 @@
       "id": "briar.amber.2",
       "owner": "none",
       "position": {
-        "x": 381.5,
+        "x": 393.5,
         "y": 253.5
       },
       "rotation": 0.0,
@@ -1506,7 +1503,7 @@
       "id": "briar.amber.3",
       "owner": "none",
       "position": {
-        "x": 377.5,
+        "x": 389.5,
         "y": 261.5
       },
       "rotation": 0.0,
@@ -1520,8 +1517,8 @@
       "id": "briar.deposit",
       "owner": "none",
       "position": {
-        "x": 343.5,
-        "y": 231.5
+        "x": 347.5,
+        "y": 263.5
       },
       "rotation": 0.0,
       "initialState": {
@@ -1529,292 +1526,12 @@
       }
     },
     {
-      "definition": "unit.neutral.capling",
-      "id": "ring.0",
-      "owner": "none",
-      "position": {
-        "x": 140.0,
-        "y": 260.0
-      },
-      "rotation": 200.0
-    },
-    {
-      "definition": "unit.neutral.capling",
-      "id": "ring.1",
-      "owner": "none",
-      "position": {
-        "x": 151.0,
-        "y": 259.0
-      },
-      "rotation": 160.0
-    },
-    {
-      "definition": "unit.neutral.capling",
-      "id": "ring.2",
-      "owner": "none",
-      "position": {
-        "x": 146.0,
-        "y": 270.0
-      },
-      "rotation": 0.0
-    },
-    {
-      "definition": "unit.neutral.puffcap",
-      "id": "ring.3",
-      "owner": "none",
-      "position": {
-        "x": 146.0,
-        "y": 264.0
-      },
-      "rotation": 180.0
-    },
-    {
-      "definition": "unit.neutral.puddle-wisp",
-      "id": "canal.0",
-      "owner": "none",
-      "position": {
-        "x": 190.0,
-        "y": 130.0
-      },
-      "rotation": 90.0
-    },
-    {
-      "definition": "unit.neutral.puddle-wisp",
-      "id": "canal.1",
-      "owner": "none",
-      "position": {
-        "x": 200.0,
-        "y": 132.0
-      },
-      "rotation": 270.0
-    },
-    {
-      "definition": "unit.neutral.dew-sprite",
-      "id": "canal.2",
-      "owner": "none",
-      "position": {
-        "x": 194.0,
-        "y": 124.0
-      },
-      "rotation": 180.0
-    },
-    {
-      "definition": "unit.neutral.dew-sprite",
-      "id": "canal.3",
-      "owner": "none",
-      "position": {
-        "x": 202.0,
-        "y": 125.0
-      },
-      "rotation": 180.0
-    },
-    {
-      "definition": "unit.neutral.young-toad",
-      "id": "bog.0",
-      "owner": "none",
-      "position": {
-        "x": 200.0,
-        "y": 361.0
-      },
-      "rotation": 0.0
-    },
-    {
-      "definition": "unit.neutral.young-toad",
-      "id": "bog.1",
-      "owner": "none",
-      "position": {
-        "x": 214.0,
-        "y": 361.0
-      },
-      "rotation": 0.0
-    },
-    {
-      "definition": "unit.neutral.tree-frog",
-      "id": "bog.2",
-      "owner": "none",
-      "position": {
-        "x": 203.0,
-        "y": 367.0
-      },
-      "rotation": 330.0
-    },
-    {
-      "definition": "unit.neutral.tree-frog",
-      "id": "bog.3",
-      "owner": "none",
-      "position": {
-        "x": 212.0,
-        "y": 367.0
-      },
-      "rotation": 30.0
-    },
-    {
-      "definition": "unit.neutral.tadpole-spirit",
-      "id": "bog.4",
-      "owner": "none",
-      "position": {
-        "x": 207.0,
-        "y": 357.0
-      },
-      "rotation": 0.0
-    },
-    {
-      "definition": "unit.neutral.briar-hulk",
-      "id": "briar.0",
-      "owner": "none",
-      "position": {
-        "x": 350.0,
-        "y": 244.0
-      },
-      "rotation": 270.0
-    },
-    {
-      "definition": "unit.neutral.briar-hulk",
-      "id": "briar.1",
-      "owner": "none",
-      "position": {
-        "x": 354.0,
-        "y": 256.0
-      },
-      "rotation": 270.0
-    },
-    {
-      "definition": "unit.neutral.bloom-witch",
-      "id": "briar.2",
-      "owner": "none",
-      "position": {
-        "x": 364.0,
-        "y": 250.0
-      },
-      "rotation": 270.0
-    },
-    {
-      "definition": "unit.neutral.seedcaster",
-      "id": "briar.3",
-      "owner": "none",
-      "position": {
-        "x": 360.0,
-        "y": 240.0
-      },
-      "rotation": 250.0
-    },
-    {
-      "definition": "unit.neutral.seedcaster",
-      "id": "briar.4",
-      "owner": "none",
-      "position": {
-        "x": 362.0,
-        "y": 260.0
-      },
-      "rotation": 290.0
-    },
-    {
-      "definition": "unit.neutral.hollow-stag",
-      "id": "stag.0",
-      "owner": "none",
-      "position": {
-        "x": 366.0,
-        "y": 370.0
-      },
-      "rotation": 315.0
-    },
-    {
-      "definition": "unit.neutral.barkguard",
-      "id": "stag.1",
-      "owner": "none",
-      "position": {
-        "x": 357.0,
-        "y": 366.0
-      },
-      "rotation": 315.0
-    },
-    {
-      "definition": "unit.neutral.barkguard",
-      "id": "stag.2",
-      "owner": "none",
-      "position": {
-        "x": 368.0,
-        "y": 359.0
-      },
-      "rotation": 315.0
-    },
-    {
-      "definition": "unit.neutral.willow-wisp",
-      "id": "stag.3",
-      "owner": "none",
-      "position": {
-        "x": 360.0,
-        "y": 378.0
-      },
-      "rotation": 315.0
-    },
-    {
-      "definition": "unit.neutral.willow-wisp",
-      "id": "stag.4",
-      "owner": "none",
-      "position": {
-        "x": 375.0,
-        "y": 372.0
-      },
-      "rotation": 315.0
-    },
-    {
-      "definition": "unit.neutral.nest-mother",
-      "id": "hornets.0",
-      "owner": "none",
-      "position": {
-        "x": 232.0,
-        "y": 70.0
-      },
-      "rotation": 180.0
-    },
-    {
-      "definition": "unit.neutral.hornet-guard",
-      "id": "hornets.1",
-      "owner": "none",
-      "position": {
-        "x": 225.0,
-        "y": 78.0
-      },
-      "rotation": 180.0
-    },
-    {
-      "definition": "unit.neutral.hornet-guard",
-      "id": "hornets.2",
-      "owner": "none",
-      "position": {
-        "x": 239.0,
-        "y": 78.0
-      },
-      "rotation": 180.0
-    },
-    {
-      "definition": "unit.neutral.needle-wasp",
-      "id": "hornets.3",
-      "owner": "none",
-      "position": {
-        "x": 228.0,
-        "y": 65.0
-      },
-      "rotation": 180.0
-    },
-    {
-      "definition": "unit.neutral.needle-wasp",
-      "id": "hornets.4",
-      "owner": "none",
-      "position": {
-        "x": 237.0,
-        "y": 65.0
-      },
-      "rotation": 180.0
-    },
-    {
       "definition": "unit.neutral.spitter",
       "id": "glade.0",
       "owner": "none",
       "position": {
-        "x": 66.0,
-        "y": 82.0
+        "x": 68.0,
+        "y": 72.0
       },
       "rotation": 150.0
     },
@@ -1823,8 +1540,8 @@
       "id": "glade.1",
       "owner": "none",
       "position": {
-        "x": 72.0,
-        "y": 86.0
+        "x": 74.0,
+        "y": 76.0
       },
       "rotation": 150.0
     },
@@ -1833,10 +1550,110 @@
       "id": "glade.2",
       "owner": "none",
       "position": {
-        "x": 60.0,
-        "y": 88.0
+        "x": 62.0,
+        "y": 78.0
       },
       "rotation": 150.0
+    },
+    {
+      "definition": "unit.neutral.nest-mother",
+      "id": "hornets.0",
+      "owner": "none",
+      "position": {
+        "x": 196.0,
+        "y": 58.0
+      },
+      "rotation": 180.0
+    },
+    {
+      "definition": "unit.neutral.hornet-guard",
+      "id": "hornets.1",
+      "owner": "none",
+      "position": {
+        "x": 190.0,
+        "y": 68.0
+      },
+      "rotation": 180.0
+    },
+    {
+      "definition": "unit.neutral.tadpole-spirit",
+      "id": "bog.0",
+      "owner": "none",
+      "position": {
+        "x": 214.0,
+        "y": 346.0
+      },
+      "rotation": 0.0
+    },
+    {
+      "definition": "unit.neutral.young-toad",
+      "id": "bog.1",
+      "owner": "none",
+      "position": {
+        "x": 205.0,
+        "y": 354.0
+      },
+      "rotation": 20.0
+    },
+    {
+      "definition": "unit.neutral.tree-frog",
+      "id": "bog.2",
+      "owner": "none",
+      "position": {
+        "x": 223.0,
+        "y": 354.0
+      },
+      "rotation": 340.0
+    },
+    {
+      "definition": "unit.neutral.briar-hulk",
+      "id": "briar.0",
+      "owner": "none",
+      "position": {
+        "x": 362.0,
+        "y": 248.0
+      },
+      "rotation": 270.0
+    },
+    {
+      "definition": "unit.neutral.bloom-witch",
+      "id": "briar.1",
+      "owner": "none",
+      "position": {
+        "x": 374.0,
+        "y": 242.0
+      },
+      "rotation": 250.0
+    },
+    {
+      "definition": "unit.neutral.hollow-stag",
+      "id": "stag.0",
+      "owner": "none",
+      "position": {
+        "x": 364.0,
+        "y": 366.0
+      },
+      "rotation": 270.0
+    },
+    {
+      "definition": "unit.neutral.willow-wisp",
+      "id": "stag.1",
+      "owner": "none",
+      "position": {
+        "x": 354.0,
+        "y": 358.0
+      },
+      "rotation": 270.0
+    },
+    {
+      "definition": "unit.neutral.willow-wisp",
+      "id": "stag.2",
+      "owner": "none",
+      "position": {
+        "x": 356.0,
+        "y": 374.0
+      },
+      "rotation": 270.0
     },
     {
       "definition": "item.amber-carapace",
@@ -1844,7 +1661,7 @@
       "owner": "none",
       "position": {
         "x": 58.0,
-        "y": 70.0
+        "y": 60.0
       },
       "rotation": 0.0
     },
@@ -1853,8 +1670,8 @@
       "id": "glade.crate",
       "owner": "none",
       "position": {
-        "x": 73.5,
-        "y": 69.5
+        "x": 77.5,
+        "y": 57.5
       },
       "rotation": 0.0,
       "initialState": {
@@ -1900,6 +1717,18 @@
         "title": "objective.glass-road.caravans.title",
         "optional": true,
         "description": "objective.glass-road.caravans.description"
+      },
+      {
+        "id": "briar",
+        "title": "objective.glass-road.briar.title",
+        "optional": true,
+        "description": "objective.glass-road.briar.description"
+      },
+      {
+        "id": "stag",
+        "title": "objective.glass-road.stag.title",
+        "optional": true,
+        "description": "objective.glass-road.stag.description"
       }
     ],
     "regions": [
@@ -1912,80 +1741,80 @@
       {
         "id": "gate",
         "x": 340,
-        "y": 160,
-        "radius": 14
+        "y": 170,
+        "radius": 16
       },
       {
         "id": "forecourt",
         "x": 340,
-        "y": 124,
-        "radius": 16
+        "y": 134,
+        "radius": 10
       },
       {
         "id": "station",
-        "x": 350,
-        "y": 68,
-        "radius": 46
+        "x": 348,
+        "y": 76,
+        "radius": 44
       },
       {
         "id": "condenser",
         "x": 340,
-        "y": 76,
+        "y": 78,
         "radius": 12
       },
       {
         "id": "rubble",
         "x": 66,
-        "y": 262,
+        "y": 296,
         "radius": 18
       },
       {
         "id": "toll",
-        "x": 230,
-        "y": 182,
-        "radius": 18
+        "x": 238,
+        "y": 272,
+        "radius": 20
       },
       {
         "id": "engineer",
-        "x": 219,
-        "y": 190,
+        "x": 226,
+        "y": 284,
         "radius": 14
       },
       {
         "id": "road-west",
         "x": 40,
-        "y": 216,
+        "y": 236,
         "radius": 10
       },
       {
         "id": "outpost-w",
-        "x": 150,
-        "y": 216,
+        "x": 136,
+        "y": 236,
         "radius": 30
       },
       {
         "id": "bog",
         "x": 214,
-        "y": 330,
+        "y": 346,
         "radius": 40
       },
       {
         "id": "briar",
-        "x": 360,
-        "y": 248,
+        "x": 366,
+        "y": 250,
         "radius": 36
       },
       {
         "id": "grove",
-        "x": 366,
-        "y": 370,
+        "x": 362,
+        "y": 364,
         "radius": 44
       },
       {
         "id": "glade",
-        "x": 64,
-        "y": 76,
-        "radius": 20
+        "x": 66,
+        "y": 66,
+        "radius": 22
       }
     ],
     "players": [
@@ -2053,215 +1882,22 @@
     ],
     "cameras": [
       {
-        "id": "op-wide",
-        "x": 108,
-        "y": 326,
-        "height": 0,
-        "distance": 111.68,
-        "pitch": 22.09,
-        "yaw": 41.08,
-        "fov": 40
-      },
-      {
-        "id": "op-follow",
-        "x": 116,
-        "y": 330,
-        "height": 3,
-        "distance": 51.66,
-        "pitch": 14.57,
-        "yaw": 36.87,
-        "fov": 36
-      },
-      {
-        "id": "op-over-queen",
-        "x": 111,
-        "y": 314,
-        "height": 5,
-        "distance": 35.58,
-        "pitch": 8.08,
-        "yaw": 34.59,
-        "fov": 30
-      },
-      {
-        "id": "op-over-korrath",
-        "x": 114,
-        "y": 329,
-        "height": 5,
-        "distance": 39.46,
-        "pitch": 8.75,
-        "yaw": 202.62,
-        "fov": 30,
-        "roll": -1.5
-      },
-      {
-        "id": "op-two",
-        "x": 108,
-        "y": 329,
-        "height": 5,
-        "distance": 24.84,
-        "pitch": 9.27,
-        "yaw": 258.23,
-        "fov": 34
-      },
-      {
-        "id": "op-korrath",
-        "x": 112,
-        "y": 320,
-        "height": 6.5,
-        "distance": 22.14,
-        "pitch": 3.88,
-        "yaw": 264.81,
-        "fov": 33
-      },
-      {
-        "id": "op-road",
-        "x": 106,
-        "y": 228,
-        "height": 6,
-        "distance": 75.12,
-        "pitch": 13.67,
-        "yaw": 9.46,
-        "fov": 40
-      },
-      {
         "id": "tunnel-out",
-        "x": 303.5,
-        "y": 59.5,
+        "x": 267.5,
+        "y": 63.5,
         "height": 2,
-        "distance": 40.11,
-        "pitch": 20.43,
-        "yaw": 49.32,
+        "distance": 46.72,
+        "pitch": 20.03,
+        "yaw": 317.77,
         "fov": 36
-      },
-      {
-        "id": "gate-wide",
-        "x": 342,
-        "y": 90,
-        "height": 6,
-        "distance": 126.5,
-        "pitch": 3.17,
-        "yaw": 349.05,
-        "fov": 38
-      },
-      {
-        "id": "gate-up",
-        "x": 340,
-        "y": 102,
-        "height": 7,
-        "distance": 76.82,
-        "pitch": -5.88,
-        "yaw": 6.01,
-        "fov": 32
-      },
-      {
-        "id": "gate-queen",
-        "x": 340,
-        "y": 155,
-        "height": 7.5,
-        "distance": 14.05,
-        "pitch": 2.29,
-        "yaw": 175.91,
-        "fov": 28
-      },
-      {
-        "id": "gate-vosk",
-        "x": 340,
-        "y": 98,
-        "height": 8,
-        "distance": 24.2,
-        "pitch": -13.44,
-        "yaw": 347.74,
-        "fov": 26
-      },
-      {
-        "id": "gate-vosk-close",
-        "x": 340,
-        "y": 98,
-        "height": 7,
-        "distance": 26.61,
-        "pitch": -5.66,
-        "yaw": 10.89,
-        "fov": 22,
-        "roll": 1.5
-      },
-      {
-        "id": "gate-over-vosk",
-        "x": 340,
-        "y": 154,
-        "height": 6,
-        "distance": 46.3,
-        "pitch": 18.09,
-        "yaw": 178.7,
-        "fov": 26
-      },
-      {
-        "id": "gate-over-queen",
-        "x": 340,
-        "y": 98,
-        "height": 7,
-        "distance": 70.31,
-        "pitch": -2.14,
-        "yaw": 4.9,
-        "fov": 18
-      },
-      {
-        "id": "gate-lodge",
-        "x": 379,
-        "y": 83,
-        "height": 4,
-        "distance": 40.63,
-        "pitch": 12.8,
-        "yaw": 317.05,
-        "fov": 38
-      },
-      {
-        "id": "cond-wide",
-        "x": 340,
-        "y": 58,
-        "height": 6,
-        "distance": 63.73,
-        "pitch": 9.94,
-        "yaw": 337.52,
-        "fov": 40
-      },
-      {
-        "id": "cond-approach",
-        "x": 340,
-        "y": 66,
-        "height": 4,
-        "distance": 35.06,
-        "pitch": 4.91,
-        "yaw": 23.63,
-        "fov": 34
-      },
-      {
-        "id": "cond-close",
-        "x": 340,
-        "y": 56,
-        "height": 6,
-        "distance": 26.5,
-        "pitch": 2.16,
-        "yaw": 10.89,
-        "fov": 30,
-        "roll": 1
-      },
-      {
-        "id": "cond-faces",
-        "x": 342,
-        "y": 68,
-        "height": 5,
-        "distance": 31.45,
-        "pitch": 9.15,
-        "yaw": 75.07,
-        "fov": 30
       },
       {
         "id": "cond-rise",
         "x": 340,
-        "y": 56,
+        "y": 58,
         "height": 10,
-        "distance": 63.06,
-        "pitch": 27.38,
+        "distance": 62.03,
+        "pitch": 20.77,
         "yaw": 0.0,
         "fov": 40
       }

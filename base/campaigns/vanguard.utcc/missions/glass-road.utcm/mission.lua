@@ -1,6 +1,6 @@
--- The Glass Road (Act I, Mission Three; docs/story.md). Authored with the map by
--- tools/maps/glass_road.py, which fills in the caravans' spill spots below and writes the
--- saved cameras the scenes cut between (mission.cameras).
+-- The Glass Road (Act I, Mission Three; docs/story.md). First authored with the map by
+-- tools/maps/glass_road.py, rebuilt on 2026-10-27 by tools/maps/glass_road_natural.py (the
+-- caravans' route and spill spots below match its road); the map package is the source.
 --
 -- Scenes (docs/campaign.md "Scenes"; each skippable, each ends in the state the player
 -- should find):
@@ -24,11 +24,17 @@
 -- condenser's own rising light (the closing fades to violet instead).
 
 local SECOND = 40
-local SPILLS = { { 45.5, 213.5 }, { 69.5, 221.5 }, { 89.5, 213.5 }, { 109.5, 213.5 }, { 133.5, 221.5 }, { 157.5, 213.5 }, { 165.5, 201.5 }, { 173.5, 173.5 }, { 181.5, 157.5 }, { 205.5, 165.5 }, { 229.5, 157.5 }, { 261.5, 165.5 }, { 285.5, 157.5 }, { 309.5, 165.5 }, { 329.5, 157.5 }
-}
-local ROUTE = { { 36, 216 }, { 100, 216 }, { 168, 216 }, { 168, 160 }, { 216, 160 }, { 276, 160 },
-  { 340, 160 }, { 340, 142 } }  -- the last at the station's gate
+local SPILLS = { { 47.5, 231.5 }, { 68.5, 241.5 }, { 89.5, 231.5 }, { 111.5, 231.5 }, { 132.5, 241.5 },
+  { 153.5, 231.5 }, { 175.5, 231.5 }, { 198.5, 241.5 }, { 221.5, 231.5 }, { 243.5, 231.5 }, { 264.5, 241.5 },
+  { 285.5, 231.5 }, { 291.5, 225.5 }, { 301.5, 203.5 }, { 295.5, 182.5 }, { 313.5, 166.5 }, { 331.5, 176.5 } }
+-- The road: west along the middle of the map, up the main ramp at the east outpost, across the
+-- forecourt to the station gate.
+local ROUTE = { { 36, 236 }, { 100, 236 }, { 164, 236 }, { 232, 236 }, { 296, 236 }, { 296, 192 },
+  { 304, 172 }, { 340, 170 }, { 340, 158 } }  -- the last before the station gate
 local CARAVANS = 6
+-- The station's own guard, by name: in the closing they stand back.
+local STAND_BACK = { "vosk", "station.shield.0", "station.shield.1", "station.shield.2", "station.bolter.0",
+  "station.bolter.1", "station.bolter.2" }
 local AMBUSHES = 3
 local HEROES = { "queen", "oleander", "korrath" }
 
@@ -106,10 +112,15 @@ local function start_talk(name)
   return true
 end
 
+-- The station gate: two timber leaves across its ramp's foot; shut while both stand.
+local function gate_shut()
+  return mission.alive("station.gate") and mission.alive("station.gate.1")
+end
+
 -- The War Lodge's waves: at once while the station's gate is open, else once it breaks
--- (a closed gate would hold them in the forecourt).
+-- (a closed gate would hold them inside the palisade).
 local function waves()
-  if mission.alive("station.gate") then
+  if gate_shut() then
     mission.set("waves_wait", true)
   else
     mission.ai_waves(2, true)
@@ -162,6 +173,8 @@ function scenes.opening()
   mission.set("caravan_at", 45 * SECOND) -- counted from the end of the opening, below
   mission.begin_objective("speak")
   mission.begin_objective("caravans")
+  mission.begin_objective("briar")
+  mission.begin_objective("stag")
   mission.cinematic(false)
   mission.camera_reset(1.5, 112, 300)
 end
@@ -173,20 +186,20 @@ function scenes.tunnel()
   talk("korrath", "line.glass-road.it-runs-under-the-road")
   talk("queen", "line.glass-road.then-we-have-not")
   mission.cinematic(false)
-  mission.camera_reset(1, 64, 262)
+  mission.camera_reset(1, 66, 296)
 end
 
 function scenes.gate()
   mission.cinematic(true)
   mission.shot("wide", "station")
-  mission.move("queen", 340, 154)
-  mission.move("oleander", 328, 163)
-  mission.move("korrath", 344, 163)
-  mission.move("vosk", 340, 98)
+  mission.move("queen", 340, 160)
+  mission.move("oleander", 330, 168)
+  mission.move("korrath", 350, 168)
+  mission.move("vosk", 340, 106) -- on the ramp behind the gate, above it
   mission.shot("wide", "gate", { seconds = 5 })
   mission.wait(2)
-  mission.face("vosk", 340, 154)
-  mission.face("queen", 340, 98)
+  mission.face("vosk", 340, 160)
+  mission.face("queen", 340, 106)
   -- Each line on its speaker, where the walk left them: a single from the front, or over
   -- the listener's shoulder.
   mission.shot("single", "queen")
@@ -200,7 +213,7 @@ function scenes.gate()
   mission.shot("over", "queen", "vosk")
   talk("vosk", "line.glass-road.turn-your-column-around-the")
   mission.shot("single", "korrath")
-  if mission.alive("station.gate") then
+  if gate_shut() then
     talk("korrath", "line.glass-road.they-re-waking-the-lodge")
   else
     talk("korrath", "line.glass-road.they-re-opening-the-lodge")
@@ -210,32 +223,39 @@ function scenes.gate()
   mission.begin_objective("condenser")
   waves()
   mission.cinematic(false)
-  mission.move("vosk", 344, 86) -- back from the gate, to his post by the condenser
-  mission.camera_reset(1.5, 340, 160)
+  mission.move("vosk", 360, 86) -- back from the gate, to his post in the yard
+  mission.camera_reset(1.5, 340, 158)
   talk("oleander", "line.glass-road.the-condenser-is-behind-that")
 end
 
 function scenes.closing()
   mission.cinematic(true)
   mission.shot("wide", "station")
-  mission.move("queen", 340, 70)
-  mission.move("oleander", 348, 74)
-  mission.move("korrath", 332, 74)
+  mission.move("queen", 338, 72)
+  mission.move("oleander", 346, 75)
+  mission.move("korrath", 326, 78)
+  -- Whatever is left of the station's guard stands back by the lodge, out of the shots.
+  for i = 1, #STAND_BACK do
+    mission.move(STAND_BACK[i], 384 + 4 * (i % 3), 114 + 4 * ((i - 1) // 3))
+  end
   mission.shot("wide", "condenser", { seconds = 5 })
   mission.wait_arrived("queen")
-  mission.face("queen", 340, 56)
-  mission.face("oleander", 340, 56)
+  mission.face("queen", 340, 58)
+  mission.face("oleander", 338, 72)
   mission.face("korrath", 340, 62)
-  mission.shot("single", "queen")
+  mission.wait_facing()
+  -- Seen from the yard's side, never from behind the condenser's glass: her hands on it in
+  -- profile, then Oleander over her shoulder.
+  mission.shot("two", "queen", "oleander")
   mission.wait(1)
   mission.animate("queen", "cast")
   talk("queen", "line.glass-road.it-s-warm-it-hums")
-  mission.shot("single", "oleander")
+  mission.shot("over", "queen", "oleander")
   talk("oleander", "line.glass-road.now-we-can-learn-what")
   mission.camera_to("cond-rise", 5)
   -- The condenser wakes to her: its light rises, and keeps rising into the fade.
-  mission.effect_at("condenser_hum", "effect.buildings.alembic-glow", 340, 57)
-  mission.light_at("condenser", 340, 57, "#9b6cff", 40, 18, 4, 3)
+  mission.effect_at("condenser_hum", "effect.buildings.alembic-glow", 340, 59)
+  mission.light_at("condenser", 340, 59, "#9b6cff", 40, 18, 4, 3)
   mission.wait(2)
   mission.fade_out(3, "#2b1450")
   mission.wait(3)
@@ -453,6 +473,19 @@ function on_tick()
   if tunnel() then return end
   finds()
 
+  -- The optional places off the road: the briar amber (its reward is amber, and the field
+  -- for a second nest), the Hollow Stag's grove (its crest drops where the camp falls).
+  if not get("briar_done", false) and not mission.alive("briar.0") and not mission.alive("briar.1") then
+    mission.set("briar_done", true)
+    mission.complete_objective("briar")
+    mission.give_stock("player.1", "item.amber", 300)
+  end
+  if not get("stag_done", false) and not mission.alive("stag.0") and not mission.alive("stag.1")
+      and not mission.alive("stag.2") then
+    mission.set("stag_done", true)
+    mission.complete_objective("stag")
+  end
+
   if phase == "road" then
     if mission.in_region("queen", "gate") or mission.in_region("queen", "forecourt") then
       mission.set("talk", nil)
@@ -467,7 +500,7 @@ function on_tick()
       start_talk("inside")
     end
   elseif phase == "war" then
-    if mission.get("waves_wait") and not mission.alive("station.gate") then
+    if mission.get("waves_wait") and not gate_shut() then
       mission.set("waves_wait", nil)
       if not mission.get("fallen") then
         mission.ai_waves(2, true)

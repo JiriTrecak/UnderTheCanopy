@@ -1,10 +1,13 @@
 {
   "schemaVersion": 1,
   "unreleased": {
-    "added": [],
+    "added": [
+      "The Glass Road: two new optional objectives that lead off the main road"
+    ],
     "improved": [
       "Cutscenes frame whole units with room around them, centred, instead of close-ups",
-      "The Hollow Brood: smaller neutral camps (three at most), fewer of them on the road"
+      "The Hollow Brood: smaller neutral camps (three at most), fewer of them on the road",
+      "The Glass Road is rebuilt: a larger, more open map with wide roads, ramps and gates, natural timber-and-stone beetle outposts, and fewer, smaller camps off the main road"
     ],
     "fixed": [],
     "knownIssues": []

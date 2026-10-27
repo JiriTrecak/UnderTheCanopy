@@ -1,0 +1,7 @@
+{
+  "id": "scenery.glass-road-stony-ground",
+  "name": "Glass Road: stony ground",
+  "category": "terrain",
+  "type": "prop",
+  "model": "asset.models.environment.glass-road-stony-ground"
+}

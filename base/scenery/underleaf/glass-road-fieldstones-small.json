@@ -1,0 +1,12 @@
+{
+  "id": "scenery.glass-road-fieldstones-small",
+  "name": "Glass Road: a few fieldstones",
+  "category": "landmark",
+  "type": "prop",
+  "model": "asset.models.environment.glass-road-fieldstones-small",
+  "blocker": {
+    "width": 2.6,
+    "depth": 2.2,
+    "shape": "ellipse"
+  }
+}

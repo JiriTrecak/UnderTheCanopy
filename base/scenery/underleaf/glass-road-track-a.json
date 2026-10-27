@@ -1,0 +1,7 @@
+{
+  "id": "scenery.glass-road-track-a",
+  "name": "Glass Road: worn track A",
+  "category": "terrain",
+  "type": "prop",
+  "model": "asset.models.environment.glass-road-track-a"
+}

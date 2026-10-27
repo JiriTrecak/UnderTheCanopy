@@ -1,0 +1,59 @@
+{
+  "id": "asset.models.environment.glass-road-timber-gate",
+  "name": "Glass Road: timber gate",
+  "kind": "building",
+  "tags": [
+    "underleaf",
+    "glass-road",
+    "beetles",
+    "natural",
+    "tripo",
+    "palisade",
+    "gate"
+  ],
+  "resources": [
+    {
+      "role": "geometry",
+      "index": 1,
+      "format": "glb"
+    },
+    {
+      "role": "source",
+      "index": 1,
+      "format": "blend"
+    }
+  ],
+  "transform": {
+    "scale": 1,
+    "pivot": [
+      0,
+      0,
+      0
+    ],
+    "up": "Y",
+    "forward": "+Z"
+  },
+  "capabilities": {
+    "groundContact": {
+      "mode": "pivot"
+    },
+    "vegetationClearance": 4,
+    "blocker": {
+      "shape": "box",
+      "size": [
+        16,
+        4
+      ],
+      "offset": [
+        0.0,
+        0.0
+      ]
+    }
+  },
+  "license": "Generated with Tripo (image to 3D, quad topology) from gpt-image-2 concepts for Under the Canopy (art/styles/glass-road-*-tripo.png); scaled and toned by tools/props/import_tripo.py (tools/props/glass_road_tripo.json).",
+  "shading": "building",
+  "display": {
+    "scale": 1,
+    "healthHeight": 7.8
+  }
+}

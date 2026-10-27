@@ -1,0 +1,20 @@
+{
+  "id": "scenery.glass-road-palisade-post",
+  "name": "Glass Road: palisade post",
+  "category": "landmark",
+  "type": "prop",
+  "model": "asset.models.environment.glass-road-palisade-post",
+  "light": {
+    "x": 0,
+    "y": 3.3,
+    "z": 1.5,
+    "color": "#9b70ff",
+    "intensity": 1.6,
+    "range": 8
+  },
+  "blocker": {
+    "width": 3.8,
+    "depth": 3.8,
+    "shape": "ellipse"
+  }
+}
