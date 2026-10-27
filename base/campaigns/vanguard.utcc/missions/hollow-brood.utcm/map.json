@@ -5,9 +5,7 @@
       "id": "mushrooms",
       "members": [
         "mushrooms.0",
-        "mushrooms.1",
-        "mushrooms.2",
-        "mushrooms.puffcap.0"
+        "mushrooms.1"
       ],
       "home": {
         "x": 134,
@@ -19,30 +17,10 @@
       "lootPool": "loot.camp.easy"
     },
     {
-      "id": "ford",
-      "members": [
-        "ford.wisp.0",
-        "ford.wisp.1",
-        "ford.sprite.0",
-        "ford.sprite.1"
-      ],
-      "home": {
-        "x": 194,
-        "y": 262
-      },
-      "aggroRange": 10,
-      "leash": 22,
-      "aggression": "players",
-      "fixedDrops": [
-        "item.moon-dew"
-      ]
-    },
-    {
       "id": "webs",
       "members": [
         "webs.0",
         "webs.1",
-        "webs.2",
         "webs.spitter.0"
       ],
       "home": {
@@ -73,9 +51,7 @@
       "id": "husk",
       "members": [
         "husk.0",
-        "husk.1",
-        "husk.spitter.0",
-        "husk.spitter.1"
+        "husk.spitter.0"
       ],
       "home": {
         "x": 306,
@@ -90,9 +66,7 @@
       "id": "thorns",
       "members": [
         "thorns.0",
-        "thorns.1",
-        "thorns.2",
-        "thorns.3"
+        "thorns.1"
       ],
       "home": {
         "x": 200,
@@ -107,9 +81,7 @@
       "id": "hornets",
       "members": [
         "hornets.guard.0",
-        "hornets.guard.1",
         "hornets.wasp.0",
-        "hornets.wasp.1",
         "hornets.mother.0"
       ],
       "home": {
@@ -284,66 +256,6 @@
       "rotation": 0.0
     },
     {
-      "id": "mushrooms.2",
-      "definition": "unit.neutral.capling",
-      "owner": "none",
-      "position": {
-        "x": 133,
-        "y": 305
-      },
-      "rotation": 0.0
-    },
-    {
-      "id": "mushrooms.puffcap.0",
-      "definition": "unit.neutral.puffcap",
-      "owner": "none",
-      "position": {
-        "x": 135,
-        "y": 298
-      },
-      "rotation": 0.0
-    },
-    {
-      "id": "ford.wisp.0",
-      "definition": "unit.neutral.puddle-wisp",
-      "owner": "none",
-      "position": {
-        "x": 186,
-        "y": 262
-      },
-      "rotation": 0.0
-    },
-    {
-      "id": "ford.wisp.1",
-      "definition": "unit.neutral.puddle-wisp",
-      "owner": "none",
-      "position": {
-        "x": 198,
-        "y": 258
-      },
-      "rotation": 0.0
-    },
-    {
-      "id": "ford.sprite.0",
-      "definition": "unit.neutral.dew-sprite",
-      "owner": "none",
-      "position": {
-        "x": 192,
-        "y": 255
-      },
-      "rotation": 0.0
-    },
-    {
-      "id": "ford.sprite.1",
-      "definition": "unit.neutral.dew-sprite",
-      "owner": "none",
-      "position": {
-        "x": 202,
-        "y": 262
-      },
-      "rotation": 0.0
-    },
-    {
       "id": "sentry",
       "definition": "unit.ants.warrior",
       "owner": "player.3",
@@ -374,16 +286,6 @@
       "position": {
         "x": 70,
         "y": 200
-      },
-      "rotation": 0.0
-    },
-    {
-      "id": "webs.2",
-      "definition": "unit.neutral.webling",
-      "owner": "none",
-      "position": {
-        "x": 76,
-        "y": 188
       },
       "rotation": 0.0
     },
@@ -528,32 +430,12 @@
       "rotation": 0.0
     },
     {
-      "id": "husk.1",
-      "definition": "unit.neutral.webling",
-      "owner": "none",
-      "position": {
-        "x": 310,
-        "y": 288
-      },
-      "rotation": 0.0
-    },
-    {
       "id": "husk.spitter.0",
       "definition": "unit.neutral.spitter",
       "owner": "none",
       "position": {
         "x": 304,
         "y": 298
-      },
-      "rotation": 0.0
-    },
-    {
-      "id": "husk.spitter.1",
-      "definition": "unit.neutral.spitter",
-      "owner": "none",
-      "position": {
-        "x": 312,
-        "y": 296
       },
       "rotation": 0.0
     },
@@ -593,26 +475,6 @@
       "rotation": 0.0
     },
     {
-      "id": "thorns.2",
-      "definition": "unit.neutral.thorn-slinger",
-      "owner": "none",
-      "position": {
-        "x": 198,
-        "y": 112
-      },
-      "rotation": 0.0
-    },
-    {
-      "id": "thorns.3",
-      "definition": "unit.neutral.thorn-slinger",
-      "owner": "none",
-      "position": {
-        "x": 208,
-        "y": 108
-      },
-      "rotation": 0.0
-    },
-    {
       "id": "hornets.guard.0",
       "definition": "unit.neutral.hornet-guard",
       "owner": "none",
@@ -623,32 +485,12 @@
       "rotation": 0.0
     },
     {
-      "id": "hornets.guard.1",
-      "definition": "unit.neutral.hornet-guard",
-      "owner": "none",
-      "position": {
-        "x": 274,
-        "y": 150
-      },
-      "rotation": 0.0
-    },
-    {
       "id": "hornets.wasp.0",
       "definition": "unit.neutral.needle-wasp",
       "owner": "none",
       "position": {
         "x": 270,
         "y": 162
-      },
-      "rotation": 0.0
-    },
-    {
-      "id": "hornets.wasp.1",
-      "definition": "unit.neutral.needle-wasp",
-      "owner": "none",
-      "position": {
-        "x": 280,
-        "y": 156
       },
       "rotation": 0.0
     },

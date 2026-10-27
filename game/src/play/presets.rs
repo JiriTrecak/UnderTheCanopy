@@ -28,6 +28,9 @@ const BAR_BOTTOM: f32 = 0.21;
 /// these show between the bars.
 const ROOM_TALL: f32 = 1.55;
 const ROOM_LONG: f32 = 1.35;
+/// The least a shot shows between the bars, cells: a small unit is seen in its place,
+/// as large as a hero is, not filling the picture.
+const LEAST_SPAN: f32 = 11.0;
 /// How far a single's camera turns from the face toward the side, radians.
 const SINGLE_TURN: f32 = 0.61;
 /// How far a wide shot on a unit turns from its front, radians.
@@ -359,7 +362,9 @@ fn hides(a: &Actor, eye: Vec3, subject: Vec3) -> bool {
 /// The span (between the bars) that shows `a` whole with room round it, at `aspect`.
 fn whole(a: &Actor, aspect: f32) -> f32 {
     let wide = aspect / visible();
-    (ROOM_TALL * a.height.max(a.stature)).max(ROOM_LONG * a.length / wide)
+    (ROOM_TALL * a.height.max(a.stature))
+        .max(ROOM_LONG * a.length / wide)
+        .max(LEAST_SPAN)
 }
 
 /// The eye's height for a whole actor `distance` away: a little above its face, looking
@@ -444,7 +449,10 @@ fn two(p: &Preset, a: &Actor, b: &Actor, sign: f32, spread: f32, aspect: f32) ->
     let fov = p.fov.unwrap_or(36f32.to_radians());
     let subject = (a.center + b.center) * 0.5;
     let apart = Vec3::new(b.feet.x - a.feet.x, 0.0, b.feet.z - a.feet.z).length();
-    let tall = distance_for(ROOM_TALL * tallest.height.max(tallest.stature), fov);
+    let tall = distance_for(
+        (ROOM_TALL * tallest.height.max(tallest.stature)).max(LEAST_SPAN),
+        fov,
+    );
     let long = a.length.max(b.length);
     let wide = (apart + ROOM_LONG * long) / (2.0 * aspect * (fov * 0.5).tan());
     let distance = p.distance.unwrap_or(tall.max(wide));

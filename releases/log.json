@@ -2,7 +2,10 @@
   "schemaVersion": 1,
   "unreleased": {
     "added": [],
-    "improved": [],
+    "improved": [
+      "Cutscenes frame whole units with room around them, centred, instead of close-ups",
+      "The Hollow Brood: smaller neutral camps (three at most), fewer of them on the road"
+    ],
     "fixed": [],
     "knownIssues": []
   },

@@ -96,6 +96,8 @@ Along the way, in order:
 
 **Map fixes** (2026-10-22, from the mission check and the autoplay plan): the Moonlit Hollow's neck is widened (the mycena that pinched it now stands in the frame), so the Queen gets past her own escort to the shrine; the survivors' chamber opens the full width of its rubble (12 cells) so she can step in; the archer survivor starts on open ground in the chamber instead of a wedge behind its spring. The plan sends the Queen up alone for the lantern.
 
+**Polish** (2026-10-27, Jiri: the neutrals "will tear you a new one… a lot smaller camps, like 2-3 units at most… less of them"; the shots "more zoomed out, so we always see the entire unit"): every camp holds at most three, off the road where it can be: the mushroom ring two Caplings (the first fight), the ford's sprites gone (a calm stop), the webs three, the husk two, the terrace two Thorn Slingers, the hornets' nest three (its Nest Mother among them). Every line's shot is a preset (`mission.shot`) framing whole units; the survivors' chamber, crowded by rocks, speaks from its own view. Autoplay wins in 7:46 on seeds 1–6.
+
 ## Mission 2: Founding
 
 Prologue · Mission Two. Morning in a lush glade: flowers, ferns, mushroom rings, a clear stream; hope. Playable about 320 × 320. Cap 4.
