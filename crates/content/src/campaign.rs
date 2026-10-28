@@ -729,6 +729,9 @@ pub struct Trimmed {
     pub steps: Vec<String>,
     /// `campaign/map` of every mission map removed with its steps.
     pub maps: Vec<String>,
+    /// Every asset id what was removed names (its art), sorted: the cook leaves out of a
+    /// release's pack those no shipped document still names.
+    pub assets: Vec<String>,
 }
 
 /// Trims the campaign packages below `dir` (a staged copy of `base/campaigns`) to what a
@@ -749,10 +752,12 @@ pub fn release(dir: &Path) -> Result<Trimmed, Errors> {
         .iter()
         .position(|c| c.campaign.early_access().is_some());
     let mut trimmed = Trimmed::default();
+    let mut assets = BTreeSet::new();
     for (index, package) in campaigns.iter().enumerate() {
         let root = package.package.root.clone();
         let id = package.id().to_string();
         if package.campaign.draft || line.is_some_and(|line| index > line) {
+            named_assets_below(&root, &mut assets);
             std::fs::remove_dir_all(&root).map_err(|e| io(&root, e))?;
             trimmed.campaigns.push(id);
             continue;
@@ -793,6 +798,11 @@ pub fn release(dir: &Path) -> Result<Trimmed, Errors> {
             .get_mut("steps")
             .and_then(serde_json::Value::as_array_mut)
         {
+            for (step, keep) in steps.iter().zip(&keep) {
+                if !keep {
+                    named_assets(step, &mut assets);
+                }
+            }
             let mut flags = keep.iter();
             steps.retain(|_| *flags.next().unwrap_or(&false));
         }
@@ -811,6 +821,7 @@ pub fn release(dir: &Path) -> Result<Trimmed, Errors> {
             if !played.contains(map.id.as_str()) {
                 let path = &map.path;
                 if path.is_dir() {
+                    named_assets_below(path, &mut assets);
                     std::fs::remove_dir_all(path).map_err(|e| io(path, e))?;
                     trimmed.maps.push(format!("{id}/{}", map.id));
                 }
@@ -854,7 +865,37 @@ pub fn release(dir: &Path) -> Result<Trimmed, Errors> {
             std::fs::remove_dir_all(&outlines).map_err(|e| io(&outlines, e))?;
         }
     }
+    trimmed.assets = assets.into_iter().collect();
     Ok(trimmed)
+}
+
+/// Collects every string in `value` that is an asset id.
+pub fn named_assets(value: &serde_json::Value, into: &mut BTreeSet<String>) {
+    match value {
+        serde_json::Value::String(s) if s.starts_with("asset.") => {
+            into.insert(s.clone());
+        }
+        serde_json::Value::Array(items) => items.iter().for_each(|v| named_assets(v, into)),
+        serde_json::Value::Object(fields) => fields.values().for_each(|v| named_assets(v, into)),
+        _ => {}
+    }
+}
+
+/// Collects the asset ids the JSON files below `dir` name, their own asset folders' too.
+fn named_assets_below(dir: &Path, into: &mut BTreeSet<String>) {
+    let Ok(entries) = std::fs::read_dir(dir) else {
+        return;
+    };
+    for path in entries.flatten().map(|e| e.path()) {
+        if path.is_dir() {
+            named_assets_below(&path, into);
+        } else if path.extension().is_some_and(|e| e == "json")
+            && let Ok(text) = std::fs::read_to_string(&path)
+            && let Ok(value) = serde_json::from_str::<serde_json::Value>(&text)
+        {
+            named_assets(&value, into);
+        }
+    }
 }
 
 fn write_json(path: &Path, value: &serde_json::Value) -> std::io::Result<()> {

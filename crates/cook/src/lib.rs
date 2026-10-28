@@ -37,6 +37,9 @@ pub use inspect::{inspect, stats};
 
 /// File name of the pack inside the output folder.
 pub const PACK_FILE: &str = "canopy.pack";
+/// File name of the release's pack inside the output folder (`--release`): the pack
+/// without the art of what a release leaves out of the campaigns (D110).
+pub const RELEASE_PACK_FILE: &str = "release.pack";
 
 #[derive(Debug, Clone)]
 pub struct Options {
@@ -48,6 +51,8 @@ pub struct Options {
     pub force: bool,
     /// Skip sources that are Git LFS pointers instead of failing (CI packaging).
     pub allow_lfs_pointers: bool,
+    /// Also write the release's pack ([`RELEASE_PACK_FILE`]) for packaging.
+    pub release: bool,
 }
 
 #[derive(Debug, Default)]
@@ -98,7 +103,7 @@ pub fn cook(options: &Options) -> Result<Report> {
         .map_err(|e| anyhow::anyhow!("the published data does not load:\n{e}"))?;
     let plan = plan::plan(&inputs);
     let locator = &inputs.locator;
-    stage_documents(
+    let withheld = stage_documents(
         &options.data.join(canopy_content::BASE_DIR),
         &options.out.join(canopy_content::BASE_DIR),
     )
@@ -169,6 +174,13 @@ pub fn cook(options: &Options) -> Result<Report> {
         let pack = Pack::open(&report.pack)?;
         report.entries = pack.entries().len();
         report.pack_bytes = fs::metadata(&report.pack)?.len();
+        if options.release {
+            let records: Vec<JobRecord> = hashes
+                .iter()
+                .map(|h| cache.job(h).unwrap_or_default())
+                .collect();
+            link_release(&cache, &records, &options.out, digest, &withheld)?;
+        }
         return Ok(report);
     }
 
@@ -215,8 +227,11 @@ pub fn cook(options: &Options) -> Result<Report> {
     }
 
     let start = Instant::now();
-    let entries = link(&cache, &records, &report.pack, digest)?;
+    let entries = link(&cache, &records, &report.pack, digest, |_| true)?;
     report.entries = entries;
+    if options.release {
+        link_release(&cache, &records, &options.out, digest, &withheld)?;
+    }
     report.pack_bytes = fs::metadata(&report.pack)?.len();
     let job_keys: BTreeSet<String> = hashes.iter().map(hex).collect();
     let blob_keys: BTreeSet<String> = records
@@ -254,10 +269,20 @@ fn inputs_digest(hashes: &[Hash]) -> Hash {
     *hasher.finalize().as_bytes()
 }
 
-/// Writes the pack: entries sorted by name, each distinct blob once.
-fn link(cache: &Cache, records: &[JobRecord], pack: &Path, digest: Hash) -> Result<usize> {
+/// Writes the pack: the entries `keep` keeps, sorted by name, each distinct blob once.
+fn link(
+    cache: &Cache,
+    records: &[JobRecord],
+    pack: &Path,
+    digest: Hash,
+    keep: impl Fn(&str) -> bool,
+) -> Result<usize> {
     let _span = tracing::info_span!("link").entered();
-    let mut entries: Vec<&JobEntry> = records.iter().flat_map(|r| &r.entries).collect();
+    let mut entries: Vec<&JobEntry> = records
+        .iter()
+        .flat_map(|r| &r.entries)
+        .filter(|e| keep(&e.name))
+        .collect();
     entries.sort_by(|a, b| a.name.cmp(&b.name));
     let tmp = pack.with_extension("pack.tmp");
     let file = fs::File::create(&tmp).with_context(|| format!("cannot write {}", tmp.display()))?;
@@ -284,10 +309,50 @@ fn link(cache: &Cache, records: &[JobRecord], pack: &Path, digest: Hash) -> Resu
     Ok(entries.len())
 }
 
+/// Writes the release's pack beside the pack: without the entries of `withheld`.
+fn link_release(
+    cache: &Cache,
+    records: &[JobRecord],
+    out: &Path,
+    digest: Hash,
+    withheld: &Withheld,
+) -> Result<()> {
+    let pack = out.join(RELEASE_PACK_FILE);
+    let entries = link(cache, records, &pack, digest, |name| !withheld.holds(name))?;
+    tracing::info!(
+        entries,
+        assets = withheld.assets.len(),
+        previews = withheld.previews.len(),
+        "release pack written"
+    );
+    Ok(())
+}
+
+/// What a release's pack leaves out: the art only trimmed campaign steps named, and the
+/// previews of trimmed mission maps (D110).
+#[derive(Debug, Default, PartialEq)]
+pub struct Withheld {
+    /// Asset ids: their entries are `<id>/<file>`.
+    pub assets: BTreeSet<String>,
+    /// Map preview entries.
+    pub previews: BTreeSet<String>,
+}
+
+impl Withheld {
+    /// Whether the pack entry `name` is left out.
+    pub fn holds(&self, name: &str) -> bool {
+        self.previews.contains(name)
+            || name
+                .split_once('/')
+                .is_some_and(|(asset, _)| self.assets.contains(asset))
+    }
+}
+
 /// Copies the documents of the base package (its identity files: JSON, Lua, map grids)
 /// to `out`, replacing what was there: what a packaged game ships beside the pack, without
-/// the asset files the pack replaces or the working sources.
-pub fn stage_documents(base: &Path, out: &Path) -> Result<()> {
+/// the asset files the pack replaces or the working sources. The campaigns are trimmed to
+/// what a release ships; the answer is what the release's pack leaves out with them.
+pub fn stage_documents(base: &Path, out: &Path) -> Result<Withheld> {
     fn walk(from: &Path, to: &Path) -> Result<()> {
         for entry in fs::read_dir(from)? {
             let entry = entry?;
@@ -316,15 +381,73 @@ pub fn stage_documents(base: &Path, out: &Path) -> Result<()> {
     // A release ships the campaigns up to the early access line, without drafts or
     // outlines (D110).
     let campaigns = out.join("campaigns");
-    if campaigns.is_dir() {
-        let trimmed = canopy_content::campaign::release(&campaigns)
-            .map_err(|e| anyhow::anyhow!("trimming the campaigns:\n{e}"))?;
-        tracing::info!(
-            campaigns = ?trimmed.campaigns,
-            steps = trimmed.steps.len(),
-            maps = ?trimmed.maps,
-            "campaigns trimmed for release"
-        );
+    if !campaigns.is_dir() {
+        return Ok(Withheld::default());
+    }
+    let trimmed = canopy_content::campaign::release(&campaigns)
+        .map_err(|e| anyhow::anyhow!("trimming the campaigns:\n{e}"))?;
+    // Their art, unless a shipped document still names it; its staged asset files go too.
+    let mut named = BTreeSet::new();
+    let mut scripts = String::new();
+    let mut files = Vec::new();
+    staged_names(out, &mut named, &mut scripts, &mut files)?;
+    let assets: BTreeSet<String> = trimmed
+        .assets
+        .into_iter()
+        .filter(|id| !named.contains(id) && !scripts.contains(id.as_str()))
+        .collect();
+    for (id, file) in files {
+        if assets.contains(&id) {
+            fs::remove_file(&file)?;
+        }
+    }
+    let previews = trimmed
+        .maps
+        .iter()
+        .filter_map(|m| m.split_once('/'))
+        .map(|(_, map)| format!("maps/{map}/{}", canopy_content::map::package::PREVIEW_FILE))
+        .collect();
+    tracing::info!(
+        campaigns = ?trimmed.campaigns,
+        steps = trimmed.steps.len(),
+        maps = ?trimmed.maps,
+        assets = ?assets,
+        "campaigns trimmed for release"
+    );
+    Ok(Withheld { assets, previews })
+}
+
+/// The asset ids the staged documents below `dir` name (an asset's own `asset.json` aside),
+/// the text of its scripts, and each staged `asset.json` with its id.
+fn staged_names(
+    dir: &Path,
+    named: &mut BTreeSet<String>,
+    scripts: &mut String,
+    assets: &mut Vec<(String, PathBuf)>,
+) -> Result<()> {
+    for entry in fs::read_dir(dir)? {
+        let path = entry?.path();
+        if path.is_dir() {
+            staged_names(&path, named, scripts, assets)?;
+            continue;
+        }
+        match path.extension().and_then(|e| e.to_str()) {
+            Some("json") => {
+                let Ok(value) = serde_json::from_slice::<serde_json::Value>(&fs::read(&path)?)
+                else {
+                    continue;
+                };
+                if path.file_name().is_some_and(|n| n == "asset.json") {
+                    if let Some(id) = value.get("id").and_then(serde_json::Value::as_str) {
+                        assets.push((id.to_owned(), path));
+                    }
+                } else {
+                    canopy_content::campaign::named_assets(&value, named);
+                }
+            }
+            Some("lua") => scripts.push_str(&fs::read_to_string(&path)?),
+            _ => {}
+        }
     }
     Ok(())
 }

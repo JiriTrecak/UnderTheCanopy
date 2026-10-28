@@ -418,6 +418,11 @@ fn drafts_and_the_early_access_line_shape_a_release() {
         ["held/sketch", "held/later", "held/scene", "held/second"]
     );
     assert_eq!(trimmed.maps, ["held/second-map"]);
+    assert_eq!(
+        trimmed.assets,
+        ["asset.icon"],
+        "the art the removed steps name"
+    );
     let left = campaign::folder(&shelf).unwrap();
     assert_eq!(left.len(), 1);
     let ids: Vec<&str> = left[0]

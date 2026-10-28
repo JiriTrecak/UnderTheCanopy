@@ -1,7 +1,7 @@
 //! `canopy-cook`: cooks the published data into `target/cooked/canopy.pack`.
 //!
 //! ```text
-//! canopy-cook [--data <folder>] [--out <folder>] [--force] [--allow-lfs-pointers] [--verbose]
+//! canopy-cook [--data <folder>] [--out <folder>] [--force] [--allow-lfs-pointers] [--release] [--verbose]
 //! canopy-cook --inspect <entry, asset id or scenery id> [--out <folder>]
 //! canopy-cook --stats [--out <folder>]
 //! ```
@@ -28,6 +28,7 @@ struct Args {
     out: Option<PathBuf>,
     force: bool,
     allow_lfs_pointers: bool,
+    release: bool,
     verbose: bool,
 }
 
@@ -38,6 +39,7 @@ fn parse(mut args: impl Iterator<Item = String>) -> Result<Args> {
         out: None,
         force: false,
         allow_lfs_pointers: false,
+        release: false,
         verbose: false,
     };
     while let Some(arg) = args.next() {
@@ -49,9 +51,10 @@ fn parse(mut args: impl Iterator<Item = String>) -> Result<Args> {
             "--stats" => parsed.command = Command::Stats,
             "--force" => parsed.force = true,
             "--allow-lfs-pointers" => parsed.allow_lfs_pointers = true,
+            "--release" => parsed.release = true,
             "--verbose" | "-v" => parsed.verbose = true,
             other => bail!(
-                "unknown option {other} (expected --data, --out, --force, --allow-lfs-pointers, --verbose, --inspect <id>, --stats)"
+                "unknown option {other} (expected --data, --out, --force, --allow-lfs-pointers, --release, --verbose, --inspect <id>, --stats)"
             ),
         }
     }
@@ -102,6 +105,7 @@ fn run() -> Result<ExitCode> {
         out,
         force: args.force,
         allow_lfs_pointers: args.allow_lfs_pointers,
+        release: args.release,
     })?;
     let warnings = report
         .diagnostics

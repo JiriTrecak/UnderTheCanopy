@@ -15,6 +15,7 @@ fn options(data: &Path, out: &Path) -> Options {
         out: out.to_owned(),
         force: false,
         allow_lfs_pointers: false,
+        release: false,
     }
 }
 
@@ -192,6 +193,7 @@ fn lfs_pointers_fail_unless_allowed() {
     assert!(error.to_string().contains("git lfs pull"), "{error}");
     let report = cook(&Options {
         allow_lfs_pointers: true,
+        release: false,
         ..options(&data, &data.join("out"))
     })
     .unwrap();
@@ -241,4 +243,61 @@ fn effects_become_runtime_primitives_bound_to_pack_entries() {
     let hut = effect.layers[1].model.as_ref().unwrap();
     assert_eq!(hut.model, BUILDING);
     assert!((hut.rotation[1] - std::f32::consts::FRAC_PI_2).abs() < 1e-6);
+}
+
+#[test]
+fn a_release_withholds_the_art_only_trimmed_steps_name() {
+    let base = std::env::temp_dir().join(format!("canopy-cook-withheld-{}", std::process::id()));
+    let _ = std::fs::remove_dir_all(&base);
+    let write = |path: &str, value: serde_json::Value| {
+        let file = base.join(path);
+        std::fs::create_dir_all(file.parent().unwrap()).unwrap();
+        std::fs::write(file, value.to_string()).unwrap();
+    };
+    for id in ["asset.shared", "asset.later", "asset.scripted"] {
+        write(
+            &format!("assets/{id}/asset.json"),
+            serde_json::json!({"id": id, "kind": "interface"}),
+        );
+    }
+    let root = "campaigns/held.utcc";
+    write(
+        &format!("{root}/package.json"),
+        serde_json::json!({"format": 1, "id": "held", "kind": "campaign", "name": "Held", "version": "1.0.0"}),
+    );
+    write(
+        &format!("{root}/campaign.json"),
+        serde_json::json!({"race": "red", "steps": [
+            {"kind": "chapter", "id": "one", "title": "One", "art": "asset.shared"},
+            {"kind": "earlyAccess", "id": "line"},
+            {"kind": "chapter", "id": "two", "title": "Two", "art": "asset.shared"},
+            {"kind": "story", "id": "tale", "title": "Tale",
+             "pages": [{"art": "asset.later", "text": "Later."}, {"art": "asset.scripted", "text": "."}]},
+            {"kind": "mission", "id": "far", "map": "far", "title": "Far"}
+        ]}),
+    );
+    write(
+        &format!("{root}/missions/far.utcm/package.json"),
+        serde_json::json!({"format": 1, "id": "far", "kind": "map", "name": "Far", "version": "1.0.0"}),
+    );
+    std::fs::create_dir_all(base.join("maps/skirmish/near.utcm")).unwrap();
+    std::fs::write(
+        base.join("maps/skirmish/near.utcm/mission.lua"),
+        "show(\"asset.scripted\")",
+    )
+    .unwrap();
+
+    let out = base.with_extension("out");
+    let withheld = canopy_cook::stage_documents(&base, &out).unwrap();
+    // Named only past the line: left out, its staged asset too. Named by a kept step or a
+    // shipped script: kept.
+    assert_eq!(withheld.assets.iter().collect::<Vec<_>>(), ["asset.later"]);
+    assert!(!out.join("assets/asset.later/asset.json").exists());
+    assert!(out.join("assets/asset.shared/asset.json").exists());
+    assert!(withheld.holds("asset.later/image.webp"));
+    assert!(!withheld.holds("asset.shared/image.webp"));
+    assert!(withheld.holds("maps/far/preview.webp"));
+    assert!(!withheld.holds("maps/near/preview.webp"));
+    std::fs::remove_dir_all(&base).ok();
+    std::fs::remove_dir_all(&out).ok();
 }

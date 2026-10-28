@@ -160,13 +160,9 @@ impl<'a> Ui<'a> {
 
     /// Replaces the text of the field whose value is `current` with `text`.
     pub fn type_over(&mut self, current: &str, text: &str) -> bool {
-        let field = self
-            .widgets()
-            .iter()
-            .find(|w| {
-                (w.role.contains("TextInput") || w.role == "SpinButton") && w.value == current
-            })
-            .cloned();
+        let field = self.field(|w| {
+            (w.role.contains("TextInput") || w.role == "SpinButton") && w.value == current
+        });
         let Some(field) = field else {
             self.fail(&format!("no field holding “{current}”"));
             return false;
@@ -175,6 +171,47 @@ impl<'a> Ui<'a> {
         self.select_all();
         self.type_text(text);
         true
+    }
+
+    /// The first widget matching `matches`, scrolled up to the middle of the screen first
+    /// when it lies low: a long form or list lays out fields a person would scroll to, and
+    /// a click where they lie below the view lands on whatever is there.
+    pub fn field(&mut self, matches: impl Fn(&Widget) -> bool) -> Option<Widget> {
+        let height = self.rig.size[1] as f32 / self.rig.scale;
+        let mut last = None;
+        for _ in 0..4 {
+            let field = self.widgets().iter().find(|w| matches(w)).cloned()?;
+            let y = field.rect.center().y;
+            if y <= height * 0.8 || last == Some(y) {
+                return Some(field);
+            }
+            last = Some(y);
+            let pointer = egui::pos2(field.rect.center().x, height * 0.5);
+            self.send(vec![
+                egui::Event::PointerMoved(pointer),
+                egui::Event::MouseWheel {
+                    unit: egui::MouseWheelUnit::Point,
+                    delta: egui::vec2(0.0, height * 0.5 - y),
+                    phase: egui::TouchPhase::Move,
+                    modifiers: egui::Modifiers::NONE,
+                },
+            ]);
+            // The wheel scrolls smoothly: wait until the field stands still.
+            let mut at = y;
+            for _ in 0..40 {
+                self.frames(1);
+                let now = self
+                    .widgets()
+                    .iter()
+                    .find(|w| matches(w))
+                    .map(|w| w.rect.center().y);
+                if now == Some(at) {
+                    break;
+                }
+                at = now.unwrap_or(at);
+            }
+        }
+        self.widgets().iter().find(|w| matches(w)).cloned()
     }
 
     pub fn escape(&mut self) {
@@ -447,11 +484,7 @@ fn shell_flows(ui: &mut Ui, scratch: &Path) {
     ui.settle();
     let _ = std::fs::write(ui.rig.out.join("dump-form.txt"), ui.dump());
     ui.check(ui.shows("Max hp"), "the form shows the definition's fields");
-    let hp = ui
-        .widgets()
-        .iter()
-        .find(|w| w.role == "SpinButton" && w.value == "185")
-        .cloned();
+    let hp = ui.field(|w| w.role == "SpinButton" && w.value == "185");
     match hp {
         Some(field) => {
             ui.click_at(field.rect.center(), egui::PointerButton::Primary);

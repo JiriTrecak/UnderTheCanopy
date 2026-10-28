@@ -73,7 +73,7 @@ test *args:
 tidy:
     #!/bin/sh
     cd "{{justfile_directory()}}/target" 2>/dev/null || exit 0
-    rm -rf cooked-* ci tmp debug/incremental release/incremental
+    rm -rf cooked-* cooked/release.pack ci tmp debug/incremental release/incremental
     for profile in debug release; do
         if [ -d "$profile" ] && [ "$(du -sk "$profile" | cut -f1)" -gt 41943040 ]; then
             echo "tidy: $profile is over 40 GB of builds; cleaning it"
@@ -83,7 +83,7 @@ tidy:
 
 [windows]
 tidy:
-    $t = Join-Path "{{justfile_directory()}}" "target"; if (Test-Path $t) { Get-ChildItem $t -Directory | Where-Object { $_.Name -like "cooked-*" -or $_.Name -in @("ci", "tmp") } | Remove-Item -Recurse -Force; foreach ($p in "debug", "release") { $d = Join-Path $t $p; Remove-Item (Join-Path $d "incremental") -Recurse -Force -ErrorAction SilentlyContinue; if ((Test-Path $d) -and ((Get-ChildItem $d -Recurse -File | Measure-Object Length -Sum).Sum -gt 40GB)) { "tidy: $p is over 40 GB of builds; cleaning it"; foreach ($s in "deps", "build", ".fingerprint", "examples") { Remove-Item (Join-Path $d $s) -Recurse -Force -ErrorAction SilentlyContinue } } } }
+    $t = Join-Path "{{justfile_directory()}}" "target"; if (Test-Path $t) { Get-ChildItem $t -Directory | Where-Object { $_.Name -like "cooked-*" -or $_.Name -in @("ci", "tmp") } | Remove-Item -Recurse -Force; Remove-Item (Join-Path $t "cooked/release.pack") -Force -ErrorAction SilentlyContinue; foreach ($p in "debug", "release") { $d = Join-Path $t $p; Remove-Item (Join-Path $d "incremental") -Recurse -Force -ErrorAction SilentlyContinue; if ((Test-Path $d) -and ((Get-ChildItem $d -Recurse -File | Measure-Object Length -Sum).Sum -gt 40GB)) { "tidy: $p is over 40 GB of builds; cleaning it"; foreach ($s in "deps", "build", ".fingerprint", "examples") { Remove-Item (Join-Path $d $s) -Recurse -Force -ErrorAction SilentlyContinue } } } }
 
 # Prime a new git worktree: Git LFS files from the local cache, the main checkout's release build and cooked pack cloned copy-on-write (first build recompiles only the workspace)
 [unix]
