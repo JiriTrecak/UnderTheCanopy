@@ -322,6 +322,8 @@ pub fn run(
             "editor-ui" => ui::editor_ui(&mut rig, &paths)?,
             // Real turns with the user's stored key: costs a few cents; never in a sweep.
             "assistant-live" => ui::assistant_live(&mut rig, &paths)?,
+            // An ideation session with one painted picture: real turns and a real image.
+            "assistant-ideation" => ui::assistant_ideation(&mut rig, &paths)?,
             "settings" => settings_tabs(&mut rig)?,
             "campaign" => campaigns(&mut rig, &paths)?,
             "replays" => {

@@ -37,18 +37,25 @@ impl Default for Thumbs {
 }
 
 /// The picture file of an asset folder: its image, in whichever format it has.
-fn picture_file(folder: &std::path::Path) -> Option<PathBuf> {
+pub fn picture_file(folder: &std::path::Path) -> Option<PathBuf> {
     ["image.webp", "image.png", "image.jpg", "image.jpeg"]
         .iter()
         .map(|name| folder.join(name))
         .find(|p| p.is_file())
 }
 
-fn decode(file: &std::path::Path) -> Option<egui::ColorImage> {
-    let image = image::open(file).ok()?;
-    let height = (image.height() as f32 * WIDTH as f32 / image.width().max(1) as f32) as u32;
+fn decode(file: &std::path::Path, width: u32) -> Option<egui::ColorImage> {
+    // By its bytes, not its name: a picture can be saved under another extension.
+    let image = image::ImageReader::open(file)
+        .ok()?
+        .with_guessed_format()
+        .ok()?
+        .decode()
+        .ok()?;
+    let width = width.min(image.width());
+    let height = (image.height() as f32 * width as f32 / image.width().max(1) as f32) as u32;
     let small = image
-        .resize(WIDTH, height.max(1), image::imageops::FilterType::Triangle)
+        .resize(width, height.max(1), image::imageops::FilterType::Triangle)
         .to_rgba8();
     Some(egui::ColorImage::from_rgba_unmultiplied(
         [small.width() as usize, small.height() as usize],
@@ -94,18 +101,44 @@ impl Thumbs {
             self.thumbs.insert(id.to_string(), Thumb::Missing);
             return None;
         };
+        self.load(ctx, id, file, WIDTH);
+        None
+    }
+
+    /// The picture at `file` (an outline's), `width` wide at most; asked for on first use.
+    pub fn file(
+        &mut self,
+        ctx: &egui::Context,
+        file: &std::path::Path,
+        width: u32,
+    ) -> Option<egui::TextureId> {
+        let id = format!("{}@{width}", file.display());
+        match self.thumbs.get(&id) {
+            Some(Thumb::Ready(t)) => Some(t.id()),
+            Some(_) => None,
+            None if file.is_file() => {
+                self.load(ctx, &id, file.to_path_buf(), width);
+                None
+            }
+            None => {
+                self.thumbs.insert(id, Thumb::Missing);
+                None
+            }
+        }
+    }
+
+    fn load(&mut self, ctx: &egui::Context, id: &str, file: PathBuf, width: u32) {
         self.thumbs.insert(id.to_string(), Thumb::Loading);
         let (tx, id, ctx) = (self.tx.clone(), id.to_string(), ctx.clone());
         let spawned = std::thread::Builder::new()
             .name("campaign art".into())
             .spawn(move || {
-                let _ = tx.send((id, decode(&file)));
+                let _ = tx.send((id, decode(&file, width)));
                 ctx.request_repaint();
             });
         if spawned.is_err() {
             tracing::warn!("editor: cannot decode campaign art");
         }
-        None
     }
 }
 

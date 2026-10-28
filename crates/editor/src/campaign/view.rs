@@ -72,6 +72,10 @@ pub struct State {
     pub(super) search: String,
     /// The outline's tabletop.
     pub sketch: super::sketch::State,
+    /// The outline shows its pictures in the middle (instead of the sketch, pages or
+    /// shots), and the one open large.
+    pub pictures: bool,
+    pub picture: Option<usize>,
 }
 
 /// What every campaign view shares: thumbnails, each campaign's state, and the requests

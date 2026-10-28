@@ -294,7 +294,7 @@ impl Shell {
     }
 
     /// The campaign an agent named by id or folder.
-    fn campaign_root(&self, name: &str) -> Result<String, String> {
+    pub(super) fn campaign_root(&self, name: &str) -> Result<String, String> {
         let name = name
             .trim_end_matches('/')
             .trim_end_matches(&format!("/{}", campaign::FILE));
@@ -317,7 +317,7 @@ impl Shell {
             })
     }
 
-    fn campaign_value(&mut self, root: &str) -> Result<Value, String> {
+    pub(super) fn campaign_value(&mut self, root: &str) -> Result<Value, String> {
         let document = campaign::document(root);
         self.store
             .as_mut()
@@ -326,7 +326,7 @@ impl Shell {
     }
 
     /// Runs a campaign step of `commands` on the campaign at `root`.
-    fn run_campaign(
+    pub(super) fn run_campaign(
         &mut self,
         root: &str,
         label: &str,
@@ -347,8 +347,283 @@ impl Shell {
         Ok(())
     }
 
+    /// Where `document` stands in the story, for the assistant: a campaign's view, mode and
+    /// step, its outline in brief and its neighbours; or the step a mission map plays.
+    pub(super) fn campaign_context(&mut self, document: &str) -> Vec<String> {
+        let mut lines = Vec::new();
+        let (root, step) = if let Some(root) = campaign::root_of(document)
+            && document == campaign::document(root)
+        {
+            let state = self
+                .campaigns
+                .states
+                .get(document)
+                .cloned()
+                .unwrap_or_default();
+            (root.to_string(), Some(state))
+        } else if let Some(map) = crate::map::root_of(document)
+            && let Some((root, _)) = campaign::mission_of(map)
+        {
+            (root.to_string(), None)
+        } else {
+            return lines;
+        };
+        let Ok(value) = self.campaign_value(&root) else {
+            return lines;
+        };
+        let list = campaign::steps(&value);
+        let words = self
+            .held(&format!(
+                "{root}/text/{}/campaign.json",
+                crate::text::LANGUAGE
+            ))
+            .unwrap_or(Value::Null);
+        let say = |s: &Value| {
+            let key = campaign::text(s, "title");
+            words
+                .get(key)
+                .and_then(Value::as_str)
+                .unwrap_or(key)
+                .to_string()
+        };
+        let numbers = campaign::mission_numbers(&value);
+        let describe = |i: usize, s: &Value| {
+            let kind = match numbers[i] {
+                Some(n) => format!("mission {n}"),
+                None => campaign::text(s, "kind").to_string(),
+            };
+            let draft = if campaign::is_draft(s) { ", draft" } else { "" };
+            format!(
+                "step {i}, {kind} \"{}\" (id {}{draft})",
+                say(s),
+                campaign::text(s, "id")
+            )
+        };
+        let all = self.campaign_list();
+        let order: Vec<String> = all.iter().map(|r| campaign::id_of(r).to_string()).collect();
+        let line = campaign::early_access(&value)
+            .map(|i| format!("; the early access line is its step {i}"))
+            .unwrap_or_default();
+        lines.push(format!(
+            "Campaign: {} ({root}), race {}, {} steps{line}. Campaigns in play order: {}",
+            campaign::id_of(&root),
+            campaign::text(&value, "race"),
+            list.len(),
+            order.join(", ")
+        ));
+        let index = match step {
+            Some(state) => {
+                use crate::campaign::view::Mode;
+                let index = match state.mode {
+                    Mode::Outline => Some(
+                        state
+                            .selected
+                            .unwrap_or(0)
+                            .min(list.len().saturating_sub(1)),
+                    ),
+                    _ => state.selected,
+                };
+                lines.push(format!(
+                    "View: {}{}",
+                    state.mode.label(),
+                    match state.mode {
+                        Mode::Steps if index.is_none() => " (no step selected: the campaign's settings)",
+                        Mode::Steps => " (a step selected: its fields on the right)",
+                        Mode::Outline => " (one step's outline: the one-pager, the beats and the tabletop sketch)",
+                        Mode::ReadThrough => " (every step of every campaign in one row, a lane per character, the tension curve)",
+                    }
+                ));
+                index
+            }
+            None => {
+                let map = crate::map::root_of(document)
+                    .and_then(|m| campaign::mission_of(m))
+                    .map(|(_, m)| m.to_string());
+                let index = map.and_then(|m| campaign::step_of_map(&value, &m));
+                lines.push(format!(
+                    "This map is a mission map of the campaign{}",
+                    if index.is_some() {
+                        ""
+                    } else {
+                        " that no step plays yet"
+                    }
+                ));
+                index
+            }
+        };
+        let Some(i) = index.filter(|i| *i < list.len()) else {
+            return lines;
+        };
+        let s = &list[i];
+        lines.push(format!("Step: {}", describe(i, s)));
+        let outline_doc = campaign::outline_document(&root, campaign::text(s, "id"));
+        match self.held(&outline_doc) {
+            Some(outline) => {
+                let held: Vec<String> = outline
+                    .as_object()
+                    .into_iter()
+                    .flatten()
+                    .map(|(k, v)| match v {
+                        Value::Array(a) => format!("{k} ({})", a.len()),
+                        _ => k.clone(),
+                    })
+                    .collect();
+                lines.push(format!(
+                    "Its outline: {outline_doc}, holds {}",
+                    held.join(", ")
+                ));
+                if let Some(pitch) = outline["pitch"].as_str().or(outline["purpose"].as_str()) {
+                    lines.push(format!("  In a line: {pitch}"));
+                }
+            }
+            None => lines.push(format!("Its outline: none yet ({outline_doc})")),
+        }
+        if i > 0 {
+            lines.push(format!("Before it: {}", describe(i - 1, &list[i - 1])));
+        }
+        if i + 1 < list.len() {
+            lines.push(format!("After it: {}", describe(i + 1, &list[i + 1])));
+        }
+        lines.push(
+            "campaign_outline reads this step's outline whole, campaign_read_through the whole story's."
+                .into(),
+        );
+        lines
+    }
+
+    /// A document as the store holds it (unsaved edits included).
+    fn held(&mut self, document: &str) -> Option<Value> {
+        self.store
+            .as_mut()
+            .and_then(|s| s.get(document).ok().flatten().cloned())
+    }
+
+    /// The whole story in play order with every step's outline (the read-through, as
+    /// data): every campaign, or one, or a stretch of one.
+    fn read_through(&mut self, args: campaign::tools::ReadThrough) -> Result<Value, String> {
+        let roots = match &args.campaign {
+            Some(name) => vec![self.campaign_root(name)?],
+            None => self.campaign_list(),
+        };
+        if args.campaign.is_none() && (args.from.is_some() || args.to.is_some()) {
+            return Err("from and to name steps of one campaign: give its campaign too".into());
+        }
+        // The early access line is one for the whole game: everything after it in play
+        // order is beyond it.
+        let all = self.campaign_list();
+        let mut beyond = false;
+        let mut line = Value::Null;
+        let mut beyond_of = std::collections::HashMap::new();
+        for root in &all {
+            let value = self.campaign_value(root)?;
+            let flags: Vec<bool> = campaign::steps(&value)
+                .iter()
+                .enumerate()
+                .map(|(i, s)| {
+                    if StepKind::of(s) == Some(StepKind::EarlyAccess) {
+                        beyond = true;
+                        line = json!({ "campaign": campaign::id_of(root), "index": i });
+                    }
+                    beyond
+                })
+                .collect();
+            beyond_of.insert(root.clone(), flags);
+        }
+        let mut campaigns = Vec::new();
+        for root in roots {
+            let value = self.campaign_value(&root)?;
+            let list = campaign::steps(&value);
+            let first = match &args.from {
+                Some(step) => Self::step_index(&value, step)?,
+                None => 0,
+            };
+            let last = match &args.to {
+                Some(step) => Self::step_index(&value, step)?,
+                None => list.len().saturating_sub(1),
+            };
+            let words = self
+                .held(&format!(
+                    "{root}/text/{}/campaign.json",
+                    crate::text::LANGUAGE
+                ))
+                .unwrap_or(Value::Null);
+            let say = |key: &str| {
+                words
+                    .get(key)
+                    .and_then(Value::as_str)
+                    .unwrap_or(key)
+                    .to_string()
+            };
+            let numbers = campaign::mission_numbers(&value);
+            let mut steps = Vec::new();
+            for (i, step) in list.iter().enumerate() {
+                if i < first || i > last {
+                    continue;
+                }
+                let id = campaign::text(step, "id");
+                let mut out = json!({
+                    "index": i,
+                    "kind": campaign::text(step, "kind"),
+                    "id": id,
+                    "title": say(campaign::text(step, "title")),
+                });
+                if let Some(n) = numbers[i] {
+                    out["mission"] = json!(n);
+                    out["map"] = json!(campaign::text(step, "map"));
+                }
+                if campaign::is_draft(step) {
+                    out["draft"] = json!(true);
+                }
+                if beyond_of[&root].get(i).copied().unwrap_or(false)
+                    && StepKind::of(step) != Some(StepKind::EarlyAccess)
+                {
+                    out["afterEarlyAccess"] = json!(true);
+                }
+                if let Some(mut outline) = self.held(&campaign::outline_document(&root, id)) {
+                    if !args.sketches
+                        && let Some(sketch) = outline.get_mut("sketch")
+                    {
+                        let stamps: Vec<Value> = sketch["stamps"]
+                            .as_array()
+                            .into_iter()
+                            .flatten()
+                            .map(|s| {
+                                let mut mark = json!({ "mark": s["mark"] });
+                                for key in ["label", "who", "count"] {
+                                    if !s[key].is_null() {
+                                        mark[key] = s[key].clone();
+                                    }
+                                }
+                                mark
+                            })
+                            .collect();
+                        *sketch = json!({
+                            "size": sketch["size"],
+                            "shapes": sketch["shapes"].as_array().map_or(0, Vec::len),
+                            "stamps": stamps,
+                            "note": "counted; sketches: true gives it whole",
+                        });
+                    }
+                    out["outline"] = outline;
+                }
+                steps.push(out);
+            }
+            let mut header = json!({
+                "campaign": campaign::id_of(&root),
+                "package": root,
+                "race": campaign::text(&value, "race"),
+                "steps": steps,
+            });
+            if value.get("draft").and_then(Value::as_bool) == Some(true) {
+                header["draft"] = json!(true);
+            }
+            campaigns.push(header);
+        }
+        Ok(json!({ "earlyAccessLine": line, "campaigns": campaigns }))
+    }
+
     /// The index of the step an agent named by id, index, or (for missions) map.
-    fn step_index(value: &Value, step: &Value) -> Result<usize, String> {
+    pub(super) fn step_index(value: &Value, step: &Value) -> Result<usize, String> {
         let list = campaign::steps(value);
         let found = match step {
             Value::Number(n) => n.as_u64().map(|n| n as usize).filter(|n| *n < list.len()),
@@ -700,19 +975,44 @@ impl Shell {
                 let index = Self::step_index(&value, &args.step)?;
                 let step = &campaign::steps(&value)[index];
                 let document = campaign::outline_document(&root, campaign::text(step, "id"));
-                let outline = self
-                    .store
-                    .as_mut()
-                    .and_then(|s| s.get(&document).ok().flatten().cloned())
-                    .unwrap_or_else(|| json!({}));
-                Ok(json!({
+                let outline = self.held(&document).unwrap_or_else(|| json!({}));
+                let words = self
+                    .held(&format!(
+                        "{root}/text/{}/campaign.json",
+                        crate::text::LANGUAGE
+                    ))
+                    .unwrap_or(Value::Null);
+                let say = |s: &Value| {
+                    let key = campaign::text(s, "title");
+                    words
+                        .get(key)
+                        .and_then(Value::as_str)
+                        .unwrap_or(key)
+                        .to_string()
+                };
+                // The steps either side, for reading on (campaign_read_through has them all).
+                let list = campaign::steps(&value);
+                let near = |i: Option<usize>| {
+                    i.and_then(|i| list.get(i)).map_or(Value::Null, |s| {
+                        json!({"id": campaign::text(s, "id"), "kind": campaign::text(s, "kind"), "title": say(s)})
+                    })
+                };
+                let mut answer = json!({
                     "step": index,
                     "kind": campaign::text(step, "kind"),
                     "id": campaign::text(step, "id"),
+                    "title": say(step),
                     "draft": campaign::is_draft(step),
                     "document": document,
                     "outline": outline,
-                }))
+                    "before": near(index.checked_sub(1)),
+                    "after": near(Some(index + 1)),
+                });
+                if let Some(n) = campaign::mission_numbers(&value)[index] {
+                    answer["mission"] = json!(n);
+                    answer["map"] = json!(campaign::text(step, "map"));
+                }
+                Ok(answer)
             }
             Call::SetOutline(args) => {
                 let root = self.campaign_root(&args.campaign)?;
@@ -759,6 +1059,7 @@ impl Shell {
                     "problems": canopy_content::outline::problems(&outline),
                 }))
             }
+            Call::ReadThrough(args) => self.read_through(args),
             Call::Players(args) => {
                 let map = match (&args.map, &args.campaign, &args.step) {
                     (Some(map), _, _) => map.clone(),
@@ -903,6 +1204,7 @@ impl Shell {
             "set_mission_players" => Call::Players(parse(args)?),
             "campaign_outline" => Call::Outline(parse(args)?),
             "set_campaign_outline" => Call::SetOutline(parse(args)?),
+            "campaign_read_through" => Call::ReadThrough(parse(args)?),
             other => return Err(format!("no campaign tool {other}")),
         };
         self.answer_campaign(call)

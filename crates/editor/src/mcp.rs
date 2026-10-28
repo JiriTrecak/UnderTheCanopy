@@ -91,6 +91,8 @@ pub enum Tool {
     SoundEvents,
     /// Sound authoring with ElevenLabs (`crate::sound`), answered when it finishes.
     Sound(crate::sound::Call),
+    /// Outline pictures (`crate::images`): painted with OpenAI, or looked at.
+    Image(crate::images::Call),
     /// Shows a document in its editor, as a click in its library does.
     Open {
         document: String,
@@ -354,7 +356,10 @@ struct Handler {
 
 impl Handler {
     async fn ask(&self, tool: Tool) -> Result<CallToolResult, ErrorData> {
-        let cook = matches!(tool, Tool::Cook | Tool::Sound(_));
+        let cook = matches!(
+            tool,
+            Tool::Cook | Tool::Sound(_) | Tool::Image(crate::images::Call::Generate(_))
+        );
         let (reply, answer) = tokio::sync::oneshot::channel();
         if self.calls.send(Call { tool, reply }).is_err() {
             return Ok(failed("The editor is closed."));
@@ -362,12 +367,19 @@ impl Handler {
         // A cook may compile the cooker first; a take of music can take minutes.
         let wait = if cook { 900 } else { 60 };
         match tokio::time::timeout(Duration::from_secs(wait), answer).await {
-            Ok(Ok(Ok(Value::Object(image)))) if image.contains_key("png") => {
-                let data = image["png"].as_str().unwrap_or_default().to_string();
-                Ok(CallToolResult::success(vec![ContentBlock::image(
-                    data,
-                    "image/png",
-                )]))
+            Ok(Ok(Ok(Value::Object(mut image)))) if picture_of(&image).is_some() => {
+                let (key, media) = picture_of(&image).expect("checked");
+                let data = image
+                    .remove(key)
+                    .and_then(|v| v.as_str().map(str::to_string))
+                    .unwrap_or_default();
+                let mut blocks = vec![ContentBlock::image(data, media)];
+                if !image.is_empty() {
+                    blocks.push(ContentBlock::text(
+                        serde_json::to_string_pretty(&image).unwrap_or_default(),
+                    ));
+                }
+                Ok(CallToolResult::success(blocks))
             }
             Ok(Ok(Ok(value))) => Ok(CallToolResult::success(vec![ContentBlock::text(
                 serde_json::to_string_pretty(&value).unwrap_or_default(),
@@ -377,6 +389,14 @@ impl Handler {
             Err(_) => Ok(failed("The editor did not answer in time.")),
         }
     }
+}
+
+/// The picture an answer carries: its field (`png` or `jpeg`, base64) and media type.
+/// What else the answer holds goes beside it as text.
+pub fn picture_of(answer: &serde_json::Map<String, Value>) -> Option<(&'static str, &'static str)> {
+    [("png", "image/png"), ("jpeg", "image/jpeg")]
+        .into_iter()
+        .find(|(key, _)| answer.get(*key).is_some_and(Value::is_string))
 }
 
 fn failed(message: &str) -> CallToolResult {
@@ -729,6 +749,38 @@ impl Handler {
     }
 
     #[tool(
+        description = "The whole story's outlines in play order (D110), to read before and after a step: every campaign (or one), each step's kind, id, title words, mission number, draft, map, which side of the early access line it is on, and its outline (purpose, cast, threads, tension, kinds, pitch, pillars, objectives, beats, shots, notes, pictures; a sketch only counted unless sketches is true). from and to narrow it to steps of one campaign. Unsaved edits included."
+    )]
+    async fn campaign_read_through(
+        &self,
+        Parameters(args): Parameters<crate::campaign::tools::ReadThrough>,
+    ) -> Result<CallToolResult, ErrorData> {
+        use crate::campaign::tools::Call;
+        self.ask(Tool::Campaign(Call::ReadThrough(args))).await
+    }
+
+    #[tool(
+        description = "Paints concept pictures for a campaign step's outline with OpenAI's image models (on the key in the assistant's Settings; costs money), writes them to the campaign's outlines/images/ at once and adds them to the outline's pictures (one undo step; a picture no saved outline names is removed on save). references start from earlier pictures or the game's art, to vary or refine them. Returns the files, the outline's pictures and a preview to look at. Takes up to two minutes. Skill canopy-outlines has the house style and how to iterate."
+    )]
+    async fn generate_image(
+        &self,
+        Parameters(args): Parameters<crate::images::GenerateImage>,
+    ) -> Result<CallToolResult, ErrorData> {
+        self.ask(Tool::Image(crate::images::Call::Generate(args)))
+            .await
+    }
+
+    #[tool(
+        description = "Looks at a picture: one of a campaign's outline pictures (file in outlines/images) or an image asset of the game (story pages, mission art, portraits, icons, by asset id). Returns it with what the outlines say of it."
+    )]
+    async fn view_image(
+        &self,
+        Parameters(args): Parameters<crate::images::ViewImage>,
+    ) -> Result<CallToolResult, ErrorData> {
+        self.ask(Tool::Image(crate::images::Call::View(args))).await
+    }
+
+    #[tool(
         description = "Sets what a mission's tech makes new or blocks (units, buildings, research of the campaign's race), as the Tech view's clicks do, one undo step. Returns the mission's tech and the contradictions it leaves (something allowed whose building is blocked or locked)."
     )]
     async fn set_mission_tech(
@@ -899,6 +951,9 @@ pub fn parse(name: &str, args: Value) -> Result<Tool, String> {
         "set_mission_players" => Tool::Campaign(Campaign::Players(arg(args)?)),
         "campaign_outline" => Tool::Campaign(Campaign::Outline(arg(args)?)),
         "set_campaign_outline" => Tool::Campaign(Campaign::SetOutline(arg(args)?)),
+        "campaign_read_through" => Tool::Campaign(Campaign::ReadThrough(arg(args)?)),
+        "generate_image" => Tool::Image(crate::images::Call::Generate(arg(args)?)),
+        "view_image" => Tool::Image(crate::images::Call::View(arg(args)?)),
         "sound_events" => Tool::SoundEvents,
         "generate_sound" => Tool::Sound(Sound::Generate(Box::new(arg(args)?))),
         "pick_sound" => Tool::Sound(Sound::Pick(arg(args)?)),
@@ -921,7 +976,7 @@ pub fn parse(name: &str, args: Value) -> Result<Tool, String> {
 pub fn needs_approval(name: &str, args: &Value) -> bool {
     match name {
         "save" | "cook" | "import_asset" | "map_preview" | "generate_sound" | "pick_sound"
-        | "keep_voice" => true,
+        | "keep_voice" | "generate_image" => true,
         // Listing the machine's maps writes nothing; importing one does.
         "import_starcraft" => args.get("source").is_some_and(|s| !s.is_null()),
         _ => false,
@@ -930,7 +985,7 @@ pub fn needs_approval(name: &str, args: &Value) -> bool {
 
 #[tool_handler(
     name = "Under the Canopy editor",
-    instructions = "Edits the game's base package (units, buildings, items, abilities, effects, races, rules, assets, maps) through the open editor. Find documents with list_elements, read them with read_document and their shape with document_schema, change them with edit (one undo step per call), check with problems, then save. Maps have their own tools: create_map, map_blocks (the block editor, D80), map_place, map_remove, map_info and map_picture. Campaigns too: create_campaign, campaign_steps, add_campaign_step, move_campaign_step, remove_campaign_step, set_campaign_step, set_mission_tech, mission_tech_tree, set_mission_players, campaign_outline and set_campaign_outline (docs/campaign.md). Sounds: sound_events, generate_sound, pick_sound and keep_voice (D97, skill canopy-sounds). The Combat Lab: lab_run (scenarios are documents under @labs/). open shows a document to the user. read_skill lists and reads the repository's skills (canopy-editor covers the editor and these tools; the canopy-* skills the formats); read_doc reads docs/*.md."
+    instructions = "Edits the game's base package (units, buildings, items, abilities, effects, races, rules, assets, maps) through the open editor. Find documents with list_elements, read them with read_document and their shape with document_schema, change them with edit (one undo step per call), check with problems, then save. Maps have their own tools: create_map, map_blocks (the block editor, D80), map_place, map_remove, map_info and map_picture. Campaigns too: create_campaign, campaign_steps, add_campaign_step, move_campaign_step, remove_campaign_step, set_campaign_step, set_mission_tech, mission_tech_tree, set_mission_players, campaign_outline, set_campaign_outline and campaign_read_through (docs/campaign.md); outline pictures: generate_image and view_image (skill canopy-outlines for ideation). Sounds: sound_events, generate_sound, pick_sound and keep_voice (D97, skill canopy-sounds). The Combat Lab: lab_run (scenarios are documents under @labs/). open shows a document to the user. read_skill lists and reads the repository's skills (canopy-editor covers the editor and these tools; the canopy-* skills the formats); read_doc reads docs/*.md."
 )]
 impl ServerHandler for Handler {}
 

@@ -28,6 +28,7 @@ use std::time::{Duration, Instant};
 mod art;
 mod campaigns;
 mod maps;
+mod pictures;
 mod serve;
 pub(crate) use serve::skills;
 
@@ -251,6 +252,8 @@ pub struct Shell {
     /// The cook running, and the MCP calls waiting for it.
     cooking: Option<std::thread::JoinHandle<Result<String, String>>>,
     cook_waiting: Vec<tokio::sync::oneshot::Sender<Result<Value, String>>>,
+    /// Outline pictures being painted (`crate::images`), and the calls waiting for them.
+    image_jobs: Vec<pictures::ImageJob>,
     pub viewport_error: Option<String>,
     pub shot: Option<crate::stage::Shot>,
     orbit: crate::stage::Orbit,
@@ -336,6 +339,7 @@ impl Shell {
             reload_pack: false,
             cooking: None,
             cook_waiting: Vec::new(),
+            image_jobs: Vec::new(),
             unused: None,
             outside: None,
             maps: HashMap::new(),
@@ -3056,16 +3060,40 @@ impl Shell {
         }
     }
 
-    /// What the user is looking at, for the assistant's next message.
-    fn assistant_context(&mut self) -> String {
+    /// What the user is looking at, for the assistant's next message: the editor and its
+    /// document, and in a campaign (or a mission's map) where in the story it is.
+    pub fn assistant_context(&mut self) -> String {
         let open = self.active_document();
         let unsaved = self.store.as_ref().map_or(0, |s| s.dirty().len());
         let problems = self.problem_count();
         let mut lines = vec![format!("Editor: {}", self.current.name())];
-        lines.push(match open {
+        lines.push(match &open {
             Some(document) => format!("Open document: {document}"),
             None => "Open document: none".into(),
         });
+        if let Some(document) = &open {
+            lines.extend(self.campaign_context(document));
+        }
+        let tabs: Vec<String> = self
+            .workspaces
+            .get(&self.current)
+            .map(|w| {
+                w.dock
+                    .iter_all_tabs()
+                    .map(|(_, d)| d.document.clone())
+                    .collect()
+            })
+            .unwrap_or_default();
+        if tabs.len() > 1 {
+            lines.push(format!(
+                "Other open tabs: {}",
+                tabs.iter()
+                    .filter(|t| Some(*t) != open.as_ref())
+                    .cloned()
+                    .collect::<Vec<_>>()
+                    .join(", ")
+            ));
+        }
         lines.push(format!("Unsaved documents: {unsaved}"));
         lines.push(match problems {
             Some(n) => format!("Problems found by the check: {n}"),

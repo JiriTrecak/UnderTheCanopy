@@ -384,6 +384,7 @@ pub(super) fn editor_ui(rig: &mut Rig, paths: &Paths) -> Result<()> {
     shell_flows(&mut ui, &scratch);
     map_flows(&mut ui);
     workbench_flows(&mut ui);
+    outline_flows(&mut ui, &scratch);
     leaving_flows(&mut ui, &scratch);
     println!("{}", ui.summary());
     let failures = std::mem::take(&mut ui.failures);
@@ -899,6 +900,101 @@ fn shown_tick(ui: &Ui) -> Option<u32> {
     })
 }
 
+/// A campaign's outline: what the assistant is told of it, the whole story's read-through
+/// as the assistant reads it, and a picture in the Outline's Pictures tab.
+fn outline_flows(ui: &mut Ui, scratch: &Path) {
+    use serde_json::json;
+    ui.flow("campaign outline");
+    ui.click("Campaigns");
+    ui.settle();
+    ui.click("The Ant Vanguard");
+    ui.settle();
+    // Every row has an Outline button too: the view bar's is set as its click does.
+    let document = "campaigns/vanguard.utcc/campaign.json";
+    ui.editor.select_campaign_step(document, Some(2));
+    ui.editor.set_campaign_mode(document, "outline");
+    ui.settle();
+    let context = ui.editor.assistant_context();
+    ui.check(
+        context.contains("View: Outline") && context.contains("Step: step 2, mission 1"),
+        "the assistant is told the view and the step",
+    );
+    ui.check(
+        context.contains("Before it: step 1") && context.contains("After it: step 3"),
+        "and the steps around it",
+    );
+    let story = ui
+        .editor
+        .campaign_tool("campaign_read_through", json!({}))
+        .unwrap_or_default();
+    let steps = story["campaigns"][0]["steps"]
+        .as_array()
+        .map_or(0, Vec::len);
+    ui.check(steps > 10, "the read-through gives every step");
+    ui.check(
+        story["campaigns"][0]["steps"].as_array().is_some_and(|s| {
+            s.iter()
+                .any(|s| s["afterEarlyAccess"] == true && s["outline"].is_object())
+        }),
+        "with the outlines past the early access line",
+    );
+    // A picture in the first step's outline shows in its Pictures tab.
+    let images = scratch.join("campaigns/vanguard.utcc/outlines/images");
+    let _ = std::fs::create_dir_all(&images);
+    let mut bytes = Vec::new();
+    let _ = image::DynamicImage::new_rgb8(96, 64).write_to(
+        &mut std::io::Cursor::new(&mut bytes),
+        image::ImageFormat::Png,
+    );
+    let _ = std::fs::write(images.join("ui-check-1.png"), bytes);
+    let set = ui.editor.campaign_tool(
+        "set_campaign_outline",
+        json!({"campaign": "vanguard", "step": 2, "fields": {"images": [{"file": "ui-check-1.png", "caption": "A check"}]}}),
+    );
+    ui.check(set.is_ok(), "a picture is added to the outline");
+    ui.settle();
+    let counted = ui.click("Pictures (1)");
+    ui.check(counted, "the Pictures tab counts it");
+    ui.settle();
+    let shown = ui.click("Picture ui-check-1.png");
+    ui.check(shown, "the grid shows it");
+    ui.settle();
+    ui.check(ui.find("All pictures").is_some(), "a click opens it large");
+    ui.click("All pictures");
+    ui.settle();
+    let seen = ui.editor.run_tool(
+        "view_image",
+        json!({"campaign": "vanguard", "file": "ui-check-1.png"}),
+    );
+    ui.check(
+        seen.as_ref()
+            .is_ok_and(|v| v["jpeg"].is_string() && v["about"]["step"] == "hollow-brood"),
+        "the assistant can look at it, and is told whose it is",
+    );
+    let outside = ui.editor.run_tool(
+        "view_image",
+        json!({"campaign": "vanguard", "file": "../campaign.json"}),
+    );
+    ui.check(outside.is_err(), "but not at a file outside the pictures");
+    // The assistant opening an outline shows its step's Outline, not its JSON.
+    ui.editor.set_campaign_mode(document, "steps");
+    let opened = ui.editor.run_tool(
+        "open",
+        json!({"document": "campaigns/vanguard.utcc/outlines/engine-yards.json"}),
+    );
+    ui.settle();
+    let context = ui.editor.assistant_context();
+    ui.check(
+        opened.is_ok() && context.contains("engine-yards") && context.contains("View: Outline"),
+        "opening an outline shows its step in the Outline view",
+    );
+    undo_all(ui, 3);
+    ui.check(unsaved(ui) == 0, "undo takes the picture out");
+    ui.editor.set_campaign_mode(document, "steps");
+    ui.settle();
+    let _ = std::fs::remove_dir_all(&images);
+}
+
 /// Campaigns, the ability stage, the Combat Lab, assets, the other overviews and the
 /// assistant's sidebar.
 fn workbench_flows(ui: &mut Ui) {
@@ -1388,6 +1484,198 @@ pub(super) fn assistant_live(rig: &mut Rig, paths: &Paths) -> Result<()> {
     anyhow::ensure!(
         failures.is_empty(),
         "the assistant for real:\n{}",
+        failures.join("\n")
+    );
+    Ok(())
+}
+
+/// One assistant turn for real: send, answer approvals with `allow`, wait for the end, and
+/// print what happened (the tools called, errors, the text). The new messages.
+fn live_turn(ui: &mut Ui, text: &str, allow: bool) -> Vec<serde_json::Value> {
+    let before = ui.editor.assistant_messages().len();
+    ui.editor.assistant_send(text);
+    let start = Instant::now();
+    while ui.editor.assistant_busy() && start.elapsed() < Duration::from_secs(600) {
+        ui.frames(1);
+        if ui.editor.assistant_waiting().is_some() {
+            ui.editor.assistant_approve(allow);
+        }
+    }
+    let new: Vec<serde_json::Value> = ui.editor.assistant_messages()[before..].to_vec();
+    println!("   » {text}");
+    for m in &new {
+        for b in m["content"].as_array().into_iter().flatten() {
+            match b["type"].as_str() {
+                Some("tool_use") => println!(
+                    "     tool {} {}",
+                    b["name"],
+                    b["input"].to_string().chars().take(300).collect::<String>()
+                ),
+                Some("tool_result") if b["is_error"] == true => {
+                    println!(
+                        "     error {}",
+                        b["content"]
+                            .to_string()
+                            .chars()
+                            .take(300)
+                            .collect::<String>()
+                    )
+                }
+                Some("text") if m["role"] == "assistant" => {
+                    println!("     says {}", b["text"].as_str().unwrap_or_default())
+                }
+                _ => {}
+            }
+        }
+    }
+    if let Some(error) = ui.editor.assistant_error() {
+        println!("     stopped: {error}");
+    }
+    new
+}
+
+/// The tools a turn called.
+fn live_tools(new: &[serde_json::Value]) -> Vec<String> {
+    new.iter()
+        .flat_map(|m| m["content"].as_array().cloned().unwrap_or_default())
+        .filter(|b| b["type"] == "tool_use")
+        .filter_map(|b| b["name"].as_str().map(str::to_string))
+        .collect()
+}
+
+/// Ideation for real (`--only assistant-ideation`, D111): on a copy of the base package,
+/// the user's stored keys copied into the capture's user folder (never read here), the
+/// assistant is asked for ideas for a drafted mission it is looking at, then to paint one
+/// picture of the chosen take and write the outline. Costs a few turns and one picture.
+pub(super) fn assistant_ideation(rig: &mut Rig, paths: &Paths) -> Result<()> {
+    let real = crate::paths::Paths::resolve(Some(paths.data.clone()))?;
+    let provider = std::env::var("CANOPY_ASSISTANT_PROVIDER").unwrap_or_else(|_| "openai".into());
+    let folder = paths.user.join("assistant");
+    std::fs::create_dir_all(&folder)?;
+    for key in ["openai-key", "anthropic-key"] {
+        if real.user.join("assistant").join(key).exists() {
+            std::fs::copy(real.user.join("assistant").join(key), folder.join(key))?;
+        }
+    }
+    let scratch = paths.user.join("ui-base");
+    scratch_package(&paths.data.join("base"), &scratch)?;
+    let mut setup = crate::app::editor_setup(paths);
+    setup.base = scratch.clone();
+    let format = CAPTURE_FORMAT.remove_srgb_suffix();
+    let editor = Editor::headless(&rig.gpu, format, setup);
+    let mut ui = Ui::new(rig, editor);
+    ui.editor.assistant_provider(&provider);
+
+    ui.flow("ideas for the step in view");
+    ui.click("Campaigns");
+    ui.settle();
+    ui.click("The Ant Vanguard");
+    ui.settle();
+    let document = "campaigns/vanguard.utcc/campaign.json";
+    let story = ui
+        .editor
+        .campaign_tool(
+            "campaign_steps",
+            serde_json::json!({"campaign": "vanguard"}),
+        )
+        .unwrap_or_default();
+    let index = story["steps"]
+        .as_array()
+        .and_then(|s| s.iter().position(|s| s["id"] == "engine-yards"));
+    ui.editor.select_campaign_step(document, index);
+    ui.editor.set_campaign_mode(document, "outline");
+    ui.settle();
+    let context = ui.editor.assistant_context();
+    println!("   context:\n{context}");
+    ui.check(
+        context.contains("engine-yards"),
+        "the context names the step in view",
+    );
+    let new = live_turn(
+        &mut ui,
+        "Help me come up with this mission. What could it be?",
+        false,
+    );
+    let used = live_tools(&new);
+    ui.check(ui.editor.assistant_error().is_none(), "the turn finishes");
+    ui.check(
+        used.iter().any(|t| t == "read_skill"),
+        "it reads the ideation skill",
+    );
+    ui.check(
+        used.iter()
+            .any(|t| t == "campaign_read_through" || t == "campaign_outline"),
+        "it reads the story around the step",
+    );
+    ui.check(
+        !used
+            .iter()
+            .any(|t| t == "set_campaign_outline" || t == "generate_image"),
+        "it pitches before writing or painting",
+    );
+
+    ui.flow("a picture and the outline");
+    let new = live_turn(
+        &mut ui,
+        "I like your recommended take. Paint one picture of its key place (one take, the fast model is fine), look at it, then write the take into this step's outline. Don't save.",
+        true,
+    );
+    let used = live_tools(&new);
+    ui.check(ui.editor.assistant_error().is_none(), "the turn finishes");
+    ui.check(
+        used.iter().any(|t| t == "generate_image"),
+        "it paints a picture",
+    );
+    let images = scratch.join("campaigns/vanguard.utcc/outlines/images");
+    let painted: Vec<std::path::PathBuf> = std::fs::read_dir(&images)
+        .into_iter()
+        .flatten()
+        .flatten()
+        .map(|e| e.path())
+        .collect();
+    ui.check(
+        !painted.is_empty(),
+        "the picture is written to outlines/images",
+    );
+    for file in &painted {
+        if let Some(name) = file.file_name() {
+            let _ = std::fs::copy(file, ui.rig.out.join(name));
+        }
+    }
+    let outline = ui
+        .editor
+        .campaign_tool(
+            "campaign_outline",
+            serde_json::json!({"campaign": "vanguard", "step": "engine-yards"}),
+        )
+        .unwrap_or_default();
+    println!(
+        "   outline: {}",
+        serde_json::to_string_pretty(&outline["outline"]).unwrap_or_default()
+    );
+    ui.check(
+        outline["outline"]["images"]
+            .as_array()
+            .is_some_and(|i| !i.is_empty()),
+        "the outline lists the picture",
+    );
+    ui.check(
+        outline["outline"]["pillars"].is_object() || outline["outline"]["beats"].is_array(),
+        "the take is written into the outline",
+    );
+    ui.settle();
+    ui.click("Pictures (1)");
+    ui.settle();
+    ui.frames(30);
+    let _ = ui.shoot("assistant-ideation-pictures");
+
+    let (usage, cost) = ui.editor.assistant_usage();
+    println!("   tokens {usage:?}, about ${cost:.3} (and the picture)");
+    println!("{}", ui.summary());
+    let failures = std::mem::take(&mut ui.failures);
+    anyhow::ensure!(
+        failures.is_empty(),
+        "ideation for real:\n{}",
         failures.join("\n")
     );
     Ok(())

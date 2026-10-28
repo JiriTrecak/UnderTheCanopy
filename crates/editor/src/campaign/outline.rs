@@ -394,47 +394,273 @@ pub fn show(ui: &mut Ui, ctx: &mut Ctx, campaign: &Value, state: &mut State) {
     }
     egui::CentralPanel::default()
         .frame(Frame::new().fill(MAIN).inner_margin(Margin::same(16)))
-        .show(ui, |ui| match kind {
-            Some(StepKind::Mission) => {
-                let sketch = outline.sketch.clone().unwrap_or_default();
-                let changed = super::sketch::show(ui, ctx, &sketch, &mut state.sketch, &cast);
-                if let Some((label, sketch)) = changed {
-                    put(ctx, &id, "sketch", to_value(&sketch), &label, None);
-                }
-                ui.add_space(6.0);
+        .show(ui, |ui| {
+            if kind != Some(StepKind::EarlyAccess) {
+                let own = match kind {
+                    Some(StepKind::Mission) => "Tabletop",
+                    Some(StepKind::Story) => "Pages",
+                    Some(StepKind::Cinematic) => "Shots",
+                    _ => "Chapter",
+                };
                 ui.horizontal(|ui| {
-                    ui.label(
-                        RichText::new("A sketch, not the map: it stays beside the mission and never ships.")
-                            .size(11.0)
-                            .color(FAINT),
-                    );
-                    if text(&step, "map").is_empty()
-                        && ui
-                            .add_enabled(ctx.content.is_some(), egui::Button::new("Make map"))
-                            .on_hover_text("A new map of flat blocks in the campaign's missions/")
-                            .clicked()
+                    if ui.selectable_label(!state.pictures, own).clicked() {
+                        state.pictures = false;
+                    }
+                    let n = outline.images.len();
+                    let name = match n {
+                        0 => "Pictures".to_string(),
+                        n => format!("Pictures ({n})"),
+                    };
+                    if ui
+                        .selectable_label(state.pictures, name)
+                        .on_hover_text("Concept pictures to think with; the assistant paints them")
+                        .clicked()
                     {
-                        make_map(ctx, &step, i);
+                        state.pictures = true;
                     }
                 });
+                ui.add_space(8.0);
+                if state.pictures {
+                    pictures(ui, ctx, &id, &outline, state);
+                    return;
+                }
             }
-            Some(StepKind::Story) => pages(ui, ctx, campaign, i, &step),
-            Some(StepKind::Cinematic) => shots(ui, ctx, &id, &outline, &cast),
-            Some(StepKind::EarlyAccess) => {
-                ui.add_space(60.0);
-                empty(
-                    ui,
-                    "You have reached the end of early access",
-                    "The story continues later. Releases ship the steps before this line; the steps after it stay here, in the drafts and outlines.",
-                );
+            centre(ui, ctx, campaign, i, &step, &id, &outline, &cast, state);
+        });
+}
+
+/// The middle of the outline: the step's own view (the tabletop, the pages, the shots).
+#[allow(clippy::too_many_arguments)]
+fn centre(
+    ui: &mut Ui,
+    ctx: &mut Ctx,
+    campaign: &Value,
+    i: usize,
+    step: &Value,
+    id: &str,
+    outline: &Outline,
+    cast: &[Character],
+    state: &mut State,
+) {
+    let kind = StepKind::of(step);
+    match kind {
+        Some(StepKind::Mission) => {
+            let sketch = outline.sketch.clone().unwrap_or_default();
+            let changed = super::sketch::show(ui, ctx, &sketch, &mut state.sketch, cast);
+            if let Some((label, sketch)) = changed {
+                put(ctx, id, "sketch", to_value(&sketch), &label, None);
             }
-            _ => {
-                ui.add_space(60.0);
-                empty(
-                    ui,
-                    "A chapter",
-                    "A title card. Its outline is what the chapter is about: write it on the left.",
+            ui.add_space(6.0);
+            ui.horizontal(|ui| {
+                ui.label(
+                    RichText::new(
+                        "A sketch, not the map: it stays beside the mission and never ships.",
+                    )
+                    .size(11.0)
+                    .color(FAINT),
                 );
+                if text(step, "map").is_empty()
+                    && ui
+                        .add_enabled(ctx.content.is_some(), egui::Button::new("Make map"))
+                        .on_hover_text("A new map of flat blocks in the campaign's missions/")
+                        .clicked()
+                {
+                    make_map(ctx, step, i);
+                }
+            });
+        }
+        Some(StepKind::Story) => pages(ui, ctx, campaign, i, step),
+        Some(StepKind::Cinematic) => shots(ui, ctx, id, outline, cast),
+        Some(StepKind::EarlyAccess) => {
+            ui.add_space(60.0);
+            empty(
+                ui,
+                "You have reached the end of early access",
+                "The story continues later. Releases ship the steps before this line; the steps after it stay here, in the drafts and outlines.",
+            );
+        }
+        _ => {
+            ui.add_space(60.0);
+            empty(
+                ui,
+                "A chapter",
+                "A title card. Its outline is what the chapter is about: write it on the left.",
+            );
+        }
+    }
+}
+
+/// The step's pictures (D111): a grid, newest first, and one open large with what it
+/// shows, how it was made, and Remove (an undo step; its file goes on save).
+fn pictures(ui: &mut Ui, ctx: &mut Ctx, id: &str, outline: &Outline, state: &mut State) {
+    let list = &outline.images;
+    if list.is_empty() {
+        ui.add_space(60.0);
+        empty(
+            ui,
+            "No pictures yet",
+            "Ask the assistant (the robot in the header) to paint this step: a place, a character, a moment. It can vary its own pictures and start from the game's art, and they land here.",
+        );
+        return;
+    }
+    let folder = ctx.root.map(|r| {
+        r.join(ctx.campaign_root())
+            .join(canopy_content::outline::IMAGES_DIR)
+    });
+    let path = |file: &str| folder.as_ref().map(|f| f.join(file));
+    if state.picture.is_some_and(|p| p >= list.len()) {
+        state.picture = None;
+    }
+    let Some(open) = state.picture else {
+        // The grid, newest first.
+        let width = ui.available_width();
+        let columns = ((width / 300.0).floor() as usize).clamp(1, 4);
+        let gap = 12.0;
+        let tile = (width - gap * (columns - 1) as f32) / columns as f32;
+        egui::ScrollArea::vertical()
+            .auto_shrink([false, false])
+            .show(ui, |ui| {
+                let order: Vec<usize> = (0..list.len()).rev().collect();
+                for row in order.chunks(columns) {
+                    ui.horizontal_top(|ui| {
+                        ui.spacing_mut().item_spacing.x = gap;
+                        for &n in row {
+                            let picture = &list[n];
+                            ui.vertical(|ui| {
+                                ui.set_width(tile);
+                                let (rect, response) = ui.allocate_exact_size(
+                                    vec2(tile, tile * 2.0 / 3.0),
+                                    Sense::click(),
+                                );
+                                let texture = path(&picture.file)
+                                    .and_then(|p| ctx.shared.thumbs.file(ui.ctx(), &p, 720));
+                                paint_cover(ui, rect, texture, "Loading…");
+                                if response.hovered() {
+                                    ui.painter().rect_stroke(
+                                        rect,
+                                        4,
+                                        Stroke::new(1.5, STRONG),
+                                        egui::StrokeKind::Inside,
+                                    );
+                                }
+                                let response = response.on_hover_text(
+                                    picture.caption.as_deref().unwrap_or(&picture.file),
+                                );
+                                response.widget_info(|| {
+                                    egui::WidgetInfo::labeled(
+                                        egui::WidgetType::Button,
+                                        true,
+                                        format!("Picture {}", picture.file),
+                                    )
+                                });
+                                if response.clicked() {
+                                    state.picture = Some(n);
+                                }
+                                ui.add(
+                                    egui::Label::new(
+                                        RichText::new(
+                                            picture.caption.as_deref().unwrap_or(&picture.file),
+                                        )
+                                        .size(11.5)
+                                        .color(SOFT),
+                                    )
+                                    .truncate(),
+                                );
+                            });
+                        }
+                    });
+                    ui.add_space(gap);
+                }
+            });
+        return;
+    };
+    let picture = list[open].clone();
+    ui.horizontal(|ui| {
+        if ui.button("All pictures").clicked() {
+            state.picture = None;
+        }
+        // Newest first, as the grid shows them.
+        let place = list.len() - open;
+        ui.label(
+            RichText::new(format!("{place} of {}", list.len()))
+                .size(11.0)
+                .color(MUTED),
+        );
+        if ui
+            .add_enabled(open + 1 < list.len(), egui::Button::new("Newer"))
+            .clicked()
+        {
+            state.picture = Some(open + 1);
+        }
+        if ui
+            .add_enabled(open > 0, egui::Button::new("Older"))
+            .clicked()
+        {
+            state.picture = Some(open - 1);
+        }
+        ui.with_layout(egui::Layout::right_to_left(egui::Align::Center), |ui| {
+            if ui
+                .button("Remove")
+                .on_hover_text(
+                    "Takes it out of the outline (undo brings it back); its file goes on save",
+                )
+                .clicked()
+            {
+                let mut next = list.clone();
+                next.remove(open);
+                put(ctx, id, "images", to_value(&next), "Remove picture", None);
+                state.picture = None;
+            }
+        });
+    });
+    ui.add_space(8.0);
+    // The picture, whole, above what it shows and how it was made.
+    let below = 130.0;
+    let room = ui.available_size() - vec2(0.0, below);
+    let texture = path(&picture.file).and_then(|p| ctx.shared.thumbs.file(ui.ctx(), &p, 2048));
+    let size = texture
+        .and_then(|t| ui.ctx().tex_manager().read().meta(t).map(|m| m.size))
+        .map_or(vec2(room.x, room.x * 2.0 / 3.0), |[w, h]| {
+            vec2(w as f32, h as f32)
+        });
+    let scale = (room.x / size.x).min(room.y.max(120.0) / size.y);
+    let (rect, _) = ui.allocate_exact_size(size * scale, Sense::hover());
+    paint_cover(ui, rect, texture, "Loading…");
+    ui.add_space(8.0);
+    let mut caption = picture.caption.clone().unwrap_or_default();
+    if ui
+        .add(
+            egui::TextEdit::singleline(&mut caption)
+                .hint_text("What it shows")
+                .desired_width(f32::INFINITY),
+        )
+        .changed()
+    {
+        let mut next = list.clone();
+        next[open].caption = (!caption.trim().is_empty()).then_some(caption);
+        put(
+            ctx,
+            id,
+            "images",
+            to_value(&next),
+            "Picture caption",
+            Some(format!("images/{open}")),
+        );
+    }
+    egui::CollapsingHeader::new(RichText::new("How it was made").size(11.0).color(MUTED))
+        .id_salt(("picture-made", id, open))
+        .show(ui, |ui| {
+            let mut made = String::new();
+            if let Some(model) = &picture.model {
+                made.push_str(&format!("{model} · "));
+            }
+            made.push_str(&picture.file);
+            if !picture.references.is_empty() {
+                made.push_str(&format!(" · from {}", picture.references.join(", ")));
+            }
+            ui.label(RichText::new(made).size(10.5).color(FAINT));
+            if let Some(prompt) = &picture.prompt {
+                ui.label(RichText::new(prompt).size(11.0).color(SOFT));
             }
         });
 }

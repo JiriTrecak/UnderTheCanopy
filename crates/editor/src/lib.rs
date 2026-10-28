@@ -15,6 +15,7 @@ mod document;
 mod encounter;
 mod forms;
 mod icons;
+mod images;
 mod inspector;
 mod lab;
 mod library;
@@ -512,6 +513,20 @@ impl Editor {
     /// campaign's settings (captures).
     pub fn select_campaign_step(&mut self, document: &str, index: Option<usize>) {
         self.shell.select_campaign_step(document, index);
+    }
+
+    /// Runs MCP's tool `name` with `args` at once, as an agent would (captures).
+    pub fn run_tool(
+        &mut self,
+        name: &str,
+        args: serde_json::Value,
+    ) -> Result<serde_json::Value, String> {
+        self.shell.run_tool(name, args)
+    }
+
+    /// What the assistant's next message would say the user is looking at (captures).
+    pub fn assistant_context(&mut self) -> String {
+        self.shell.assistant_context()
     }
 
     /// Shows the campaign `document` in `mode`: `steps`, `outline` or `read-through`

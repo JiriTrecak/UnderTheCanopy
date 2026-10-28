@@ -591,6 +591,14 @@ pub fn validate(campaign: &CampaignPackage, content: &Content) -> Vec<Error> {
         .map(|(name, _)| name)
         .collect();
     names.sort();
+    let pictures: BTreeSet<String> = campaign
+        .package
+        .entries(crate::outline::IMAGES_DIR)
+        .unwrap_or_default()
+        .into_iter()
+        .filter(|(_, dir)| !dir)
+        .map(|(name, _)| name)
+        .collect();
     for name in names {
         let Some(step) = name.strip_suffix(".json") else {
             continue;
@@ -608,11 +616,26 @@ pub fn validate(campaign: &CampaignPackage, content: &Content) -> Vec<Error> {
                 serde_json::from_str::<crate::outline::Outline>(&t).map_err(|e| e.to_string())
             });
         match read {
-            Ok(outline) => errors.extend(
-                crate::outline::problems(&outline)
-                    .into_iter()
-                    .map(|p| Error::new(&label, "", p)),
-            ),
+            Ok(outline) => {
+                errors.extend(
+                    crate::outline::problems(&outline)
+                        .into_iter()
+                        .map(|p| Error::new(&label, "", p)),
+                );
+                for (i, picture) in outline.images.iter().enumerate() {
+                    if !pictures.contains(&picture.file) {
+                        errors.push(Error::new(
+                            &label,
+                            format!("images[{i}].file"),
+                            format!(
+                                "no picture {} in {}",
+                                picture.file,
+                                crate::outline::IMAGES_DIR
+                            ),
+                        ));
+                    }
+                }
+            }
             Err(e) => errors.push(Error::new(&label, "", e)),
         }
     }

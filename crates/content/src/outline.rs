@@ -3,9 +3,10 @@
 //! The design of a step before (and beside) the real thing, after Blizzard's mission
 //! briefs: what the step is for, who is on stage, the threads it opens and carries; for a
 //! mission its kinds, pitch, pillars, objectives, feel, story beats and a sketch of the
-//! map; for a cinematic its shots. A story's pages are the story's own, in
-//! `campaign.json`. Outlines are working documents: plain words, never text keys, and a
-//! release leaves them out.
+//! map; for a cinematic its shots; for any step pictures to think with (generated concept
+//! images in `outlines/images/`). A story's pages are the story's own, in `campaign.json`.
+//! Outlines are working documents: plain words, never text keys, and a release leaves them
+//! out, pictures and all.
 
 use serde::{Deserialize, Serialize};
 use serde_with::skip_serializing_none;
@@ -50,7 +51,32 @@ pub struct Outline {
     /// A cinematic's shots, in order.
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub shots: Vec<Shot>,
+    /// Pictures to think with, newest last: concept images in `outlines/images/`.
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    pub images: Vec<Picture>,
 }
+
+/// A picture of an outline: a file in the campaign's `outlines/images/`, with what it shows
+/// and how it was made, so the next one can build on it.
+#[skip_serializing_none]
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize, schemars::JsonSchema)]
+#[serde(rename_all = "camelCase", deny_unknown_fields)]
+pub struct Picture {
+    /// Its file name in `outlines/images/`.
+    pub file: String,
+    /// What it shows, or what it is for.
+    pub caption: Option<String>,
+    /// The prompt it was generated from.
+    pub prompt: Option<String>,
+    /// The image model that made it.
+    pub model: Option<String>,
+    /// The pictures it was made from (files of `outlines/images/`, or art asset ids).
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    pub references: Vec<String>,
+}
+
+/// The folder of a campaign's outline pictures, within its package.
+pub const IMAGES_DIR: &str = "outlines/images";
 
 /// The kinds a mission may be (D110); more may come.
 pub const MISSION_KINDS: [&str; 10] = [
@@ -339,6 +365,14 @@ pub fn problems(outline: &Outline) -> Vec<String> {
     {
         found.push("a sketch is 32 to 2048 cells".to_string());
     }
+    for picture in &outline.images {
+        if picture.file.is_empty()
+            || picture.file.contains(['/', '\\'])
+            || picture.file.starts_with('.')
+        {
+            found.push(format!("{} is not a file name", picture.file));
+        }
+    }
     found
 }
 
@@ -356,15 +390,19 @@ mod tests {
             "beats": [{"phase": "before", "speaker": "unit.a", "mode": "scene", "text": "Here."}],
             "sketch": {"size": 256, "shapes": [{"brush": "road", "points": [[1, 2], [3, 4]]}],
                        "stamps": [{"mark": "camp", "x": 10, "z": 20, "count": 2}]},
-            "tension": 4
+            "tension": 4,
+            "images": [{"file": "yard-1.webp", "caption": "The yard at dusk", "references": ["asset.x"]}]
         }))
         .unwrap();
         assert!(problems(&outline).is_empty());
         assert_eq!(outline.cast[0].presence, Presence::Joins);
         assert_eq!(outline.sketch.as_ref().unwrap().stamps[0].mark, Mark::Camp);
+        assert_eq!(outline.images[0].references, ["asset.x"]);
         assert!(serde_json::from_value::<Outline>(json!({"pitch": "x", "map": "y"})).is_err());
-        let bad: Outline =
-            serde_json::from_value(json!({"kinds": ["siege"], "tension": 9})).unwrap();
-        assert_eq!(problems(&bad).len(), 2);
+        let bad: Outline = serde_json::from_value(
+            json!({"kinds": ["siege"], "tension": 9, "images": [{"file": "../x.webp"}]}),
+        )
+        .unwrap();
+        assert_eq!(problems(&bad).len(), 3);
     }
 }

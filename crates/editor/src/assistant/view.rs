@@ -103,6 +103,7 @@ impl Assistant {
     fn composer(&mut self, ui: &mut Ui, env: &Env) {
         if let Some(approval) = self.running.as_ref().and_then(|r| r.approval.as_ref()) {
             let what = describe_call(&approval.name, &approval.input);
+            let for_thread = super::ALLOW_FOR_THREAD.contains(&approval.name.as_str());
             let mut answer = None;
             Frame::new()
                 .fill(RAISED)
@@ -115,15 +116,27 @@ impl Assistant {
                     ui.add_space(4.0);
                     ui.horizontal(|ui| {
                         if ui.add(primary("Allow")).clicked() {
-                            answer = Some(true);
+                            answer = Some(Some(true));
+                        }
+                        if for_thread
+                            && ui
+                                .button("Allow in this conversation")
+                                .on_hover_text(
+                                    "Its later calls run without asking, until a new conversation",
+                                )
+                                .clicked()
+                        {
+                            answer = Some(None);
                         }
                         if ui.button("Decline").clicked() {
-                            answer = Some(false);
+                            answer = Some(Some(false));
                         }
                     });
                 });
-            if let Some(allow) = answer {
-                self.approve(allow);
+            match answer {
+                Some(Some(allow)) => self.approve(allow),
+                Some(None) => self.approve_for_thread(),
+                None => {}
             }
             ui.add_space(8.0);
         }
@@ -207,7 +220,9 @@ impl Assistant {
                             let next = messages.get(i + 1);
                             match message["role"].as_str() {
                                 Some("user") => user_message(ui, message),
-                                Some("assistant") => assistant_message(ui, message, next),
+                                Some("assistant") => {
+                                    assistant_message(ui, message, next, &mut self.pictures)
+                                }
                                 _ => {}
                             }
                         }
@@ -514,7 +529,7 @@ fn user_message(ui: &mut Ui, message: &Value) {
     ui.add_space(6.0);
 }
 
-fn assistant_message(ui: &mut Ui, message: &Value, next: Option<&Value>) {
+fn assistant_message(ui: &mut Ui, message: &Value, next: Option<&Value>, pictures: &mut Pictures) {
     let empty = Vec::new();
     let blocks = message["content"].as_array().unwrap_or(&empty);
     for block in blocks {
@@ -526,7 +541,7 @@ fn assistant_message(ui: &mut Ui, message: &Value, next: Option<&Value>) {
                     note(ui, text);
                 }
             }
-            Some("tool_use") => tool_row(ui, block, next),
+            Some("tool_use") => tool_row(ui, block, next, pictures),
             _ => {}
         }
     }
@@ -536,9 +551,41 @@ fn note(ui: &mut Ui, text: &str) {
     ui.label(RichText::new(text).color(FAINT).italics().size(11.0));
 }
 
+/// Tool answers' pictures, decoded once, by tool call id.
+type Pictures = std::collections::HashMap<String, Option<egui::TextureHandle>>;
+
+/// The picture of a tool's answer, as a texture (decoded on first sight).
+fn answer_picture(
+    ui: &Ui,
+    pictures: &mut Pictures,
+    id: &str,
+    result: &Value,
+) -> Option<egui::TextureHandle> {
+    use base64::Engine;
+    pictures
+        .entry(id.to_string())
+        .or_insert_with(|| {
+            let part = result["content"]
+                .as_array()?
+                .iter()
+                .find(|p| p["type"] == "image")?;
+            let bytes = base64::engine::general_purpose::STANDARD
+                .decode(part["source"]["data"].as_str()?)
+                .ok()?;
+            let image = image::load_from_memory(&bytes).ok()?.to_rgba8();
+            let size = [image.width() as usize, image.height() as usize];
+            Some(ui.ctx().load_texture(
+                format!("assistant-picture/{id}"),
+                egui::ColorImage::from_rgba_unmultiplied(size, &image),
+                egui::TextureOptions::LINEAR,
+            ))
+        })
+        .clone()
+}
+
 /// A tool call as one line (what it did, and whether it worked), opening to its input
-/// and answer.
-fn tool_row(ui: &mut Ui, block: &Value, next: Option<&Value>) {
+/// and answer; a picture it answered with shows under it.
+fn tool_row(ui: &mut Ui, block: &Value, next: Option<&Value>, pictures: &mut Pictures) {
     let id = block["id"].as_str().unwrap_or_default();
     let name = block["name"].as_str().unwrap_or_default();
     let input = &block["input"];
@@ -588,6 +635,13 @@ fn tool_row(ui: &mut Ui, block: &Value, next: Option<&Value>) {
                 code(ui, &cut(&text, 3000));
             }
         });
+    if let Some(texture) = result.and_then(|r| answer_picture(ui, pictures, id, r)) {
+        let width = ui.available_width();
+        let [w, h] = texture.size();
+        let size = egui::vec2(width, width * h as f32 / w.max(1) as f32);
+        ui.add(egui::Image::new((texture.id(), size)).corner_radius(6));
+        ui.add_space(4.0);
+    }
 }
 
 /// A call in words, for its row and its approval.
@@ -614,6 +668,25 @@ fn describe_call(name: &str, input: &Value) -> String {
         "import_starcraft" => format!("Import the StarCraft II map {} as {}", s("source"), s("id")),
         "map_preview" => format!("Write the map preview of {}", s("map")),
         "generate_sound" => "Generate sounds with ElevenLabs (costs credits)".into(),
+        "generate_image" => {
+            let count = input["count"].as_u64().unwrap_or(1);
+            let what = input["caption"].as_str().unwrap_or("a picture");
+            format!(
+                "Paint {what} with OpenAI ({count} take{}, {}; costs money)",
+                if count == 1 { "" } else { "s" },
+                input["model"].as_str().unwrap_or(crate::images::MODELS[0])
+            )
+        }
+        "view_image" => match input["file"].as_str() {
+            Some(file) => format!("Look at {file}"),
+            None => format!("Look at {}", s("asset")),
+        },
+        "campaign_read_through" => match input["campaign"].as_str() {
+            Some(c) => format!("Read the {c} campaign's outlines"),
+            None => "Read the whole story's outlines".into(),
+        },
+        "campaign_outline" => format!("Read the outline of {}", input["step"]),
+        "set_campaign_outline" => format!("Write the outline of {}", input["step"]),
         "pick_sound" => "Pick a generated sound into its asset".into(),
         "keep_voice" => "Keep a designed voice".into(),
         "open" => format!("Open {}", s("document")),

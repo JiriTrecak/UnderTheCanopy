@@ -3,7 +3,8 @@
   "unreleased": {
     "added": [
       "The campaign now ends early access with its own end card, and players carry on from there when new missions arrive",
-      "The campaign editor can outline whole campaigns: draft steps, a tabletop for sketching missions, story beats, cinematic shots and a read-through of every step"
+      "The campaign editor can outline whole campaigns: draft steps, a tabletop for sketching missions, story beats, cinematic shots and a read-through of every step",
+      "The editor's assistant helps design campaign missions: it knows the step you are on, reads the whole story's outlines, pitches ideas and paints concept pictures into an outline (with an OpenAI key)"
     ],
     "improved": [
       "Cutscenes frame whole units with room around them, centred, instead of close-ups",

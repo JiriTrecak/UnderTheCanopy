@@ -6,7 +6,7 @@
 use canopy_content::map::grid::{Element, Grid};
 use serde::{Deserialize, Serialize};
 use serde_json::{Map, Value};
-use std::collections::BTreeMap;
+use std::collections::{BTreeMap, BTreeSet};
 use std::path::{Path, PathBuf};
 
 /// One change to one document. Pointers are JSON pointers (`/ranks/0/damage`); `""` is
@@ -173,6 +173,44 @@ fn remove_asset_files(manifest: &Path, asset: &Value) -> std::io::Result<()> {
     }
     if std::fs::read_dir(folder)?.next().is_none() {
         std::fs::remove_dir(folder)?;
+    }
+    Ok(())
+}
+
+/// The `outlines` folder of an outline document (`<campaign>.utcc/outlines/<step>.json`).
+fn outlines_folder(path: &str) -> Option<&str> {
+    let (folder, file) = path.rsplit_once('/')?;
+    (folder.ends_with(".utcc/outlines") && file.ends_with(".json")).then_some(folder)
+}
+
+/// Removes the pictures in `outlines/images/` that no outline file beside it names.
+fn sweep_pictures(outlines: &Path) -> std::io::Result<()> {
+    let images = outlines.join("images");
+    if !images.is_dir() {
+        return Ok(());
+    }
+    let mut named = BTreeSet::new();
+    for entry in std::fs::read_dir(outlines)?.flatten() {
+        let path = entry.path();
+        if path.extension().is_some_and(|e| e == "json")
+            && let Ok(text) = std::fs::read_to_string(&path)
+            && let Ok(outline) = serde_json::from_str::<Value>(&text)
+        {
+            for picture in outline["images"].as_array().into_iter().flatten() {
+                if let Some(file) = picture["file"].as_str() {
+                    named.insert(file.to_string());
+                }
+            }
+        }
+    }
+    for entry in std::fs::read_dir(&images)?.flatten() {
+        let name = entry.file_name().to_string_lossy().to_string();
+        if entry.path().is_file() && !name.starts_with('.') && !named.contains(&name) {
+            std::fs::remove_file(entry.path())?;
+        }
+    }
+    if std::fs::read_dir(&images)?.next().is_none() {
+        std::fs::remove_dir(&images)?;
     }
     Ok(())
 }
@@ -853,6 +891,19 @@ impl Store {
             grid.compared.set(Some((grid.revision, false)));
             written.push(path.clone());
         }
+        // Outline pictures (D110) no saved outline of their campaign names any more go too.
+        let mut swept = BTreeSet::new();
+        for path in &written {
+            if let Some(folder) = outlines_folder(path)
+                && swept.insert(folder.to_string())
+            {
+                let dir = mounted_file(&self.root, &self.mounts, folder);
+                sweep_pictures(&dir).map_err(|e| Error::Write {
+                    document: path.clone(),
+                    message: e.to_string(),
+                })?;
+            }
+        }
         written.sort();
         Ok(written)
     }
@@ -1242,6 +1293,35 @@ mod tests {
         assert!(!folder.0.join("@labs").exists());
         // Undo comes back to it like any document.
         assert_eq!(store.undo().map(|c| c.document), Some(doc.to_string()));
+    }
+
+    #[test]
+    fn saving_outlines_removes_the_pictures_none_of_them_names() {
+        let folder = Folder::new("outline-pictures");
+        let outlines = folder.0.join("campaigns/c.utcc/outlines");
+        std::fs::create_dir_all(outlines.join("images")).unwrap();
+        let other = json!({"images": [{"file": "b.webp"}]});
+        std::fs::write(outlines.join("other.json"), format(&other)).unwrap();
+        for name in ["a.webp", "b.webp", "c.webp"] {
+            std::fs::write(outlines.join("images").join(name), b"x").unwrap();
+        }
+        let mut store = Store::new(&folder.0);
+        let document = "campaigns/c.utcc/outlines/yard.json";
+        store
+            .run(
+                "Outline",
+                here(document),
+                vec![Command::Create {
+                    document: document.into(),
+                    value: json!({"images": [{"file": "a.webp"}]}),
+                }],
+            )
+            .unwrap();
+        store.save().unwrap();
+        // Each outline's pictures stay, the one nobody names goes.
+        let images = outlines.join("images");
+        assert!(images.join("a.webp").exists() && images.join("b.webp").exists());
+        assert!(!images.join("c.webp").exists());
     }
 
     #[test]

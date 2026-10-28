@@ -22,6 +22,22 @@ use std::sync::mpsc;
 /// The folder in the user folder that holds the assistant's settings, keys and threads.
 const FOLDER: &str = "assistant";
 
+/// `provider`'s key: its environment variable, else the one entered in the assistant's
+/// Settings (kept in the user folder). Never shown or logged; the image tool uses OpenAI's.
+pub fn read_key(user: Option<&std::path::Path>, provider: Provider) -> Key {
+    if let Ok(key) = std::env::var(provider.key_variable())
+        && !key.trim().is_empty()
+    {
+        return Key::Environment(key.trim().to_string());
+    }
+    user.map(|u| u.join(FOLDER))
+        .and_then(|f| std::fs::read_to_string(f.join(provider.key_file())).ok())
+        .map(|k| k.trim().to_string())
+        .filter(|k| !k.is_empty())
+        .map(Key::Stored)
+        .unwrap_or(Key::Missing)
+}
+
 /// A conversation: its messages in the API's form, as they were sent and answered.
 #[derive(Debug, Clone, Default, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase", default)]
@@ -72,7 +88,7 @@ pub enum Key {
 }
 
 impl Key {
-    fn value(&self) -> Option<&str> {
+    pub(crate) fn value(&self) -> Option<&str> {
         match self {
             Key::Environment(k) | Key::Stored(k) => Some(k),
             Key::Missing => None,
@@ -110,7 +126,16 @@ pub struct Assistant {
     system: Option<String>,
     /// Scroll the conversation to its end on the next frame.
     pub follow: bool,
+    /// Tools the user allowed for the rest of this conversation (painting pictures, to
+    /// iterate without a click each time).
+    pub allowed: std::collections::BTreeSet<String>,
+    /// The pictures of tool answers, decoded once, by tool call id.
+    pub pictures: std::collections::HashMap<String, Option<egui::TextureHandle>>,
 }
+
+/// The tools a conversation may allow once for all its calls: they spend a little money,
+/// write files outside the undo history only as their own folder's, and nothing else.
+pub const ALLOW_FOR_THREAD: [&str; 1] = ["generate_image"];
 
 #[derive(Debug, Default, Serialize, Deserialize)]
 #[serde(default, rename_all = "camelCase")]
@@ -161,6 +186,8 @@ impl Assistant {
             url: None,
             system: None,
             follow: false,
+            allowed: Default::default(),
+            pictures: Default::default(),
         };
         me.keys = Provider::ALL.map(|p| me.read_key(p));
         me.load_threads();
@@ -178,17 +205,7 @@ impl Assistant {
     // --- The key -----------------------------------------------------------------------
 
     fn read_key(&self, provider: Provider) -> Key {
-        if let Ok(key) = std::env::var(provider.key_variable())
-            && !key.trim().is_empty()
-        {
-            return Key::Environment(key.trim().to_string());
-        }
-        self.folder()
-            .and_then(|f| std::fs::read_to_string(f.join(provider.key_file())).ok())
-            .map(|k| k.trim().to_string())
-            .filter(|k| !k.is_empty())
-            .map(Key::Stored)
-            .unwrap_or(Key::Missing)
+        read_key(self.user.as_deref(), provider)
     }
 
     /// The key of `provider`.
@@ -296,6 +313,7 @@ impl Assistant {
         self.thread = Thread::default();
         self.error = None;
         self.list_open = false;
+        self.allowed.clear();
     }
 
     pub fn open_thread(&mut self, id: &str) {
@@ -313,6 +331,7 @@ impl Assistant {
             self.error = None;
             self.list_open = false;
             self.follow = true;
+            self.allowed.clear();
         }
     }
 
@@ -422,6 +441,14 @@ impl Assistant {
         }
     }
 
+    /// Allows the waiting call, and every later call of its tool in this conversation.
+    pub fn approve_for_thread(&mut self) {
+        if let Some(approval) = self.running.as_ref().and_then(|r| r.approval.as_ref()) {
+            self.allowed.insert(approval.name.clone());
+        }
+        self.approve(true);
+    }
+
     /// Takes in what the loop reported since the last frame. Whether anything changed.
     pub fn poll(&mut self) -> bool {
         let Some(running) = &mut self.running else {
@@ -447,7 +474,11 @@ impl Assistant {
                 Update::Approve {
                     name, input, reply, ..
                 } => {
-                    running.approval = Some(Approval { name, input, reply });
+                    if self.allowed.contains(&name) {
+                        let _ = reply.send(true);
+                    } else {
+                        running.approval = Some(Approval { name, input, reply });
+                    }
                 }
                 Update::Usage { model, usage } => {
                     for (total, n) in self.thread.usage.iter_mut().zip(usage) {

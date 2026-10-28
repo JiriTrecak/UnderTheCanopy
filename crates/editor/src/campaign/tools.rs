@@ -1,7 +1,8 @@
 //! MCP's campaign tools (docs/editor.md "Campaigns"): what agents call to make a
 //! campaign, add, move, remove and change its steps, set a mission's tech, read its tech
-//! tree and set a mission's computer players. The shell answers them
-//! (`shell/campaigns.rs`) through the same commands as the editor's own controls.
+//! tree, set a mission's computer players, and read and write the steps' outlines. The
+//! shell answers them (`shell/campaigns.rs`) through the same commands as the editor's own
+//! controls.
 
 use schemars::JsonSchema;
 use serde::Deserialize;
@@ -113,6 +114,19 @@ pub struct MissionPlayers {
     pub players: Vec<Value>,
 }
 
+#[derive(Debug, Clone, Deserialize, JsonSchema)]
+pub struct ReadThrough {
+    /// One campaign (its id or package path); every campaign, in play order, when absent.
+    pub campaign: Option<String>,
+    /// The first step to give (its id or index; with `campaign`).
+    pub from: Option<Value>,
+    /// The last step to give (its id or index; with `campaign`).
+    pub to: Option<Value>,
+    /// Give sketches whole (shapes and stamps) rather than counted.
+    #[serde(default)]
+    pub sketches: bool,
+}
+
 /// A campaign tool call.
 #[derive(Debug, Clone)]
 pub enum Call {
@@ -127,4 +141,5 @@ pub enum Call {
     Players(MissionPlayers),
     Outline(StepArgs),
     SetOutline(SetOutline),
+    ReadThrough(ReadThrough),
 }

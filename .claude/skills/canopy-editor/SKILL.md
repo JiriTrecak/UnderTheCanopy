@@ -14,6 +14,7 @@ The content formats are in the other skills. Read the matching one before changi
 - **canopy-definitions** for units, buildings, items, races and rules;
 - **canopy-abilities** for abilities and effects;
 - **canopy-maps** for maps, and **canopy-campaign** for missions;
+- **canopy-outlines** for ideation: pitching, outlining and picturing campaign steps;
 - **canopy-assets** for art, **canopy-icons** for icons, **canopy-sounds** for sounds.
 
 ## Starting it
@@ -102,6 +103,14 @@ Every document also has **Form** (from its schema) and **JSON** (its text) in th
   - `mission_tech_tree`: `{campaign, step}` gives the Tech view as data.
 - **Drafts and outlines (D110):** `add_campaign_step` takes `draft: true` (a draft mission gets no map) and the kind `earlyAccess` (one line in the whole game). `campaign_outline {campaign, step}` reads a step's outline; `set_campaign_outline {campaign, step, fields}` merges fields into it (null removes): purpose, cast, threads, tension, kinds, pitch, pillars, objectives, minutes, beats, sketch, location, madeAs, shots. The user's views: Steps, Outline (one-pager, tabletop, beats, pages, shots) and Read-through.
 - **Players:** `set_mission_players` takes `{map, players}` (the mission map's id or package path) or `{campaign, step, players}`. It replaces the mission's computer players.
+- **Outlines** (D110, D111; skill canopy-outlines has the format and how to ideate):
+  - `campaign_outline {campaign, step}` gives one step's outline with its title, mission number and the steps before and after it.
+  - `campaign_read_through {campaign?, from?, to?, sketches?}` gives the whole story in play order: every campaign (or one, or a stretch of one), each step's kind, title, draft and outline, the steps after the early access line marked. Sketches come counted unless `sketches: true`.
+  - `set_campaign_outline {campaign, step, fields}` sets top-level fields as one undo step. An array is replaced whole, and `null` removes a field.
+- **Pictures** (D111):
+  - `generate_image {campaign, step, prompt, caption?, references?, model?, size?, quality?, count?}` paints concept pictures with OpenAI into the campaign's `outlines/images/` and the step's outline. It uses the OpenAI key in the assistant's Settings, costs money, takes up to two minutes and asks first.
+  - `references` are earlier pictures' files or image asset ids.
+  - `view_image {campaign, file}` or `{asset}` looks at a picture.
 - **Before a mission is done,** prove it with skill canopy-campaign (autoplay, the mission check). That needs a shell; the editor cannot run it.
 
 ## Trying things
@@ -133,8 +142,9 @@ Every document also has **Form** (from its schema) and **JSON** (its text) in th
 ## The assistant
 
 The sidebar on the right of every editor: Claude (Anthropic, the default) or OpenAI's GPT, chosen in its Settings and called with the user's key for that provider, working through these same tools (docs/editor.md, The assistant).
-- **Context:** each message carries what the user is looking at, in an `<editor-context>` block (the editor, the open document, unsaved documents, problems).
-- **Approval:** `save`, `cook`, `import_asset`, `import_starcraft` (with a source), `map_preview` and the sound tools wait for the user's Allow. Everything else runs as undo steps.
+- **Context:** each message carries what the user is looking at, in an `<editor-context>` block: the editor, the open document and its other tabs, unsaved documents, problems. In a campaign it also gives the view, the selected step, what its outline holds and its neighbours; on a mission map, the step that plays it.
+- **Approval:** `save`, `cook`, `import_asset`, `import_starcraft` (with a source), `map_preview`, the sound tools and `generate_image` wait for the user's Allow. Pictures can be allowed for the rest of the conversation. Everything else runs as undo steps.
+- **Pictures in the conversation:** a tool answer with a picture (`map_picture`, `generate_image`, `view_image`) shows it under its row, and the model sees it with the answer's text.
 - **Threads** are kept in the user folder's `assistant/threads/`, in one form either provider can carry on. The provider, the model for each, the effort and each provider's key (`ANTHROPIC_API_KEY` / `OPENAI_API_KEY`, or one entered there) are in the Settings.
 
 ## Recipes
@@ -156,6 +166,11 @@ The sidebar on the right of every editor: Claude (Anthropic, the default) or Ope
   3. `map_place` the starts, amber and camps.
   4. `map_info` and `map_picture` to check it.
   5. `problems`: the starts must be playable and every site reachable.
+- **Ideas for a step:** follow canopy-outlines.
+  1. Read the context, `campaign_read_through` and docs/story.md.
+  2. Pitch two or three takes and ask.
+  3. `generate_image` the chosen one, and iterate.
+  4. `set_campaign_outline`, then `problems`.
 - **A mission:**
   1. `add_campaign_step` with `kind: mission`.
   2. Shape its map.

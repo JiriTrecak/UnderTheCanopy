@@ -107,6 +107,24 @@ impl Shell {
         self.serve_calls();
     }
 
+    /// Runs MCP's tool `name` with `args` at once, as an agent's call would (captures and
+    /// tests; tools that wait for a check, a cook or a thread are not offered here).
+    pub fn run_tool(&mut self, name: &str, args: Value) -> Result<Value, String> {
+        let tool = mcp::parse(name, args)?;
+        if matches!(
+            tool,
+            Tool::Problems
+                | Tool::Encounter(_)
+                | Tool::Sound(_)
+                | Tool::Cook
+                | Tool::LabRun(_)
+                | Tool::Image(crate::images::Call::Generate(_))
+        ) {
+            return Err(format!("{name} answers later; it cannot run at once"));
+        }
+        self.answer(tool)
+    }
+
     /// Answers the tool calls that arrived; `problems` waits for the current check.
     pub fn serve_calls(&mut self) {
         while let Ok(Call { tool, reply }) = self.calls.1.try_recv() {
@@ -129,6 +147,10 @@ impl Shell {
                         let _ = reply.send(Err("The editor has no data folder.".into()));
                     }
                 }
+                continue;
+            }
+            if let Tool::Image(crate::images::Call::Generate(args)) = tool {
+                self.start_image(args, reply);
                 continue;
             }
             if matches!(tool, Tool::Cook) {
@@ -154,6 +176,7 @@ impl Shell {
             let answer = self.answer(tool);
             let _ = reply.send(answer);
         }
+        self.poll_images();
         if !self.encounter_waiting.is_empty() && !self.checking() {
             let content = self.checked_content();
             for (args, reply) in std::mem::take(&mut self.encounter_waiting) {
@@ -349,6 +372,10 @@ impl Shell {
                 None => Err("No version of the package has passed the check yet.".into()),
             },
             Tool::Sound(_) => unreachable!("sound calls answer when they finish"),
+            Tool::Image(crate::images::Call::View(args)) => self.view_image(args),
+            Tool::Image(crate::images::Call::Generate(_)) => {
+                unreachable!("pictures answer when they are painted")
+            }
             Tool::Cook => unreachable!("cooks answer when they finish"),
             Tool::ImportStarcraft(args) => match (&args.source, &args.id) {
                 (Some(source), Some(id)) => {
@@ -427,6 +454,22 @@ impl Shell {
                 }
                 if Kind::of_document(&document).is_none() {
                     return Err(format!("{document}: no editor shows it"));
+                }
+                // An outline shows in its campaign's Outline view, at its step.
+                if let Some((root, step)) = document
+                    .strip_suffix(".json")
+                    .and_then(|d| d.rsplit_once("/outlines/"))
+                    .filter(|(root, _)| root.ends_with(".utcc"))
+                {
+                    let campaign = crate::campaign::document(root);
+                    let value = self.campaign_value(root)?;
+                    let index = crate::campaign::steps(&value)
+                        .iter()
+                        .position(|s| crate::campaign::text(s, "id") == step);
+                    self.select_campaign_step(&campaign, index);
+                    self.set_campaign_mode(&campaign, "outline");
+                    self.reveal_document(&campaign);
+                    return Ok(json!({ "opened": campaign, "view": "outline", "step": step }));
                 }
                 self.reveal_document(&document);
                 Ok(json!({ "opened": document, "editor": self.current.label().to_lowercase() }))

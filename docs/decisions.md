@@ -1189,3 +1189,19 @@ Jiri approved the new autumn-tree illustration and asked to mirror it so the ant
 - **The editor's look**, nothing bespoke: the tabletop is drawn in the editor's own widgets and colours.
 - **Mission kinds:** Hero walk, Base, Defend, Timed, Escort, Dungeon, Stealth, Race, Hold points, Split forces; more may be added.
 - **Views:** the campaign editor gains Outline (step by step, previous and next, across campaigns) and Read-through (every step of every campaign, character lanes, tension) beside Steps. Mockups: the Campaign Mockups canvas, "Draft mode" row.
+
+## D111. The assistant as an ideation partner, with pictures (2026-10-28, Jiri: "for ideation it would be where it would be the most powerful … It absolutely needs all the detail about the context … it should be able to request any content of the mission outlines before and after … It would also be great if it could generate images (OpenAI imagegen 2.5) … so we could visually iterate quickly"; built by Claude, review)
+
+- **Context.** The assistant's `<editor-context>` names the campaign, its view, the selected step, what its outline holds and its neighbours; on a mission map, the step it plays.
+- **Reading the story.** `campaign_read_through` gives every step of every campaign (or a stretch of one) with its outline, in play order, marking the steps after the early access line. Sketches are counted unless asked for whole. `campaign_outline` gives a step's title and its neighbours.
+- **Pictures in outlines.** An outline's `images` lists concept pictures in the campaign's `outlines/images/`: file, caption, prompt, model, references. The check flags a listed file that is missing. Saving an outline deletes the pictures no saved outline of its campaign names, as a deleted asset's files go. Releases drop the whole `outlines/` folder.
+- **Painting.** `generate_image` calls OpenAI's images API with the OpenAI key from the assistant's Settings (`OPENAI_API_KEY`, else the stored one), never shown or logged:
+  - It generates anew, or edits from `references`: earlier pictures or image assets.
+  - Model `gpt-image-2.5-sunburst` by default (`-flare` for fast variations, `gpt-image-2` allowed), 1536×1024, medium quality, 1–4 takes, WebP.
+  - It is never retried automatically.
+  - The files are written at once; the outline's entry is an undo step.
+  - It asks for approval, once or for the conversation.
+  - `view_image` shows the assistant an outline picture or an image asset.
+- **Ideation skill.** The skill `canopy-outlines` holds the outline format field by field, the reading order, how to pitch (two or three takes that play differently, a recommendation, write only what Jiri chose), the house style for prompts, and how to iterate on pictures. The assistant's prompt points to it.
+- **The Outline view** has a Pictures tab beside the step's own view: a grid newest first, one picture large with its caption, how it was made, and Remove.
+

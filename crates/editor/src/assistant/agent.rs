@@ -295,7 +295,10 @@ async fn run_tool(
     let tool = mcp::parse(name, input)?;
     let long = matches!(
         tool,
-        mcp::Tool::Cook | mcp::Tool::Sound(_) | mcp::Tool::LabRun(_)
+        mcp::Tool::Cook
+            | mcp::Tool::Sound(_)
+            | mcp::Tool::LabRun(_)
+            | mcp::Tool::Image(crate::images::Call::Generate(_))
     );
     let (reply, answer) = tokio::sync::oneshot::channel();
     calls
@@ -309,18 +312,24 @@ async fn run_tool(
     }
 }
 
-/// A tool's answer as a `tool_result` block: a picture as an image, anything else as
-/// JSON text (cut at [`MAX_RESULT`]), a failure marked as an error.
+/// A tool's answer as a `tool_result` block: a picture as an image (with the rest of the
+/// answer as text beside it), anything else as JSON text (cut at [`MAX_RESULT`]), a
+/// failure marked as an error.
 fn result(id: &str, answer: Result<Value, String>) -> Value {
     match answer {
-        Ok(Value::Object(object)) if object.get("png").is_some_and(Value::is_string) => json!({
-            "type": "tool_result",
-            "tool_use_id": id,
-            "content": [{
+        Ok(Value::Object(mut object)) if mcp::picture_of(&object).is_some() => {
+            let (key, media) = mcp::picture_of(&object).expect("checked");
+            let data = object.remove(key).unwrap_or_default();
+            let mut content = vec![json!({
                 "type": "image",
-                "source": { "type": "base64", "media_type": "image/png", "data": object["png"] },
-            }],
-        }),
+                "source": { "type": "base64", "media_type": media, "data": data },
+            })];
+            if !object.is_empty() {
+                let text = serde_json::to_string_pretty(&object).unwrap_or_default();
+                content.push(json!({ "type": "text", "text": text }));
+            }
+            json!({ "type": "tool_result", "tool_use_id": id, "content": content })
+        }
         Ok(value) => {
             let mut text = serde_json::to_string_pretty(&value).unwrap_or_default();
             if text.len() > MAX_RESULT {
