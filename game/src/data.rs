@@ -219,11 +219,14 @@ impl GameData {
         layers.push(campaign.clone());
         install_text(&self.content, &layers, &self.maps);
         let campaign = read_campaign(campaign);
+        let campaign = Arc::new(
+            playable((*campaign).clone()).ok_or_else(|| anyhow!("{id} is a draft campaign"))?,
+        );
         let one = std::slice::from_ref(&campaign);
         add_missions(&mut self.maps, one, &self.pack);
         self.campaign_images.extend(campaign_images(one));
         self.campaigns.push(campaign);
-        self.campaigns.sort_by(|a, b| a.id().cmp(b.id()));
+        canopy_content::campaign::in_play_order(&mut self.campaigns);
         Ok(id)
     }
 
@@ -361,7 +364,7 @@ fn load_campaigns(paths: &Paths, content: &Content) -> Vec<Arc<CampaignPackage>>
             return Vec::new();
         }
     };
-    found
+    let mut found: Vec<Arc<CampaignPackage>> = found
         .into_iter()
         .filter(|c| {
             let errors = canopy_content::campaign::validate(c, content);
@@ -370,8 +373,21 @@ fn load_campaigns(paths: &Paths, content: &Content) -> Vec<Arc<CampaignPackage>>
             }
             errors.is_empty()
         })
+        .filter_map(playable)
         .map(Arc::new)
-        .collect()
+        .collect();
+    canopy_content::campaign::in_play_order(&mut found);
+    found
+}
+
+/// A campaign as it plays (D110): drafts are never played, so a draft campaign is left out
+/// and a campaign's draft steps are dropped.
+fn playable(mut campaign: CampaignPackage) -> Option<CampaignPackage> {
+    if campaign.campaign.draft {
+        return None;
+    }
+    campaign.campaign = campaign.campaign.playable();
+    Some(campaign)
 }
 
 /// The campaigns' mission maps join the maps (as their campaign's); a map whose id is
@@ -476,6 +492,7 @@ fn read_campaign(campaign: Arc<CampaignPackage>) -> Arc<CampaignPackage> {
                 say(&mut s.title);
                 s.note.iter_mut().for_each(say);
             }
+            Step::EarlyAccess(_) => {}
         }
     }
     Arc::new(campaign)

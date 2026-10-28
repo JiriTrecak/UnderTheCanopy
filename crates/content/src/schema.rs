@@ -128,6 +128,9 @@ pub fn of_document(path: &str) -> Option<Value> {
         return match (marker, rest) {
             (".utcm/", crate::map::package::MAP_FILE) => Some(map_file()),
             (".utcc/", crate::campaign::CAMPAIGN_FILE) => Some(root::<crate::campaign::Campaign>()),
+            (".utcc/", rest) if rest.starts_with("outlines/") && rest.ends_with(".json") => {
+                Some(root::<crate::outline::Outline>())
+            }
             _ => None,
         };
     }

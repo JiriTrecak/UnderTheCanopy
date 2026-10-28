@@ -9,7 +9,10 @@
 
 pub mod art;
 pub mod check;
+pub mod outline;
 pub mod players;
+pub mod readthrough;
+pub mod sketch;
 pub mod tech;
 pub mod tools;
 pub mod view;
@@ -85,14 +88,17 @@ pub enum StepKind {
     Story,
     Mission,
     Cinematic,
+    /// Where early access ends: one in all the campaigns (D110).
+    EarlyAccess,
 }
 
 impl StepKind {
-    pub const ALL: [StepKind; 4] = [
+    pub const ALL: [StepKind; 5] = [
         StepKind::Chapter,
         StepKind::Story,
         StepKind::Mission,
         StepKind::Cinematic,
+        StepKind::EarlyAccess,
     ];
 
     /// Its `kind` in campaign.json.
@@ -102,6 +108,7 @@ impl StepKind {
             StepKind::Story => "story",
             StepKind::Mission => "mission",
             StepKind::Cinematic => "cinematic",
+            StepKind::EarlyAccess => "earlyAccess",
         }
     }
 
@@ -111,6 +118,7 @@ impl StepKind {
             StepKind::Story => "Story",
             StepKind::Mission => "Mission",
             StepKind::Cinematic => "Cinematic",
+            StepKind::EarlyAccess => "Early access line",
         }
     }
 
@@ -123,6 +131,34 @@ impl StepKind {
             .and_then(Value::as_str)
             .and_then(Self::parse)
     }
+}
+
+/// Whether a step is a draft: only outlined, never played or shipped (D110).
+pub fn is_draft(step: &Value) -> bool {
+    step.get("draft").and_then(Value::as_bool).unwrap_or(false)
+}
+
+/// The index of the early access line in a campaign, if it holds it.
+pub fn early_access(campaign: &Value) -> Option<usize> {
+    steps(campaign)
+        .iter()
+        .position(|s| StepKind::of(s) == Some(StepKind::EarlyAccess))
+}
+
+/// A step's outline document (D110): `<campaign>/outlines/<step id>.json`.
+pub fn outline_document(root: &str, step: &str) -> String {
+    format!("{root}/{}", canopy_content::outline::path(step))
+}
+
+/// The campaigns `roots` in the order they play: by `order` (from `value`), then by id.
+pub fn in_play_order(roots: &mut [String], value: impl Fn(&str) -> Option<Value>) {
+    let key = |root: &String| {
+        let order = value(root)
+            .and_then(|v| v.get("order").and_then(Value::as_u64))
+            .unwrap_or(u64::from(u32::MAX));
+        (order, id_of(root).to_string())
+    };
+    roots.sort_by_key(key);
 }
 
 /// The campaign's steps (none when it has no list).
@@ -342,6 +378,9 @@ pub fn new_step(kind: StepKind, id: &str, title: &str, map: Option<&str>) -> Val
             step["tech"] = json!({"new": [], "blocked": []});
         }
         StepKind::Cinematic => {}
+        StepKind::EarlyAccess => {
+            return json!({"kind": kind.name(), "id": id});
+        }
     }
     step
 }

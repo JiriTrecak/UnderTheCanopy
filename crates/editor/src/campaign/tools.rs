@@ -28,7 +28,8 @@ pub struct CampaignArgs {
 pub struct AddStep {
     /// The campaign: its id or its package path.
     pub campaign: String,
-    /// chapter, story, mission or cinematic.
+    /// chapter, story, mission, cinematic or earlyAccess (the early access line: one in all
+    /// the campaigns).
     pub kind: String,
     pub title: Option<String>,
     /// The step's id (unique in the campaign); made from the title when absent.
@@ -36,8 +37,10 @@ pub struct AddStep {
     /// Where it goes in the list (0 first); last when absent.
     pub at: Option<usize>,
     /// A mission's map among the campaign's missions/; absent, the mission gets a new
-    /// map package of flat blocks there.
+    /// map package of flat blocks there (a draft mission gets none).
     pub map: Option<String>,
+    /// A draft (D110): only outlined, never played or shipped.
+    pub draft: Option<bool>,
 }
 
 #[derive(Debug, Clone, Deserialize, JsonSchema)]
@@ -63,6 +66,24 @@ pub struct SetStep {
     pub step: Value,
     /// Fields to set, as campaign.json names them (title, art, chapterLine, story,
     /// heroLevelCap, pages, note, music, map, id …); null removes a field.
+    pub fields: serde_json::Map<String, Value>,
+}
+
+#[derive(Debug, Clone, Deserialize, JsonSchema)]
+pub struct SetOutline {
+    pub campaign: String,
+    /// The step: its id or its index.
+    pub step: Value,
+    /// Outline fields to set (D110, `canopy_content::outline::Outline`): purpose, notes,
+    /// cast [{who, presence: on|mentioned|joins|leaves|open}], threads [{mark: opens|carries|
+    /// closes, text}], tension 1-5, kinds (hero-walk, base, defend, timed, escort, dungeon,
+    /// stealth, race, hold-points, split-forces), pitch, pillars {play, character, story},
+    /// objectives [{kind: main|optional|secret|easterEgg, text}], minutes, beats [{phase:
+    /// before|during|after, speaker, trigger, mode: scene|line, text}], sketch {size, shapes:
+    /// [{brush: pen|high|forest|water|road|path|attack, points: [[x, z]…]}], stamps: [{mark:
+    /// start|amber|camp|hero|objective|optional|secret|beat|shop|spring|text, x, z, label,
+    /// count, who}]}, location, madeAs (scene|film|card), shots [{framing, action, speaker,
+    /// line, seconds}]. Plain words, never text keys; null removes a field.
     pub fields: serde_json::Map<String, Value>,
 }
 
@@ -104,4 +125,6 @@ pub enum Call {
     Tech(SetTech),
     Tree(StepArgs),
     Players(MissionPlayers),
+    Outline(StepArgs),
+    SetOutline(SetOutline),
 }

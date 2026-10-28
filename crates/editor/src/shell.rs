@@ -451,6 +451,7 @@ impl Shell {
                 Default::default()
             };
         let campaign_maps = self.campaign_maps();
+        let campaign_list = self.campaign_list();
         let version = package.manifest.version.to_string();
         let workspace = self
             .workspaces
@@ -580,6 +581,7 @@ impl Shell {
                 stale,
                 campaigns: &mut self.campaigns,
                 campaign_maps: &campaign_maps,
+                campaign_list: &campaign_list,
                 version: &version,
             },
         );

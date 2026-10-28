@@ -1118,7 +1118,7 @@ impl Game {
         let Some(mission) = c.campaign.steps.get(step).and_then(|s| s.mission()) else {
             return;
         };
-        let Some(map) = data.map(mission.map.as_str()) else {
+        let Some(map) = mission.map_id().and_then(|m| data.map(m)) else {
             return;
         };
         let start = self
@@ -1151,7 +1151,7 @@ impl Game {
         };
         self.play_step_music(data, &c.campaign.steps[step]);
         self.start_rerun(Rerun {
-            map: mission.map.to_string(),
+            map: mission.map_id().unwrap_or_default().to_string(),
             setup,
             me: Some(0),
             kind: MatchKind::Campaign,
@@ -1268,7 +1268,7 @@ impl Game {
             .find(|&i| {
                 c.campaign.steps[i]
                     .mission()
-                    .is_some_and(|m| m.map.as_str() == map)
+                    .is_some_and(|m| m.map_id() == Some(map))
             })?;
         let start = progress.start(&c.campaign, &data.content, step);
         self.progress.insert(c.id().to_string(), progress);
@@ -1291,7 +1291,7 @@ impl Game {
             .campaign
             .steps
             .iter()
-            .position(|s| s.mission().is_some_and(|m| m.map.as_str() == map))?;
+            .position(|s| s.mission().is_some_and(|m| m.map_id() == Some(map)))?;
         Some((campaign.id().to_string(), step))
     }
 

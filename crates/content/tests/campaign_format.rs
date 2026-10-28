@@ -253,6 +253,22 @@ fn broken_campaigns_say_what_is_wrong() {
         "heroLevelCap",
     );
     broken("empty", &|d| d["steps"] = json!([]), "at least one step");
+    broken(
+        "no-map",
+        &|d| {
+            d["steps"][2].as_object_mut().unwrap().remove("map");
+        },
+        "only a draft may have none yet",
+    );
+    broken(
+        "two-lines",
+        &|d| {
+            let steps = d["steps"].as_array_mut().unwrap();
+            steps.push(json!({"kind": "earlyAccess", "id": "line"}));
+            steps.push(json!({"kind": "earlyAccess", "id": "again"}));
+        },
+        "may stand only once",
+    );
     // Unknown fields are refused when the package opens.
     let mut extra = json!({"race": "red", "steps": steps()});
     extra["steps"][2]["nextMission"] = json!("second");
@@ -323,4 +339,112 @@ fn shipped_missions_name_only_known_text() {
             }
         }
     }
+}
+
+/// D110: drafts check loosely and never ship; one early access line in all the campaigns,
+/// after which a release ships nothing.
+#[test]
+fn drafts_and_the_early_access_line_shape_a_release() {
+    let mut lined = steps();
+    let list = lined.as_array_mut().unwrap();
+    list.insert(3, json!({"kind": "earlyAccess", "id": "line"}));
+    list.insert(
+        3,
+        json!({"kind": "mission", "id": "later", "title": "Later", "draft": true}),
+    );
+    list.insert(
+        1,
+        json!({"kind": "story", "id": "sketch", "title": "Sketch", "draft": true,
+                          "pages": [{"text": ""}]}),
+    );
+    let held = package(
+        "held",
+        json!({"race": "red", "order": 1, "steps": lined}),
+        &["first-map", "second-map"],
+    );
+    let write = |path: PathBuf, value: Value| {
+        std::fs::create_dir_all(path.parent().unwrap()).unwrap();
+        std::fs::write(path, value.to_string()).unwrap();
+    };
+    write(
+        held.join("text/en/campaign.json"),
+        json!({"campaign.held.first.title": "First", "campaign.held.second.title": "Second"}),
+    );
+    write(
+        held.join("outlines/later.json"),
+        json!({"pitch": "Hold the yard.", "kinds": ["defend"]}),
+    );
+    let found = campaign::open(&held).unwrap();
+    assert_eq!(
+        messages(&found),
+        Vec::<String>::new(),
+        "drafts may lack maps and pages"
+    );
+    assert_eq!(found.campaign.early_access(), Some(5));
+    assert_eq!(found.campaign.playable().steps.len(), 6);
+    write(held.join("outlines/nowhere.json"), json!({"tension": 7}));
+    let found = messages(&campaign::open(&held).unwrap());
+    assert!(
+        found.iter().any(|m| m.contains("no step nowhere")),
+        "{found:?}"
+    );
+    assert!(
+        found.iter().any(|m| m.contains("tension is 1 to 5")),
+        "{found:?}"
+    );
+    std::fs::remove_file(held.join("outlines/nowhere.json")).unwrap();
+
+    // Three campaigns in one folder: a draft, the one holding the line and one after it.
+    let after = package(
+        "after",
+        json!({"race": "red", "order": 2, "steps": steps()}),
+        &["first-map", "second-map"],
+    );
+    let sketched = package(
+        "sketched",
+        json!({"race": "red", "order": 0, "draft": true, "steps": [{"kind": "chapter", "id": "c", "title": "C"}]}),
+        &[],
+    );
+    let shelf = Path::new(env!("CARGO_TARGET_TMPDIR")).join("campaign-format/release");
+    let _ = std::fs::remove_dir_all(&shelf);
+    std::fs::create_dir_all(&shelf).unwrap();
+    for root in [&held, &after, &sketched] {
+        std::fs::rename(root, shelf.join(root.file_name().unwrap())).unwrap();
+    }
+    let trimmed = campaign::release(&shelf).unwrap_or_else(|e| panic!("{e}"));
+    assert_eq!(trimmed.campaigns, ["sketched", "after"]);
+    assert_eq!(
+        trimmed.steps,
+        ["held/sketch", "held/later", "held/scene", "held/second"]
+    );
+    assert_eq!(trimmed.maps, ["held/second-map"]);
+    let left = campaign::folder(&shelf).unwrap();
+    assert_eq!(left.len(), 1);
+    let ids: Vec<&str> = left[0]
+        .campaign
+        .steps
+        .iter()
+        .map(|s| s.id().as_str())
+        .collect();
+    assert_eq!(ids, ["prologue", "tale", "first", "line"]);
+    assert_eq!(left[0].missions.len(), 1);
+    let held = shelf.join("held.utcc");
+    assert!(!held.join("outlines").exists());
+    let words = std::fs::read_to_string(held.join("text/en/campaign.json")).unwrap();
+    assert!(words.contains("campaign.held.first.title") && !words.contains("campaign.held.second"));
+
+    // A second line anywhere is refused.
+    let mut twice = steps();
+    twice
+        .as_array_mut()
+        .unwrap()
+        .push(json!({"kind": "earlyAccess", "id": "line"}));
+    let other = package(
+        "other",
+        json!({"race": "red", "steps": twice}),
+        &["first-map", "second-map"],
+    );
+    std::fs::rename(&other, shelf.join("other.utcc")).unwrap();
+    let refused = campaign::folder(&shelf).unwrap_err().to_string();
+    assert!(refused.contains("the game has one"), "{refused}");
 }

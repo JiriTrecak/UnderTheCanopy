@@ -65,6 +65,15 @@ fn kind_label(step: &Step) -> (String, String) {
         Step::Story(_) => (tr!("campaign.story"), tr!("campaign.read")),
         Step::Mission(_) => (tr!("campaign.mission"), tr!("campaign.play")),
         Step::Cinematic(_) => (tr!("campaign.cinematic"), tr!("campaign.watch")),
+        Step::EarlyAccess(_) => (tr!("campaign.early-access"), tr!("campaign.continue")),
+    }
+}
+
+/// A step's title as the screens show it: the early access line's is the game's own.
+pub fn step_title(step: &Step) -> String {
+    match step {
+        Step::EarlyAccess(_) => tr!("campaign.early-access.title"),
+        _ => plain(step.title()),
     }
 }
 
@@ -82,7 +91,7 @@ pub fn step_art<'a>(
             .and_then(|p| p.art.as_ref())
             .or_else(|| s.pages.iter().find_map(|p| p.art.as_ref())),
         Step::Mission(s) => s.art.as_ref(),
-        Step::Cinematic(_) => None,
+        Step::Cinematic(_) | Step::EarlyAccess(_) => None,
     };
     own.or(campaign.campaign.background.as_ref())
 }
@@ -119,7 +128,7 @@ pub fn show_cards(
             tr!("campaign.complete")
         } else if saved.started() {
             c.steps.get(saved.next(c)).map_or_else(String::new, |s| {
-                tr!("campaign.next", title = &plain(s.title()))
+                tr!("campaign.next", title = &step_title(s))
             })
         } else {
             tr!("campaign.not-begun")
@@ -199,6 +208,7 @@ fn next_line(step: &Step) -> String {
             .unwrap_or_default(),
         Step::Cinematic(s) => s.note.clone().unwrap_or_default(),
         Step::Chapter(_) => tr!("campaign.new-chapter"),
+        Step::EarlyAccess(_) => tr!("campaign.early-access.note"),
     }
 }
 
@@ -264,11 +274,11 @@ pub fn show_steps(
             Entry::Heading { step } | Entry::Row { step } | Entry::Next { step } => &c.steps[*step],
         };
         let (kind, act) = kind_label(step);
-        let title = plain(step.title());
+        let title = step_title(step);
         // Play with AI: a mission whose map has an autoplay plan.
         let planned = step
             .mission()
-            .and_then(|m| data.map(m.map.as_str()))
+            .and_then(|m| data.map(m.map_id()?))
             .is_some_and(|m| m.autoplay);
         widgets::visible(ui, &format!("{base}/row/ai"), planned);
         widgets::visible(ui, &format!("{base}/next/ai"), planned);
@@ -498,6 +508,11 @@ pub fn show_card(host: &mut UiHost, gpu: &Gpu, data: &GameData, card: &Card) {
                 None => tr!("campaign.coming-later"),
             };
             widgets::text(ui, "card/title/note", &note);
+        }
+        Step::EarlyAccess(_) => {
+            widgets::text(ui, "card/title/kicker", &plain(campaign.name()));
+            widgets::text(ui, "card/title/name", &tr!("campaign.early-access.title"));
+            widgets::text(ui, "card/title/note", &tr!("campaign.early-access.note"));
         }
         Step::Mission(_) => {}
     }

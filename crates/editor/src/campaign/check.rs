@@ -64,7 +64,7 @@ pub fn problems(package: &Package, content: Option<&Content>) -> Vec<Problem> {
         let race = text(&campaign, "race");
         // Art the campaign should still have.
         for (field, what) in [("background", "background art"), ("card", "card art")] {
-            if text(&campaign, field).is_empty() {
+            if text(&campaign, field).is_empty() && !super::is_draft(&campaign) {
                 say(field.into(), format!("No {what}"), true);
             }
         }
@@ -78,6 +78,10 @@ pub fn problems(package: &Package, content: Option<&Content>) -> Vec<Problem> {
         let mut read_vars: Vec<(usize, String)> = Vec::new();
         for (i, step) in steps(&campaign).iter().enumerate() {
             let at = |field: &str| format!("steps[{i}].{field}");
+            // A draft is only outlined: nothing to settle yet (D110).
+            if super::is_draft(step) {
+                continue;
+            }
             match StepKind::of(step) {
                 Some(StepKind::Story) => {
                     let pages = step.get("pages").and_then(Value::as_array);

@@ -14,6 +14,7 @@ pub mod id;
 pub mod items;
 pub mod lab;
 pub mod map;
+pub mod outline;
 pub mod package;
 pub mod placement;
 pub mod schema;

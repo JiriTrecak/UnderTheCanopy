@@ -52,6 +52,10 @@ pub enum Icon {
     Tech,
     // The combat lab: a flask.
     Lab,
+    // Campaign outlines (D110): the early access line, the tabletop's eraser and springs.
+    Lock,
+    Eraser,
+    Wave,
 }
 
 /// One stroke of an icon: an open or closed polyline in grid units.
@@ -401,6 +405,45 @@ fn parts(icon: Icon) -> Vec<Part> {
                 [16.0, 8.5],
                 [19.0, 13.0],
                 [5.0, 13.0],
+            ]),
+        ],
+        Icon::Lock => vec![
+            Closed(vec![[5.0, 11.0], [19.0, 11.0], [19.0, 21.0], [5.0, 21.0]]),
+            Open({
+                let mut p = vec![[8.0, 11.0]];
+                p.extend(arc([12.0, 7.0], [4.0, 4.0], PI, 2.0 * PI));
+                p.push([16.0, 11.0]);
+                p
+            }),
+        ],
+        Icon::Eraser => vec![
+            Closed(vec![
+                [4.0, 15.0],
+                [13.0, 6.0],
+                [19.0, 12.0],
+                [12.0, 19.0],
+                [8.0, 19.0],
+            ]),
+            Open(vec![[8.0, 19.0], [20.0, 19.0]]),
+        ],
+        Icon::Wave => vec![
+            Open(vec![
+                [3.0, 9.0],
+                [6.0, 7.5],
+                [9.0, 9.0],
+                [12.0, 10.5],
+                [15.0, 9.0],
+                [18.0, 7.5],
+                [21.0, 9.0],
+            ]),
+            Open(vec![
+                [3.0, 15.0],
+                [6.0, 13.5],
+                [9.0, 15.0],
+                [12.0, 16.5],
+                [15.0, 15.0],
+                [18.0, 13.5],
+                [21.0, 15.0],
             ]),
         ],
         // A flask: the combat lab.

@@ -514,6 +514,12 @@ impl Editor {
         self.shell.select_campaign_step(document, index);
     }
 
+    /// Shows the campaign `document` in `mode`: `steps`, `outline` or `read-through`
+    /// (captures).
+    pub fn set_campaign_mode(&mut self, document: &str, mode: &str) {
+        self.shell.set_campaign_mode(document, mode);
+    }
+
     /// Opens a campaign's mission map at `root`, in its Tech view when `tech` (captures).
     pub fn open_mission(&mut self, root: &str, tech: bool) {
         self.shell.open_mission(root, tech);

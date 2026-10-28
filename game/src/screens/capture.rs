@@ -1645,6 +1645,131 @@ fn editor_campaigns(rig: &mut Rig, paths: &Paths) -> Result<()> {
     editor.show_problems(true);
     shoot(&mut editor, rig, "editor-campaign-problems")?;
     editor.show_problems(false);
+    // Draft mode (D110): drafts after the early access line, a mission outlined with its
+    // tabletop and beats, a cinematic's shots, the story's outline and the read-through.
+    // The line and drafts the campaign holds, else made here.
+    let ids = |editor: &mut Editor| -> Result<Vec<String>> {
+        Ok(
+            tool(editor, "campaign_steps", json!({"campaign": id}))?["steps"]
+                .as_array()
+                .into_iter()
+                .flatten()
+                .filter_map(|s| s["id"].as_str().map(str::to_string))
+                .collect(),
+        )
+    };
+    let have = ids(&mut editor)?;
+    if !have.iter().any(|s| s == "early-access") {
+        tool(
+            &mut editor,
+            "add_campaign_step",
+            json!({"campaign": id, "kind": "earlyAccess", "id": "early-access"}),
+        )?;
+    }
+    for (step, title) in [
+        ("engine-yards", "The Engine Yards"),
+        ("pressure-vaults", "The Pressure Vaults"),
+    ] {
+        if !have.iter().any(|s| s == step) {
+            tool(
+                &mut editor,
+                "add_campaign_step",
+                json!({"campaign": id, "kind": "mission", "title": title, "id": step, "draft": true}),
+            )?;
+        }
+    }
+    let at = ids(&mut editor)?
+        .iter()
+        .position(|s| s == "engine-yards")
+        .map_or(0, |i| i + 1);
+    tool(
+        &mut editor,
+        "add_campaign_step",
+        json!({"campaign": id, "kind": "cinematic", "title": "A Night at the Glass", "id": "night-at-the-glass", "draft": true, "at": at}),
+    )?;
+    let heroes: Vec<String> = nodes
+        .iter()
+        .filter(|n| n["kind"] == "unit")
+        .filter_map(|n| n["id"].as_str().map(str::to_string))
+        .take(3)
+        .collect();
+    let hero = |n: usize| json!(heroes.get(n).cloned().unwrap_or_default());
+    tool(
+        &mut editor,
+        "set_campaign_outline",
+        json!({"campaign": id, "step": "engine-yards", "fields": {
+            "kinds": ["defend", "timed"],
+            "pitch": "The beetles come back for their condenser. Hold the yard until it runs.",
+            "purpose": "The first defence: hold a wall while the story turns on the glass.",
+            "pillars": {"play": "Hold a wall under pressure", "character": "Korrath starts to doubt", "story": "The condenser answers"},
+            "objectives": [
+                {"kind": "main", "text": "Hold the yard for 20 minutes"},
+                {"kind": "main", "text": "The condenser must stand"},
+                {"kind": "optional", "text": "Free the drone crews in the scrap pens"},
+                {"kind": "secret", "text": "A crack in the north wall"}
+            ],
+            "minutes": 25, "tension": 4,
+            "cast": [{"who": hero(0), "presence": "on"}, {"who": hero(1), "presence": "joins"}],
+            "threads": [{"mark": "carries", "text": "The glass wants her"}],
+            "beats": [
+                {"phase": "before", "speaker": hero(0), "trigger": "Start", "mode": "scene", "text": "They will want it back."},
+                {"phase": "during", "speaker": hero(1), "trigger": "Wave 3", "mode": "line", "text": "A lamp on the ridge is calling them in."},
+                {"phase": "after", "trigger": "Win", "mode": "scene", "text": "Next time they bring more than lamps."}
+            ],
+            "sketch": {"size": 256, "shapes": [
+                {"brush": "water", "points": [[10, 0], [40, 0], [44, 120], [36, 256], [8, 256], [14, 120]]},
+                {"brush": "high", "points": [[80, 70], [180, 66], [186, 170], [86, 176]]},
+                {"brush": "forest", "points": [[190, 10], [246, 10], [246, 60], [200, 54]]},
+                {"brush": "road", "points": [[132, 236], [136, 200], [130, 150], [132, 122]]},
+                {"brush": "path", "points": [[186, 120], [214, 160], [210, 206]]},
+                {"brush": "attack", "points": [[132, 4], [132, 40], [132, 64]]},
+                {"brush": "attack", "points": [[252, 118], [220, 120], [190, 120]]}
+            ], "stamps": [
+                {"mark": "start", "x": 132, "z": 236},
+                {"mark": "hero", "x": 110, "z": 230, "who": heroes.first().cloned().unwrap_or_default()},
+                {"mark": "objective", "x": 132, "z": 118, "label": "1"},
+                {"mark": "optional", "x": 210, "z": 210, "label": "A"},
+                {"mark": "camp", "x": 60, "z": 210, "count": 2},
+                {"mark": "amber", "x": 108, "z": 100},
+                {"mark": "amber", "x": 160, "z": 150},
+                {"mark": "secret", "x": 120, "z": 60},
+                {"mark": "beat", "x": 146, "z": 226, "label": "1"},
+                {"mark": "text", "x": 132, "z": 186, "label": "the yard"}
+            ]}
+        }}),
+    )?;
+    tool(
+        &mut editor,
+        "set_campaign_outline",
+        json!({"campaign": id, "step": "night-at-the-glass", "fields": {
+            "purpose": "The first sign the substance wants her.", "location": "The camp at night", "madeAs": "scene", "tension": 2,
+            "shots": [
+                {"framing": "wide", "action": "The camp at night, the condenser among the lanterns.", "seconds": 6},
+                {"framing": "close", "action": "The light in the glass stirs.", "seconds": 5},
+                {"framing": "two-shot", "action": "She steps up to the glass.", "speaker": hero(0), "line": "It knows me.", "seconds": 8}
+            ]
+        }}),
+    )?;
+    tool(
+        &mut editor,
+        "set_campaign_outline",
+        json!({"campaign": id, "step": "pressure-vaults", "fields": {
+            "kinds": ["dungeon"], "pitch": "Into the beetle works.", "tension": 3, "cast": [{"who": hero(0)}]
+        }}),
+    )?;
+    let order = ids(&mut editor)?;
+    let index = |step: &str| order.iter().position(|s| s == step);
+    editor.select_campaign_step(&document, index("engine-yards"));
+    shoot(&mut editor, rig, "editor-campaign-drafts")?;
+    editor.set_campaign_mode(&document, "outline");
+    shoot(&mut editor, rig, "editor-campaign-outline-mission")?;
+    editor.select_campaign_step(&document, index("night-at-the-glass"));
+    shoot(&mut editor, rig, "editor-campaign-outline-cinematic")?;
+    editor.select_campaign_step(&document, Some(1));
+    shoot(&mut editor, rig, "editor-campaign-outline-story")?;
+    editor.set_campaign_mode(&document, "read-through");
+    shoot(&mut editor, rig, "editor-campaign-read-through")?;
+    editor.set_campaign_mode(&document, "steps");
     // The Tech view of the first mission's map, then the third mission's (its blocked
     // building and the contradiction), then only what the third changes.
     editor.open_mission(&missions[0].1, true);

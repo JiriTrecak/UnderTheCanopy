@@ -312,7 +312,21 @@ pub fn stage_documents(base: &Path, out: &Path) -> Result<()> {
     if out.exists() {
         fs::remove_dir_all(out)?;
     }
-    walk(base, out)
+    walk(base, out)?;
+    // A release ships the campaigns up to the early access line, without drafts or
+    // outlines (D110).
+    let campaigns = out.join("campaigns");
+    if campaigns.is_dir() {
+        let trimmed = canopy_content::campaign::release(&campaigns)
+            .map_err(|e| anyhow::anyhow!("trimming the campaigns:\n{e}"))?;
+        tracing::info!(
+            campaigns = ?trimmed.campaigns,
+            steps = trimmed.steps.len(),
+            maps = ?trimmed.maps,
+            "campaigns trimmed for release"
+        );
+    }
+    Ok(())
 }
 
 fn read_source(data: &plan::Locator, path: &str) -> Result<Vec<u8>> {

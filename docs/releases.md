@@ -94,6 +94,9 @@ just release-publish --artifact build/releases/0.3.1/darwin-aarch64/artifact.jso
    before publishing: prepare set its version, and its health check
    (`https://18.134.138.1/api/health`) must report the released game's version even when no
    server code changed.
+   The campaigns ship up to the early access line (D110, docs/campaign.md): the staged
+   base documents leave out drafts, outlines and every step after the line, so nothing past
+   it is in the files.
 2. **Build** requires the log to have a release for the app version. It verifies the
    galleries, loads the signing key (before the long build), runs the same packaging as
    `just package` (`cargo packager`), and checks the bundle's `Info.plist`: the version must

@@ -2,6 +2,10 @@
 //! race, the campaign screen's art and one linear list of steps) and the mission maps in
 //! `missions/`.
 //!
+//! Steps may be drafts (D110): outlined in `outlines/<step id>.json` ([`crate::outline`])
+//! but never played or shipped. One step in all the campaigns is the early access line;
+//! a release leaves out what follows it ([`release`]).
+//!
 //! The order of missions lives here and nowhere else. A mission step names its map, its
 //! presentation (loading art, chapter line, title, story), the hero level cap and the tech
 //! it unlocks or blocks; [`Campaign::locked`] turns the steps into what player 1 may not
@@ -28,8 +32,14 @@ pub const CAMPAIGN_FILE: &str = "campaign.json";
 pub const MISSIONS_DIR: &str = "missions";
 /// Where shipped campaigns live, relative to the data folder.
 pub const CAMPAIGNS_FOLDER: &str = "base/campaigns";
+/// The folder of a campaign package holding its steps' outlines (D110).
+pub const OUTLINES_DIR: &str = "outlines";
 /// A mission's highest hero level cap.
 pub const MAX_LEVEL_CAP: u32 = 50;
+
+fn is_false(value: &bool) -> bool {
+    !*value
+}
 
 /// `campaign.json`.
 #[skip_serializing_none]
@@ -42,6 +52,11 @@ pub struct Campaign {
     pub background: Option<Id>,
     /// The card art of the campaign selection.
     pub card: Option<Id>,
+    /// Where it plays among the campaigns, lowest first (then by id).
+    pub order: Option<u32>,
+    /// Only outlined: never played and never shipped.
+    #[serde(default, skip_serializing_if = "is_false")]
+    pub draft: bool,
     /// The campaign, step by step; played straight through.
     pub steps: Vec<Step>,
 }
@@ -58,6 +73,9 @@ pub enum Step {
     Mission(MissionStep),
     /// A cinematic; for now a placeholder card with a note of what it will show.
     Cinematic(Cinematic),
+    /// Where early access ends: one in all the campaigns. Players get the end card here,
+    /// and a release leaves out everything after it.
+    EarlyAccess(EarlyAccess),
 }
 
 #[skip_serializing_none]
@@ -68,6 +86,8 @@ pub struct Chapter {
     pub title: String,
     pub art: Option<Id>,
     pub music: Option<Id>,
+    #[serde(default, skip_serializing_if = "is_false")]
+    pub draft: bool,
 }
 
 #[skip_serializing_none]
@@ -76,8 +96,11 @@ pub struct Chapter {
 pub struct Story {
     pub id: Id,
     pub title: String,
+    #[serde(default)]
     pub pages: Vec<Page>,
     pub music: Option<Id>,
+    #[serde(default, skip_serializing_if = "is_false")]
+    pub draft: bool,
 }
 
 /// A story page: one image and some text.
@@ -96,8 +119,8 @@ pub struct Page {
 #[serde(rename_all = "camelCase", deny_unknown_fields)]
 pub struct MissionStep {
     pub id: Id,
-    /// A map id among the package's `missions/`.
-    pub map: Id,
+    /// A map id among the package's `missions/`; a draft may have none yet.
+    pub map: Option<Id>,
     pub title: String,
     /// The small line above the title (`Prologue · Mission One`).
     pub chapter_line: Option<String>,
@@ -110,6 +133,8 @@ pub struct MissionStep {
     #[serde(default)]
     pub tech: Tech,
     pub music: Option<Id>,
+    #[serde(default, skip_serializing_if = "is_false")]
+    pub draft: bool,
 }
 
 /// What a mission changes in the campaign race's tech.
@@ -133,6 +158,15 @@ pub struct Cinematic {
     /// What it will show.
     pub note: Option<String>,
     pub music: Option<Id>,
+    #[serde(default, skip_serializing_if = "is_false")]
+    pub draft: bool,
+}
+
+/// The early access line: its card's words are the game's own.
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize, schemars::JsonSchema)]
+#[serde(rename_all = "camelCase", deny_unknown_fields)]
+pub struct EarlyAccess {
+    pub id: Id,
 }
 
 impl Step {
@@ -142,15 +176,29 @@ impl Step {
             Self::Story(s) => &s.id,
             Self::Mission(s) => &s.id,
             Self::Cinematic(s) => &s.id,
+            Self::EarlyAccess(s) => &s.id,
         }
     }
 
+    /// Its title, a text key or words; the early access line has none of its own.
     pub fn title(&self) -> &str {
         match self {
             Self::Chapter(s) => &s.title,
             Self::Story(s) => &s.title,
             Self::Mission(s) => &s.title,
             Self::Cinematic(s) => &s.title,
+            Self::EarlyAccess(_) => "",
+        }
+    }
+
+    /// Only outlined: never played or shipped.
+    pub fn draft(&self) -> bool {
+        match self {
+            Self::Chapter(s) => s.draft,
+            Self::Story(s) => s.draft,
+            Self::Mission(s) => s.draft,
+            Self::Cinematic(s) => s.draft,
+            Self::EarlyAccess(_) => false,
         }
     }
 
@@ -160,16 +208,18 @@ impl Step {
             Self::Story(s) => s.music.as_ref(),
             Self::Mission(s) => s.music.as_ref(),
             Self::Cinematic(s) => s.music.as_ref(),
+            Self::EarlyAccess(_) => None,
         }
     }
 
-    /// `chapter`, `story`, `mission` or `cinematic`.
+    /// `chapter`, `story`, `mission`, `cinematic` or `earlyAccess`.
     pub fn kind(&self) -> &'static str {
         match self {
             Self::Chapter(_) => "chapter",
             Self::Story(_) => "story",
             Self::Mission(_) => "mission",
             Self::Cinematic(_) => "cinematic",
+            Self::EarlyAccess(_) => "earlyAccess",
         }
     }
 
@@ -178,6 +228,13 @@ impl Step {
             Self::Mission(m) => Some(m),
             _ => None,
         }
+    }
+}
+
+impl MissionStep {
+    /// Its map's id; a draft may have none yet.
+    pub fn map_id(&self) -> Option<&str> {
+        self.map.as_ref().map(Id::as_str)
     }
 }
 
@@ -191,6 +248,20 @@ pub fn paragraphs(text: &str) -> Vec<String> {
 }
 
 impl Campaign {
+    /// The campaign as it plays: without its draft steps.
+    pub fn playable(&self) -> Campaign {
+        let mut campaign = self.clone();
+        campaign.steps.retain(|s| !s.draft());
+        campaign
+    }
+
+    /// The index of the early access line, if this campaign holds it.
+    pub fn early_access(&self) -> Option<usize> {
+        self.steps
+            .iter()
+            .position(|s| matches!(s, Step::EarlyAccess(_)))
+    }
+
     /// The index of the step with `id`.
     pub fn position(&self, id: &str) -> Option<usize> {
         self.steps.iter().position(|s| s.id().as_str() == id)
@@ -389,11 +460,34 @@ pub fn folder(dir: &Path) -> Result<Vec<CampaignPackage>, Errors> {
             ));
         }
     }
+    let lines: Vec<&CampaignPackage> = found
+        .iter()
+        .filter(|c| c.campaign.early_access().is_some())
+        .collect();
+    for extra in lines.iter().skip(1) {
+        errors.push(Error::new(
+            &extra.package.label(CAMPAIGN_FILE),
+            "steps",
+            format!(
+                "the early access line is already in {}; the game has one",
+                lines[0].id()
+            ),
+        ));
+    }
     if errors.is_empty() {
         Ok(found)
     } else {
         Err(Errors(errors))
     }
+}
+
+/// The campaigns in the order they play: by `order`, then by id.
+pub fn in_play_order<T: std::borrow::Borrow<CampaignPackage>>(campaigns: &mut [T]) {
+    campaigns.sort_by(|a, b| {
+        let (a, b) = (a.borrow(), b.borrow());
+        (a.campaign.order.unwrap_or(u32::MAX), a.id())
+            .cmp(&(b.campaign.order.unwrap_or(u32::MAX), b.id()))
+    });
 }
 
 /// The shipped campaigns (`base/campaigns/` in the data folder).
@@ -469,6 +563,62 @@ pub fn validate(campaign: &CampaignPackage, content: &Content) -> Vec<Error> {
     if c.steps.is_empty() {
         fail("steps".into(), "a campaign needs at least one step".into());
     }
+    let lines = c
+        .steps
+        .iter()
+        .filter(|s| matches!(s, Step::EarlyAccess(_)))
+        .count();
+    if lines > 1 {
+        fail(
+            "steps".into(),
+            "the early access line may stand only once".into(),
+        );
+    }
+    if lines > 0 && c.draft {
+        fail(
+            "draft".into(),
+            "a draft campaign cannot hold the early access line".into(),
+        );
+    }
+    // Outlines (D110): one per step, named by its id (unsaved ones too, through the
+    // package's overlay).
+    let mut names: Vec<String> = campaign
+        .package
+        .entries(OUTLINES_DIR)
+        .unwrap_or_default()
+        .into_iter()
+        .filter(|(_, dir)| !dir)
+        .map(|(name, _)| name)
+        .collect();
+    names.sort();
+    for name in names {
+        let Some(step) = name.strip_suffix(".json") else {
+            continue;
+        };
+        let path = crate::outline::path(step);
+        let label = campaign.package.label(&path);
+        if c.position(step).is_none() {
+            errors.push(Error::new(&label, "", format!("no step {step} to outline")));
+        }
+        let read = campaign
+            .package
+            .read_text(&path)
+            .map_err(|e| e.to_string())
+            .and_then(|t| {
+                serde_json::from_str::<crate::outline::Outline>(&t).map_err(|e| e.to_string())
+            });
+        match read {
+            Ok(outline) => errors.extend(
+                crate::outline::problems(&outline)
+                    .into_iter()
+                    .map(|p| Error::new(&label, "", p)),
+            ),
+            Err(e) => errors.push(Error::new(&label, "", e)),
+        }
+    }
+    let mut fail = |location: String, message: String| {
+        errors.push(Error::new(&file, location, message));
+    };
     let tech = race_tech(content, &c.race);
     let mut ids = BTreeSet::new();
     for (i, step) in c.steps.iter().enumerate() {
@@ -479,7 +629,9 @@ pub fn validate(campaign: &CampaignPackage, content: &Content) -> Vec<Error> {
                 format!("step id {} is used twice", step.id()),
             );
         }
-        text(&mut fail, format!("{at}.title"), step.title(), 120);
+        if !matches!(step, Step::EarlyAccess(_)) {
+            text(&mut fail, format!("{at}.title"), step.title(), 120);
+        }
         check_sound(
             &mut fail,
             format!("{at}.music"),
@@ -488,13 +640,16 @@ pub fn validate(campaign: &CampaignPackage, content: &Content) -> Vec<Error> {
         );
         match step {
             Step::Chapter(s) => check_asset(&mut fail, format!("{at}.art"), &s.art),
+            Step::EarlyAccess(_) => {}
             Step::Story(s) => {
-                if s.pages.is_empty() || s.pages.len() > 32 {
+                if (s.pages.is_empty() && !s.draft) || s.pages.len() > 32 {
                     fail(format!("{at}.pages"), "a story has 1 to 32 pages".into());
                 }
                 for (p, page) in s.pages.iter().enumerate() {
                     let at = format!("{at}.pages[{p}]");
-                    text(&mut fail, format!("{at}.text"), &page.text, 4000);
+                    if !(s.draft && page.text.trim().is_empty()) {
+                        text(&mut fail, format!("{at}.text"), &page.text, 4000);
+                    }
                     check_asset(&mut fail, format!("{at}.art"), &page.art);
                     check_sound(
                         &mut fail,
@@ -510,11 +665,16 @@ pub fn validate(campaign: &CampaignPackage, content: &Content) -> Vec<Error> {
                 }
             }
             Step::Mission(m) => {
-                if campaign.mission_map(m.map.as_str()).is_none() {
-                    fail(
+                match &m.map {
+                    Some(map) if campaign.mission_map(map.as_str()).is_none() => fail(
                         format!("{at}.map"),
-                        format!("no map {} in {MISSIONS_DIR}/", m.map),
-                    );
+                        format!("no map {map} in {MISSIONS_DIR}/"),
+                    ),
+                    None if !m.draft => fail(
+                        format!("{at}.map"),
+                        "a mission needs its map; only a draft may have none yet".into(),
+                    ),
+                    _ => {}
                 }
                 check_asset(&mut fail, format!("{at}.art"), &m.art);
                 if let Some(line) = &m.chapter_line {
@@ -558,6 +718,149 @@ pub fn validate(campaign: &CampaignPackage, content: &Content) -> Vec<Error> {
         }
     }
     errors
+}
+
+/// What a release leaves out of the staged campaigns ([`release`]).
+#[derive(Debug, Default, PartialEq)]
+pub struct Trimmed {
+    /// Campaigns removed whole: drafts and those after the early access line's.
+    pub campaigns: Vec<String>,
+    /// `campaign/step` of every step removed: drafts and steps after the line.
+    pub steps: Vec<String>,
+    /// `campaign/map` of every mission map removed with its steps.
+    pub maps: Vec<String>,
+}
+
+/// Trims the campaign packages below `dir` (a staged copy of `base/campaigns`) to what a
+/// release ships (D110): no draft campaigns, no campaigns after the one holding the early
+/// access line, no draft steps, no steps after the line, no mission maps and text only
+/// removed steps name, and no outlines. The line itself stays, so the game shows its card.
+pub fn release(dir: &Path) -> Result<Trimmed, Errors> {
+    let io = |path: &Path, e: std::io::Error| {
+        Errors(vec![Error::new(
+            &path.display().to_string(),
+            "",
+            e.to_string(),
+        )])
+    };
+    let mut campaigns = folder(dir)?;
+    in_play_order(&mut campaigns);
+    let line = campaigns
+        .iter()
+        .position(|c| c.campaign.early_access().is_some());
+    let mut trimmed = Trimmed::default();
+    for (index, package) in campaigns.iter().enumerate() {
+        let root = package.package.root.clone();
+        let id = package.id().to_string();
+        if package.campaign.draft || line.is_some_and(|line| index > line) {
+            std::fs::remove_dir_all(&root).map_err(|e| io(&root, e))?;
+            trimmed.campaigns.push(id);
+            continue;
+        }
+        let cut = package
+            .campaign
+            .early_access()
+            .map_or(usize::MAX, |at| at + 1);
+        let keep: Vec<bool> = package
+            .campaign
+            .steps
+            .iter()
+            .enumerate()
+            .map(|(i, s)| i < cut && !s.draft())
+            .collect();
+        let removed: Vec<&Step> = package
+            .campaign
+            .steps
+            .iter()
+            .zip(&keep)
+            .filter(|(_, keep)| !**keep)
+            .map(|(s, _)| s)
+            .collect();
+        trimmed
+            .steps
+            .extend(removed.iter().map(|s| format!("{id}/{}", s.id())));
+        // campaign.json without the removed steps, the rest as written.
+        let file = root.join(CAMPAIGN_FILE);
+        let text = std::fs::read_to_string(&file).map_err(|e| io(&file, e))?;
+        let mut value: serde_json::Value = serde_json::from_str(&text).map_err(|e| {
+            Errors(vec![Error::new(
+                &file.display().to_string(),
+                "",
+                e.to_string(),
+            )])
+        })?;
+        if let Some(steps) = value
+            .get_mut("steps")
+            .and_then(serde_json::Value::as_array_mut)
+        {
+            let mut flags = keep.iter();
+            steps.retain(|_| *flags.next().unwrap_or(&false));
+        }
+        write_json(&file, &value).map_err(|e| io(&file, e))?;
+        // Maps no kept step plays.
+        let played: BTreeSet<&str> = package
+            .campaign
+            .steps
+            .iter()
+            .zip(&keep)
+            .filter(|(_, keep)| **keep)
+            .filter_map(|(s, _)| s.mission().and_then(|m| m.map.as_ref()))
+            .map(Id::as_str)
+            .collect();
+        for map in &package.missions {
+            if !played.contains(map.id.as_str()) {
+                let path = &map.path;
+                if path.is_dir() {
+                    std::fs::remove_dir_all(path).map_err(|e| io(path, e))?;
+                    trimmed.maps.push(format!("{id}/{}", map.id));
+                }
+            }
+        }
+        // The removed steps' words: `campaign.<campaign>.<step>.*` in every language.
+        let prefixes: Vec<String> = removed
+            .iter()
+            .map(|s| format!("campaign.{id}.{}.", s.id()))
+            .collect();
+        let text_dir = root.join("text");
+        if text_dir.is_dir() && !prefixes.is_empty() {
+            for language in std::fs::read_dir(&text_dir)
+                .map_err(|e| io(&text_dir, e))?
+                .flatten()
+            {
+                let Ok(files) = std::fs::read_dir(language.path()) else {
+                    continue;
+                };
+                for file in files.flatten().map(|f| f.path()) {
+                    if file.extension().is_none_or(|e| e != "json") {
+                        continue;
+                    }
+                    let text = std::fs::read_to_string(&file).map_err(|e| io(&file, e))?;
+                    let Ok(mut value) = serde_json::from_str::<serde_json::Value>(&text) else {
+                        continue;
+                    };
+                    if let Some(words) = value.as_object_mut() {
+                        let before = words.len();
+                        words
+                            .retain(|key, _| !prefixes.iter().any(|p| key.starts_with(p.as_str())));
+                        if words.len() != before {
+                            write_json(&file, &value).map_err(|e| io(&file, e))?;
+                        }
+                    }
+                }
+            }
+        }
+        let outlines = root.join(OUTLINES_DIR);
+        if outlines.is_dir() {
+            std::fs::remove_dir_all(&outlines).map_err(|e| io(&outlines, e))?;
+        }
+    }
+    Ok(trimmed)
+}
+
+fn write_json(path: &Path, value: &serde_json::Value) -> std::io::Result<()> {
+    let mut text = serde_json::to_string_pretty(value).map_err(std::io::Error::other)?;
+    text.push('\n');
+    std::fs::write(path, text)
 }
 
 #[cfg(test)]

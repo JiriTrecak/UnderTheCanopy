@@ -99,7 +99,7 @@ fn find(campaigns: &[CampaignPackage], name: &str) -> Result<Mission, String> {
             let Some(mission) = step.mission() else {
                 continue;
             };
-            let Some(file) = c.mission_map(mission.map.as_str()) else {
+            let Some(file) = mission.map_id().and_then(|m| c.mission_map(m)) else {
                 continue;
             };
             let matches = if by_path {
@@ -109,7 +109,7 @@ fn find(campaigns: &[CampaignPackage], name: &str) -> Result<Mission, String> {
                     .zip(file.path.canonicalize().ok())
                     .is_some_and(|(a, b)| a == b)
             } else {
-                name == mission.map.as_str() || name == step.id().as_str()
+                mission.map_id() == Some(name) || name == step.id().as_str()
             };
             if matches {
                 let map = package::load(&file.path).map_err(|e| e.to_string())?;
@@ -401,11 +401,11 @@ fn main() {
     if args.all {
         for c in &campaigns {
             for step in &c.campaign.steps {
-                if let Some(m) = step.mission()
-                    && c.mission_map(m.map.as_str())
+                if let Some(map) = step.mission().and_then(|m| m.map_id())
+                    && c.mission_map(map)
                         .is_some_and(|f| f.path.join(package::AUTOPLAY_SCRIPT).is_file())
                 {
-                    names.push(m.map.to_string());
+                    names.push(map.to_string());
                 }
             }
         }

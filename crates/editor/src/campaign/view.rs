@@ -1,9 +1,11 @@
 //! A campaign's view (docs/campaign.md "The editor"): its steps as one list, chapters as
 //! headings over their Story, Mission and Cinematic rows (each with its kind, title,
 //! picture and what it holds), reordered by dragging, added from the bar above them;
-//! every step with Play, missions with Edit. The panel on the right shows the campaign's
-//! settings with nothing selected, a step's fields with one selected. Every change is an
-//! undo step on the campaign's documents.
+//! every step with Play and Outline, missions with Edit. Drafts (D110) show dashed, the
+//! early access line as a band. The panel on the right shows the campaign's settings with
+//! nothing selected, a step's fields with one selected. The bar above switches to the
+//! Outline ([`super::outline`]) and the Read-through ([`super::readthrough`]). Every
+//! change is an undo step on the campaign's documents.
 
 use super::art::{Choices, Thumbs, paint_cover, picker};
 use super::{StepKind, Tech, mission_numbers, steps, text};
@@ -25,16 +27,51 @@ pub enum Request {
     Play { document: String, step: usize },
     /// Open the mission map at `root` in the Maps editor, in its Tech view when `tech`.
     Map { root: String, tech: bool },
+    /// Show step `step` of campaign `document` in `mode` (another campaign's tab).
+    Show {
+        document: String,
+        step: Option<usize>,
+        mode: Mode,
+    },
+}
+
+/// What a campaign's view shows.
+#[derive(Debug, Default, Clone, Copy, PartialEq, Eq)]
+pub enum Mode {
+    /// The steps and their fields.
+    #[default]
+    Steps,
+    /// One step's outline at a time, previous and next.
+    Outline,
+    /// Every step of every campaign in one row.
+    ReadThrough,
+}
+
+impl Mode {
+    pub const ALL: [Mode; 3] = [Mode::Steps, Mode::Outline, Mode::ReadThrough];
+
+    pub fn label(self) -> &'static str {
+        match self {
+            Mode::Steps => "Steps",
+            Mode::Outline => "Outline",
+            Mode::ReadThrough => "Read-through",
+        }
+    }
 }
 
 /// One campaign view's state between frames.
 #[derive(Debug, Default, Clone)]
 pub struct State {
     pub selected: Option<usize>,
+    pub mode: Mode,
+    /// New steps are added as drafts.
+    pub drafts: bool,
     /// The step being dragged.
     drag: Option<usize>,
     /// The art picker's search.
-    search: String,
+    pub(super) search: String,
+    /// The outline's tabletop.
+    pub sketch: super::sketch::State,
 }
 
 /// What every campaign view shares: thumbnails, each campaign's state, and the requests
@@ -58,6 +95,8 @@ pub struct Ctx<'a> {
     pub root: Option<&'a std::path::Path>,
     /// The maps of the campaign's `missions/`.
     pub maps: Vec<String>,
+    /// Every campaign's folder, in the order they play.
+    pub campaigns: Vec<String>,
     /// The base package's version (a new mission map depends on it).
     pub version: String,
     pub shared: &'a mut Shared,
@@ -65,11 +104,20 @@ pub struct Ctx<'a> {
 }
 
 impl Ctx<'_> {
-    fn campaign_root(&self) -> &str {
+    pub(super) fn campaign_root(&self) -> &str {
         super::root_of(self.document).unwrap_or_default()
     }
 
-    fn context(&self, pointer: Option<String>) -> Context {
+    /// Where the early access line stands: its campaign's folder and step.
+    pub(super) fn line(&mut self) -> Option<(String, usize)> {
+        let roots = self.campaigns.clone();
+        roots.into_iter().find_map(|root| {
+            let value = self.store.get(&super::document(&root)).ok().flatten()?;
+            super::early_access(value).map(|i| (root, i))
+        })
+    }
+
+    pub(super) fn context(&self, pointer: Option<String>) -> Context {
         Context {
             editor: Editor::Campaigns,
             document: self.document.to_string(),
@@ -78,7 +126,7 @@ impl Ctx<'_> {
     }
 
     /// One step changing campaign.json at `pointer`; typing and dragging fold in.
-    fn set(&mut self, label: &str, pointer: &str, value: Value, merge: bool) {
+    pub(super) fn set(&mut self, label: &str, pointer: &str, value: Value, merge: bool) {
         self.edits.push(Edit {
             label: label.to_string(),
             context: self.context(Some(pointer.to_string())),
@@ -93,7 +141,14 @@ impl Ctx<'_> {
     }
 
     /// Sets an optional field, or removes it when `value` is empty.
-    fn set_optional(&mut self, label: &str, step: &Value, at: &str, field: &str, value: &str) {
+    pub(super) fn set_optional(
+        &mut self,
+        label: &str,
+        step: &Value,
+        at: &str,
+        field: &str,
+        value: &str,
+    ) {
         let pointer = format!("{at}/{field}");
         if value.is_empty() {
             if step.get(field).is_some() {
@@ -113,23 +168,23 @@ impl Ctx<'_> {
     }
 
     /// The campaign's text file (D96): its steps' titles, pages, lines and notes.
-    fn text_file(&self) -> String {
+    pub(super) fn text_file(&self) -> String {
         super::text_file(self.campaign_root())
     }
 
-    fn library(&mut self) -> Option<Value> {
+    pub(super) fn library(&mut self) -> Option<Value> {
         self.store.get(&self.text_file()).ok().flatten().cloned()
     }
 
     /// What a step field shows: the library's text when it holds a key, else itself.
-    fn say(&mut self, value: &str) -> String {
+    pub(super) fn say(&mut self, value: &str) -> String {
         self.library()
             .and_then(|t| t.get(value).and_then(Value::as_str).map(str::to_string))
             .unwrap_or_else(|| value.to_string())
     }
 
     /// A free key under the step for `name` (`campaign.<campaign>.<step>.<name>`).
-    fn key(&mut self, step: &Value, name: &str) -> String {
+    pub(super) fn key(&mut self, step: &Value, name: &str) -> String {
         let manifest = format!("{}/package.json", self.campaign_root());
         let campaign = self
             .store
@@ -150,7 +205,7 @@ impl Ctx<'_> {
     }
 
     /// The commands that write `entries` into the text file, creating it when missing.
-    fn put_text(&mut self, entries: Vec<(String, String)>) -> Vec<Command> {
+    pub(super) fn put_text(&mut self, entries: Vec<(String, String)>) -> Vec<Command> {
         let file = self.text_file();
         if self.library().is_some() {
             entries
@@ -173,7 +228,7 @@ impl Ctx<'_> {
     }
 
     /// The command that drops a key's text, when the library holds it.
-    fn drop_text(&mut self, key: &str) -> Option<Command> {
+    pub(super) fn drop_text(&mut self, key: &str) -> Option<Command> {
         self.library()?.get(key)?;
         Some(Command::Remove {
             document: self.text_file(),
@@ -184,7 +239,7 @@ impl Ctx<'_> {
     /// Edits the text a field of `holder` (at `at`) names: the library entry when the field
     /// holds a key, else a new entry `name` under the step with the field set to its key.
     /// An empty optional field is removed with its text.
-    fn edit_text(
+    pub(super) fn edit_text(
         &mut self,
         label: &str,
         (step, holder, at): (&Value, &Value, &str),
@@ -230,7 +285,7 @@ impl Ctx<'_> {
         });
     }
 
-    fn step(&mut self, label: &str, commands: Vec<Command>) {
+    pub(super) fn step(&mut self, label: &str, commands: Vec<Command>) {
         if commands.is_empty() {
             return;
         }
@@ -251,7 +306,7 @@ impl Ctx<'_> {
             .collect()
     }
 
-    fn thumb(&mut self, ui: &Ui, id: &str) -> Option<egui::TextureId> {
+    pub(super) fn thumb(&mut self, ui: &Ui, id: &str) -> Option<egui::TextureId> {
         if id.is_empty() {
             return None;
         }
@@ -263,7 +318,7 @@ impl Ctx<'_> {
 }
 
 /// The picture a step shows: its art, a story's first page.
-fn step_art(step: &Value) -> &str {
+pub(super) fn step_art(step: &Value) -> &str {
     match StepKind::of(step) {
         Some(StepKind::Story) => step
             .pointer("/pages/0/art")
@@ -285,7 +340,11 @@ fn subtitle(
         Some(StepKind::Mission) => {
             let map = text(step, "map");
             let file = if map.is_empty() {
-                "no map".to_string()
+                if super::is_draft(step) {
+                    "no map yet".to_string()
+                } else {
+                    "no map".to_string()
+                }
             } else if maps.iter().any(|m| m == map) {
                 format!("{map}.utcm")
             } else {
@@ -308,6 +367,9 @@ fn subtitle(
             note => note.lines().next().unwrap_or_default().to_string(),
         },
         Some(StepKind::Chapter) => String::new(),
+        Some(StepKind::EarlyAccess) => {
+            "Releases ship the steps above; after the last, players see the end card".into()
+        }
         None => format!("unknown kind {:?}", text(step, "kind")),
     }
 }
@@ -338,6 +400,43 @@ pub fn show(ui: &mut Ui, ctx: &mut Ctx) {
         .unwrap_or_default();
     if state.selected.is_some_and(|s| s >= steps(&campaign).len()) {
         state.selected = None;
+    }
+    egui::Panel::top(egui::Id::new(("campaign-modes", ctx.document)))
+        .frame(
+            Frame::new()
+                .fill(SUNK)
+                .inner_margin(Margin::symmetric(14, 8)),
+        )
+        .show_separator_line(true)
+        .show(ui, |ui| {
+            ui.horizontal(|ui| {
+                ui.spacing_mut().item_spacing.x = 4.0;
+                for mode in Mode::ALL {
+                    if ui
+                        .selectable_label(state.mode == mode, mode.label())
+                        .clicked()
+                    {
+                        state.mode = mode;
+                    }
+                }
+                ui.add_space(12.0);
+                if state.mode == Mode::Outline {
+                    super::outline::stepper(ui, ctx, &campaign, &mut state);
+                }
+            });
+        });
+    match state.mode {
+        Mode::Outline => {
+            super::outline::show(ui, ctx, &campaign, &mut state);
+            ctx.shared.states.insert(ctx.document.to_string(), state);
+            return;
+        }
+        Mode::ReadThrough => {
+            super::readthrough::show(ui, ctx, &mut state);
+            ctx.shared.states.insert(ctx.document.to_string(), state);
+            return;
+        }
+        Mode::Steps => {}
     }
     egui::Panel::right(egui::Id::new(("campaign-panel", ctx.document)))
         .exact_size(340.0)
@@ -421,24 +520,45 @@ fn steps_list(ui: &mut Ui, ctx: &mut Ctx, campaign: &Value, manifest: &Value, st
     ui.horizontal(|ui| {
         ui.spacing_mut().item_spacing.x = 6.0;
         let at = state.selected.map_or(list.len(), |s| s + 1);
+        let line = ctx.line();
         for kind in StepKind::ALL {
             let mission = kind == StepKind::Mission;
-            let enabled = !mission || ctx.content.is_some();
+            let (enabled, why) = match kind {
+                StepKind::Mission if !state.drafts && ctx.content.is_none() => (
+                    false,
+                    "A new map needs a package that has passed the check".to_string(),
+                ),
+                StepKind::EarlyAccess if line.is_some() => (
+                    false,
+                    format!(
+                        "The game has one line; it stands in {}: drag it there",
+                        super::id_of(&line.clone().unwrap_or_default().0)
+                    ),
+                ),
+                _ => (true, String::new()),
+            };
             let hint = match kind {
                 StepKind::Chapter => "A title card heading the steps under it",
                 StepKind::Story => "Full-screen pages of art and text",
+                StepKind::Mission if state.drafts => "A draft mission: an outline, no map yet",
                 StepKind::Mission => "A mission and its own new map in the campaign's missions/",
                 StepKind::Cinematic => "A placeholder card for a cinematic to come",
+                StepKind::EarlyAccess => {
+                    "Where early access ends: releases leave out every step after it"
+                }
             };
+            let _ = mission;
             if ui
                 .add_enabled(enabled, egui::Button::new(format!("+ {}", kind.label())))
                 .on_hover_text(hint)
-                .on_disabled_hover_text("A new map needs a package that has passed the check")
+                .on_disabled_hover_text(why)
                 .clicked()
             {
                 add_step(ctx, campaign, kind, at, state);
             }
         }
+        ui.checkbox(&mut state.drafts, "As drafts")
+            .on_hover_text("New steps are drafts: outlined, never played or shipped");
         ui.with_layout(egui::Layout::right_to_left(egui::Align::Center), |ui| {
             ui.label(
                 RichText::new("Drag a row to move it · Esc: the campaign's settings")
@@ -541,7 +661,11 @@ fn row(
     state: &mut State,
 ) -> (Rect, egui::Response) {
     let kind = StepKind::of(step);
+    if kind == Some(StepKind::EarlyAccess) {
+        return line_row(ui, ctx, i, state);
+    }
     let chapter = kind == Some(StepKind::Chapter);
+    let draft = super::is_draft(step);
     let height = if chapter { 52.0 } else { 76.0 };
     let width = ui.available_width();
     let (full, response) = ui.allocate_exact_size(vec2(width, height), Sense::click_and_drag());
@@ -570,6 +694,16 @@ fn row(
                 rect.right_bottom() - vec2(10.0, 1.0),
             ],
             Stroke::new(1.0, BORDER),
+        );
+    } else if draft {
+        // A draft: no fill, a dashed outline.
+        if selected || hovered {
+            painter.rect_filled(rect, 8, if selected { SELECTED } else { RAISED });
+        }
+        dashed_rect(
+            painter,
+            rect.shrink(0.5),
+            Stroke::new(1.0, if selected { SOFT } else { CONTROL }),
         );
     } else {
         painter.rect(
@@ -662,10 +796,16 @@ fn row(
         painter.text(
             pos2(x, rect.top() + 11.0),
             Align2::LEFT_TOP,
-            label,
+            label.clone(),
             FontId::proportional(9.5),
             color.gamma_multiply(0.9),
         );
+        if draft {
+            draft_badge(
+                ui.painter(),
+                pos2(x + 8.0 * label_width(&label), rect.top() + 9.0),
+            );
+        }
         let title = match ctx.say(text(step, "title")).as_str() {
             "" => "Untitled".to_string(),
             t => t.to_string(),
@@ -713,26 +853,43 @@ fn row(
             .on_hover_text("Remove this step (a mission's map stays in missions/)")
             .clicked()
     };
-    if kind == Some(StepKind::Mission)
-        && button(ui, &mut right, "Edit", "Open the map in the Maps editor")
-    {
-        let map = text(step, "map");
-        if !map.is_empty() {
-            ctx.shared.requests.push(Request::Map {
-                root: super::map_root(ctx.campaign_root(), map),
-                tech: false,
-            });
+    let map = text(step, "map").to_string();
+    if kind == Some(StepKind::Mission) && map.is_empty() {
+        if button(
+            ui,
+            &mut right,
+            "Make map",
+            "Give this mission its own map of flat blocks",
+        ) {
+            make_map(ctx, step, i);
         }
+    } else if kind == Some(StepKind::Mission)
+        && button(ui, &mut right, "Edit", "Open the map in the Maps editor")
+        && !map.is_empty()
+    {
+        ctx.shared.requests.push(Request::Map {
+            root: super::map_root(ctx.campaign_root(), &map),
+            tech: false,
+        });
     }
     let play_hint = match kind {
         Some(StepKind::Mission) => "Play this mission",
         _ => "Play the campaign from this step",
     };
-    if button(ui, &mut right, "Play", play_hint) {
+    if !draft && button(ui, &mut right, "Play", play_hint) {
         ctx.shared.requests.push(Request::Play {
             document: ctx.document.to_string(),
             step: i,
         });
+    }
+    if button(
+        ui,
+        &mut right,
+        "Outline",
+        "This step's outline: its story, beats and sketch",
+    ) {
+        state.selected = Some(i);
+        state.mode = Mode::Outline;
     }
     if delete {
         let title = ctx.say(text(step, "title"));
@@ -760,11 +917,19 @@ fn add_step(ctx: &mut Ctx, campaign: &Value, kind: StepKind, at: usize, state: &
         StepKind::Story => "New story".to_string(),
         StepKind::Mission => format!("Mission {}", missions + 1),
         StepKind::Cinematic => "New cinematic".to_string(),
+        StepKind::EarlyAccess => "early access".to_string(),
     };
     let id = super::unique_step_id(campaign, &title);
+    if kind == StepKind::EarlyAccess {
+        let step = super::new_step(kind, &id, "", None);
+        let commands = vec![super::insert_step(ctx.document, campaign, at, step)];
+        ctx.step("Add the early access line", commands);
+        state.selected = Some(at.min(steps(campaign).len()));
+        return;
+    }
     let mut commands = Vec::new();
     let mut map = None;
-    if kind == StepKind::Mission {
+    if kind == StepKind::Mission && !state.drafts {
         let Some(content) = ctx.content else { return };
         let mut map_id = id.clone();
         let mut n = 2;
@@ -791,6 +956,12 @@ fn add_step(ctx: &mut Ctx, campaign: &Value, kind: StepKind, at: usize, state: &
         map = Some(map_id);
     }
     let mut step = super::new_step(kind, &id, &title, map.as_deref());
+    if state.drafts {
+        step["draft"] = json!(true);
+        if kind == StepKind::Mission {
+            step.as_object_mut().expect("a step").remove("map");
+        }
+    }
     let mut entries = Vec::new();
     let key = ctx.key(&step, "title");
     entries.push((key.clone(), title.clone()));
@@ -804,6 +975,151 @@ fn add_step(ctx: &mut Ctx, campaign: &Value, kind: StepKind, at: usize, state: &
     commands.push(super::insert_step(ctx.document, campaign, at, step));
     ctx.step(&format!("Add {}", kind.label().to_lowercase()), commands);
     state.selected = Some(at.min(steps(campaign).len()));
+}
+
+/// Gives the mission at step `i` its own new map of flat blocks in the campaign's
+/// missions/, named after the step.
+pub(super) fn make_map(ctx: &mut Ctx, step: &Value, i: usize) {
+    let Some(content) = ctx.content else {
+        return;
+    };
+    let id = text(step, "id").to_string();
+    let title = ctx.say(text(step, "title"));
+    let mut map_id = if id.is_empty() {
+        "mission".to_string()
+    } else {
+        id
+    };
+    let base = map_id.clone();
+    let mut n = 2;
+    while ctx.maps.contains(&map_id) {
+        map_id = format!("{base}-{n}");
+        n += 1;
+    }
+    let root = super::map_root(ctx.campaign_root(), &map_id);
+    match crate::map::new_map_at(
+        content,
+        &ctx.version,
+        &root,
+        &map_id,
+        &title,
+        512,
+        super::mission_biome(ctx.root),
+    ) {
+        Ok(mut commands) => {
+            commands.push(Command::Set {
+                document: ctx.document.to_string(),
+                pointer: format!("/steps/{i}/map"),
+                value: json!(map_id),
+                at: None,
+            });
+            ctx.step(&format!("Make the map of {title}"), commands);
+        }
+        Err(error) => tracing::warn!(%error, "editor: new mission map"),
+    }
+}
+
+/// The early access line's row: a light band across the list.
+fn line_row(ui: &mut Ui, ctx: &mut Ctx, i: usize, state: &mut State) -> (Rect, egui::Response) {
+    let (rect, response) =
+        ui.allocate_exact_size(vec2(ui.available_width(), 58.0), Sense::click_and_drag());
+    response.widget_info(|| {
+        egui::WidgetInfo::selected(
+            egui::WidgetType::Button,
+            true,
+            state.selected == Some(i),
+            format!("Step {i}: the early access line"),
+        )
+    });
+    let selected = state.selected == Some(i);
+    let painter = ui.painter();
+    painter.rect(
+        rect,
+        8,
+        if selected { TEXT } else { BODY },
+        Stroke::new(if selected { 3.0 } else { 0.0 }, CONTROL),
+        egui::StrokeKind::Outside,
+    );
+    for k in 0..3 {
+        for c in 0..2 {
+            painter.circle_filled(
+                pos2(
+                    rect.left() + 12.0 + c as f32 * 5.0,
+                    rect.center().y - 5.0 + k as f32 * 5.0,
+                ),
+                1.3,
+                CONTROL,
+            );
+        }
+    }
+    icons::paint(
+        painter,
+        icons::square(pos2(rect.left() + 44.0, rect.center().y), 18.0),
+        Icon::Lock,
+        BG,
+    );
+    painter.text(
+        pos2(rect.left() + 64.0, rect.top() + 11.0),
+        Align2::LEFT_TOP,
+        "EARLY ACCESS ENDS HERE",
+        FontId::proportional(14.0),
+        BG,
+    );
+    painter.text(
+        pos2(rect.left() + 64.0, rect.top() + 32.0),
+        Align2::LEFT_TOP,
+        "Releases ship the steps above (no drafts). After the last, players see the end card.",
+        FontId::proportional(11.5),
+        STRONG,
+    );
+    let r = Rect::from_min_size(
+        pos2(rect.right() - 36.0, rect.center().y - 13.0),
+        vec2(26.0, 26.0),
+    );
+    let mut child = ui.new_child(egui::UiBuilder::new().max_rect(r));
+    if icon_button(&mut child, Icon::Close, false, true)
+        .on_hover_text("Remove the line: releases then ship every step")
+        .clicked()
+    {
+        ctx.step(
+            "Remove the early access line",
+            vec![Command::Remove {
+                document: ctx.document.to_string(),
+                pointer: format!("/steps/{i}"),
+            }],
+        );
+        state.selected = None;
+    }
+    let response = response.on_hover_cursor(egui::CursorIcon::Grab);
+    (rect, response)
+}
+
+/// A rectangle's outline in dashes.
+pub(super) fn dashed_rect(painter: &egui::Painter, rect: Rect, stroke: Stroke) {
+    let points = [
+        rect.left_top(),
+        rect.right_top(),
+        rect.right_bottom(),
+        rect.left_bottom(),
+        rect.left_top(),
+    ];
+    painter.extend(egui::Shape::dashed_line(&points, stroke, 5.0, 4.0));
+}
+
+/// The orange DRAFT mark beside a step's kind.
+pub(super) fn draft_badge(painter: &egui::Painter, at: egui::Pos2) {
+    let galley = painter.layout_no_wrap("DRAFT".into(), FontId::proportional(9.0), DRAFT);
+    let r = Rect::from_min_size(at, galley.size() + vec2(10.0, 4.0));
+    dashed_rect(painter, r, Stroke::new(1.0, DRAFT));
+    painter.galley(at + vec2(5.0, 2.0), galley, DRAFT);
+}
+
+/// Drafts' colour.
+pub(super) const DRAFT: Color32 = Color32::from_rgb(0xfd, 0xba, 0x74);
+
+/// About how many 8-pixel cells a label of small capitals takes.
+fn label_width(label: &str) -> f32 {
+    label.chars().count() as f32 * 0.9 + 1.0
 }
 
 fn section(ui: &mut Ui, title: &str) {
@@ -930,6 +1246,35 @@ fn settings_panel(
     if let Some(race) = chosen.filter(|r| *r != race) {
         ctx.set("Campaign race", "/race", json!(race), false);
     }
+    section(ui, "Order and drafts");
+    ui.horizontal(|ui| {
+        ui.label(RichText::new("Plays").size(11.0).color(MUTED));
+        let order = campaign.get("order").and_then(Value::as_u64);
+        let mut set = order.is_some();
+        let mut n = order.unwrap_or(1);
+        let toggled = ui
+            .checkbox(&mut set, "in place")
+            .on_hover_text("Where it plays among the campaigns, lowest first; else by id")
+            .changed();
+        let dragged = set && ui.add(egui::DragValue::new(&mut n).range(0..=99)).changed();
+        if toggled && !set {
+            ctx.set_optional("Campaign order", campaign, "", "order", "");
+        } else if toggled || dragged {
+            ctx.set("Campaign order", "/order", json!(n), dragged);
+        }
+    });
+    let mut draft = super::is_draft(campaign);
+    if ui
+        .checkbox(&mut draft, "Draft campaign")
+        .on_hover_text("Only outlined: the game lists it nowhere and releases leave it out")
+        .changed()
+    {
+        if draft {
+            ctx.set("Draft campaign", "/draft", json!(true), false);
+        } else {
+            ctx.set_optional("Not a draft campaign", campaign, "", "draft", "");
+        }
+    }
     let images = ctx.choices("assets/interface/");
     section(ui, "Art");
     field(ui, "Background of the campaign screen");
@@ -995,11 +1340,69 @@ fn step_panel(ui: &mut Ui, ctx: &mut Ctx, campaign: &Value, i: usize, state: &mu
                 .color(FAINT),
         );
     });
+    if kind == Some(StepKind::EarlyAccess) {
+        section(ui, "The end card");
+        ui.label(
+            RichText::new("You have reached the end of early access")
+                .size(14.0)
+                .color(TEXT),
+        );
+        ui.label(RichText::new("The story continues later.").color(SOFT));
+        ui.add_space(8.0);
+        ui.label(
+            RichText::new(
+                "The game has one line, across all the campaigns. A release leaves out every \
+                 step after it, their maps and words, every campaign after this one, every \
+                 draft and every outline. Players who reach it wait here; when an update moves \
+                 the line on, they go on from where they were.",
+            )
+            .size(11.0)
+            .color(FAINT),
+        );
+        ui.add_space(10.0);
+        if ui
+            .button("Play the end card")
+            .on_hover_text("Run the game from the line")
+            .clicked()
+        {
+            ctx.shared.requests.push(Request::Play {
+                document: ctx.document.to_string(),
+                step: i,
+            });
+        }
+        return;
+    }
     section(ui, "Step");
     field(ui, "Id (progress and Play from here name it)");
     let id = text(&step, "id").to_string();
     if let Some(v) = line(ui, &id) {
-        ctx.set("Step id", &format!("{at}/id"), json!(super::slug(&v)), true);
+        let new = super::slug(&v);
+        let mut commands = vec![Command::Set {
+            document: ctx.document.to_string(),
+            pointer: format!("{at}/id"),
+            value: json!(new),
+            at: None,
+        }];
+        // Its outline goes with it.
+        let root = ctx.campaign_root().to_string();
+        let old = super::outline_document(&root, &id);
+        let moved = super::outline_document(&root, &new);
+        if new != id
+            && let Ok(Some(outline)) = ctx.store.get(&old).map(|o| o.cloned())
+            && !matches!(ctx.store.get(&moved), Ok(Some(_)))
+        {
+            commands.push(Command::Delete { document: old });
+            commands.push(Command::Create {
+                document: moved,
+                value: outline,
+            });
+        }
+        ctx.edits.push(Edit {
+            label: "Step id".into(),
+            context: ctx.context(Some(format!("{at}/id"))),
+            commands,
+            merge: Some(format!("{}{at}/id", ctx.document)),
+        });
     }
     let duplicate = steps(campaign)
         .iter()
@@ -1023,6 +1426,25 @@ fn step_panel(ui: &mut Ui, ctx: &mut Ctx, campaign: &Value, i: usize, state: &mu
             &v,
             false,
         );
+    }
+    let mut draft = super::is_draft(&step);
+    if ui
+        .checkbox(&mut draft, "Draft")
+        .on_hover_text("Only outlined: never played, and never shipped in a release")
+        .changed()
+    {
+        if draft {
+            ctx.set("Draft", &format!("{at}/draft"), json!(true), false);
+        } else {
+            ctx.set_optional("Not a draft", &step, &at, "draft", "");
+        }
+    }
+    if ui
+        .button("Outline")
+        .on_hover_text("This step's outline: its story, beats and sketch")
+        .clicked()
+    {
+        state.mode = Mode::Outline;
     }
     let images = ctx.choices("assets/interface/");
     let sounds = ctx.choices("assets/audio/");
@@ -1174,7 +1596,24 @@ fn step_panel(ui: &mut Ui, ctx: &mut Ctx, campaign: &Value, i: usize, state: &mu
                 ctx.set("Mission map", &format!("{at}/map"), json!(m), false);
             }
             let exists = ctx.maps.contains(&map);
-            if !exists {
+            if map.is_empty() {
+                ui.label(
+                    RichText::new(if draft {
+                        "No map yet: a draft may wait for one"
+                    } else {
+                        "A mission needs its map"
+                    })
+                    .size(11.0)
+                    .color(if draft { FAINT } else { ERROR }),
+                );
+                if ui
+                    .add_enabled(ctx.content.is_some(), egui::Button::new("Make map"))
+                    .on_hover_text("A new map of flat blocks in the campaign's missions/")
+                    .clicked()
+                {
+                    make_map(ctx, &step, i);
+                }
+            } else if !exists {
                 ui.label(
                     RichText::new(format!("No map {map} in the campaign's missions/"))
                         .size(11.0)
@@ -1274,7 +1713,7 @@ fn step_panel(ui: &mut Ui, ctx: &mut Ctx, campaign: &Value, i: usize, state: &mu
                     .color(FAINT),
             );
         }
-        None => {
+        Some(StepKind::EarlyAccess) | None => {
             ui.label(RichText::new("This step's kind is unknown; edit it as JSON.").color(ERROR));
         }
     }

@@ -627,7 +627,7 @@ impl Handler {
     }
 
     #[tool(
-        description = "Adds a chapter, story, mission or cinematic step to a campaign, one undo step. A new mission gets its own map package of flat blocks in the campaign's missions/ unless it names one there."
+        description = "Adds a chapter, story, mission, cinematic or earlyAccess step to a campaign, one undo step; draft: true adds a draft (only outlined, never played or shipped, D110). A new mission gets its own map package of flat blocks in the campaign's missions/ unless it names one there or is a draft. The game has one early access line, across all campaigns."
     )]
     async fn add_campaign_step(
         &self,
@@ -704,6 +704,28 @@ impl Handler {
     ) -> Result<CallToolResult, ErrorData> {
         use crate::campaign::tools::Call;
         self.ask(Tool::Campaign(Call::Set(args))).await
+    }
+
+    #[tool(
+        description = "A campaign step's outline (D110, outlines/<step id>.json): what the step is for, its cast, threads, tension; a mission's kinds, pitch, pillars, objectives, story beats and tabletop sketch; a cinematic's shots. Empty when it has none."
+    )]
+    async fn campaign_outline(
+        &self,
+        Parameters(args): Parameters<crate::campaign::tools::StepArgs>,
+    ) -> Result<CallToolResult, ErrorData> {
+        use crate::campaign::tools::Call;
+        self.ask(Tool::Campaign(Call::Outline(args))).await
+    }
+
+    #[tool(
+        description = "Sets fields of a campaign step's outline (D110), creating it when missing, as one undo step; null removes a field. Plain words, never text keys; releases leave outlines out."
+    )]
+    async fn set_campaign_outline(
+        &self,
+        Parameters(args): Parameters<crate::campaign::tools::SetOutline>,
+    ) -> Result<CallToolResult, ErrorData> {
+        use crate::campaign::tools::Call;
+        self.ask(Tool::Campaign(Call::SetOutline(args))).await
     }
 
     #[tool(
@@ -875,6 +897,8 @@ pub fn parse(name: &str, args: Value) -> Result<Tool, String> {
         "set_mission_tech" => Tool::Campaign(Campaign::Tech(arg(args)?)),
         "mission_tech_tree" => Tool::Campaign(Campaign::Tree(arg(args)?)),
         "set_mission_players" => Tool::Campaign(Campaign::Players(arg(args)?)),
+        "campaign_outline" => Tool::Campaign(Campaign::Outline(arg(args)?)),
+        "set_campaign_outline" => Tool::Campaign(Campaign::SetOutline(arg(args)?)),
         "sound_events" => Tool::SoundEvents,
         "generate_sound" => Tool::Sound(Sound::Generate(Box::new(arg(args)?))),
         "pick_sound" => Tool::Sound(Sound::Pick(arg(args)?)),
@@ -906,7 +930,7 @@ pub fn needs_approval(name: &str, args: &Value) -> bool {
 
 #[tool_handler(
     name = "Under the Canopy editor",
-    instructions = "Edits the game's base package (units, buildings, items, abilities, effects, races, rules, assets, maps) through the open editor. Find documents with list_elements, read them with read_document and their shape with document_schema, change them with edit (one undo step per call), check with problems, then save. Maps have their own tools: create_map, map_blocks (the block editor, D80), map_place, map_remove, map_info and map_picture. Campaigns too: create_campaign, campaign_steps, add_campaign_step, move_campaign_step, remove_campaign_step, set_campaign_step, set_mission_tech, mission_tech_tree and set_mission_players (docs/campaign.md). Sounds: sound_events, generate_sound, pick_sound and keep_voice (D97, skill canopy-sounds). The Combat Lab: lab_run (scenarios are documents under @labs/). open shows a document to the user. read_skill lists and reads the repository's skills (canopy-editor covers the editor and these tools; the canopy-* skills the formats); read_doc reads docs/*.md."
+    instructions = "Edits the game's base package (units, buildings, items, abilities, effects, races, rules, assets, maps) through the open editor. Find documents with list_elements, read them with read_document and their shape with document_schema, change them with edit (one undo step per call), check with problems, then save. Maps have their own tools: create_map, map_blocks (the block editor, D80), map_place, map_remove, map_info and map_picture. Campaigns too: create_campaign, campaign_steps, add_campaign_step, move_campaign_step, remove_campaign_step, set_campaign_step, set_mission_tech, mission_tech_tree, set_mission_players, campaign_outline and set_campaign_outline (docs/campaign.md). Sounds: sound_events, generate_sound, pick_sound and keep_voice (D97, skill canopy-sounds). The Combat Lab: lab_run (scenarios are documents under @labs/). open shows a document to the user. read_skill lists and reads the repository's skills (canopy-editor covers the editor and these tools; the canopy-* skills the formats); read_doc reads docs/*.md."
 )]
 impl ServerHandler for Handler {}
 

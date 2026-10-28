@@ -52,6 +52,8 @@ The ants' art stays bio-magic (living light, blossoms, never corruption) until t
 | 18 | Mission | The Wellspring | She walks into the source |
 | 19 | Cinematic | The Forest Turns | (later) The corruption |
 
+The campaign holds this whole outline (D110): steps 1–8, then the early access line, then steps 9–19 as **drafts**, each outlined from its line above (`outlines/<step id>.json`). Releases ship up to the line. Designing a mission now starts in its outline in the editor (Outline and Read-through), agreed with Jiri before its map is built.
+
 ## How the missions are built
 
 Warcraft III's campaign maps are full of small things beside the main road, and these missions follow them: crates at the start with a potion inside; villagers' side quests with an item at the end; creep camps guarding treasure; a single creep hidden in the trees; a gap in a tree line opening onto a secret glade; a silly secret for the curious (Jimmy the Seal); merchants and healing springs. Every map has:

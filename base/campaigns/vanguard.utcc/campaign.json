@@ -2,6 +2,7 @@
   "race": "ants",
   "background": "asset.interface.campaign.vanguard.background",
   "card": "asset.interface.campaign.ants",
+  "order": 1,
   "steps": [
     {
       "kind": "chapter",
@@ -146,6 +147,108 @@
       "id": "condenser-hums",
       "title": "campaign.vanguard.condenser-hums.title",
       "note": "campaign.vanguard.condenser-hums.note"
+    },
+    {
+      "kind": "earlyAccess",
+      "id": "early-access"
+    },
+    {
+      "kind": "mission",
+      "id": "engine-yards",
+      "title": "campaign.vanguard.engine-yards.title",
+      "tech": {
+        "new": [],
+        "blocked": []
+      },
+      "draft": true
+    },
+    {
+      "kind": "mission",
+      "id": "pressure-vaults",
+      "title": "campaign.vanguard.pressure-vaults.title",
+      "tech": {
+        "new": [],
+        "blocked": []
+      },
+      "draft": true
+    },
+    {
+      "kind": "chapter",
+      "id": "act-2",
+      "title": "campaign.vanguard.act-2.title",
+      "draft": true
+    },
+    {
+      "kind": "mission",
+      "id": "waxen-cloister",
+      "title": "campaign.vanguard.waxen-cloister.title",
+      "tech": {
+        "new": [],
+        "blocked": []
+      },
+      "draft": true
+    },
+    {
+      "kind": "mission",
+      "id": "pilgrims-way",
+      "title": "campaign.vanguard.pilgrims-way.title",
+      "tech": {
+        "new": [],
+        "blocked": []
+      },
+      "draft": true
+    },
+    {
+      "kind": "mission",
+      "id": "ash-and-honey",
+      "title": "campaign.vanguard.ash-and-honey.title",
+      "tech": {
+        "new": [],
+        "blocked": []
+      },
+      "draft": true
+    },
+    {
+      "kind": "chapter",
+      "id": "act-3",
+      "title": "campaign.vanguard.act-3.title",
+      "draft": true
+    },
+    {
+      "kind": "mission",
+      "id": "roots-of-the-world",
+      "title": "campaign.vanguard.roots-of-the-world.title",
+      "tech": {
+        "new": [],
+        "blocked": []
+      },
+      "draft": true
+    },
+    {
+      "kind": "mission",
+      "id": "the-long-dark",
+      "title": "campaign.vanguard.the-long-dark.title",
+      "tech": {
+        "new": [],
+        "blocked": []
+      },
+      "draft": true
+    },
+    {
+      "kind": "mission",
+      "id": "the-wellspring",
+      "title": "campaign.vanguard.the-wellspring.title",
+      "tech": {
+        "new": [],
+        "blocked": []
+      },
+      "draft": true
+    },
+    {
+      "kind": "cinematic",
+      "id": "the-forest-turns",
+      "title": "campaign.vanguard.the-forest-turns.title",
+      "draft": true
     }
   ]
 }

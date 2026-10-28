@@ -100,6 +100,7 @@ Every document also has **Form** (from its schema) and **JSON** (its text) in th
 - **Tech:**
   - `set_mission_tech`: `{campaign, step, set: {"unit.x": "new" | "blocked" | "locked" | "available"}}`.
   - `mission_tech_tree`: `{campaign, step}` gives the Tech view as data.
+- **Drafts and outlines (D110):** `add_campaign_step` takes `draft: true` (a draft mission gets no map) and the kind `earlyAccess` (one line in the whole game). `campaign_outline {campaign, step}` reads a step's outline; `set_campaign_outline {campaign, step, fields}` merges fields into it (null removes): purpose, cast, threads, tension, kinds, pitch, pillars, objectives, minutes, beats, sketch, location, madeAs, shots. The user's views: Steps, Outline (one-pager, tabletop, beats, pages, shots) and Read-through.
 - **Players:** `set_mission_players` takes `{map, players}` (the mission map's id or package path) or `{campaign, step, players}`. It replaces the mission's computer players.
 - **Before a mission is done,** prove it with skill canopy-campaign (autoplay, the mission check). That needs a shell; the editor cannot run it.
 

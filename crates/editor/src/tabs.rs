@@ -176,6 +176,8 @@ pub struct Viewer<'a> {
     /// its folder); the base package's version (new mission maps depend on it).
     pub campaigns: &'a mut crate::campaign::view::Shared,
     pub campaign_maps: &'a std::collections::BTreeMap<String, Vec<String>>,
+    /// Every campaign's folder, in play order.
+    pub campaign_list: &'a [String],
     pub version: &'a str,
     /// The lab's open scenarios by document, and its viewport's size this frame.
     pub labs: &'a mut std::collections::HashMap<String, crate::lab::Session>,
@@ -408,6 +410,7 @@ impl TabViewer for Viewer<'_> {
                     index: self.index,
                     root: self.root.as_deref(),
                     maps,
+                    campaigns: self.campaign_list.to_vec(),
                     version: self.version.to_string(),
                     shared: &mut *self.campaigns,
                     edits: &mut *self.edits,

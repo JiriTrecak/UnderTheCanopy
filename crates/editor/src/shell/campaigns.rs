@@ -159,6 +159,33 @@ impl Shell {
         out
     }
 
+    /// Every campaign's folder, in the order they play (D110).
+    pub(super) fn campaign_list(&mut self) -> Vec<String> {
+        let mut roots: Vec<String> = Vec::new();
+        if let Some(workspace) = self.workspaces.get(&Kind::Campaigns) {
+            let mut elements = Vec::new();
+            workspace
+                .library
+                .nodes
+                .iter()
+                .for_each(|n| n.elements(&mut elements));
+            roots = elements.into_iter().map(|e| e.path.clone()).collect();
+        }
+        roots.sort();
+        roots.dedup();
+        let store = self.store.as_mut();
+        let mut values = std::collections::HashMap::new();
+        if let Some(store) = store {
+            for root in &roots {
+                if let Ok(Some(value)) = store.get(&campaign::document(root)) {
+                    values.insert(root.clone(), value.clone());
+                }
+            }
+        }
+        campaign::in_play_order(&mut roots, |root| values.get(root).cloned());
+        roots
+    }
+
     /// Opens the mission map at `root` in the Maps editor (its Tech view when `tech`).
     fn open_mission_map(&mut self, root: &str, tech: bool) {
         if tech {
@@ -190,6 +217,24 @@ impl Shell {
         for request in std::mem::take(&mut self.campaigns.requests) {
             match request {
                 ViewRequest::Map { root, tech } => self.open_mission_map(&root, tech),
+                ViewRequest::Show {
+                    document,
+                    step,
+                    mode,
+                } => {
+                    let state = self.campaigns.states.entry(document.clone()).or_default();
+                    state.selected = step;
+                    state.mode = mode;
+                    if let Some(here) = self.active_document() {
+                        self.back.push((self.current, here));
+                    }
+                    self.forward.clear();
+                    self.reveal(&Context {
+                        editor: Kind::Campaigns,
+                        document,
+                        pointer: None,
+                    });
+                }
                 ViewRequest::Play { document, step } => {
                     if let Err(error) = self.play_step(&document, step) {
                         self.say(error, true);
@@ -371,6 +416,13 @@ impl Shell {
                             "id": campaign::text(s, "id"),
                             "title": campaign::text(s, "title"),
                         });
+                        if campaign::is_draft(s) {
+                            out["draft"] = json!(true);
+                        }
+                        let outline = campaign::outline_document(&root, campaign::text(s, "id"));
+                        if matches!(self.store.as_mut().map(|st| st.get(&outline)), Some(Ok(Some(_)))) {
+                            out["outline"] = json!(outline);
+                        }
                         if let Some(text) = words
                             .get(campaign::text(s, "title"))
                             .and_then(Value::as_str)
@@ -413,7 +465,23 @@ impl Shell {
                 let root = self.campaign_root(&args.campaign)?;
                 let value = self.campaign_value(&root)?;
                 let kind = StepKind::parse(&args.kind)
-                    .ok_or("kind is chapter, story, mission or cinematic")?;
+                    .ok_or("kind is chapter, story, mission, cinematic or earlyAccess")?;
+                let draft = args.draft.unwrap_or(false);
+                if kind == StepKind::EarlyAccess {
+                    let roots = self.campaign_list();
+                    for other in roots {
+                        if let Ok(v) = self.campaign_value(&other)
+                            && campaign::early_access(&v).is_some()
+                        {
+                            return Err(format!(
+                                "The early access line stands in {other} already: the game has one (move it instead)"
+                            ));
+                        }
+                    }
+                    if draft {
+                        return Err("The early access line is never a draft".into());
+                    }
+                }
                 let missions = campaign::steps(&value)
                     .iter()
                     .filter(|s| StepKind::of(s) == Some(StepKind::Mission))
@@ -437,7 +505,7 @@ impl Shell {
                 let at = args.at.unwrap_or(usize::MAX);
                 let mut commands = Vec::new();
                 let mut map = args.map.clone();
-                if kind == StepKind::Mission && map.is_none() {
+                if kind == StepKind::Mission && map.is_none() && !draft {
                     let content = self
                         .checker
                         .as_ref()
@@ -468,7 +536,15 @@ impl Shell {
                     )?);
                     map = Some(map_id);
                 }
-                let step = campaign::new_step(kind, &id, &title, map.as_deref());
+                let mut step = campaign::new_step(kind, &id, &title, map.as_deref());
+                if draft {
+                    step["draft"] = json!(true);
+                    if map.is_none()
+                        && let Some(fields) = step.as_object_mut()
+                    {
+                        fields.remove("map");
+                    }
+                }
                 let document = campaign::document(&root);
                 let index = at.min(campaign::steps(&value).len());
                 commands.push(campaign::insert_step(
@@ -618,6 +694,71 @@ impl Shell {
                     .collect();
                 Ok(json!({ "halls": tiers, "nodes": nodes, "contradictions": contradictions }))
             }
+            Call::Outline(args) => {
+                let root = self.campaign_root(&args.campaign)?;
+                let value = self.campaign_value(&root)?;
+                let index = Self::step_index(&value, &args.step)?;
+                let step = &campaign::steps(&value)[index];
+                let document = campaign::outline_document(&root, campaign::text(step, "id"));
+                let outline = self
+                    .store
+                    .as_mut()
+                    .and_then(|s| s.get(&document).ok().flatten().cloned())
+                    .unwrap_or_else(|| json!({}));
+                Ok(json!({
+                    "step": index,
+                    "kind": campaign::text(step, "kind"),
+                    "id": campaign::text(step, "id"),
+                    "draft": campaign::is_draft(step),
+                    "document": document,
+                    "outline": outline,
+                }))
+            }
+            Call::SetOutline(args) => {
+                let root = self.campaign_root(&args.campaign)?;
+                let value = self.campaign_value(&root)?;
+                let index = Self::step_index(&value, &args.step)?;
+                let step = &campaign::steps(&value)[index];
+                let document = campaign::outline_document(&root, campaign::text(step, "id"));
+                let held = self
+                    .store
+                    .as_mut()
+                    .and_then(|s| s.get(&document).ok().flatten().cloned());
+                let mut merged = held.clone().unwrap_or_else(|| json!({}));
+                for (field, v) in &args.fields {
+                    match merged.as_object_mut() {
+                        Some(o) if v.is_null() => {
+                            o.remove(field);
+                        }
+                        Some(o) => {
+                            o.insert(field.clone(), v.clone());
+                        }
+                        None => return Err(format!("{document} is not an object")),
+                    }
+                }
+                let outline: canopy_content::outline::Outline =
+                    serde_json::from_value(merged.clone())
+                        .map_err(|e| format!("The outline does not read: {e}"))?;
+                let commands = if held.is_some() {
+                    vec![Command::Set {
+                        document: document.clone(),
+                        pointer: String::new(),
+                        value: merged.clone(),
+                        at: None,
+                    }]
+                } else {
+                    vec![Command::Create {
+                        document: document.clone(),
+                        value: merged.clone(),
+                    }]
+                };
+                self.run_campaign(&root, "Set outline", commands)?;
+                Ok(json!({
+                    "document": document,
+                    "outline": merged,
+                    "problems": canopy_content::outline::problems(&outline),
+                }))
+            }
             Call::Players(args) => {
                 let map = match (&args.map, &args.campaign, &args.step) {
                     (Some(map), _, _) => map.clone(),
@@ -760,6 +901,8 @@ impl Shell {
             "set_mission_tech" => Call::Tech(parse(args)?),
             "mission_tech_tree" => Call::Tree(parse(args)?),
             "set_mission_players" => Call::Players(parse(args)?),
+            "campaign_outline" => Call::Outline(parse(args)?),
+            "set_campaign_outline" => Call::SetOutline(parse(args)?),
             other => return Err(format!("no campaign tool {other}")),
         };
         self.answer_campaign(call)
@@ -772,6 +915,20 @@ impl Shell {
             .entry(document.to_string())
             .or_default()
             .selected = index;
+    }
+
+    /// Shows campaign `document` in `mode` (`steps`, `outline`, `read-through`).
+    pub fn set_campaign_mode(&mut self, document: &str, mode: &str) {
+        use crate::campaign::view::Mode;
+        self.campaigns
+            .states
+            .entry(document.to_string())
+            .or_default()
+            .mode = match mode {
+            "outline" => Mode::Outline,
+            "read-through" => Mode::ReadThrough,
+            _ => Mode::Steps,
+        };
     }
 
     /// Opens a campaign's mission map (its Tech view when `tech`), as the campaign view's

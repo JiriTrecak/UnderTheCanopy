@@ -33,6 +33,10 @@ pub struct Progress {
     /// Every step is done.
     #[serde(skip_serializing_if = "std::ops::Not::not")]
     pub complete: bool,
+    /// The step played just before the player reached the early access line (D110): when
+    /// an update moves the line on, play resumes after it, not at the line's new place.
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub before_line: Option<String>,
     /// The heroes won missions carried on, by definition.
     #[serde(skip_serializing_if = "BTreeMap::is_empty")]
     pub heroes: BTreeMap<String, CarriedHero>,
@@ -72,10 +76,22 @@ impl Progress {
         if self.complete {
             return campaign.steps.len();
         }
-        self.furthest
+        let at = self
+            .furthest
             .as_deref()
             .and_then(|id| campaign.position(id))
-            .unwrap_or(0)
+            .unwrap_or(0);
+        // Waiting at the line, which has moved on since: what came in between is next.
+        if matches!(campaign.steps.get(at), Some(Step::EarlyAccess(_)))
+            && let Some(before) = self
+                .before_line
+                .as_deref()
+                .and_then(|id| campaign.position(id))
+            && before + 1 < at
+        {
+            return before + 1;
+        }
+        at
     }
 
     /// How many steps the campaign screen shows: those done and the next one.
@@ -90,7 +106,13 @@ impl Progress {
             return;
         }
         match campaign.steps.get(index + 1) {
-            Some(step) => self.furthest = Some(step.id().to_string()),
+            Some(step) => {
+                self.before_line = matches!(step, Step::EarlyAccess(_))
+                    .then(|| campaign.steps[index].id().to_string());
+                self.furthest = Some(step.id().to_string());
+            }
+            // The line is the last step: the campaign waits there for more.
+            None if matches!(campaign.steps.get(index), Some(Step::EarlyAccess(_))) => {}
             None => {
                 self.complete = true;
                 self.furthest = campaign.steps.last().map(|s| s.id().to_string());
@@ -207,6 +229,43 @@ mod tests {
             ]
         }))
         .unwrap()
+    }
+
+    /// D110: a release ends at the early access line; the player waits there, and an
+    /// update that moves the line on resumes after what they last played.
+    #[test]
+    fn the_campaign_waits_at_the_early_access_line() {
+        let shipped: Campaign = serde_json::from_value(json!({
+            "race": "red",
+            "steps": [
+                {"kind": "mission", "id": "first", "map": "a", "title": "First"},
+                {"kind": "earlyAccess", "id": "line"}
+            ]
+        }))
+        .unwrap();
+        let mut progress = Progress::default();
+        progress.finish(&shipped, 0);
+        assert_eq!(progress.next(&shipped), 1, "the line is next");
+        progress.finish(&shipped, 1);
+        assert!(
+            !progress.complete,
+            "the end card does not complete the campaign"
+        );
+        assert_eq!(progress.next(&shipped), 1);
+        let updated: Campaign = serde_json::from_value(json!({
+            "race": "red",
+            "steps": [
+                {"kind": "mission", "id": "first", "map": "a", "title": "First"},
+                {"kind": "story", "id": "tale", "title": "Tale", "pages": [{"text": "x"}]},
+                {"kind": "mission", "id": "second", "map": "b", "title": "Second"},
+                {"kind": "earlyAccess", "id": "line"}
+            ]
+        }))
+        .unwrap();
+        assert_eq!(progress.next(&updated), 1, "the new story is next");
+        progress.finish(&updated, 1);
+        progress.finish(&updated, 2);
+        assert_eq!(progress.next(&updated), 3, "and then the line again");
     }
 
     fn hero(definition: &str, experience: u32) -> CarriedHero {
