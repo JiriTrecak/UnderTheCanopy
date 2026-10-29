@@ -16,7 +16,7 @@
     "combat": {
       "damage": 14,
       "damageType": "melee",
-      "range": 0.7,
+      "range": 0.8,
       "cooldownTicks": 40,
       "aggroRange": 20,
       "attack": {
@@ -42,10 +42,10 @@
   "level": 1,
   "supplyCost": 0,
   "dimensions": {
-    "size": "small",
-    "height": 3.0
+    "size": "medium",
+    "height": 6.0
   },
-  "modelScale": 1.6,
+  "modelScale": 3.2,
   "presentation": {
     "impactEffect": "effect.ants.kit.hit-bite",
     "voice": {
