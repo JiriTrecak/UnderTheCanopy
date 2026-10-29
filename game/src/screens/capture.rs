@@ -649,8 +649,12 @@ fn lab(rig: &mut Rig, paths: &Paths) -> Result<()> {
     settle(&mut editor, rig, 20);
     /// A scenario, the ticks run, the camera's cell, distance and pitch, the layers on.
     type LabShot<'a> = (&'a str, u32, f32, f32, f32, f32, &'a [&'a str]);
-    let shots: [LabShot; 9] = [
+    let shots: [LabShot; 12] = [
         ("look-check", 1, 62.0, 63.0, 106.0, 0.977, &[]),
+        // Every ant unit in a roster composition: both colours, then blue and red up close.
+        ("ant-roster", 1, 96.0, 64.0, 150.0, 0.977, &[]),
+        ("ant-roster", 2, 52.0, 62.0, 72.0, 0.977, &[]),
+        ("ant-roster", 3, 140.0, 62.0, 72.0, 0.977, &[]),
         (
             "look-check",
             2,

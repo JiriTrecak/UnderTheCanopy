@@ -1,0 +1,232 @@
+{
+  "name": "Ant roster, Zerg style",
+  "description": "Every ant unit in one composition, as a Zerg roster picture: the huge centrepiece, the large ones around it, then medium and small. Blue (player 1) on the left, red (player 2) on the right, to judge which units read at game zoom.",
+  "size": 192,
+  "duration": 200,
+  "units": [
+    {
+      "definition": "unit.ants.reaver-queen",
+      "owner": "player.1",
+      "x": 52.0,
+      "y": 36.0,
+      "group": "blue"
+    },
+    {
+      "definition": "unit.ants.queen",
+      "owner": "player.1",
+      "x": 34.0,
+      "y": 34.0,
+      "group": "blue"
+    },
+    {
+      "definition": "unit.ants.marshal",
+      "owner": "player.1",
+      "x": 70.0,
+      "y": 34.0,
+      "group": "blue"
+    },
+    {
+      "definition": "unit.ants.royal-alchemist",
+      "owner": "player.1",
+      "x": 26.0,
+      "y": 50.0,
+      "group": "blue"
+    },
+    {
+      "definition": "unit.ants.thornblade",
+      "owner": "player.1",
+      "x": 78.0,
+      "y": 50.0,
+      "group": "blue"
+    },
+    {
+      "definition": "unit.ants.burster",
+      "owner": "player.1",
+      "x": 41.0,
+      "y": 56.0,
+      "group": "blue"
+    },
+    {
+      "definition": "unit.ants.bombardier",
+      "owner": "player.1",
+      "x": 63.0,
+      "y": 56.0,
+      "group": "blue"
+    },
+    {
+      "definition": "unit.ants.archer",
+      "owner": "player.1",
+      "x": 37.0,
+      "y": 70.0,
+      "group": "blue"
+    },
+    {
+      "definition": "unit.ants.banneret",
+      "owner": "player.1",
+      "x": 47.0,
+      "y": 70.0,
+      "group": "blue"
+    },
+    {
+      "definition": "unit.ants.queensguard",
+      "owner": "player.1",
+      "x": 57.0,
+      "y": 70.0,
+      "group": "blue"
+    },
+    {
+      "definition": "unit.ants.winglancer",
+      "owner": "player.1",
+      "x": 67.0,
+      "y": 70.0,
+      "group": "blue"
+    },
+    {
+      "definition": "unit.ants.warrior",
+      "owner": "player.1",
+      "x": 36.0,
+      "y": 82.0,
+      "group": "blue"
+    },
+    {
+      "definition": "unit.ants.settler",
+      "owner": "player.1",
+      "x": 44.0,
+      "y": 82.0,
+      "group": "blue"
+    },
+    {
+      "definition": "unit.ants.nectarist",
+      "owner": "player.1",
+      "x": 52.0,
+      "y": 82.0,
+      "group": "blue"
+    },
+    {
+      "definition": "unit.ants.youngling",
+      "owner": "player.1",
+      "x": 60.0,
+      "y": 82.0,
+      "group": "blue"
+    },
+    {
+      "definition": "unit.ants.civilian",
+      "owner": "player.1",
+      "x": 68.0,
+      "y": 82.0,
+      "group": "blue"
+    },
+    {
+      "definition": "unit.ants.reaver-queen",
+      "owner": "player.2",
+      "x": 140.0,
+      "y": 36.0,
+      "group": "red"
+    },
+    {
+      "definition": "unit.ants.queen",
+      "owner": "player.2",
+      "x": 122.0,
+      "y": 34.0,
+      "group": "red"
+    },
+    {
+      "definition": "unit.ants.marshal",
+      "owner": "player.2",
+      "x": 158.0,
+      "y": 34.0,
+      "group": "red"
+    },
+    {
+      "definition": "unit.ants.royal-alchemist",
+      "owner": "player.2",
+      "x": 114.0,
+      "y": 50.0,
+      "group": "red"
+    },
+    {
+      "definition": "unit.ants.thornblade",
+      "owner": "player.2",
+      "x": 166.0,
+      "y": 50.0,
+      "group": "red"
+    },
+    {
+      "definition": "unit.ants.burster",
+      "owner": "player.2",
+      "x": 129.0,
+      "y": 56.0,
+      "group": "red"
+    },
+    {
+      "definition": "unit.ants.bombardier",
+      "owner": "player.2",
+      "x": 151.0,
+      "y": 56.0,
+      "group": "red"
+    },
+    {
+      "definition": "unit.ants.archer",
+      "owner": "player.2",
+      "x": 125.0,
+      "y": 70.0,
+      "group": "red"
+    },
+    {
+      "definition": "unit.ants.banneret",
+      "owner": "player.2",
+      "x": 135.0,
+      "y": 70.0,
+      "group": "red"
+    },
+    {
+      "definition": "unit.ants.queensguard",
+      "owner": "player.2",
+      "x": 145.0,
+      "y": 70.0,
+      "group": "red"
+    },
+    {
+      "definition": "unit.ants.winglancer",
+      "owner": "player.2",
+      "x": 155.0,
+      "y": 70.0,
+      "group": "red"
+    },
+    {
+      "definition": "unit.ants.warrior",
+      "owner": "player.2",
+      "x": 124.0,
+      "y": 82.0,
+      "group": "red"
+    },
+    {
+      "definition": "unit.ants.settler",
+      "owner": "player.2",
+      "x": 132.0,
+      "y": 82.0,
+      "group": "red"
+    },
+    {
+      "definition": "unit.ants.nectarist",
+      "owner": "player.2",
+      "x": 140.0,
+      "y": 82.0,
+      "group": "red"
+    },
+    {
+      "definition": "unit.ants.youngling",
+      "owner": "player.2",
+      "x": 148.0,
+      "y": 82.0,
+      "group": "red"
+    },
+    {
+      "definition": "unit.ants.civilian",
+      "owner": "player.2",
+      "x": 156.0,
+      "y": 82.0,
+      "group": "red"
+    }
+  ]
+}

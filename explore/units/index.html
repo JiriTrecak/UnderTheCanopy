@@ -1,0 +1,147 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Unit exploration</title>
+<!-- A throwaway workbench for exploring races and units (not part of the game).
+     Open this file in a browser straight from disk. Everything it shows lives in data.js:
+     edit that, never this page, to add findings, ideas, images or decisions. -->
+<style>
+  :root {
+    --bg: #18181b; --panel: #27272a; --line: #52525b; --text: #e4e4e7; --muted: #a1a1aa;
+    --accent: #d9c27a; --blue: #3d86e0; --red: #d24a4a; --ok: #6cc36c; --warn: #e0a43d;
+  }
+  * { box-sizing: border-box; }
+  body { margin: 0; background: var(--bg); color: var(--text); font: 15px/1.5 -apple-system, "Segoe UI", sans-serif; }
+  header { position: sticky; top: 0; z-index: 2; background: var(--bg); border-bottom: 1px solid var(--line); padding: 14px 24px 0; }
+  header h1 { margin: 0; font-size: 20px; font-weight: 600; }
+  header p { margin: 2px 0 10px; color: var(--muted); font-size: 13px; }
+  nav { display: flex; gap: 4px; flex-wrap: wrap; }
+  nav button { background: none; border: 0; border-bottom: 2px solid transparent; color: var(--muted); padding: 8px 12px; font: inherit; cursor: pointer; }
+  nav button.on { color: var(--text); border-color: var(--accent); }
+  main { padding: 24px; max-width: 1400px; }
+  section { display: none; } section.on { display: block; }
+  h2 { font-size: 18px; margin: 0 0 12px; } h3 { font-size: 15px; margin: 20px 0 8px; color: var(--accent); }
+  .lede { color: var(--muted); max-width: 900px; }
+  .grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(320px, 1fr)); gap: 14px; }
+  .card { background: var(--panel); border: 1px solid #3f3f46; border-radius: 6px; padding: 14px 16px; }
+  .card h4 { margin: 0 0 2px; font-size: 15px; }
+  .card .sub { color: var(--muted); font-size: 12px; margin-bottom: 8px; }
+  .card dl { margin: 0; display: grid; grid-template-columns: 92px 1fr; gap: 3px 10px; font-size: 13px; }
+  .card dt { color: var(--muted); } .card dd { margin: 0; }
+  .tag { display: inline-block; font-size: 11px; padding: 1px 7px; border-radius: 9px; border: 1px solid var(--line); color: var(--muted); margin-right: 4px; }
+  .tag.idea { border-color: var(--blue); color: #9cc3f2; } .tag.agreed { border-color: var(--ok); color: var(--ok); }
+  .tag.rejected { border-color: var(--red); color: #f19a9a; } .tag.open { border-color: var(--warn); color: var(--warn); }
+  ol.rules li { margin-bottom: 6px; } ol.rules b { color: var(--accent); }
+  table { border-collapse: collapse; width: 100%; font-size: 13px; margin-bottom: 8px; }
+  th, td { text-align: left; vertical-align: top; padding: 6px 8px; border-bottom: 1px solid #3f3f46; }
+  th { color: var(--muted); font-weight: 500; }
+  .shots { display: grid; grid-template-columns: repeat(auto-fill, minmax(420px, 1fr)); gap: 14px; }
+  figure { margin: 0; background: var(--panel); border-radius: 6px; overflow: hidden; }
+  figure img { width: 100%; display: block; cursor: zoom-in; }
+  figcaption { padding: 8px 12px; font-size: 13px; color: var(--muted); }
+  .note { border-left: 3px solid var(--accent); padding: 4px 12px; color: var(--muted); margin: 10px 0; }
+  #zoom { display: none; position: fixed; inset: 0; background: #000d; z-index: 9; cursor: zoom-out; }
+  #zoom img { max-width: 96vw; max-height: 96vh; position: absolute; inset: 0; margin: auto; }
+  .stamp { color: var(--muted); font-size: 12px; }
+</style>
+</head>
+<body>
+<header>
+  <h1>Unit exploration</h1>
+  <p id="lede"></p>
+  <nav id="tabs"></nav>
+</header>
+<main id="main"></main>
+<div id="zoom"><img alt=""></div>
+<script src="data.js"></script>
+<script>
+const D = window.EXPLORE;
+const esc = s => String(s ?? "").replace(/[&<>"]/g, c => ({"&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;"}[c]));
+const tag = s => s ? `<span class="tag ${esc(s)}">${esc(s)}</span>` : "";
+const figure = i => `<figure><img src="${esc(i.file)}" alt="${esc(i.caption)}" loading="lazy"><figcaption>${esc(i.caption)}${i.date ? ` <span class="stamp">· ${esc(i.date)}</span>` : ""}</figcaption></figure>`;
+const rows = (cols, items) => `<table><tr>${cols.map(c => `<th>${esc(c[1])}</th>`).join("")}</tr>${items.map(it => `<tr>${cols.map(c => `<td>${esc(it[c[0]])}</td>`).join("")}</tr>`).join("")}</table>`;
+
+const pages = [];
+pages.push(["standard", "Readability", () => `
+  <h2>The unit readability standard</h2>
+  <p class="lede">${esc(D.standard.why)}</p>
+  <ol class="rules">${D.standard.rules.map(r => `<li><b>${esc(r[0])}.</b> ${esc(r[1])}</li>`).join("")}</ol>
+  <h3>Settled before this exploration</h3>
+  ${D.history.map(h => `<div class="note"><span class="stamp">${esc(h.date)}</span> ${esc(h.text)}</div>`).join("")}`]);
+
+for (const race of D.races) {
+  pages.push([race.id, race.name, () => `
+    <h2>${esc(race.name)} ${tag(race.status)}</h2>
+    <div class="grid" style="margin-bottom:14px">
+      <div class="card"><dl>
+        <dt>Identity</dt><dd>${esc(race.identity)}</dd>
+        <dt>Substance</dt><dd>${esc(race.substance)}</dd>
+        <dt>Palette</dt><dd>${esc(race.palette)}</dd>
+        <dt>Body language</dt><dd>${esc(race.body)}</dd>
+      </dl></div>
+    </div>
+    ${(race.images || []).length ? `<h3>Pictures</h3><div class="shots">${race.images.map(figure).join("")}</div>` : ""}
+    <h3>Units</h3>
+    <div class="grid">${race.units.map(u => `
+      <div class="card">
+        <h4>${esc(u.name)} ${tag(u.status)}</h4>
+        <div class="sub">${esc(u.id || "new")} · ${esc(u.size || "?")}${u.hero ? " · hero" : ""}</div>
+        <dl>
+          <dt>Role</dt><dd>${esc(u.role)}</dd>
+          <dt>Today</dt><dd>${esc(u.today || "—")}</dd>
+          <dt>Signature</dt><dd>${esc(u.signature || "—")}</dd>
+          <dt>Body plan</dt><dd>${esc(u.body || "—")}</dd>
+          ${u.notes ? `<dt>Notes</dt><dd>${esc(u.notes)}</dd>` : ""}
+        </dl>
+        ${(u.images || []).map(figure).join("")}
+      </div>`).join("")}
+    </div>`]);
+}
+
+pages.push(["research", "Nature", () => `
+  <h2>Real enemies and allies</h2>
+  <p class="lede">${esc(D.research.intro)}</p>
+  ${D.research.races.map(r => `
+    <h3>${esc(r.name)}</h3>
+    ${r.groups.map(g => `<p style="margin:10px 0 4px"><b>${esc(g.title)}</b></p>${rows([["creature", "Creature"], ["fact", "What it does in nature"], ["hook", "Possible game hook"]], g.items)}`).join("")}`).join("")}
+  <h3>Between our races</h3>
+  ${rows([["between", "Between"], ["fact", "In nature"], ["hook", "Possible game hook"]], D.research.between)}`]);
+
+pages.push(["questions", "Questions", () => `
+  <h2>Open questions and decisions</h2>
+  ${D.questions.map(q => `
+    <div class="card" style="margin-bottom:14px">
+      <h4>${esc(q.title)} ${tag(q.status)}</h4>
+      <div class="sub">${esc(q.date)}</div>
+      <p style="margin:6px 0">${esc(q.text)}</p>
+      ${(q.options || []).length ? `<ul>${q.options.map(o => `<li><b>${esc(o[0])}:</b> ${esc(o[1])}</li>`).join("")}</ul>` : ""}
+      ${q.recommendation ? `<div class="note">Recommendation: ${esc(q.recommendation)}</div>` : ""}
+      ${q.answer ? `<div class="note">Answer: ${esc(q.answer)}</div>` : ""}
+    </div>`).join("")}`]);
+
+pages.push(["log", "Log", () => `
+  <h2>Exploration log</h2>
+  ${D.log.slice().reverse().map(l => `<div class="note"><span class="stamp">${esc(l.date)}</span> ${esc(l.text)}</div>`).join("")}`]);
+
+document.getElementById("lede").textContent = D.lede;
+const tabs = document.getElementById("tabs"), main = document.getElementById("main");
+for (const [id, label, render] of pages) {
+  const b = document.createElement("button"); b.textContent = label; b.dataset.id = id; tabs.append(b);
+  const s = document.createElement("section"); s.dataset.id = id; s.innerHTML = render(); main.append(s);
+}
+function show(id) {
+  if (!pages.some(p => p[0] === id)) id = pages[0][0];
+  for (const el of document.querySelectorAll("nav button, section")) el.classList.toggle("on", el.dataset.id === id);
+  history.replaceState(null, "", "#" + id);
+  scrollTo(0, 0);
+}
+tabs.addEventListener("click", e => e.target.dataset.id && show(e.target.dataset.id));
+show(location.hash.slice(1));
+const zoom = document.getElementById("zoom");
+main.addEventListener("click", e => { if (e.target.tagName === "IMG") { zoom.firstElementChild.src = e.target.src; zoom.style.display = "block"; } });
+zoom.addEventListener("click", () => zoom.style.display = "none");
+</script>
+</body>
+</html>
