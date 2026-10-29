@@ -138,6 +138,62 @@ window.EXPLORE = {
       },
       rosters: [
         {
+          "title": "Chitin, round 3 (2026-10-29)",
+          "status": "open",
+          "note": "Jiri chose grown chitin (material A). Changes: the Soldier dual-wields two long, plain broadswords with no shield (three blade options); the Hunter has no spit effect (the engine will draw it), even legs and stands in line; the Door-head keeps its shield in one hand and gets an oversized fist in the other, a shield-and-fist brawler. Worker and Queen unchanged.",
+          "groups": [
+            {
+              "units": [
+                {
+                  "name": "Option 1: plain blades",
+                  "kind": "sheet",
+                  "size": "sheet",
+                  "status": "open",
+                  "role": "Worker, Soldier, Hunter, Door-head, Queen.",
+                  "signature": "—",
+                  "notes": "Clean, long, straight broadswords: the simplest, boldest read. The Door-head's fist only slightly enlarged.",
+                  "images": [
+                    {
+                      "file": "images/ant-army-chitin-v3-1-plain.webp",
+                      "caption": "Option 1: plain blades"
+                    }
+                  ]
+                },
+                {
+                  "name": "Option 2: spined blades",
+                  "kind": "sheet",
+                  "size": "sheet",
+                  "status": "open",
+                  "role": "Worker, Soldier, Hunter, Door-head, Queen.",
+                  "signature": "—",
+                  "notes": "Serrated chitin spikes along the blades: the most aggressive and the most distinct from above. The Door-head's fist clearly oversized.",
+                  "images": [
+                    {
+                      "file": "images/ant-army-chitin-v3-2-spined.webp",
+                      "caption": "Option 2: spined blades"
+                    }
+                  ]
+                },
+                {
+                  "name": "Option 3: thorned guards",
+                  "kind": "sheet",
+                  "size": "sheet",
+                  "status": "open",
+                  "role": "Worker, Soldier, Hunter, Door-head, Queen.",
+                  "signature": "—",
+                  "notes": "Plain blades with thorns at the guards: subtle, close to option 1. The Door-head's fist clearly oversized.",
+                  "images": [
+                    {
+                      "file": "images/ant-army-chitin-v3-3-thorned.webp",
+                      "caption": "Option 3: thorned guards"
+                    }
+                  ]
+                }
+              ]
+            }
+          ]
+        },
+        {
           "title": "No metal: four grown materials (2026-10-29)",
           "status": "open",
           "note": "Jiri: metal is the beetles', ivory and bone the bees' (the holy order); the ants wear what the colony grows, gathers or secretes. The Knights round 2 sheet (variant 2) repainted with only the materials changed.",
@@ -148,7 +204,7 @@ window.EXPLORE = {
                   "name": "A. Grown chitin",
                   "kind": "materials",
                   "size": "sheet",
-                  "status": "open",
+                  "status": "agreed",
                   "role": "Their own exoskeleton thickened into armour, polished like lacquer; blue as pigmented chitin and silk.",
                   "signature": "—",
                   "notes": "The most ant-like; strong blue on top; cohesive. Recommended, with C's silk stitching as the accent.",
@@ -840,6 +896,7 @@ window.EXPLORE = {
   ],
 
   log: [
+    {date: "2026-10-29", text: "Grown chitin chosen. Round 3: the Soldier dual-wields broadswords (three blade options), the Hunter loses its spit and stands in line, the Door-head becomes a shield-and-fist brawler."},
     {date: "2026-10-29", text: "No metal for ants: four material sets painted on the Knights sheet (chitin, amber, leaf and silk, clay and fungus)."},
     {date: "2026-10-29", text: "Jiri chose the Knights take: the Queen great, the Soldier and Hunter too alike. Round 2: Soldier with mandibles, shield and greatsword; Hunter with a raised biological venom sac (no gun). The Hunter came out six-legged."},
     {date: "2026-10-29", text: "Ten takes painted on the first five ants (Worker, Soldier, Hunter, Door-head, Queen), human-like to Zerg-like (Ants: Ten takes)."},
