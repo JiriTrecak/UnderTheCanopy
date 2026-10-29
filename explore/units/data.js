@@ -30,7 +30,7 @@ window.EXPLORE = {
   races: [
     {
       id: "ants", name: "Ants", status: "open",
-      identity: "A colony of many castes under a young queen: warm, enchanted and many-handed; substance changes their bodies.",
+      identity: "Mobility, numbers and mutations (Jiri, 2026-10-29): they move through tunnels, win by many, and drink raw substance to mutate, weirder as the missions go on.",
       substance: "Taken in directly: it mutates them (Burster, Honeypot, Reaver Queen). Bio-magic: luminous, blooming, amber.",
       palette: "Sand-and-bronze chitin, ivory mandibles, royal-blue silk and plates, gold for royalty, amber; violet liquid substance.",
       body: "Regular castes are bipedal real ants, each with its real trait exaggerated until it reads from the top camera; mutants are wild, non-bipedal creatures swollen and glowing with substance, weirder as the missions go on.",
@@ -132,7 +132,7 @@ window.EXPLORE = {
         "findings": [
           "Every ground role has a real ant that does it in nature; several are near-perfect (Exploding ant as the Baneling, Door-head as the Roach, Trap-jaw as the Lurker, slave-makers as the Infestor).",
           "Air is the gap: ants barely fly, and only to mate. Air roles go to partners (non-ant species) or to mutations: an ant that grows wings from raw substance.",
-          "The Door-head sits in the Roach's role, the armoured frontline, with a twist Zerg lacks: it seals a choke."
+          "The Door-head sits in the Roach's role: the armoured frontline."
         ]
       },
       rosters: [
@@ -144,7 +144,7 @@ window.EXPLORE = {
               {name: "Leafcutter", kind: "worker", size: "small", status: "parked", role: "Worker: gathers and builds.", nature: "Atta leafcutters carry cut leaf pieces home to farm fungus; tiny minims ride on the leaf to fend off parasitic flies.", lore: "Farmers: they never eat the leaves, they feed them to the fungus garden they tend, the oldest agriculture on earth, millions of years before anyone else.", signature: "A leaf held high like a parasol, a minim riding on it: from above, a moving leaf.", replaces: "Worker"},
               {name: "Trap-jaw", kind: "light melee", size: "small", status: "parked", role: "Fast striker; leaps.", nature: "Odontomachus locks its jaws open at 180° and snaps them shut, among the fastest movements in nature; snapping against the ground launches it into the air.", lore: "Jaws so fast they fling their owner through the air; a trap-jaw is never where you last saw it.", signature: "Jaws held wide open, a flat T in front of the head.", replaces: "Raider"},
               {name: "Wood ant", kind: "ranged", size: "small", status: "parked", role: "Ranged: sprays acid.", nature: "Formica wood ants spray formic acid from the tip of the abdomen, curled forward under the body.", lore: "Carries its weapon inside its own body: an acid cannon it swings forward between its legs.", signature: "The abdomen curled forward like a cannon, a mist of acid.", replaces: "Needler"},
-              {name: "Door-head", kind: "tank", size: "medium", status: "agreed", role: "Tank; plugs a choke.", nature: "Colobopsis door-head majors have a flat, plug-shaped head that seals the nest entrance.", lore: "Born a living door: a head shaped to fit the nest's entrance. Gatekeepers for life, who know every nestmate by touch and step aside only for family.", signature: "A head like a round shield or a manhole cover.", body: "Bipedal: squat and broad under a head the size of a round tower shield, braced like one.", replaces: "Major", notes: "From the top camera the one round disc on the field; in cutscenes the disc reads as a wide hat pulled low over a small, cute face (big eyes, little mandibles): a stoic, lovable gatekeeper and a natural mascot. Ability seed: plug a gap so only your own units pass."},
+              {name: "Door-head", kind: "tank", size: "medium", status: "agreed", role: "Tank: the armoured frontline.", nature: "Colobopsis door-head majors have a flat, plug-shaped head that seals the nest entrance.", lore: "Born a living door: a head shaped to fit the nest's entrance. Gatekeepers for life, who know every nestmate by touch and step aside only for family.", signature: "A head like a round shield or a manhole cover.", body: "Bipedal: squat and broad under a head the size of a round tower shield, braced like one.", replaces: "Major", notes: "From the top camera the one round disc on the field; in cutscenes the disc reads as a wide hat pulled low over a small, cute face (big eyes, little mandibles): a stoic, lovable gatekeeper and a natural mascot."},
               {name: "Weaver", kind: "support", size: "medium", status: "parked", role: "Builder and binder: repairs, raises leaf walls, snares.", nature: "Oecophylla weaver ants pull leaves together in living chains and stitch them with silk from larvae they hold in their jaws.", lore: "They sew with their own children: the larvae are the thread, held in the jaws and squeezed for silk.", signature: "A glowing larva held like a glue gun, a silk thread.", replaces: "Gardener and Herald (roles to split)"},
               {name: "Army-ant soldier", kind: "elite melee", size: "medium", status: "parked", role: "Elite melee.", nature: "Eciton soldiers carry huge sickle-shaped mandibles; army ants link their bodies into living bridges and bivouacs.", lore: "Jaws so great it cannot feed itself, so others feed it: a pure warrior. Its kind builds bridges and camps from their own bodies.", signature: "Two great sickles curving forward; a living-bridge ability.", replaces: "Bullet Ant"},
               {name: "Alate", kind: "flyer", size: "medium", status: "parked", role: "Flying scout and harasser.", nature: "Winged males and princesses leave the nest on mating flights.", lore: "Born with wings to leave: every new colony begins with one flight.", signature: "Wings held wide.", replaces: "Alate"}
@@ -474,8 +474,7 @@ window.EXPLORE = {
       "Identity comes from one signature mechanic that reshapes both the base and the battle: blight, creep, power fields, walking buildings, the night. For the ants: drinking raw substance and mutating.",
       "Each race is deliberately bad at one or two jobs (Protoss and Undead at healing, Zerg at static defence, Orcs at dispels, Night Elves at hit points). The weakness forces a style of play.",
       "The ants' natural weakness is the air: real ants barely fly. Like Zerg's weak static defence, it can be embraced, with air answered by partner species or by mutation.",
-      "Their natural strengths, from nature: numbers and ground, real healing (nurses feeding nestmates), mobility through tunnels, and morphs.",
-      "Each race has one or two things only it can do (walking buildings, lift-off, warp-in, burrows that shoot). The Door-head sealing a choke is a first candidate for the ants."
+      "The ants' identity (agreed, 2026-10-29): mobility through tunnels, numbers, and mutations. Mutations and movement are enough to set them apart; no other special mechanic is needed."
     ]
   },
 
@@ -555,6 +554,7 @@ window.EXPLORE = {
   ],
 
   log: [
+    {date: "2026-10-29", text: "Agreed: the ants' racial identity is mobility (tunnels), numbers and mutations. No 'only they can' mechanic beyond those; the Door-head is simply a tank (no choke-sealing)."},
     {date: "2026-10-29", text: "Armies tab: Warcraft III's and StarCraft II's seven races compared role by role, what makes each itself, and what it means for the ants (air as their natural weakness)."},
     {date: "2026-10-29", text: "Proposal 1 parked: only the Door-head is kept. Cross-referenced Zerg's roles against real ants (Ants: Zerg roles against real ants): the ground roles are covered, air is the gap."},
     {date: "2026-10-29", text: "Agreed: regular castes are bipedal with their real trait exaggerated (no trade-off with readability). Every unit is built on one true fact about its real animal, now its Lore line. The Door-head is the first anchor: a round disc from above, a hat over a cute face in cutscenes."},
