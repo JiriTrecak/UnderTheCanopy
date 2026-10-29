@@ -20,6 +20,7 @@ window.EXPLORE = {
   },
 
   history: [
+    {date: "2026-10-29", text: "Materials by race (Jiri): metal is the beetles' (technology), ivory and bone the bees' (the blood and holy order), and the ants wear only what the colony grows, gathers or secretes: chitin, amber, resin, leaf, silk, clay, fungus."},
     {date: "2026-10-18", text: "Substance is the forest's magic, a glowing liquid (never crystals). Ants take it in and mutate; bees are a blood and holy order that transform through substance and ritual; beetles never take it in and use it only through technology."},
     {date: "2026-10-19", text: "The first ant concept set was rejected: every unit a plain six-legged ant, hard to tell apart. Ants should mix ant-like and humanoid bodies. Their magic is bio-magic (alive, luminous, blossoms, amber), never corruption."},
     {date: "2026-10-20", text: "Humanoid ant concepts were rejected as unreadable from above (upright, front-facing, robed figures become the same cone). Basic soldiers became ant creatures (the Raider as the ants' Zergling, the Needler Hydralisk-inspired); humanoid was kept for specialists and heroes."},
@@ -32,7 +33,7 @@ window.EXPLORE = {
       id: "ants", name: "Ants", status: "open",
       identity: "Mobility, numbers and mutations (Jiri, 2026-10-29): they move through tunnels, win by many, and drink raw substance to mutate, weirder as the missions go on.",
       substance: "Taken in directly: it mutates them (Burster, Honeypot, Reaver Queen). Bio-magic: luminous, blooming, amber.",
-      palette: "Sand-and-bronze chitin, ivory mandibles, royal-blue silk and plates, gold for royalty, amber; violet liquid substance.",
+      palette: "Sand-and-bronze chitin, ivory mandibles, royal-blue silk and plates, gold for royalty, amber; violet liquid substance. Materials: only what the colony grows, gathers or secretes (chitin, amber, resin, leaf, silk, clay, fungus); never metal.",
       body: "Regular castes are bipedal real ants, each with its real trait exaggerated until it reads from the top camera; mutants are wild, non-bipedal creatures swollen and glowing with substance, weirder as the missions go on.",
       roleMap: {
         "title": "Zerg roles against real ants",
@@ -136,6 +137,77 @@ window.EXPLORE = {
         ]
       },
       rosters: [
+        {
+          "title": "No metal: four grown materials (2026-10-29)",
+          "status": "open",
+          "note": "Jiri: metal is the beetles', ivory and bone the bees' (the holy order); the ants wear what the colony grows, gathers or secretes. The Knights round 2 sheet (variant 2) repainted with only the materials changed.",
+          "groups": [
+            {
+              "units": [
+                {
+                  "name": "A. Grown chitin",
+                  "kind": "materials",
+                  "size": "sheet",
+                  "status": "open",
+                  "role": "Their own exoskeleton thickened into armour, polished like lacquer; blue as pigmented chitin and silk.",
+                  "signature": "—",
+                  "notes": "The most ant-like; strong blue on top; cohesive. Recommended, with C's silk stitching as the accent.",
+                  "images": [
+                    {
+                      "file": "images/ant-army-material-a-chitin.webp",
+                      "caption": "A. Grown chitin"
+                    }
+                  ]
+                },
+                {
+                  "name": "B. Amber and resin",
+                  "kind": "materials",
+                  "size": "sheet",
+                  "status": "open",
+                  "role": "Translucent golden amber plates over chitin, blue silk.",
+                  "signature": "—",
+                  "notes": "Beautiful, but gold swamps the blue (weaker team colour) and the Worker's amber load stops standing out.",
+                  "images": [
+                    {
+                      "file": "images/ant-army-material-b-amber.webp",
+                      "caption": "B. Amber and resin"
+                    }
+                  ]
+                },
+                {
+                  "name": "C. Leaf and silk",
+                  "kind": "materials",
+                  "size": "sheet",
+                  "status": "open",
+                  "role": "Leaf armour stitched with white weaver silk, seed-husk shields, a thorn sword.",
+                  "signature": "—",
+                  "notes": "The most natural and charming; clearly not metal.",
+                  "images": [
+                    {
+                      "file": "images/ant-army-material-c-leaf-silk.webp",
+                      "caption": "C. Leaf and silk"
+                    }
+                  ]
+                },
+                {
+                  "name": "D. Clay and fungus",
+                  "kind": "materials",
+                  "size": "sheet",
+                  "status": "open",
+                  "role": "Fired sand-clay plates like their spire buildings, blue glaze, fungus leather.",
+                  "signature": "—",
+                  "notes": "Ties units to buildings; close to A up close.",
+                  "images": [
+                    {
+                      "file": "images/ant-army-material-d-clay-fungus.webp",
+                      "caption": "D. Clay and fungus"
+                    }
+                  ]
+                }
+              ]
+            }
+          ]
+        },
         {
           "title": "Knights, round 2 (2026-10-29)",
           "status": "open",
@@ -768,6 +840,7 @@ window.EXPLORE = {
   ],
 
   log: [
+    {date: "2026-10-29", text: "No metal for ants: four material sets painted on the Knights sheet (chitin, amber, leaf and silk, clay and fungus)."},
     {date: "2026-10-29", text: "Jiri chose the Knights take: the Queen great, the Soldier and Hunter too alike. Round 2: Soldier with mandibles, shield and greatsword; Hunter with a raised biological venom sac (no gun). The Hunter came out six-legged."},
     {date: "2026-10-29", text: "Ten takes painted on the first five ants (Worker, Soldier, Hunter, Door-head, Queen), human-like to Zerg-like (Ants: Ten takes)."},
     {date: "2026-10-29", text: "Agreed: the ants' racial identity is mobility (tunnels), numbers and mutations. No 'only they can' mechanic beyond those; the Door-head is simply a tank (no choke-sealing)."},
