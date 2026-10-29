@@ -1201,6 +1201,7 @@ window.EXPLORE = {
   ],
 
   log: [
+    {date: "2026-10-29", text: "First Tripo models: Soldier and Door-head. Multiview with the painted sides at 1,800 quads came out thin and generic; one front image at full detail, then Retopo to about 2,200 quads, keeps the concept. Workflow written into skill canopy-tripo."},
     {date: "2026-10-29", text: "Turnarounds painted for all five (front and side, no equipment); skill canopy-units written."},
     {date: "2026-10-29", text: "An in-game shot mock-up painted with the agreed five on our Underleaf ground and HUD."},
     {date: "2026-10-29", text: "The first five agreed as the baseline (round 6). Next: an in-game shot mock-up with these designs."},

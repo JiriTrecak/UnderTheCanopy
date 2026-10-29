@@ -27,37 +27,33 @@ Read **canopy-assets** (asset folders, ids, cooking) and **canopy-definitions** 
 
 Units are designed together, on a sheet of the race's units in a row (gpt-image-2.5 Sunburst through `tools/buildings/concept.sh`, references staged inside the old repository's `.asset-work/concepts/`). Iterate the sheet until Jiri agrees it; record every round in the workbench.
 
-### 2. Turnarounds for Tripo
+### 2. The Tripo reference
 
-A lineup is not a modelling reference. For each agreed unit, paint **two single-unit shots** from the agreed sheet (cut the unit out of the sheet as the reference):
-- **Front:** a bipedal unit in a **T-pose** (arms straight out to the sides, hands open and empty, legs straight, slightly apart); a creature (four or six legs) in a **neutral stance**, legs evenly spread, body level.
-- **Side:** the same unit in the same pose from its left, exactly side-on.
+A lineup is not a modelling reference. For each agreed unit, paint **one single-unit front shot** from the agreed sheet (cut the unit out of the sheet as the reference):
+- a bipedal unit in a **T-pose** (arms straight out to the sides, hands open and empty, legs straight, slightly apart); a creature (four or six legs) in a **neutral stance**, legs evenly spread, body level;
+- the whole unit centred, seen straight from the front, orthographic-looking, on plain light grey, soft even light, no ground, shadow or floor, **no equipment** in the hands or on the back, no effects, no text;
+- **the sheet's proportions**: the same head size, bulk, stance width and limb thickness as the agreed unit. Lay the shot beside the sheet before Tripo; a T-pose painting tends to come out taller and thinner, and Tripo reproduces its input faithfully.
 
-Both: the whole unit centred, the same scale and design in both, orthographic-looking (no strong perspective), a plain light grey background, soft even studio light, no ground, shadow or floor, **no equipment** in the hands or on the back, no effects, no text.
+Start the prompt with "ONE SINGLE FIGURE ONLY": without it the model often returns a whole character sheet. Keep the shots in `explore/units/images/turnarounds/` (`<unit>-front.webp`).
 
-How to get them (learned on the ants' first five, 2026-10-29):
-- Paint the **front first**, from the unit cut out of the agreed sheet. Start the prompt with "ONE SINGLE FIGURE ONLY": without it the model often returns a whole character sheet (front, back and side on one canvas), which Tripo can't use.
-- Paint the **side from the front shot** (the front as a second reference, "the exact same unit, the same T-pose, seen exactly side-on"), and say where the arms go: one points straight at the camera, the other away, hidden; otherwise the arms come out pointing forward or the design drifts.
-- Check every pair: the same design, the same pose, one figure each. Keep the set in `explore/units/images/turnarounds/` (`<unit>-front.webp`, `<unit>-side.webp`).
+**No side shots for Tripo.** Painted side views invent their own body (the ants' Soldier got a long neck and a thin torso from its side shot), and Tripo's multiview trusts them over the front. One front image at full detail keeps the design (2026-10-29).
 
 ### 3. Equipment is its own model
 
-Anything a unit holds or carries (a sword, a shield, a staff, a carried load such as the Worker's amber chunk) is a **separate Tripo model** from its own concept (the object alone, centred, light grey, front and side). It is attached in Blender to the hand or back (below), so the body rigs cleanly in its T-pose and a weapon can change without a new body.
+Anything a unit holds or carries (a sword, a shield, a staff, a carried load such as the Worker's amber chunk) is a **separate Tripo model** from its own concept (the object alone, centred, light grey, one view). It is attached in Blender to the hand or back (below), so the body rigs cleanly in its T-pose and a weapon can change without a new body.
 
 ### 4. Tripo
 
-Tripo runs in the browser, signed in to tripo3d.ai (skill canopy-buildings, step 2, for uploading images and exporting to `tools/buildings/tripo_receiver.py`).
-- **Image to 3D, multiview** with the front and side shots; the newest model, textured.
-- **Quads:** in the generate panel, Geometry & Texture → **Topology: Quad**, always.
-- **Triangle budgets** (a quad is two triangles; Tripo overshoots a quad target by about a third, so ask a little under):
+Run Tripo with skill **canopy-tripo** (Claude in Chrome, no uploads by Jiri): **Image to 3D** of the front shot, single image, **Quad**, full detail; then **Retopo** to the budget:
 
-  | Model | Triangles | Ask Tripo for about |
-  |---|---|---|
-  | Unit | 5k | 1,800 quads |
-  | Hero | 10k | 3,700 quads |
-  | Equipment and props | 5k (most far less) | what the piece needs |
+| Model | Triangles | Retopo polygon count |
+|---|---|---|
+| Unit | 5k | about 2,000 quads |
+| Hero | 10k | about 4,000 quads |
+| Equipment and props | 5k (most far less) | what the piece needs |
 
-  The polycount box can reset to 50,000 between generations: check it before every Generate. Bring a model down with Tripo's **Retopo** (quad, keeps the shape, re-bakes the texture), never by decimating in Blender, which wrecks the quads.
+Never decimate in Blender, which wrecks the quads.
+
 - **Rig and animate in Tripo:** a biped as **humanoid** (Mixamo skeleton) with its preset clips; a creature as **Other** (`Root`, `Spine_n`, `Head_n`, limbs), whose clips are made in Blender (`tools/units/ant_creature.py`, `ant_centaur.py`). Export one GLB with the skeleton and every clip. Keep raw exports in the scratchpad, never in the repository.
 
 ### 5. Blender: game-ready

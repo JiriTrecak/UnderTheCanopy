@@ -88,17 +88,13 @@ Moving parts are made separately (step 2) so they can be separate nodes.
 
 ### 2. Tripo base model and segments
 
-Tripo runs in the built-in browser pane, which is signed in to tripo3d.ai. Every model comes from Tripo, props and map pieces included: never build one from primitives. When Tripo isn't signed in, ask Jiri to sign in on the pane; don't fall back to procedural models.
+Run Tripo with skill **canopy-tripo**: Claude in Chrome on Jiri's signed-in account, uploads, settings, Retopo, segmenting, export, credits. Never ask Jiri to upload or export. Every model comes from Tripo, props and map pieces included: never build one from primitives, and don't fall back to procedural models.
 
-1. Open Tripo Studio, `https://studio.tripo3d.ai` (its front page has image to 3D; the old `www.tripo3d.ai/workspace/generate` address answers 404).
-2. **Image to 3D.** The built-in browser cannot upload local files: localhost fetch, the clipboard and file pickers are blocked. Ask Jiri once to drop the Tripo reference into the image tab and start the generation, and give its path. Copy the references to a visible folder (e.g. `target/tripo-<name>/`) first: worktrees sit under the hidden `.claude/`. Use the newest model, textured, with **quad topology** (Geometry & Texture → Topology Quad; Jiri's rule, 2026-10-27). Quads rig and deform cleanly and keep static models crisp.
-3. **Triangle budgets** (Jiri, 2026-10-27): **prop 5k, unit 5k, hero 10k, building 10k** triangles. A quad is two triangles, so Tripo's quad count is half of that, and Tripo overshoots a quad target by about a third: ask a little under. Bring a model down with Tripo's **Retopo** tool (left toolbar; Quad, a polygon count, 40 credits; it keeps the shape and re-bakes the texture), never by decimating in Blender, which wrecks the quads. Tripo's polycount box can jump back to its 50,000 maximum between generations: check it before each Generate. Chrome (Claude in Chrome's file upload) can hand local reference images to Tripo when the built-in browser can't. Units and heroes (turnarounds, equipment as separate models, rigging): skill **canopy-units**.
+1. **Image to 3D** of the Tripo reference: one image, full detail, quad topology (canopy-tripo).
+2. **Retopo** to the budget: building 10k triangles, props 5k (canopy-tripo).
+3. Units and heroes (turnarounds, equipment as separate models, rigging): skill **canopy-units**.
 4. **Segment.** On the finished model, choose the Segment tool in the left toolbar. It opens `/workspace/segmentation/<id>`. Use Balanced (8–15 parts, 40 credits), then Save.
-5. **Export** each model as GLB to the receiver:
-   - start `python3 tools/buildings/tripo_receiver.py <scratchpad>/models`, unless something already listens on 8766 (`lsof -iTCP:8766 -sTCP:LISTEN`); that receiver saves into its own folder, so look there;
-   - in the Tripo tab, set `localStorage.__lookdevExport` to the text of `tools/buildings/tripo_export.js` once;
-   - then run `eval(localStorage.__lookdevExport); await window.__exportTo('<building>-segmented.glb')`;
-   - the tab navigates to the receiver's answer; go back for the next export.
+5. **Export** each model as GLB (canopy-tripo, Export) into the scratchpad as `<race>-<building>-segmented.glb`.
 6. **Moving parts** are Tripo **text to 3D** models of the one part (for example "a brass forge hammer arm on a beam, stylised, clean, game asset"), exported the same way.
 
 Tripo's prompt box is a React textarea. Set it through the page's value setter and an `input` event, or type into it. Generate is at the bottom of the left panel.
