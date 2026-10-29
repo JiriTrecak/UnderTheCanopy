@@ -137,6 +137,167 @@ window.EXPLORE = {
       },
       rosters: [
         {
+          "title": "Ten takes on the first five (2026-10-29)",
+          "status": "open",
+          "note": "Worker, Soldier (fire ant), Hunter (wood ant, shoots up), Door-head and Queen, one sheet per take, from most human-like (1) to fully Zerg-like (10): gpt-image-2.5 Sunburst with Jiri's WC3 and SC2 references and today's ants, under the readability rules and the real-ant traits. Seen across all ten: the amber Worker and the round Door-head read everywhere; the model drifted to six legs in several takes; in the creature takes the Soldier and Hunter blur.",
+          "groups": [
+            {
+              "units": [
+                {
+                  "name": "1. Knights",
+                  "kind": "take",
+                  "size": "sheet",
+                  "status": "open",
+                  "role": "Human-like: a disciplined legion like Warcraft's Humans; plate-like chitin, tabards, shields, a sorceress-queen.",
+                  "signature": "—",
+                  "notes": "The most readable set: upright, a distinct silhouette per unit, lots of blue on top; the Door-head's tower shield reads instantly.",
+                  "images": [
+                    {
+                      "file": "images/ant-army-01-knights.webp",
+                      "caption": "Take 1: Knights"
+                    }
+                  ]
+                },
+                {
+                  "name": "2. Brutes",
+                  "kind": "take",
+                  "size": "sheet",
+                  "status": "open",
+                  "role": "Human-like and brutish like the Orcish Horde: huge shoulders, mandibles as tusks, a war-matriarch queen.",
+                  "signature": "—",
+                  "notes": "Chunky and strong; the Door-head turned into a crab-like shell; less bipedal than asked.",
+                  "images": [
+                    {
+                      "file": "images/ant-army-02-brutes.webp",
+                      "caption": "Take 2: Brutes"
+                    }
+                  ]
+                },
+                {
+                  "name": "3. Wardens",
+                  "kind": "take",
+                  "size": "sheet",
+                  "status": "open",
+                  "role": "Graceful like the Night Elves: leaf cloaks, moonlit glows, a winged priestess-queen.",
+                  "signature": "—",
+                  "notes": "The winged Queen is a standout; the Soldier and Hunter drifted to six legs.",
+                  "images": [
+                    {
+                      "file": "images/ant-army-03-wardens.webp",
+                      "caption": "Take 3: Wardens"
+                    }
+                  ]
+                },
+                {
+                  "name": "4. Tribal",
+                  "kind": "take",
+                  "size": "sheet",
+                  "status": "open",
+                  "role": "Clay-painted chitin, woven grass, leaf banners, a shamanic mother.",
+                  "signature": "—",
+                  "notes": "Warm and handmade; the Queen's headdress and the Door-head's banner read well; Soldier and Hunter crab-like.",
+                  "images": [
+                    {
+                      "file": "images/ant-army-04-tribal.webp",
+                      "caption": "Take 4: Tribal"
+                    }
+                  ]
+                },
+                {
+                  "name": "5. Samurai",
+                  "kind": "take",
+                  "size": "sheet",
+                  "status": "open",
+                  "role": "Lacquered chitin armour, tall back banners as team colour, an empress.",
+                  "signature": "—",
+                  "notes": "Tall back banners are the best team-colour idea: from above you see the banner first.",
+                  "images": [
+                    {
+                      "file": "images/ant-army-05-samurai.webp",
+                      "caption": "Take 5: Samurai"
+                    }
+                  ]
+                },
+                {
+                  "name": "6. Four-armed",
+                  "kind": "take",
+                  "size": "sheet",
+                  "status": "open",
+                  "role": "Hunched between human and insect, four arms, like heroic Nerubians.",
+                  "signature": "—",
+                  "notes": "The four-armed Queen is striking; the castes are hunched and creature-like rather than upright.",
+                  "images": [
+                    {
+                      "file": "images/ant-army-06-four-armed.webp",
+                      "caption": "Take 6: Four-armed"
+                    }
+                  ]
+                },
+                {
+                  "name": "7. Cute",
+                  "kind": "take",
+                  "size": "sheet",
+                  "status": "open",
+                  "role": "Hearthstone-style big heads and eyes, mascot-like.",
+                  "signature": "—",
+                  "notes": "Charming and round; the Door-head became turtle-like; low and six-legged.",
+                  "images": [
+                    {
+                      "file": "images/ant-army-07-cute.webp",
+                      "caption": "Take 7: Cute"
+                    }
+                  ]
+                },
+                {
+                  "name": "8. Bio-magic",
+                  "kind": "take",
+                  "size": "sheet",
+                  "status": "open",
+                  "role": "Glowing with raw liquid substance: blue-violet sacs, beautiful rather than corrupted.",
+                  "signature": "—",
+                  "notes": "The glow reads from far; the units blur into one colour; fits the mutants better than the basics.",
+                  "images": [
+                    {
+                      "file": "images/ant-army-08-bio-magic.webp",
+                      "caption": "Take 8: Bio-magic"
+                    }
+                  ]
+                },
+                {
+                  "name": "9. Half-creature",
+                  "kind": "take",
+                  "size": "sheet",
+                  "status": "open",
+                  "role": "Raised fore-bodies like a mantis or centaur, Hydralisk-adjacent.",
+                  "signature": "—",
+                  "notes": "Soldier and Hunter hard to tell apart; spidery.",
+                  "images": [
+                    {
+                      "file": "images/ant-army-09-half-creature.webp",
+                      "caption": "Take 9: Half-creature"
+                    }
+                  ]
+                },
+                {
+                  "name": "10. Zerg",
+                  "kind": "take",
+                  "size": "sheet",
+                  "status": "open",
+                  "role": "Low, six-legged organic monsters, still ants.",
+                  "signature": "—",
+                  "notes": "Menacing, but Soldier and Hunter blur: today's problem again.",
+                  "images": [
+                    {
+                      "file": "images/ant-army-10-zerg.webp",
+                      "caption": "Take 10: Zerg"
+                    }
+                  ]
+                }
+              ]
+            }
+          ]
+        },
+        {
           title: "Proposal 1: real castes, partners, wild mutations", status: "parked",
           note: "Parked (Jiri, 2026-10-29): only the Door-head is kept; the rest is set aside for now. 2026-10-29. The roster disrupted and rebuilt from real ants: regular castes you recognise, two partner species that are not ants, and mutations from drinking raw substance (a Zerg-style morph in the field: Substance and time, a vulnerable cocoon). 12 units plus 3–4 heroes, the ballpark of WC3 Undead (10 trained, 2 morphs, 4 heroes) and SC2 Zerg (11 hatched, 5 morphs).",
           groups: [
@@ -554,6 +715,7 @@ window.EXPLORE = {
   ],
 
   log: [
+    {date: "2026-10-29", text: "Ten takes painted on the first five ants (Worker, Soldier, Hunter, Door-head, Queen), human-like to Zerg-like (Ants: Ten takes)."},
     {date: "2026-10-29", text: "Agreed: the ants' racial identity is mobility (tunnels), numbers and mutations. No 'only they can' mechanic beyond those; the Door-head is simply a tank (no choke-sealing)."},
     {date: "2026-10-29", text: "Armies tab: Warcraft III's and StarCraft II's seven races compared role by role, what makes each itself, and what it means for the ants (air as their natural weakness)."},
     {date: "2026-10-29", text: "Proposal 1 parked: only the Door-head is kept. Cross-referenced Zerg's roles against real ants (Ants: Zerg roles against real ants): the ground roles are covered, air is the gap."},
