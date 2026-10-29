@@ -138,9 +138,9 @@ window.EXPLORE = {
       },
       rosters: [
         {
-          "title": "Chitin, round 4 (2026-10-29)",
+          "title": "Chitin, round 6: the chosen sheet, fixed (2026-10-29)",
           "status": "open",
-          "note": "From round 3's option 2: the Soldier holds ONE two-handed broadsword with small spikes along its back edge (not dual-wielding); the Door-head keeps its big fist and shield, and its head becomes a simple round dome rising upwards like a real door-ant's plug head. Two variants: 1 a plain dome with a thin rim (recommended), 2 taller with a small emblem.",
+          "note": "Jiri: rounds 4 and 5 went wrong; back to round 3's option 2 (the spined blades, the original dome and the big fist) with only three fixes: the Hunter's eyes normal (no evil glow), the Soldier holding one of its spiked swords with both hands, the Queen without the flame, her free hand at her side.",
           "groups": [
             {
               "units": [
@@ -149,6 +149,88 @@ window.EXPLORE = {
                   "kind": "sheet",
                   "size": "sheet",
                   "status": "open",
+                  "role": "Worker, Soldier, Hunter, Door-head, Queen.",
+                  "signature": "—",
+                  "notes": "The sword a touch larger, closer to the reference.",
+                  "images": [
+                    {
+                      "file": "images/ant-army-chitin-v6-1.webp",
+                      "caption": "Round 6, variant 1"
+                    }
+                  ]
+                },
+                {
+                  "name": "Variant 2",
+                  "kind": "sheet",
+                  "size": "sheet",
+                  "status": "open",
+                  "role": "Worker, Soldier, Hunter, Door-head, Queen.",
+                  "signature": "—",
+                  "notes": "The sword slightly smaller.",
+                  "images": [
+                    {
+                      "file": "images/ant-army-chitin-v6-2.webp",
+                      "caption": "Round 6, variant 2"
+                    }
+                  ]
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "title": "Chitin, round 5 (2026-10-29)",
+          "status": "rejected",
+          "note": "From round 4's variant 1: the greatsword about two notches shorter, and the Door-head's head turned over into a half-sphere with the flat cut face on top and the rounded side underneath, like a bowl (closer to a real door-head's flat plug). Caveat: the flat top is painted in darker shaded blue, so it can read like the inside of a bowl; a raised, lit flat disc would fix that.",
+          "groups": [
+            {
+              "units": [
+                {
+                  "name": "Variant 1",
+                  "kind": "sheet",
+                  "size": "sheet",
+                  "status": "open",
+                  "role": "Worker, Soldier, Hunter, Door-head, Queen.",
+                  "signature": "—",
+                  "notes": "The shortest sword, about forearm to knee.",
+                  "images": [
+                    {
+                      "file": "images/ant-army-chitin-v5-1.webp",
+                      "caption": "Round 5, variant 1"
+                    }
+                  ]
+                },
+                {
+                  "name": "Variant 2",
+                  "kind": "sheet",
+                  "size": "sheet",
+                  "status": "open",
+                  "role": "Worker, Soldier, Hunter, Door-head, Queen.",
+                  "signature": "—",
+                  "notes": "The sword about as tall as the Soldier.",
+                  "images": [
+                    {
+                      "file": "images/ant-army-chitin-v5-2.webp",
+                      "caption": "Round 5, variant 2"
+                    }
+                  ]
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "title": "Chitin, round 4 (2026-10-29)",
+          "status": "rejected",
+          "note": "From round 3's option 2: the Soldier holds ONE two-handed broadsword with small spikes along its back edge (not dual-wielding); the Door-head keeps its big fist and shield, and its head becomes a simple round dome rising upwards like a real door-ant's plug head. Two variants: 1 a plain dome with a thin rim (recommended), 2 taller with a small emblem.",
+          "groups": [
+            {
+              "units": [
+                {
+                  "name": "Variant 1",
+                  "kind": "sheet",
+                  "size": "sheet",
+                  "status": "agreed",
                   "role": "Worker, Soldier, Hunter, Door-head, Queen.",
                   "signature": "—",
                   "notes": "Plain round dome, thin gold rim: the minimal look.",
@@ -937,6 +1019,8 @@ window.EXPLORE = {
   ],
 
   log: [
+    {date: "2026-10-29", text: "Rounds 4 and 5 rejected. Round 6: round 3's option 2 with only three fixes (the Hunter's eyes normal, one two-handed spiked sword, the Queen without the flame)."},
+    {date: "2026-10-29", text: "Round 5: a shorter greatsword, and the Door-head's head as a half-sphere with the flat face on top."},
     {date: "2026-10-29", text: "Round 4 from option 2: one two-handed spiked broadsword for the Soldier (Jiri meant one, not dual), the big fist kept, and a simple round upward dome for the Door-head's head."},
     {date: "2026-10-29", text: "Grown chitin chosen. Round 3: the Soldier dual-wields broadswords (three blade options), the Hunter loses its spit and stands in line, the Door-head becomes a shield-and-fist brawler."},
     {date: "2026-10-29", text: "No metal for ants: four material sets painted on the Knights sheet (chitin, amber, leaf and silk, clay and fungus)."},
