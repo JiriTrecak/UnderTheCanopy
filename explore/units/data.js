@@ -138,6 +138,72 @@ window.EXPLORE = {
       },
       rosters: [
         {
+          "title": "In-game shot mock-up (2026-10-29)",
+          "status": "open",
+          "note": "The agreed five as they could look in a match: a real capture of our Underleaf look-dev map (ground, ant hall, amber crystals, HUD, camera) as the environment, the agreed sheet for the units, and Jiri's Warcraft III screenshot for the composition. Variant 2 is complete (the Queen, four Soldiers, five Spitters, two Door-heads, Workers mining); variant 1 lacks the Spitters. Caveats: units drawn about 1.5–2x our real game scale, and the ground is lusher (moss, clover, rocks) than the game renders today.",
+          "groups": [
+            {
+              "units": [
+                {
+                  "name": "Variant 2",
+                  "kind": "mock-up",
+                  "size": "shot",
+                  "status": "open",
+                  "role": "One hero, Soldiers, Spitters, two Door-heads, Workers mining.",
+                  "signature": "—",
+                  "notes": "Complete and readable: every unit type recognisable by silhouette.",
+                  "images": [
+                    {
+                      "file": "images/ant-army-ingame-2.webp",
+                      "caption": "In-game mock-up, variant 2"
+                    }
+                  ]
+                },
+                {
+                  "name": "Variant 1",
+                  "kind": "mock-up",
+                  "size": "shot",
+                  "status": "open",
+                  "role": "One hero, Soldiers, Spitters, two Door-heads, Workers mining.",
+                  "signature": "—",
+                  "notes": "Missing the Spitters.",
+                  "images": [
+                    {
+                      "file": "images/ant-army-ingame-1.webp",
+                      "caption": "In-game mock-up, variant 1"
+                    }
+                  ]
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "title": "The first five, agreed (2026-10-29)",
+          "status": "agreed",
+          "note": "Jiri: 'This is actually pretty awesome. Let's record this as something we can work with.' The baseline for the ants' Worker, Soldier, Hunter (spitter), Door-head and Queen: grown chitin, royal-blue team colour on top, gold edges; the Soldier with one spiked sword held two-handed; the Hunter's raised venom sac with a toothed mouth and normal eyes; the Door-head with a dome head, tall shield and oversized fist (a shield-and-fist brawler); the Queen with her staff and no flame.",
+          "groups": [
+            {
+              "units": [
+                {
+                  "name": "Worker, Soldier, Hunter, Door-head, Queen",
+                  "kind": "baseline",
+                  "size": "sheet",
+                  "status": "agreed",
+                  "role": "The ants' first five units: the basic tier and the hero.",
+                  "signature": "—",
+                  "images": [
+                    {
+                      "file": "images/ant-army-chosen.webp",
+                      "caption": "The agreed baseline (round 6)."
+                    }
+                  ]
+                }
+              ]
+            }
+          ]
+        },
+        {
           "title": "Chitin, round 6: the chosen sheet, fixed (2026-10-29)",
           "status": "open",
           "note": "Jiri: rounds 4 and 5 went wrong; back to round 3's option 2 (the spined blades, the original dome and the big fist) with only three fixes: the Hunter's eyes normal (no evil glow), the Soldier holding one of its spiked swords with both hands, the Queen without the flame, her free hand at her side.",
@@ -1019,6 +1085,8 @@ window.EXPLORE = {
   ],
 
   log: [
+    {date: "2026-10-29", text: "An in-game shot mock-up painted with the agreed five on our Underleaf ground and HUD."},
+    {date: "2026-10-29", text: "The first five agreed as the baseline (round 6). Next: an in-game shot mock-up with these designs."},
     {date: "2026-10-29", text: "Rounds 4 and 5 rejected. Round 6: round 3's option 2 with only three fixes (the Hunter's eyes normal, one two-handed spiked sword, the Queen without the flame)."},
     {date: "2026-10-29", text: "Round 5: a shorter greatsword, and the Door-head's head as a half-sphere with the flat face on top."},
     {date: "2026-10-29", text: "Round 4 from option 2: one two-handed spiked broadsword for the Soldier (Jiri meant one, not dual), the big fist kept, and a simple round upward dome for the Door-head's head."},
