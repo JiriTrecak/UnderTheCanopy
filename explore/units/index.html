@@ -109,6 +109,21 @@ for (const race of D.races) {
         </div>`).join("")}`).join("")}`]);
 }
 
+pages.push(["armies", "Armies", () => {
+  const A = D.armies, mark = {S: ["Strong", "agreed"], M: ["Some", "open"], W: ["Weak", "rejected"]};
+  return `
+  <h2>What every army needs</h2>
+  <p class="lede">${esc(A.intro)}</p>
+  <h3>Roles each race covers</h3>
+  <table><tr><th>Role</th>${A.races.map(r => `<th>${esc(r)}</th>`).join("")}<th>How</th></tr>
+  ${A.roles.map(r => `<tr><td><b>${esc(r.role)}</b><br><span class="stamp">${esc(r.verdict)}</span></td>${r.cover.map(c => `<td>${tag(mark[c][1]).replace(`>${mark[c][1]}<`, `>${mark[c][0]}<`)}</td>`).join("")}<td>${esc(r.how)}</td></tr>`).join("")}
+  </table>
+  <h3>What makes each race itself</h3>
+  ${rows([["race", "Race"], ["strength", "Strength"], ["weakness", "Deliberate weakness"], ["unique", "Only they can"]], A.identity)}
+  <h3>What it means for the ants</h3>
+  <ul>${A.lessons.map(l => `<li>${esc(l)}</li>`).join("")}</ul>`;
+}]);
+
 pages.push(["research", "Nature", () => `
   <h2>Real enemies and allies</h2>
   <p class="lede">${esc(D.research.intro)}</p>

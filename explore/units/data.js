@@ -216,6 +216,269 @@ window.EXPLORE = {
     }
   ],
 
+  armies: {
+    "races": [
+      "Human",
+      "Orc",
+      "Night Elf",
+      "Undead",
+      "Terran",
+      "Zerg",
+      "Protoss"
+    ],
+    "roles": [
+      {
+        "role": "Worker / economy",
+        "verdict": "every race",
+        "cover": [
+          "S",
+          "S",
+          "S",
+          "S",
+          "S",
+          "S",
+          "S"
+        ],
+        "how": "Peasant, Peon, Wisp, Acolyte and Ghoul; SCV, Drone, Probe. Each gathers in its race's own way."
+      },
+      {
+        "role": "Supply",
+        "verdict": "every race",
+        "cover": [
+          "S",
+          "S",
+          "S",
+          "S",
+          "S",
+          "S",
+          "S"
+        ],
+        "how": "Farm, Burrow (shelters peons and shoots), Moon Well (also heals), Ziggurat (also a tower); Supply Depot (lowers), Overlord (flies), Pylon (also powers)."
+      },
+      {
+        "role": "Cheap frontline",
+        "verdict": "every race",
+        "cover": [
+          "S",
+          "S",
+          "M",
+          "S",
+          "S",
+          "S",
+          "S"
+        ],
+        "how": "Footman, Grunt, Huntress, Ghoul; Marine, Zergling, Zealot. Night Elves lean on ranged."
+      },
+      {
+        "role": "Ranged damage",
+        "verdict": "every race",
+        "cover": [
+          "S",
+          "S",
+          "S",
+          "S",
+          "S",
+          "S",
+          "S"
+        ],
+        "how": "Rifleman, Troll Headhunter, Archer, Crypt Fiend; Marine, Hydralisk, Stalker."
+      },
+      {
+        "role": "Anti-air",
+        "verdict": "every race",
+        "cover": [
+          "S",
+          "M",
+          "S",
+          "S",
+          "S",
+          "S",
+          "S"
+        ],
+        "how": "Every race can shoot air, but some lean on one unit for it."
+      },
+      {
+        "role": "Siege",
+        "verdict": "every race",
+        "cover": [
+          "S",
+          "S",
+          "S",
+          "S",
+          "S",
+          "S",
+          "S"
+        ],
+        "how": "Mortar Team, Catapult, Glaive Thrower, Meat Wagon; Siege Tank, Lurker and Brood Lord, Colossus and Tempest."
+      },
+      {
+        "role": "Healing",
+        "verdict": "uneven: a weakness",
+        "cover": [
+          "S",
+          "M",
+          "M",
+          "W",
+          "S",
+          "M",
+          "W"
+        ],
+        "how": "Priest; Healing Ward; Druid of the Claw, Moon Well; Undead regenerate only on blight. Medivac; Queen's transfuse, burrow regen; Protoss only Shield Batteries."
+      },
+      {
+        "role": "Disable / control",
+        "verdict": "every race, in its own way",
+        "cover": [
+          "S",
+          "S",
+          "S",
+          "S",
+          "S",
+          "S",
+          "S"
+        ],
+        "how": "Sorceress (slow, polymorph), Shaman (purge), Dryad, Banshee (curse, possession); Ghost, Infestor and Viper, High Templar and Sentry."
+      },
+      {
+        "role": "Buffs",
+        "verdict": "uneven",
+        "cover": [
+          "M",
+          "S",
+          "M",
+          "M",
+          "W",
+          "W",
+          "M"
+        ],
+        "how": "Inner Fire; Bloodlust (Orc's signature); Roar; Unholy Frenzy. SC2 has few buffs: Stim is self-inflicted."
+      },
+      {
+        "role": "Air army",
+        "verdict": "every race",
+        "cover": [
+          "S",
+          "M",
+          "S",
+          "S",
+          "S",
+          "S",
+          "S"
+        ],
+        "how": "Gryphon and Dragonhawk; Wind Rider and Bat Rider; Hippogryph, Faerie Dragon, Chimaera; Gargoyle, Frost Wyrm. SC2: Viking, Mutalisk, Void Ray and Carrier."
+      },
+      {
+        "role": "Heavy top tier",
+        "verdict": "every race",
+        "cover": [
+          "S",
+          "S",
+          "S",
+          "S",
+          "S",
+          "S",
+          "S"
+        ],
+        "how": "Knight, Tauren, Mountain Giant, Abomination; Thor, Ultralisk, Archon or Carrier."
+      },
+      {
+        "role": "Static defence",
+        "verdict": "uneven: a weakness",
+        "cover": [
+          "S",
+          "S",
+          "M",
+          "M",
+          "S",
+          "W",
+          "M"
+        ],
+        "how": "Human towers and Call to Arms; Orc Burrows; Ancient Protectors; Ziggurats. Terran bunkers and turrets; Zerg spines (slow to place); Protoss cannons need power."
+      },
+      {
+        "role": "Mobility",
+        "verdict": "uneven: a strength",
+        "cover": [
+          "M",
+          "M",
+          "S",
+          "M",
+          "S",
+          "S",
+          "S"
+        ],
+        "how": "Night Elves: Shadowmeld, Blink. Terran: drops, lift-off. Zerg: speed, creep, Nydus. Protoss: Warp-in, Blink, Recall."
+      },
+      {
+        "role": "Detection",
+        "verdict": "every race",
+        "cover": [
+          "S",
+          "S",
+          "S",
+          "S",
+          "S",
+          "S",
+          "S"
+        ],
+        "how": "Magic Sentry, Sentry Ward, Owl and Faerie Fire, Shade; Scan and Raven, Overseer, Observer."
+      }
+    ],
+    "identity": [
+      {
+        "race": "Human",
+        "strength": "Versatile and defensive: the best casters (Priest, Sorceress), towers, Militia (workers take up arms).",
+        "weakness": "Fragile, slow units early; expensive Knights.",
+        "unique": "Militia; Call to Arms; Spell Breakers steal buffs."
+      },
+      {
+        "race": "Orc",
+        "strength": "Brute strength: the most hit points, Bloodlust, early aggression.",
+        "weakness": "Little healing; weak to dispels and kiting.",
+        "unique": "Burrows that shelter peons and shoot; Pillage (gold from buildings); Kodo devour."
+      },
+      {
+        "race": "Night Elf",
+        "strength": "Mobile and night-bound: archers, Shadowmeld at night, moon wells.",
+        "weakness": "Low hit points; slow, costly tech.",
+        "unique": "Buildings that walk and fight (Ancients); wisps; night bonuses."
+      },
+      {
+        "race": "Undead",
+        "strength": "Attrition on blight: corpses raise the dead, fast regeneration on blight.",
+        "weakness": "Heals only on blight; the base is tied to blight.",
+        "unique": "Blight (build only on it); corpses as a resource; Acolytes summon buildings."
+      },
+      {
+        "race": "Terran",
+        "strength": "Positional and flexible: siege, healing, drops, upgrades.",
+        "weakness": "Weak when caught out of position (an unsieged tank).",
+        "unique": "Buildings lift off; add-ons; the MULE; repair."
+      },
+      {
+        "race": "Zerg",
+        "strength": "The swarm: cheap units, fast remax from larva, creep, morphs.",
+        "weakness": "Lower unit quality; weak static defence; dies to splash.",
+        "unique": "Larva production; creep; morphs; burrow; flying supply."
+      },
+      {
+        "race": "Protoss",
+        "strength": "Quality: expensive, strong units, shields, devastating splash.",
+        "weakness": "Few units: every loss costs; almost no healing.",
+        "unique": "Shields; warp-in; Pylon power; Chrono Boost; workers only start buildings."
+      }
+    ],
+    "intro": "2026-10-29. Warcraft III's four races and StarCraft II's three, compared role by role: every army covers the same core jobs, but each is deliberately weak at one or two, and that weakness is part of its identity. From general knowledge of both games: check a detail on a wiki before leaning on it.",
+    "lessons": [
+      "Every army covers about a dozen jobs: worker, supply, cheap frontline, ranged damage, anti-air, siege, healing, control, air, a heavy top tier, defence and detection. The ants need an answer to each, even a weak one.",
+      "Identity comes from one signature mechanic that reshapes both the base and the battle: blight, creep, power fields, walking buildings, the night. For the ants: drinking raw substance and mutating.",
+      "Each race is deliberately bad at one or two jobs (Protoss and Undead at healing, Zerg at static defence, Orcs at dispels, Night Elves at hit points). The weakness forces a style of play.",
+      "The ants' natural weakness is the air: real ants barely fly. Like Zerg's weak static defence, it can be embraced, with air answered by partner species or by mutation.",
+      "Their natural strengths, from nature: numbers and ground, real healing (nurses feeding nestmates), mobility through tunnels, and morphs.",
+      "Each race has one or two things only it can do (walking buildings, lift-off, warp-in, burrows that shoot). The Door-head sealing a choke is a first candidate for the ants."
+    ]
+  },
+
   research: {
     intro: "Real creatures that prey on, parasitise, serve or ally with ants, beetles and bees, as seeds for units, neutral camps, abilities and story. First pass from general knowledge (2026-10-29): verify against sources before a design leans on a detail.",
     races: [
@@ -292,6 +555,7 @@ window.EXPLORE = {
   ],
 
   log: [
+    {date: "2026-10-29", text: "Armies tab: Warcraft III's and StarCraft II's seven races compared role by role, what makes each itself, and what it means for the ants (air as their natural weakness)."},
     {date: "2026-10-29", text: "Proposal 1 parked: only the Door-head is kept. Cross-referenced Zerg's roles against real ants (Ants: Zerg roles against real ants): the ground roles are covered, air is the gap."},
     {date: "2026-10-29", text: "Agreed: regular castes are bipedal with their real trait exaggerated (no trade-off with readability). Every unit is built on one true fact about its real animal, now its Lore line. The Door-head is the first anchor: a round disc from above, a hat over a cute face in cutscenes."},
     {date: "2026-10-29", text: "Ants only for now. Everything today is a tech demo and the story will be reworked, so neither constrains the roster. Jiri: regular basic units, wild mutations (weirder and weirder through the missions), the roster disrupted and drawn from real nature, with 2–3 units that are not ants. Proposal 1 written (Ants tab)."},
