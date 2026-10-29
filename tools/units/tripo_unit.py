@@ -17,8 +17,12 @@ spec.json: {"glb": path, "name": "beetles-bolter", "title": "Bolter", "height": 
   "clips": {"idle": "idle", "walk": "walk", "attack": "shoot", ...}  (semantic -> Tripo clip),
   "attackEvent": {"name": "hit" | "release", "share": 0.55}, "healthHeight": 2.3,
   "tags": [...], "loops": ["idle", "walk", "run", ...],
-  "keepViolet": true  (the ants' violet substance stays out of the team mask; royal blue only)}"""
-import json, os, sys
+  "keepViolet": true  (the ants' violet substance stays out of the team mask; royal blue only),
+  "pin": ["cast"]  (clips that step about in place lose all horizontal root motion),
+  "equipment": [{"glb": path, "name": "sword", "bone": "RightHand", "socket": "socket_hand_r",
+                 "length": 0.8, "grip": 0.13, "tilt": [30, 0], "offset": [0, -0.05, 0]}]
+    (rigid Tripo models held in a hand; see attach())}"""
+import json, math, os, sys
 
 import bpy
 import mathutils
@@ -65,6 +69,74 @@ for o in top:
     o.scale = o.scale * s
 bpy.context.view_layer.update()
 print('height', round((hi.z - lo.z) * s, 2), 'scale', round(s, 4))
+
+
+# --- Equipment: rigid Tripo models held in a hand, each a mesh under its hand bone.
+def attach(item):
+    """Imports `item['glb']` (an upright object facing -Y, as Tripo exports it), scales it to
+    `length` metres along its long axis and places it in the idle pose: its grip (`grip`, a
+    share of its height from the bottom) at the palm of `bone`, its up axis turned by `tilt`
+    degrees about X (forward) and Z (outward), then parented to the bone with a socket there."""
+    before = set(scene.objects)
+    bpy.ops.import_scene.gltf(filepath=item['glb'])
+    new = [o for o in scene.objects if o not in before]
+    parts = [o for o in new if o.type == 'MESH']
+    for o in parts:
+        o.matrix_world = o.matrix_world.copy()
+        o.parent = None
+    for o in new:
+        if o not in parts:
+            bpy.data.objects.remove(o, do_unlink=True)
+    bpy.ops.object.select_all(action='DESELECT')
+    for o in parts:
+        o.select_set(True)
+    bpy.context.view_layer.objects.active = parts[0]
+    if len(parts) > 1:
+        bpy.ops.object.join()
+    obj = bpy.context.view_layer.objects.active
+    bpy.ops.object.transform_apply(location=True, rotation=True, scale=True)
+    obj.name = item['name']
+    vs = [v.co for v in obj.data.vertices]
+    lo_ = mathutils.Vector([min(v[i] for v in vs) for i in range(3)])
+    hi_ = mathutils.Vector([max(v[i] for v in vs) for i in range(3)])
+    grip = mathutils.Vector(((lo_.x + hi_.x) / 2, (lo_.y + hi_.y) / 2, lo_.z + (hi_.z - lo_.z) * item.get('grip', 0.5)))
+    k = item['length'] / (hi_.z - lo_.z)
+    for v in obj.data.vertices:
+        v.co = (v.co - grip) * k
+    bones = [b.name for b in rig.pose.bones]
+    bone = next(n for n in bones if n.lower().endswith(item['bone'].lower()))
+    fingers = next((n for n in bones if n.lower().endswith(item['bone'].lower() + 'middle1')), None)
+    idle = next((a for a in bpy.data.actions if SPEC['clips'].get('idle', 'idle') in a.name), None)
+    rig.animation_data.action = idle
+    scene.frame_set(int(idle.frame_range[0]) if idle else 0)
+    bpy.context.view_layer.update()
+    pb = rig.pose.bones[bone]
+    palm = rig.matrix_world @ pb.head
+    if fingers:
+        palm = (palm + rig.matrix_world @ rig.pose.bones[fingers].head) / 2
+    palm += mathutils.Vector(item.get('offset', (0, 0, 0)))
+    tilt = item.get('tilt', (0, 0))
+    turn = mathutils.Euler((math.radians(-tilt[0]), 0, math.radians(tilt[1])), 'XYZ').to_matrix().to_4x4()
+    obj.matrix_world = mathutils.Matrix.Translation(palm) @ turn
+    world = obj.matrix_world.copy()
+    obj.parent = rig
+    obj.parent_type = 'BONE'
+    obj.parent_bone = bone
+    obj.matrix_world = world
+    sock = bpy.data.objects.new(item['socket'], None)
+    scene.collection.objects.link(sock)
+    sock.parent = rig
+    sock.parent_type = 'BONE'
+    sock.parent_bone = bone
+    sock.matrix_world = world
+    rig.animation_data.action = None
+    scene.frame_set(0)
+    print('equipment', obj.name, 'on', bone, len(obj.data.polygons), 'faces')
+    return obj
+
+
+equipment = [attach(item) for item in SPEC.get('equipment', [])]
+meshes += equipment
 
 
 # --- Team colour: the royal-blue plates into each material's base-colour alpha.
@@ -212,7 +284,7 @@ for semantic, act in keep.items():
     animations.append({'semantic': semantic, 'clip': semantic, 'loop': semantic in LOOPS, 'events': events})
 
 # Tripo's presets carry root motion; the game moves the unit, so every clip plays in place.
-in_place(rig)
+in_place(rig, pinned=SPEC.get('pin', ()))
 
 faces = sum(len(o.data.polygons) for o in meshes)
 print('faces', faces)

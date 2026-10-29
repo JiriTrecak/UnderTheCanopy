@@ -35,8 +35,8 @@ Learned on the ants' Soldier and Door-head (2026-10-29), whose first takes Jiri 
 
 Triangle budgets (Jiri, 2026-10-27): **unit 5k, hero 10k, building 10k, equipment and props 5k** (most far less). A quad is two triangles.
 1. Open the full-detail model, then **Retopo** in the left toolbar (`/workspace/retopology/<id>`).
-2. Quad, Smart Mesh on, Polygon Count (500–10,000) about **2,000 for a unit** (it came out at 2,239 quads, 4.5k triangles), **4,000 for a hero or building**, less for small pieces. Retopology costs 40.
-3. The result is a new asset in the list (dated thumbnail, top left); the viewport's top right shows Topology, Faces (quads) and Vertices. Check the faces against the budget and the shape against the full-detail model.
+2. Quad, Smart Mesh on, Polygon Count (500–10,000; it resets to 10,000, so set it every time) about **2,000 for a unit** (it came out at 2,239 quads, 4.5k triangles), **4,000 for a hero or building**, less for small pieces. Retopology costs 40.
+3. The result replaces the model in its asset tile (and is selected); the viewport's top right shows Topology, Faces (quads) and Vertices. Equipment: about 600 for a sword, 500 for a shield. Check the faces against the budget and the shape against the full-detail model.
 
 Never decimate in Blender: it wrecks the quads.
 
@@ -44,13 +44,16 @@ Never decimate in Blender: it wrecks the quads.
 
 On the finished model, **Segment** in the left toolbar (`/workspace/segmentation/<id>`): Balanced (8–15 parts, 40 credits), then Save. Units don't need it.
 
-## Rig
+## Rig and animate (units)
 
-Units: **Rig** in the left toolbar; a biped as humanoid (Mixamo skeleton) with preset clips, a creature as Other. Rig the retopologised model, not the full-detail one. Details in skill canopy-units.
+Rig the retopologised model, not the full-detail one.
+1. **Rig** in the left toolbar (`/workspace/rigging/<id>`): Humanoid with the Mixamo skeleton for a biped (a creature: Other), **Auto Rig** (20 credits, about 20 seconds). The skeleton shows over the model when it's done.
+2. **Animate** (the toolbar entry below Rig, `/workspace/animate/<id>`), tab Preset. For each clip: click the search box, type the preset's name, click its card (it plays and gets a tick). Wait about 6 seconds between cards. A humanoid unit takes `idle`, `walk`, `run`, its attack (`slash` for a blade, `box_01` for a punch or shield bash, `shoot` for a ranged unit), `hit_to_body_01`, `fall` (death) and `cast_a_spell`. The search for `run` also finds `run_upstairs`: `run` is the second card. The clock icon beside the search lists the picked presets.
+3. Export (below) with **Number of Animations** opened and **Select All** ticked (it starts at 0, which exports a bare skeleton). Leave "Animation stay in Place" off: `tools/units/tripo_unit.py` takes the root motion out itself. The GLB's clips are named `<preset>.001`.
 
 ## Export
 
-1. Select the model in the asset list, then **Export** at the bottom of the viewport.
+1. Select the model in the asset list, then **Export** at the bottom of the viewport (`find` "Export button in bottom toolbar" gives its ref; its position moves between pages).
 2. In the dialog: Format **GLB** (it remembers the last format; FBX is the default the first time), texture 2K, then the yellow **Export**.
 3. Chrome downloads it to `~/Downloads` under Tripo's own title ("fantasy armored demon 3d model.glb"; typing a file name into the dialog doesn't stick). Wait for the newest `*.glb` there, then move it straight into the scratchpad under your own name:
    ```bash

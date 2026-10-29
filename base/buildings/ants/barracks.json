@@ -44,7 +44,9 @@
         "unit.ants.warrior",
         "unit.ants.archer",
         "unit.ants.burster",
-        "unit.ants.queensguard"
+        "unit.ants.queensguard",
+        "unit.ants.soldier",
+        "unit.ants.doorhead"
       ],
       "workerSlots": 0,
       "queueCapacity": 6

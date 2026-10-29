@@ -60,7 +60,11 @@ Never decimate in Blender, which wrecks the quads.
 
 `tools/units/tripo_unit.py <spec.json>` makes a rigged Tripo character game-ready: scale to its height with its feet on the ground, facing −Y; the royal-blue plates become the team mask (base colour alpha); Tripo's clips renamed to the game's semantics with the attack contact event; clips in place (`tripo_in_place.py`); idle added where missing (`humanoid_idle.py`); scene poses (`scene_poses.py`); seams closed (`loop_clips.py`). It writes `base/assets/units/<race>-<unit>/` (`geometry.glb`, `source.blend`, `asset.json`).
 
-**Equipment** is imported as its own mesh, scaled, and parented to the hand bone (or the spine for a carried load) with its grip at the hand: a rigid node, not skinned. Name the attach points as sockets (`socket_hand_r`, `socket_back`) so effects and swaps can find them. Give a group two or three variants of its move cycle so it never marches in lockstep.
+**Equipment** goes in the same spec: `"equipment": [{"glb", "name", "bone": "RightHand", "socket": "socket_hand_r", "length": 0.8, "grip": 0.13, "tilt": [30, 0], "offset": [0, -0.05, 0]}]`. `tripo_unit.py` imports each piece, scales it to `length` (metres on a unit 1 m tall), puts its grip (a share of its height from the bottom) in the palm in the idle pose, tilts it (degrees forward, then outward), and parents it to the hand bone as a rigid node with a socket node on the same spot; the cook draws rigid nodes under bones in animated models. Its blue is team colour like the body's. Render the clips before cooking to check the grip in idle, walk and attack. Give a group two or three variants of its move cycle so it never marches in lockstep.
+
+Clips that step about in place (Tripo's `cast_a_spell`, some hits and attacks) make the cook refuse the model ("carries the model across the ground"): list them in the spec's `"pin"`, which takes all their horizontal root motion out. Spec for a unit: `"height": 1.0`, `"displayScale": 2`, `"race": "ants"`; the definition's `modelScale` sets the size (about 1.6 for infantry, 2.0 for a tank).
+
+**Trying a unit before it is designed into the race:** add it as a test unit of the race's barracks: 1 Amber, `workTicks` 40, `supplyCost` 0, a stand-in portrait, text saying it is a test, in the race's `roster` and the barracks' `outputs`. Remove it, or give it real numbers and an icon, once Jiri has played it.
 
 ### 6. Check
 
