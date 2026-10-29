@@ -22,6 +22,7 @@ window.EXPLORE = {
     {date: "2026-10-18", text: "Substance is the forest's magic, a glowing liquid (never crystals). Ants take it in and mutate; bees are a blood and holy order that transform through substance and ritual; beetles never take it in and use it only through technology."},
     {date: "2026-10-19", text: "The first ant concept set was rejected: every unit a plain six-legged ant, hard to tell apart. Ants should mix ant-like and humanoid bodies. Their magic is bio-magic (alive, luminous, blossoms, amber), never corruption."},
     {date: "2026-10-20", text: "Humanoid ant concepts were rejected as unreadable from above (upright, front-facing, robed figures become the same cone). Basic soldiers became ant creatures (the Raider as the ants' Zergling, the Needler Hydralisk-inspired); humanoid was kept for specialists and heroes."},
+    {date: "2026-10-29", text: "The current units and story are a tech demo; the story will be completely reworked. Ants drink raw substance and mutate: the race's defining trait."},
     {date: "2026-10-29", text: "The roster lineup in the Combat Lab (Ants: Pictures) shows the problem: shared body plans, little or no team colour on several units, and a centrepiece barely bigger than the heroes. Jiri: redesign every unit, readable on its own, with something unique that explains its role."}
   ],
 
@@ -31,7 +32,34 @@ window.EXPLORE = {
       identity: "A colony of many castes under a young queen: warm, enchanted and many-handed; substance changes their bodies.",
       substance: "Taken in directly: it mutates them (Burster, Honeypot, Reaver Queen). Bio-magic: luminous, blooming, amber.",
       palette: "Sand-and-bronze chitin, ivory mandibles, royal-blue silk and plates, gold for royalty, amber; violet liquid substance.",
-      body: "Open (see Questions): ant creatures, bipedal ants, or a mix by caste.",
+      body: "Regular castes are grounded, recognisable real ants (upright or ant-like: see Questions); mutants go wild, swollen creatures glowing with substance, weirder as the missions go on.",
+      rosters: [
+        {
+          title: "Proposal 1: real castes, partners, wild mutations", status: "idea",
+          note: "2026-10-29. The roster disrupted and rebuilt from real ants: regular castes you recognise, two partner species that are not ants, and mutations from drinking raw substance (a Zerg-style morph in the field: Substance and time, a vulnerable cocoon). 12 units plus 3–4 heroes, the ballpark of WC3 Undead (10 trained, 2 morphs, 4 heroes) and SC2 Zerg (11 hatched, 5 morphs).",
+          groups: [
+            {title: "Regular castes", note: "grounded, readable, each a real ant with one iconic trait", units: [
+              {name: "Leafcutter", kind: "worker", size: "small", status: "idea", role: "Worker: gathers and builds.", nature: "Atta leafcutters carry cut leaf pieces home to farm fungus; tiny minims ride on the leaf to fend off parasitic flies.", signature: "A leaf held high like a parasol, a minim riding on it: from above, a moving leaf.", replaces: "Worker"},
+              {name: "Trap-jaw", kind: "light melee", size: "small", status: "idea", role: "Fast striker; leaps.", nature: "Odontomachus locks its jaws open at 180° and snaps them shut, among the fastest movements in nature; snapping against the ground launches it into the air.", signature: "Jaws held wide open, a flat T in front of the head.", replaces: "Raider"},
+              {name: "Wood ant", kind: "ranged", size: "small", status: "idea", role: "Ranged: sprays acid.", nature: "Formica wood ants spray formic acid from the tip of the abdomen, curled forward under the body.", signature: "The abdomen curled forward like a cannon, a mist of acid.", replaces: "Needler"},
+              {name: "Door-head", kind: "tank", size: "medium", status: "idea", role: "Tank; plugs a choke.", nature: "Colobopsis door-head majors have a flat, plug-shaped head that seals the nest entrance.", signature: "A head like a round shield or a manhole cover.", replaces: "Major"},
+              {name: "Weaver", kind: "support", size: "medium", status: "idea", role: "Builder and binder: repairs, raises leaf walls, snares.", nature: "Oecophylla weaver ants pull leaves together in living chains and stitch them with silk from larvae they hold in their jaws.", signature: "A glowing larva held like a glue gun, a silk thread.", replaces: "Gardener and Herald (roles to split)"},
+              {name: "Army-ant soldier", kind: "elite melee", size: "medium", status: "idea", role: "Elite melee.", nature: "Eciton soldiers carry huge sickle-shaped mandibles; army ants link their bodies into living bridges and bivouacs.", signature: "Two great sickles curving forward; a living-bridge ability.", replaces: "Bullet Ant"},
+              {name: "Alate", kind: "flyer", size: "medium", status: "idea", role: "Flying scout and harasser.", nature: "Winged males and princesses leave the nest on mating flights.", signature: "Wings held wide.", replaces: "Alate"}
+            ]},
+            {title: "Partners", note: "not ants; a player knows them on sight", units: [
+              {name: "Aphid herd", kind: "livestock", size: "small", status: "idea", role: "Healer or income: slow, defenceless, escorted.", nature: "Ants guard aphids and 'milk' them for honeydew, even carry them to better plants.", signature: "Round, soft and green, in a cluster."},
+              {name: "Blue caterpillar", kind: "beast", size: "large", status: "idea", role: "Heavy unit or siege, guarded by ants (perhaps ridden).", nature: "Some blue-butterfly caterpillars are tended and guarded by ants for their sweet secretions.", signature: "A long, segmented soft body with ants on its back."}
+            ]},
+            {title: "Mutations", note: "drunk raw substance: swollen creatures glowing violet, weirder as the missions go on", units: [
+              {name: "Replete", kind: "artillery", size: "large", status: "idea", from: "Leafcutter", role: "Lobs glowing globs over long range.", nature: "Honeypot ants (Myrmecocystus) are workers swollen into living food stores, hanging from the nest ceiling.", signature: "A huge glowing abdomen with a little ant in front.", replaces: "Honeypot"},
+              {name: "Exploder", kind: "bomb", size: "medium", status: "idea", from: "Trap-jaw", role: "Runs in and bursts for heavy splash.", nature: "Exploding ants (Colobopsis explodens) rupture their own bodies to spray a sticky toxic glue on attackers.", signature: "A swollen, sloshing, glowing body.", replaces: "Burster"},
+              {name: "Colossus", kind: "centrepiece", size: "huge", status: "idea", from: "Door-head", role: "The army's giant.", signature: "Two to three times a hero; the door-head grown monstrous.", replaces: "Reaver Queen"},
+              {name: "Later, in missions", kind: "progression", size: "?", status: "idea", role: "Weirder mutations found mission by mission: fused swarms, many-headed things, a walking nest.", signature: "Each wilder than the last."}
+            ]}
+          ]
+        }
+      ],
       images: [
         {file: "images/ants-today-1.webp", caption: "Today: blue (player 1) and red (player 2), every ant unit, Combat Lab.", date: "2026-10-29"},
         {file: "images/ants-today-2.webp", caption: "Today, blue up close: Queen, Reaver Queen, General; Royal Alchemist, Burster, Honeypot, Bullet Ant; Needler, Herald, Major, Alate; Raider, Worker, Gardener, Youngling, Villager.", date: "2026-10-29"},
@@ -161,6 +189,7 @@ window.EXPLORE = {
   ],
 
   log: [
+    {date: "2026-10-29", text: "Ants only for now. Everything today is a tech demo and the story will be reworked, so neither constrains the roster. Jiri: regular basic units, wild mutations (weirder and weirder through the missions), the roster disrupted and drawn from real nature, with 2–3 units that are not ants. Proposal 1 written (Ants tab)."},
     {date: "2026-10-29", text: "Workbench started: readability standard, both races' units, a bee placeholder, a first pass of real enemies and allies, the bipedal question; the ant roster lineup from the Combat Lab (labs/ant-roster.lab.json)."}
   ]
 };

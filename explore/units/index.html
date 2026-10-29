@@ -83,21 +83,28 @@ for (const race of D.races) {
       </dl></div>
     </div>
     ${(race.images || []).length ? `<h3>Pictures</h3><div class="shots">${race.images.map(figure).join("")}</div>` : ""}
-    <h3>Units</h3>
-    <div class="grid">${race.units.map(u => `
-      <div class="card">
-        <h4>${esc(u.name)} ${tag(u.status)}</h4>
-        <div class="sub">${esc(u.id || "new")} · ${esc(u.size || "?")}${u.hero ? " · hero" : ""}</div>
-        <dl>
-          <dt>Role</dt><dd>${esc(u.role)}</dd>
-          <dt>Today</dt><dd>${esc(u.today || "—")}</dd>
-          <dt>Signature</dt><dd>${esc(u.signature || "—")}</dd>
-          <dt>Body plan</dt><dd>${esc(u.body || "—")}</dd>
-          ${u.notes ? `<dt>Notes</dt><dd>${esc(u.notes)}</dd>` : ""}
-        </dl>
-        ${(u.images || []).map(figure).join("")}
-      </div>`).join("")}
-    </div>`]);
+    ${[...(race.rosters || []), ...(race.units.length ? [{title: "Today (tech demo)", units: race.units}] : [])].map(roster => `
+      <h3>${esc(roster.title)} ${tag(roster.status)}</h3>
+      ${roster.note ? `<p class="lede" style="margin-top:0">${esc(roster.note)}</p>` : ""}
+      ${(roster.groups || [{units: roster.units}]).map(g => `
+        ${g.title ? `<p style="margin:14px 0 6px"><b>${esc(g.title)}</b>${g.note ? ` <span class="stamp">${esc(g.note)}</span>` : ""}</p>` : ""}
+        <div class="grid">${g.units.map(u => `
+          <div class="card">
+            <h4>${esc(u.name)} ${tag(u.status)}</h4>
+            <div class="sub">${esc(u.id || u.kind || "new")} · ${esc(u.size || "?")}${u.hero ? " · hero" : ""}</div>
+            <dl>
+              <dt>Role</dt><dd>${esc(u.role)}</dd>
+              ${u.from ? `<dt>Mutates from</dt><dd>${esc(u.from)}</dd>` : ""}
+              ${u.nature ? `<dt>In nature</dt><dd>${esc(u.nature)}</dd>` : ""}
+              ${u.today ? `<dt>Today</dt><dd>${esc(u.today)}</dd>` : ""}
+              <dt>Signature</dt><dd>${esc(u.signature || "—")}</dd>
+              ${u.body ? `<dt>Body plan</dt><dd>${esc(u.body)}</dd>` : ""}
+              ${u.replaces ? `<dt>Replaces</dt><dd>${esc(u.replaces)}</dd>` : ""}
+              ${u.notes ? `<dt>Notes</dt><dd>${esc(u.notes)}</dd>` : ""}
+            </dl>
+            ${(u.images || []).map(figure).join("")}
+          </div>`).join("")}
+        </div>`).join("")}`).join("")}`]);
 }
 
 pages.push(["research", "Nature", () => `
