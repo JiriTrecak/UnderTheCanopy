@@ -20,6 +20,7 @@ window.EXPLORE = {
   },
 
   history: [
+    {date: "2026-10-29", text: "Model pipeline rules (Jiri): every model in quads from Tripo; anything a unit holds or carries is a separate model attached in Blender; units are generated in a T-pose (creatures in a neutral stance) from a front and a side shot. Written into skill canopy-units."},
     {date: "2026-10-29", text: "Materials by race (Jiri): metal is the beetles' (technology), ivory and bone the bees' (the blood and holy order), and the ants wear only what the colony grows, gathers or secretes: chitin, amber, resin, leaf, silk, clay, fungus."},
     {date: "2026-10-18", text: "Substance is the forest's magic, a glowing liquid (never crystals). Ants take it in and mutate; bees are a blood and holy order that transform through substance and ritual; beetles never take it in and use it only through technology."},
     {date: "2026-10-19", text: "The first ant concept set was rejected: every unit a plain six-legged ant, hard to tell apart. Ants should mix ant-like and humanoid bodies. Their magic is bio-magic (alive, luminous, blossoms, amber), never corruption."},
@@ -137,6 +138,121 @@ window.EXPLORE = {
         ]
       },
       rosters: [
+        {
+          "title": "Turnarounds for Tripo (2026-10-29)",
+          "status": "open",
+          "note": "From the agreed sheet, each unit painted alone for image-to-3D: a front view (bipeds in a T-pose, the Hunter in a neutral stance) and a side view, on light grey, without equipment (the sword, shields, staff and amber load become separate models). Six first attempts came back as multi-view sheets and three sides drifted, so the sides were repainted from their front shots. The Queen's and Hunter's sides lean a little towards three-quarter.",
+          "groups": [
+            {
+              "units": [
+                {
+                  "name": "All ten",
+                  "kind": "turnarounds",
+                  "size": "sheet",
+                  "status": "open",
+                  "role": "Fronts above, sides below.",
+                  "signature": "—",
+                  "images": [
+                    {
+                      "file": "images/turnarounds/all.webp",
+                      "caption": "Worker, Soldier, Hunter, Door-head, Queen: front (top) and side (bottom)."
+                    }
+                  ]
+                },
+                {
+                  "name": "Worker",
+                  "kind": "turnaround",
+                  "size": "pair",
+                  "status": "open",
+                  "role": "Front and side for Tripo.",
+                  "signature": "—",
+                  "images": [
+                    {
+                      "file": "images/turnarounds/worker-front.webp",
+                      "caption": "Worker, front"
+                    },
+                    {
+                      "file": "images/turnarounds/worker-side.webp",
+                      "caption": "Worker, side"
+                    }
+                  ]
+                },
+                {
+                  "name": "Soldier",
+                  "kind": "turnaround",
+                  "size": "pair",
+                  "status": "open",
+                  "role": "Front and side for Tripo.",
+                  "signature": "—",
+                  "images": [
+                    {
+                      "file": "images/turnarounds/soldier-front.webp",
+                      "caption": "Soldier, front"
+                    },
+                    {
+                      "file": "images/turnarounds/soldier-side.webp",
+                      "caption": "Soldier, side"
+                    }
+                  ]
+                },
+                {
+                  "name": "Hunter",
+                  "kind": "turnaround",
+                  "size": "pair",
+                  "status": "open",
+                  "role": "Front and side for Tripo.",
+                  "signature": "—",
+                  "images": [
+                    {
+                      "file": "images/turnarounds/hunter-front.webp",
+                      "caption": "Hunter, front"
+                    },
+                    {
+                      "file": "images/turnarounds/hunter-side.webp",
+                      "caption": "Hunter, side"
+                    }
+                  ]
+                },
+                {
+                  "name": "Door-head",
+                  "kind": "turnaround",
+                  "size": "pair",
+                  "status": "open",
+                  "role": "Front and side for Tripo.",
+                  "signature": "—",
+                  "images": [
+                    {
+                      "file": "images/turnarounds/doorhead-front.webp",
+                      "caption": "Door-head, front"
+                    },
+                    {
+                      "file": "images/turnarounds/doorhead-side.webp",
+                      "caption": "Door-head, side"
+                    }
+                  ]
+                },
+                {
+                  "name": "Queen",
+                  "kind": "turnaround",
+                  "size": "pair",
+                  "status": "open",
+                  "role": "Front and side for Tripo.",
+                  "signature": "—",
+                  "images": [
+                    {
+                      "file": "images/turnarounds/queen-front.webp",
+                      "caption": "Queen, front"
+                    },
+                    {
+                      "file": "images/turnarounds/queen-side.webp",
+                      "caption": "Queen, side"
+                    }
+                  ]
+                }
+              ]
+            }
+          ]
+        },
         {
           "title": "In-game shot mock-up (2026-10-29)",
           "status": "open",
@@ -1085,6 +1201,7 @@ window.EXPLORE = {
   ],
 
   log: [
+    {date: "2026-10-29", text: "Turnarounds painted for all five (front and side, no equipment); skill canopy-units written."},
     {date: "2026-10-29", text: "An in-game shot mock-up painted with the agreed five on our Underleaf ground and HUD."},
     {date: "2026-10-29", text: "The first five agreed as the baseline (round 6). Next: an in-game shot mock-up with these designs."},
     {date: "2026-10-29", text: "Rounds 4 and 5 rejected. Round 6: round 3's option 2 with only three fixes (the Hunter's eyes normal, one two-handed spiked sword, the Queen without the flame)."},
