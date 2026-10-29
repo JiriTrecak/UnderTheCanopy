@@ -137,6 +137,59 @@ window.EXPLORE = {
       },
       rosters: [
         {
+          "title": "Knights, round 2 (2026-10-29)",
+          "status": "open",
+          "note": "Jiri chose take 1 (Knights): the Queen is great; the Soldier and Hunter were nearly the same, with no defining traits. Kept the Worker, Door-head and Queen; the Soldier keeps its mandibles and shield and takes a greatsword; the Hunter follows Jiri's sac silhouette (a big round toothed venom sac carried high over a small body) in knight armour, biological, spitting acid, no gun. Three variants. The Hunter came out six-legged (the silhouette reference copied too literally); the sword is a longsword more than a greatsword.",
+          "groups": [
+            {
+              "units": [
+                {
+                  "name": "Variant 1",
+                  "kind": "sheet",
+                  "size": "sheet",
+                  "status": "open",
+                  "role": "Worker, Soldier, Hunter, Door-head, Queen.",
+                  "signature": "—",
+                  "images": [
+                    {
+                      "file": "images/ant-army-knights-v2-1.webp",
+                      "caption": "Knights round 2, variant 1"
+                    }
+                  ]
+                },
+                {
+                  "name": "Variant 2",
+                  "kind": "sheet",
+                  "size": "sheet",
+                  "status": "open",
+                  "role": "Worker, Soldier, Hunter, Door-head, Queen.",
+                  "signature": "—",
+                  "images": [
+                    {
+                      "file": "images/ant-army-knights-v2-2.webp",
+                      "caption": "Knights round 2, variant 2"
+                    }
+                  ]
+                },
+                {
+                  "name": "Variant 3",
+                  "kind": "sheet",
+                  "size": "sheet",
+                  "status": "open",
+                  "role": "Worker, Soldier, Hunter, Door-head, Queen.",
+                  "signature": "—",
+                  "images": [
+                    {
+                      "file": "images/ant-army-knights-v2-3.webp",
+                      "caption": "Knights round 2, variant 3"
+                    }
+                  ]
+                }
+              ]
+            }
+          ]
+        },
+        {
           "title": "Ten takes on the first five (2026-10-29)",
           "status": "open",
           "note": "Worker, Soldier (fire ant), Hunter (wood ant, shoots up), Door-head and Queen, one sheet per take, from most human-like (1) to fully Zerg-like (10): gpt-image-2.5 Sunburst with Jiri's WC3 and SC2 references and today's ants, under the readability rules and the real-ant traits. Seen across all ten: the amber Worker and the round Door-head read everywhere; the model drifted to six legs in several takes; in the creature takes the Soldier and Hunter blur.",
@@ -147,7 +200,7 @@ window.EXPLORE = {
                   "name": "1. Knights",
                   "kind": "take",
                   "size": "sheet",
-                  "status": "open",
+                  "status": "agreed",
                   "role": "Human-like: a disciplined legion like Warcraft's Humans; plate-like chitin, tabards, shields, a sorceress-queen.",
                   "signature": "—",
                   "notes": "The most readable set: upright, a distinct silhouette per unit, lots of blue on top; the Door-head's tower shield reads instantly.",
@@ -715,6 +768,7 @@ window.EXPLORE = {
   ],
 
   log: [
+    {date: "2026-10-29", text: "Jiri chose the Knights take: the Queen great, the Soldier and Hunter too alike. Round 2: Soldier with mandibles, shield and greatsword; Hunter with a raised biological venom sac (no gun). The Hunter came out six-legged."},
     {date: "2026-10-29", text: "Ten takes painted on the first five ants (Worker, Soldier, Hunter, Door-head, Queen), human-like to Zerg-like (Ants: Ten takes)."},
     {date: "2026-10-29", text: "Agreed: the ants' racial identity is mobility (tunnels), numbers and mutations. No 'only they can' mechanic beyond those; the Door-head is simply a tank (no choke-sealing)."},
     {date: "2026-10-29", text: "Armies tab: Warcraft III's and StarCraft II's seven races compared role by role, what makes each itself, and what it means for the ants (air as their natural weakness)."},
