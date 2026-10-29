@@ -138,6 +138,47 @@ window.EXPLORE = {
       },
       rosters: [
         {
+          "title": "Chitin, round 4 (2026-10-29)",
+          "status": "open",
+          "note": "From round 3's option 2: the Soldier holds ONE two-handed broadsword with small spikes along its back edge (not dual-wielding); the Door-head keeps its big fist and shield, and its head becomes a simple round dome rising upwards like a real door-ant's plug head. Two variants: 1 a plain dome with a thin rim (recommended), 2 taller with a small emblem.",
+          "groups": [
+            {
+              "units": [
+                {
+                  "name": "Variant 1",
+                  "kind": "sheet",
+                  "size": "sheet",
+                  "status": "open",
+                  "role": "Worker, Soldier, Hunter, Door-head, Queen.",
+                  "signature": "—",
+                  "notes": "Plain round dome, thin gold rim: the minimal look.",
+                  "images": [
+                    {
+                      "file": "images/ant-army-chitin-v4-1.webp",
+                      "caption": "Round 4, variant 1"
+                    }
+                  ]
+                },
+                {
+                  "name": "Variant 2",
+                  "kind": "sheet",
+                  "size": "sheet",
+                  "status": "open",
+                  "role": "Worker, Soldier, Hunter, Door-head, Queen.",
+                  "signature": "—",
+                  "notes": "Taller dome with a small gold emblem.",
+                  "images": [
+                    {
+                      "file": "images/ant-army-chitin-v4-2.webp",
+                      "caption": "Round 4, variant 2"
+                    }
+                  ]
+                }
+              ]
+            }
+          ]
+        },
+        {
           "title": "Chitin, round 3 (2026-10-29)",
           "status": "open",
           "note": "Jiri chose grown chitin (material A). Changes: the Soldier dual-wields two long, plain broadswords with no shield (three blade options); the Hunter has no spit effect (the engine will draw it), even legs and stands in line; the Door-head keeps its shield in one hand and gets an oversized fist in the other, a shield-and-fist brawler. Worker and Queen unchanged.",
@@ -163,7 +204,7 @@ window.EXPLORE = {
                   "name": "Option 2: spined blades",
                   "kind": "sheet",
                   "size": "sheet",
-                  "status": "open",
+                  "status": "agreed",
                   "role": "Worker, Soldier, Hunter, Door-head, Queen.",
                   "signature": "—",
                   "notes": "Serrated chitin spikes along the blades: the most aggressive and the most distinct from above. The Door-head's fist clearly oversized.",
@@ -896,6 +937,7 @@ window.EXPLORE = {
   ],
 
   log: [
+    {date: "2026-10-29", text: "Round 4 from option 2: one two-handed spiked broadsword for the Soldier (Jiri meant one, not dual), the big fist kept, and a simple round upward dome for the Door-head's head."},
     {date: "2026-10-29", text: "Grown chitin chosen. Round 3: the Soldier dual-wields broadswords (three blade options), the Hunter loses its spit and stands in line, the Door-head becomes a shield-and-fist brawler."},
     {date: "2026-10-29", text: "No metal for ants: four material sets painted on the Knights sheet (chitin, amber, leaf and silk, clay and fungus)."},
     {date: "2026-10-29", text: "Jiri chose the Knights take: the Queen great, the Soldier and Hunter too alike. Round 2: Soldier with mandibles, shield and greatsword; Hunter with a raised biological venom sac (no gun). The Hunter came out six-legged."},
