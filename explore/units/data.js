@@ -34,29 +34,130 @@ window.EXPLORE = {
       substance: "Taken in directly: it mutates them (Burster, Honeypot, Reaver Queen). Bio-magic: luminous, blooming, amber.",
       palette: "Sand-and-bronze chitin, ivory mandibles, royal-blue silk and plates, gold for royalty, amber; violet liquid substance.",
       body: "Regular castes are bipedal real ants, each with its real trait exaggerated until it reads from the top camera; mutants are wild, non-bipedal creatures swollen and glowing with substance, weirder as the missions go on.",
+      roleMap: {
+        "title": "Zerg roles against real ants",
+        "note": "2026-10-29. Each role in SC2's Zerg army (Legacy of the Void) and the real ants whose actual behaviour fits it. Names and facts from general knowledge: check the specifics (acid range, propaganda chemicals) against sources before a design leans on them.",
+        "rows": [
+          {
+            "unit": "Drone",
+            "role": "Worker",
+            "ants": "Leafcutter (Atta): harvests and farms fungus. Harvester ant (Pogonomyrmex): collects seeds.",
+            "fit": "Strong"
+          },
+          {
+            "unit": "Zergling",
+            "role": "Cheap, fast swarm melee",
+            "ants": "Fire ant (Solenopsis): swarms and stings en masse. Saharan silver ant (Cataglyphis): among the fastest runners.",
+            "fit": "Strong"
+          },
+          {
+            "unit": "Baneling (morph)",
+            "role": "Suicide splash",
+            "ants": "Exploding ant (Colobopsis explodens): ruptures to spray toxic glue.",
+            "fit": "Perfect"
+          },
+          {
+            "unit": "Roach",
+            "role": "Armoured frontline, holds the line",
+            "ants": "Door-head (Colobopsis majors): blocks the way. Turtle ant (Cephalotes): armour plates.",
+            "fit": "Strong"
+          },
+          {
+            "unit": "Ravager (morph)",
+            "role": "Artillery",
+            "ants": "Formica wood ant: sprays acid at a distance (short in reality; needs exaggerating).",
+            "fit": "Medium"
+          },
+          {
+            "unit": "Hydralisk",
+            "role": "Ranged damage, hits air",
+            "ants": "Formica wood ant: acid from the abdomen. Spiny ant (Polyrhachis): hooked spines, though it does not shoot them.",
+            "fit": "Medium"
+          },
+          {
+            "unit": "Lurker (morph)",
+            "role": "Burrowed ambush, area denial",
+            "ants": "Trap-jaw (Odontomachus): waits with jaws locked open. Dracula ant (Mystrium): the fastest snap known, lives underground.",
+            "fit": "Strong"
+          },
+          {
+            "unit": "Ultralisk",
+            "role": "Huge melee tank, cleaves",
+            "ants": "Giant Amazon ant (Dinoponera): among the largest ants. Army-ant soldier (Eciton): huge sickle mandibles.",
+            "fit": "Strong"
+          },
+          {
+            "unit": "Queen",
+            "role": "Base defence, heals, spawns",
+            "ants": "Nurse ants: tend the brood and feed nestmates mouth to mouth. The queen herself.",
+            "fit": "Strong"
+          },
+          {
+            "unit": "Infestor",
+            "role": "Mind control, roots",
+            "ants": "Slave-making ants (Polyergus): raid nests and steal brood; some raiders release 'propaganda' chemicals that turn defenders on each other.",
+            "fit": "Strong"
+          },
+          {
+            "unit": "Swarm Host",
+            "role": "Siege by spawning swarms",
+            "ants": "Army and driver ants (Eciton, Dorylus): pour out of a living bivouac in raiding columns.",
+            "fit": "Medium"
+          },
+          {
+            "unit": "Viper",
+            "role": "Caster: pulls, blinds",
+            "ants": "Weaver ant (Oecophylla): pulls in living chains (Abduct). Acrobat ant (Crematogaster): smears venom.",
+            "fit": "Medium"
+          },
+          {
+            "unit": "Overlord / Overseer",
+            "role": "Supply, scouting, detection",
+            "ants": "Replete: living storage, as supply. Bulldog ant (Myrmecia): exceptional eyesight, for detection.",
+            "fit": "Weak"
+          },
+          {
+            "unit": "Mutalisk",
+            "role": "Fast air harass",
+            "ants": "Alates (winged ants). Gliding ants (Cephalotes): steer their fall back to the tree.",
+            "fit": "Weak"
+          },
+          {
+            "unit": "Corruptor, Brood Lord",
+            "role": "Air against air, air siege",
+            "ants": "No ant does this.",
+            "fit": "Gap"
+          }
+        ],
+        "findings": [
+          "Every ground role has a real ant that does it in nature; several are near-perfect (Exploding ant as the Baneling, Door-head as the Roach, Trap-jaw as the Lurker, slave-makers as the Infestor).",
+          "Air is the gap: ants barely fly, and only to mate. Air roles go to partners (non-ant species) or to mutations: an ant that grows wings from raw substance.",
+          "The Door-head sits in the Roach's role, the armoured frontline, with a twist Zerg lacks: it seals a choke."
+        ]
+      },
       rosters: [
         {
-          title: "Proposal 1: real castes, partners, wild mutations", status: "idea",
-          note: "2026-10-29. The roster disrupted and rebuilt from real ants: regular castes you recognise, two partner species that are not ants, and mutations from drinking raw substance (a Zerg-style morph in the field: Substance and time, a vulnerable cocoon). 12 units plus 3–4 heroes, the ballpark of WC3 Undead (10 trained, 2 morphs, 4 heroes) and SC2 Zerg (11 hatched, 5 morphs).",
+          title: "Proposal 1: real castes, partners, wild mutations", status: "parked",
+          note: "Parked (Jiri, 2026-10-29): only the Door-head is kept; the rest is set aside for now. 2026-10-29. The roster disrupted and rebuilt from real ants: regular castes you recognise, two partner species that are not ants, and mutations from drinking raw substance (a Zerg-style morph in the field: Substance and time, a vulnerable cocoon). 12 units plus 3–4 heroes, the ballpark of WC3 Undead (10 trained, 2 morphs, 4 heroes) and SC2 Zerg (11 hatched, 5 morphs).",
           groups: [
             {title: "Regular castes", note: "grounded, readable, each a real ant with one iconic trait", units: [
-              {name: "Leafcutter", kind: "worker", size: "small", status: "idea", role: "Worker: gathers and builds.", nature: "Atta leafcutters carry cut leaf pieces home to farm fungus; tiny minims ride on the leaf to fend off parasitic flies.", lore: "Farmers: they never eat the leaves, they feed them to the fungus garden they tend, the oldest agriculture on earth, millions of years before anyone else.", signature: "A leaf held high like a parasol, a minim riding on it: from above, a moving leaf.", replaces: "Worker"},
-              {name: "Trap-jaw", kind: "light melee", size: "small", status: "idea", role: "Fast striker; leaps.", nature: "Odontomachus locks its jaws open at 180° and snaps them shut, among the fastest movements in nature; snapping against the ground launches it into the air.", lore: "Jaws so fast they fling their owner through the air; a trap-jaw is never where you last saw it.", signature: "Jaws held wide open, a flat T in front of the head.", replaces: "Raider"},
-              {name: "Wood ant", kind: "ranged", size: "small", status: "idea", role: "Ranged: sprays acid.", nature: "Formica wood ants spray formic acid from the tip of the abdomen, curled forward under the body.", lore: "Carries its weapon inside its own body: an acid cannon it swings forward between its legs.", signature: "The abdomen curled forward like a cannon, a mist of acid.", replaces: "Needler"},
-              {name: "Door-head", kind: "tank", size: "medium", status: "idea", role: "Tank; plugs a choke.", nature: "Colobopsis door-head majors have a flat, plug-shaped head that seals the nest entrance.", lore: "Born a living door: a head shaped to fit the nest's entrance. Gatekeepers for life, who know every nestmate by touch and step aside only for family.", signature: "A head like a round shield or a manhole cover.", body: "Bipedal: squat and broad under a head the size of a round tower shield, braced like one.", replaces: "Major", notes: "From the top camera the one round disc on the field; in cutscenes the disc reads as a wide hat pulled low over a small, cute face (big eyes, little mandibles): a stoic, lovable gatekeeper and a natural mascot. Ability seed: plug a gap so only your own units pass."},
-              {name: "Weaver", kind: "support", size: "medium", status: "idea", role: "Builder and binder: repairs, raises leaf walls, snares.", nature: "Oecophylla weaver ants pull leaves together in living chains and stitch them with silk from larvae they hold in their jaws.", lore: "They sew with their own children: the larvae are the thread, held in the jaws and squeezed for silk.", signature: "A glowing larva held like a glue gun, a silk thread.", replaces: "Gardener and Herald (roles to split)"},
-              {name: "Army-ant soldier", kind: "elite melee", size: "medium", status: "idea", role: "Elite melee.", nature: "Eciton soldiers carry huge sickle-shaped mandibles; army ants link their bodies into living bridges and bivouacs.", lore: "Jaws so great it cannot feed itself, so others feed it: a pure warrior. Its kind builds bridges and camps from their own bodies.", signature: "Two great sickles curving forward; a living-bridge ability.", replaces: "Bullet Ant"},
-              {name: "Alate", kind: "flyer", size: "medium", status: "idea", role: "Flying scout and harasser.", nature: "Winged males and princesses leave the nest on mating flights.", lore: "Born with wings to leave: every new colony begins with one flight.", signature: "Wings held wide.", replaces: "Alate"}
+              {name: "Leafcutter", kind: "worker", size: "small", status: "parked", role: "Worker: gathers and builds.", nature: "Atta leafcutters carry cut leaf pieces home to farm fungus; tiny minims ride on the leaf to fend off parasitic flies.", lore: "Farmers: they never eat the leaves, they feed them to the fungus garden they tend, the oldest agriculture on earth, millions of years before anyone else.", signature: "A leaf held high like a parasol, a minim riding on it: from above, a moving leaf.", replaces: "Worker"},
+              {name: "Trap-jaw", kind: "light melee", size: "small", status: "parked", role: "Fast striker; leaps.", nature: "Odontomachus locks its jaws open at 180° and snaps them shut, among the fastest movements in nature; snapping against the ground launches it into the air.", lore: "Jaws so fast they fling their owner through the air; a trap-jaw is never where you last saw it.", signature: "Jaws held wide open, a flat T in front of the head.", replaces: "Raider"},
+              {name: "Wood ant", kind: "ranged", size: "small", status: "parked", role: "Ranged: sprays acid.", nature: "Formica wood ants spray formic acid from the tip of the abdomen, curled forward under the body.", lore: "Carries its weapon inside its own body: an acid cannon it swings forward between its legs.", signature: "The abdomen curled forward like a cannon, a mist of acid.", replaces: "Needler"},
+              {name: "Door-head", kind: "tank", size: "medium", status: "agreed", role: "Tank; plugs a choke.", nature: "Colobopsis door-head majors have a flat, plug-shaped head that seals the nest entrance.", lore: "Born a living door: a head shaped to fit the nest's entrance. Gatekeepers for life, who know every nestmate by touch and step aside only for family.", signature: "A head like a round shield or a manhole cover.", body: "Bipedal: squat and broad under a head the size of a round tower shield, braced like one.", replaces: "Major", notes: "From the top camera the one round disc on the field; in cutscenes the disc reads as a wide hat pulled low over a small, cute face (big eyes, little mandibles): a stoic, lovable gatekeeper and a natural mascot. Ability seed: plug a gap so only your own units pass."},
+              {name: "Weaver", kind: "support", size: "medium", status: "parked", role: "Builder and binder: repairs, raises leaf walls, snares.", nature: "Oecophylla weaver ants pull leaves together in living chains and stitch them with silk from larvae they hold in their jaws.", lore: "They sew with their own children: the larvae are the thread, held in the jaws and squeezed for silk.", signature: "A glowing larva held like a glue gun, a silk thread.", replaces: "Gardener and Herald (roles to split)"},
+              {name: "Army-ant soldier", kind: "elite melee", size: "medium", status: "parked", role: "Elite melee.", nature: "Eciton soldiers carry huge sickle-shaped mandibles; army ants link their bodies into living bridges and bivouacs.", lore: "Jaws so great it cannot feed itself, so others feed it: a pure warrior. Its kind builds bridges and camps from their own bodies.", signature: "Two great sickles curving forward; a living-bridge ability.", replaces: "Bullet Ant"},
+              {name: "Alate", kind: "flyer", size: "medium", status: "parked", role: "Flying scout and harasser.", nature: "Winged males and princesses leave the nest on mating flights.", lore: "Born with wings to leave: every new colony begins with one flight.", signature: "Wings held wide.", replaces: "Alate"}
             ]},
             {title: "Partners", note: "not ants; a player knows them on sight", units: [
-              {name: "Aphid herd", kind: "livestock", size: "small", status: "idea", role: "Healer or income: slow, defenceless, escorted.", nature: "Ants guard aphids and 'milk' them for honeydew, even carry them to better plants.", lore: "The colony's cattle: guarded, moved to better pastures and milked for honeydew.", signature: "Round, soft and green, in a cluster."},
-              {name: "Blue caterpillar", kind: "beast", size: "large", status: "idea", role: "Heavy unit or siege, guarded by ants (perhaps ridden).", nature: "Some blue-butterfly caterpillars are tended and guarded by ants for their sweet secretions.", lore: "A guest the colony feeds and guards for the sweetness it gives; some of its kind repay that by eating the brood.", signature: "A long, segmented soft body with ants on its back."}
+              {name: "Aphid herd", kind: "livestock", size: "small", status: "parked", role: "Healer or income: slow, defenceless, escorted.", nature: "Ants guard aphids and 'milk' them for honeydew, even carry them to better plants.", lore: "The colony's cattle: guarded, moved to better pastures and milked for honeydew.", signature: "Round, soft and green, in a cluster."},
+              {name: "Blue caterpillar", kind: "beast", size: "large", status: "parked", role: "Heavy unit or siege, guarded by ants (perhaps ridden).", nature: "Some blue-butterfly caterpillars are tended and guarded by ants for their sweet secretions.", lore: "A guest the colony feeds and guards for the sweetness it gives; some of its kind repay that by eating the brood.", signature: "A long, segmented soft body with ants on its back."}
             ]},
             {title: "Mutations", note: "drunk raw substance: swollen creatures glowing violet, weirder as the missions go on", units: [
-              {name: "Replete", kind: "artillery", size: "large", status: "idea", from: "Leafcutter", role: "Lobs glowing globs over long range.", nature: "Honeypot ants (Myrmecocystus) are workers swollen into living food stores, hanging from the nest ceiling.", lore: "A living larder: swells until it cannot walk, hangs from the ceiling and feeds the colony in hard times.", signature: "A huge glowing abdomen with a little ant in front.", replaces: "Honeypot"},
-              {name: "Exploder", kind: "bomb", size: "medium", status: "idea", from: "Trap-jaw", role: "Runs in and bursts for heavy splash.", nature: "Exploding ants (Colobopsis explodens) rupture their own bodies to spray a sticky toxic glue on attackers.", lore: "It dies by bursting, spraying the enemy with glue, to save the nest.", signature: "A swollen, sloshing, glowing body.", replaces: "Burster"},
-              {name: "Colossus", kind: "centrepiece", size: "huge", status: "idea", from: "Door-head", role: "The army's giant.", signature: "Two to three times a hero; the door-head grown monstrous.", replaces: "Reaver Queen"},
-              {name: "Later, in missions", kind: "progression", size: "?", status: "idea", role: "Weirder mutations found mission by mission: fused swarms, many-headed things, a walking nest.", signature: "Each wilder than the last."}
+              {name: "Replete", kind: "artillery", size: "large", status: "parked", from: "Leafcutter", role: "Lobs glowing globs over long range.", nature: "Honeypot ants (Myrmecocystus) are workers swollen into living food stores, hanging from the nest ceiling.", lore: "A living larder: swells until it cannot walk, hangs from the ceiling and feeds the colony in hard times.", signature: "A huge glowing abdomen with a little ant in front.", replaces: "Honeypot"},
+              {name: "Exploder", kind: "bomb", size: "medium", status: "parked", from: "Trap-jaw", role: "Runs in and bursts for heavy splash.", nature: "Exploding ants (Colobopsis explodens) rupture their own bodies to spray a sticky toxic glue on attackers.", lore: "It dies by bursting, spraying the enemy with glue, to save the nest.", signature: "A swollen, sloshing, glowing body.", replaces: "Burster"},
+              {name: "Colossus", kind: "centrepiece", size: "huge", status: "parked", from: "Door-head", role: "The army's giant.", signature: "Two to three times a hero; the door-head grown monstrous.", replaces: "Reaver Queen"},
+              {name: "Later, in missions", kind: "progression", size: "?", status: "parked", role: "Weirder mutations found mission by mission: fused swarms, many-headed things, a walking nest.", signature: "Each wilder than the last."}
             ]}
           ]
         }
@@ -191,6 +292,7 @@ window.EXPLORE = {
   ],
 
   log: [
+    {date: "2026-10-29", text: "Proposal 1 parked: only the Door-head is kept. Cross-referenced Zerg's roles against real ants (Ants: Zerg roles against real ants): the ground roles are covered, air is the gap."},
     {date: "2026-10-29", text: "Agreed: regular castes are bipedal with their real trait exaggerated (no trade-off with readability). Every unit is built on one true fact about its real animal, now its Lore line. The Door-head is the first anchor: a round disc from above, a hat over a cute face in cutscenes."},
     {date: "2026-10-29", text: "Ants only for now. Everything today is a tech demo and the story will be reworked, so neither constrains the roster. Jiri: regular basic units, wild mutations (weirder and weirder through the missions), the roster disrupted and drawn from real nature, with 2–3 units that are not ants. Proposal 1 written (Ants tab)."},
     {date: "2026-10-29", text: "Workbench started: readability standard, both races' units, a bee placeholder, a first pass of real enemies and allies, the bipedal question; the ant roster lineup from the Combat Lab (labs/ant-roster.lab.json)."}

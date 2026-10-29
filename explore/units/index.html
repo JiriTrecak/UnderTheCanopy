@@ -83,6 +83,7 @@ for (const race of D.races) {
       </dl></div>
     </div>
     ${(race.images || []).length ? `<h3>Pictures</h3><div class="shots">${race.images.map(figure).join("")}</div>` : ""}
+    ${race.roleMap ? `<h3>${esc(race.roleMap.title)}</h3><p class="lede" style="margin-top:0">${esc(race.roleMap.note)}</p>${rows([["unit", "Zerg unit"], ["role", "Its role"], ["ants", "Real ants that fit"], ["fit", "Fit"]], race.roleMap.rows)}${race.roleMap.findings ? `<ul>${race.roleMap.findings.map(f => `<li>${esc(f)}</li>`).join("")}</ul>` : ""}` : ""}
     ${[...(race.rosters || []), ...(race.units.length ? [{title: "Today (tech demo)", units: race.units}] : [])].map(roster => `
       <h3>${esc(roster.title)} ${tag(roster.status)}</h3>
       ${roster.note ? `<p class="lede" style="margin-top:0">${esc(roster.note)}</p>` : ""}
