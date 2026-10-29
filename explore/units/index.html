@@ -96,6 +96,7 @@ for (const race of D.races) {
               <dt>Role</dt><dd>${esc(u.role)}</dd>
               ${u.from ? `<dt>Mutates from</dt><dd>${esc(u.from)}</dd>` : ""}
               ${u.nature ? `<dt>In nature</dt><dd>${esc(u.nature)}</dd>` : ""}
+              ${u.lore ? `<dt>Lore</dt><dd><i>${esc(u.lore)}</i></dd>` : ""}
               ${u.today ? `<dt>Today</dt><dd>${esc(u.today)}</dd>` : ""}
               <dt>Signature</dt><dd>${esc(u.signature || "—")}</dd>
               ${u.body ? `<dt>Body plan</dt><dd>${esc(u.body)}</dd>` : ""}
