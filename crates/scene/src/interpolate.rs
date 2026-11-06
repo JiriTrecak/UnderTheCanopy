@@ -8,7 +8,7 @@
 
 use crate::{animation::Poses, live::Presentation};
 use canopy_render::actors::{ActorInstance, MAX_POSES, Pose};
-use glam::{Mat4, Quat};
+use glam::{Mat4, Quat, Vec3};
 
 /// The poses between `a` and `b`.
 pub fn blend_poses(a: &Poses, b: &Poses, t: f32) -> Poses {
@@ -117,8 +117,12 @@ pub fn interpolate(
                 if ra.dot(actor.rotation) < 0.0 {
                     ra = -ra;
                 }
+                // What stands still stays exactly where it stands: glam's `lerp` between
+                // equal ends moves by an ulp with `t`, and the world UI keeps what it
+                // drapes under buildings only while they stand where they stood.
+                let still = |a: Vec3, b: Vec3, t: f32| if a == b { b } else { a.lerp(b, t) };
                 (
-                    p.position.lerp(actor.position, t),
+                    still(p.position, actor.position, t),
                     Quat::from_xyzw(
                         ra.x + (actor.rotation.x - ra.x) * t,
                         ra.y + (actor.rotation.y - ra.y) * t,
@@ -126,7 +130,7 @@ pub fn interpolate(
                         ra.w + (actor.rotation.w - ra.w) * t,
                     )
                     .normalize(),
-                    p.scale.lerp(actor.scale, t),
+                    still(p.scale, actor.scale, t),
                     p.opacity + (actor.opacity - p.opacity) * t,
                     blend_poses(&p.poses, &actor.poses, t),
                 )
