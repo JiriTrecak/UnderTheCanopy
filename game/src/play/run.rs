@@ -177,12 +177,16 @@ impl InMatch {
         renderer: &mut Renderer,
         ui: &mut Ui,
         audio: &mut canopy_audio::Audio,
-        loaded: Loaded,
+        mut loaded: Loaded,
         game: Match,
         start: Start,
     ) -> Result<Self> {
+        let _span = tracing::info_span!("match_start").entered();
         renderer.set_environment(gpu, loaded.environment.clone());
-        renderer.load_world(gpu, &loaded.pack, &loaded.scene.world)?;
+        match loaded.upload.take() {
+            Some(upload) => renderer.install_world(gpu, upload),
+            None => renderer.load_world(gpu, &loaded.pack, &loaded.scene.world)?,
+        }
         renderer.set_actors(&[]);
         // No fog until the match's first view says otherwise (not the last match's).
         renderer.set_fog(gpu, None);
@@ -240,22 +244,29 @@ impl InMatch {
         // Effects, world UI, the minimap's background and the portrait image, before the
         // world moves to the simulation thread and before any live model is drawn.
         let mut live = LiveScene::default();
-        live.attach_effects(
-            renderer,
-            gpu,
-            &loaded.pack,
-            game.presenter.effects.effect_table().clone(),
-        );
-        live.prewarm_effects(renderer, gpu, &game.presenter.effects.bound_effects());
-        live.attach_world_ui(
-            &loaded.data,
-            &loaded.pack,
-            &content,
-            loaded.scene.colors.clone(),
-        );
+        {
+            let _span = tracing::info_span!("match_effects").entered();
+            live.attach_effects(
+                renderer,
+                gpu,
+                &loaded.pack,
+                game.presenter.effects.effect_table().clone(),
+            );
+            live.prewarm_effects(renderer, gpu, &game.presenter.effects.bound_effects());
+        }
+        {
+            let _span = tracing::info_span!("match_world_ui").entered();
+            live.attach_world_ui(
+                &loaded.data,
+                &loaded.pack,
+                &content,
+                loaded.scene.colors.clone(),
+            );
+        }
         live.world_ui_input.viewer = start.me;
         renderer.bake_minimap(gpu, loaded.scene.size, loaded.scene.minimap, MINIMAP_PIXELS);
         renderer.set_portrait(gpu, None, PORTRAIT_PIXELS);
+        let hud_span = tracing::info_span!("match_hud").entered();
         let mut hud = Hud::new();
         hud.configure(&content, game.world.setup(), start.me);
         let sounds = super::sounds::MatchSounds::new(
@@ -265,6 +276,7 @@ impl InMatch {
             loaded.music.clone(),
             loaded.ambience.clone(),
         );
+        drop(hud_span);
         let sim = SimThread::start_with(
             game.world,
             game.session,

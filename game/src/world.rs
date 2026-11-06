@@ -63,6 +63,9 @@ pub struct Loaded {
     /// The map's music and its biome's ambience (sound event ids, D97).
     pub music: Vec<String>,
     pub ambience: Option<canopy_render::environment::Ambience>,
+    /// The world's GPU resources, when the loader built them (see
+    /// [`canopy_render::WorldUploader`]); the window thread uploads it otherwise.
+    pub upload: Option<canopy_render::WorldUpload>,
 }
 
 /// The hour `seconds` of match time after `start` when a day lasts `day_seconds` (old
@@ -152,7 +155,10 @@ pub fn load(paths: &Paths, spec: &MatchSpec<'_>) -> Result<(Loaded, Match)> {
         None => Content::load(&paths.data),
     };
     let content = Arc::new(content.map_err(|e| anyhow!("content: {e}"))?);
-    let mut map = read_map(paths, id)?;
+    let mut map = {
+        let _span = tracing::info_span!("match_map").entered();
+        read_map(paths, id)?
+    };
     if let Some(exploration) = spec.exploration {
         map.initial_exploration = Some(exploration);
     }
@@ -175,7 +181,10 @@ pub fn load(paths: &Paths, spec: &MatchSpec<'_>) -> Result<(Loaded, Match)> {
     }
     let pack_path =
         canopy_assets::find_pack(&paths.data).context("no cooked asset pack (run `just cook`)")?;
-    let pack = Arc::new(Pack::open(&pack_path).with_context(|| pack_path.display().to_string())?);
+    let pack = {
+        let _span = tracing::info_span!("match_pack").entered();
+        Arc::new(Pack::open(&pack_path).with_context(|| pack_path.display().to_string())?)
+    };
     let look = Look::load(&paths.data, spec.biome.unwrap_or(map.biome()))?;
     let setup = match spec.crowd {
         Some(n) => canopy_sim::crowd::crowd_of(
@@ -215,6 +224,7 @@ pub fn load(paths: &Paths, spec: &MatchSpec<'_>) -> Result<(Loaded, Match)> {
         .setup()
         .context("a local session has its setup")?
         .clone();
+    let _world_span = tracing::info_span!("match_world").entered();
     let world = canopy_sim::World::new(content, &map, setup)
         .map_err(|e| anyhow!("cannot start the match: {}", e.0))?;
     // Matches of the shipped kind are recorded; measured scenes and encounters are not.
@@ -223,6 +233,7 @@ pub fn load(paths: &Paths, spec: &MatchSpec<'_>) -> Result<(Loaded, Match)> {
         recorder: recorded.then(|| crate::replay::record::Recorder::new(&world)),
         autoplay: autoplay_spec(&map, spec.autoplay && human.is_some()),
     };
+    drop(_world_span);
     let (mut loaded, game) = assemble(
         &map,
         pack,
@@ -267,7 +278,10 @@ fn assemble(
             }
         }
     }
-    let presenter = scene.presenter(&world, map, pack.clone());
+    let presenter = {
+        let _span = tracing::info_span!("match_presenter").entered();
+        scene.presenter(&world, map, pack.clone())
+    };
     // The clock runs unless the map holds its hour (`landscape.environment.playing`).
     let dynamic = map.landscape.as_ref().is_none_or(|l| l.environment.playing);
     let day_minutes = map
@@ -300,6 +314,7 @@ fn assemble(
     };
     let environment = Environment::new(&look.lighting, &look.biome, hour, lut.as_ref())
         .with_weather(canopy_scene::weather_of(map));
+    let _span = tracing::info_span!("match_obstacles").entered();
     let obstacles = canopy_scene::obstruction::Obstacles::new(
         &pack,
         &scene.world.statics,
@@ -313,6 +328,7 @@ fn assemble(
             pack,
             // Set by the caller.
             data: std::path::PathBuf::new(),
+            upload: None,
             day,
             sandbox: map.sandbox,
             music: map

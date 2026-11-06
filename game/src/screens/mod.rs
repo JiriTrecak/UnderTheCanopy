@@ -186,6 +186,8 @@ pub struct Game {
     boot_error: Option<String>,
     /// The effect table's graph programs went to the background compiler.
     effects_precompiled: bool,
+    /// Uploads a match's world on its loader thread (the renderer's, from the first frame).
+    uploader: Option<canopy_render::WorldUploader>,
     dev: Option<DevStart>,
     skirmish: Skirmish,
     /// The match's draw list: the UI's with the match's decorations (kept between frames).
@@ -325,6 +327,7 @@ impl Game {
             boot: Some(rx),
             boot_stage: (BootStage::Pack, 0.0),
             effects_precompiled: false,
+            uploader: None,
             boot_error: None,
             dev,
             skirmish: Skirmish::default(),
@@ -801,7 +804,12 @@ impl Game {
                         .is_some_and(|d| d.map(&start.map).is_some_and(|m| m.autoplay))
             });
         self.loading = Some(Loading {
-            job: Some(LoadJob::spawn(self.paths.clone(), data, job)),
+            job: Some(LoadJob::spawn(
+                self.paths.clone(),
+                data,
+                job,
+                self.uploader.clone(),
+            )),
             start,
             error: None,
             started: Instant::now(),
@@ -1510,6 +1518,9 @@ impl Game {
         }
         if std::mem::take(&mut self.clear_actors) {
             ctx.renderer.set_actors(&[]);
+        }
+        if self.uploader.is_none() {
+            self.uploader = Some(ctx.renderer.uploader(ctx.gpu));
         }
         self.poll_boot();
         // Every effect graph program compiles on background threads while the menus

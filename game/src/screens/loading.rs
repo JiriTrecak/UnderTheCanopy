@@ -52,7 +52,14 @@ pub struct LoadJob {
 }
 
 impl LoadJob {
-    pub fn spawn(paths: Paths, data: Arc<GameData>, job: Job) -> Self {
+    /// Loads `job` on a worker thread; with `uploader`, the worker uploads the world to
+    /// the GPU too, so the window thread only installs it.
+    pub fn spawn(
+        paths: Paths,
+        data: Arc<GameData>,
+        job: Job,
+        uploader: Option<canopy_render::WorldUploader>,
+    ) -> Self {
         let (tx, rx) = mpsc::channel();
         std::thread::Builder::new()
             .name("match-loader".into())
@@ -65,6 +72,17 @@ impl LoadJob {
                     Job::Match(request) => world::prepare(&paths, &data, *request, &progress),
                     Job::Dev(spec) => dev(&paths, &data, &spec, &progress),
                 };
+                let result = result.and_then(|mut prepared| {
+                    if let Some(uploader) = uploader {
+                        let loaded = &mut prepared.loaded;
+                        loaded.upload = Some(uploader.build(
+                            &loaded.pack,
+                            &loaded.scene.world,
+                            &loaded.environment,
+                        )?);
+                    }
+                    Ok(prepared)
+                });
                 let _ = tx.send(Message::Done(Box::new(result)));
             })
             .expect("the loader thread starts");

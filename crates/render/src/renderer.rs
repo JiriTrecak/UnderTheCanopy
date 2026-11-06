@@ -198,6 +198,165 @@ pub struct World {
     pub dressing: Option<crate::dressing::DressingDesc>,
 }
 
+/// A world's GPU resources ([`WorldUploader::build`]), for [`Renderer::install_world`].
+pub struct WorldUpload {
+    shade: crate::shade::ShadeGpu,
+    terrain: Option<TerrainGpu>,
+    water: Option<WaterGpu>,
+    forest: Option<ForestGpu>,
+    motes: Option<crate::motes::MotesGpu>,
+    dressing: Option<crate::dressing::DressingGpu>,
+    blockout: Option<crate::blockout::BlockoutGpu>,
+    statics: StaticsGpu,
+    actors: ActorsGpu,
+    bytes: u64,
+    map_lights: Vec<PointLight>,
+}
+
+/// Builds worlds' GPU resources on any thread (see [`Renderer::uploader`]).
+#[derive(Clone)]
+pub struct WorldUploader {
+    device: wgpu::Device,
+    queue: wgpu::Queue,
+    features: crate::device::GpuFeatures,
+    frame_layout: wgpu::BindGroupLayout,
+}
+
+impl WorldUploader {
+    /// Uploads `world` (seen in `environment`): the terrain with its water, forest and
+    /// motes, the dressing, the scenery and the live models, each on a thread of its own.
+    pub fn build(
+        &self,
+        pack: &canopy_assets::Pack,
+        world: &World,
+        environment: &Environment,
+    ) -> Result<WorldUpload> {
+        let _span = tracing::info_span!("world_upload").entered();
+        let (device, queue, features, layout) =
+            (&self.device, &self.queue, self.features, &self.frame_layout);
+        let shade = match world
+            .terrain
+            .as_ref()
+            .and_then(|t| Some((t, t.shade.as_ref()?)))
+        {
+            Some((desc, values)) => {
+                crate::shade::ShadeGpu::new(device, queue, desc.origin, desc.vertices(), values)
+            }
+            None => crate::shade::ShadeGpu::none(device, queue),
+        };
+        type Ground = (
+            Option<TerrainGpu>,
+            Option<WaterGpu>,
+            Option<ForestGpu>,
+            Option<crate::motes::MotesGpu>,
+        );
+        let (ground, dressing, statics, actors) = std::thread::scope(|scope| {
+            let ground = scope.spawn(|| -> Result<Ground> {
+                let Some(desc) = &world.terrain else {
+                    return Ok((None, None, None, None));
+                };
+                let terrain = TerrainGpu::new(device, queue, features, pack, desc, layout)?;
+                let water = match &world.water {
+                    Some(water) => WaterGpu::new(
+                        device,
+                        queue,
+                        features,
+                        pack,
+                        desc,
+                        water,
+                        &world.water_textures,
+                        layout,
+                    )?,
+                    None => None,
+                };
+                let forest = match &world.forest {
+                    Some(forest) => Some(ForestGpu::new(
+                        device,
+                        queue,
+                        features,
+                        pack,
+                        forest,
+                        desc,
+                        (environment.haze.0.to_array(), environment.haze.1),
+                        layout,
+                    )?),
+                    None => None,
+                };
+                let motes = match &environment.motes {
+                    Some(motes) => Some(crate::motes::MotesGpu::new(
+                        device, queue, features, pack, motes, layout,
+                    )?),
+                    None => None,
+                };
+                Ok((Some(terrain), water, forest, motes))
+            });
+            let dressing = scope.spawn(|| {
+                world
+                    .dressing
+                    .as_ref()
+                    .map(|desc| {
+                        crate::dressing::DressingGpu::new(
+                            device, queue, features, pack, desc, layout,
+                        )
+                    })
+                    .transpose()
+            });
+            let statics = scope.spawn(|| {
+                StaticsGpu::new(
+                    device,
+                    queue,
+                    features,
+                    pack,
+                    &world.statics,
+                    &world.glows,
+                    layout,
+                )
+            });
+            let mut actors = ActorsGpu::new(device, queue, features, layout, world.glows.clone());
+            actors.sync_models(device, queue, pack, &world.actor_models);
+            let join = |name| move |_| anyhow::anyhow!("uploading the {name} panicked");
+            (
+                ground.join().map_err(join("ground")),
+                dressing.join().map_err(join("dressing")),
+                statics.join().map_err(join("scenery")),
+                actors,
+            )
+        });
+        let (terrain, water, forest, motes) = ground??;
+        let dressing = dressing??;
+        let statics = statics??;
+        let blockout = world
+            .blockout
+            .as_ref()
+            .and_then(|mesh| crate::blockout::BlockoutGpu::new(device, mesh, layout));
+        let bytes = terrain.as_ref().map_or(0, |t| t.bytes)
+            + water.as_ref().map_or(0, |w| w.bytes)
+            + forest.as_ref().map_or(0, |f| f.bytes)
+            + motes.as_ref().map_or(0, |m| m.bytes)
+            + dressing.as_ref().map_or(0, |d| d.bytes)
+            + blockout.as_ref().map_or(0, |b| b.bytes)
+            + statics.bytes;
+        // Room for the marks' and the effect lights after the map's own.
+        let lights = &world.point_lights[..world
+            .point_lights
+            .len()
+            .min(MAX_POINT_LIGHTS - MAX_EFFECT_LIGHTS - MAX_MARK_LIGHTS)];
+        Ok(WorldUpload {
+            shade,
+            terrain,
+            water,
+            forest,
+            motes,
+            dressing,
+            blockout,
+            statics,
+            actors,
+            bytes,
+            map_lights: lights.to_vec(),
+        })
+    }
+}
+
 /// Measurements of one frame.
 #[derive(Debug, Clone, Default)]
 pub struct FrameReport {
@@ -730,6 +889,26 @@ impl Renderer {
         world: &World,
     ) -> Result<()> {
         let _span = tracing::info_span!("load_world").entered();
+        // The old world goes first, so the two are never in memory at once.
+        self.drop_world();
+        let upload = self.uploader(gpu).build(pack, world, &self.environment)?;
+        self.install_world(gpu, upload);
+        Ok(())
+    }
+
+    /// What builds a world's GPU resources on another thread ([`WorldUploader::build`]),
+    /// for [`Renderer::install_world`]: a match uploads its world while the loading screen
+    /// still shows.
+    pub fn uploader(&self, gpu: &Gpu) -> WorldUploader {
+        WorldUploader {
+            device: gpu.device.clone(),
+            queue: gpu.queue.clone(),
+            features: gpu.features,
+            frame_layout: self.frame_layout.clone(),
+        }
+    }
+
+    fn drop_world(&mut self) {
         self.terrain = None;
         self.statics = None;
         self.water = None;
@@ -737,121 +916,30 @@ impl Renderer {
         self.motes = None;
         self.blockout = None;
         self.dressing = None;
+        self.actors = None;
+    }
+
+    /// Shows a world built by [`WorldUploader::build`], replacing the previous one; the
+    /// renderer's environment should be the one it was built with.
+    pub fn install_world(&mut self, gpu: &Gpu, upload: WorldUpload) {
+        let _span = tracing::info_span!("install_world").entered();
+        self.drop_world();
         self.ripples.clear();
-        self.world_bytes = 0;
-        self.bindings.shade = match world
-            .terrain
-            .as_ref()
-            .and_then(|t| Some((t, t.shade.as_ref()?)))
-        {
-            Some((desc, values)) => crate::shade::ShadeGpu::new(
-                &gpu.device,
-                &gpu.queue,
-                desc.origin,
-                desc.vertices(),
-                values,
-            ),
-            None => crate::shade::ShadeGpu::none(&gpu.device, &gpu.queue),
-        };
+        self.bindings.shade = upload.shade;
         self.rebind_frame(gpu);
-        if let Some(desc) = &world.terrain {
-            let terrain = TerrainGpu::new(
-                &gpu.device,
-                &gpu.queue,
-                gpu.features,
-                pack,
-                desc,
-                &self.frame_layout,
-            )?;
-            self.world_bytes += terrain.bytes;
-            self.terrain = Some(terrain);
-            if let Some(water) = &world.water {
-                self.water = WaterGpu::new(
-                    &gpu.device,
-                    &gpu.queue,
-                    gpu.features,
-                    pack,
-                    desc,
-                    water,
-                    &world.water_textures,
-                    &self.frame_layout,
-                )?;
-                self.world_bytes += self.water.as_ref().map_or(0, |w| w.bytes);
-            }
-            if let Some(forest) = &world.forest {
-                let gpu_forest = ForestGpu::new(
-                    &gpu.device,
-                    &gpu.queue,
-                    gpu.features,
-                    pack,
-                    forest,
-                    desc,
-                    (self.environment.haze.0.to_array(), self.environment.haze.1),
-                    &self.frame_layout,
-                )?;
-                self.world_bytes += gpu_forest.bytes;
-                self.forest = Some(gpu_forest);
-            }
-            if let Some(motes) = &self.environment.motes {
-                let gpu_motes = crate::motes::MotesGpu::new(
-                    &gpu.device,
-                    &gpu.queue,
-                    gpu.features,
-                    pack,
-                    motes,
-                    &self.frame_layout,
-                )?;
-                self.world_bytes += gpu_motes.bytes;
-                self.motes = Some(gpu_motes);
-            }
-        }
-        if let Some(desc) = &world.dressing {
-            let dressing = crate::dressing::DressingGpu::new(
-                &gpu.device,
-                &gpu.queue,
-                gpu.features,
-                pack,
-                desc,
-                &self.frame_layout,
-            )?;
-            self.world_bytes += dressing.bytes;
-            self.dressing = Some(dressing);
-        }
-        if let Some(mesh) = &world.blockout {
-            self.blockout =
-                crate::blockout::BlockoutGpu::new(&gpu.device, mesh, &self.frame_layout);
-            self.world_bytes += self.blockout.as_ref().map_or(0, |b| b.bytes);
-        }
-        let statics = StaticsGpu::new(
-            &gpu.device,
-            &gpu.queue,
-            gpu.features,
-            pack,
-            &world.statics,
-            &world.glows,
-            &self.frame_layout,
-        )?;
-        self.world_bytes += statics.bytes;
-        self.statics = Some(statics);
-        let mut actors = ActorsGpu::new(
-            &gpu.device,
-            &gpu.queue,
-            gpu.features,
-            &self.frame_layout,
-            world.glows.clone(),
-        );
-        actors.sync_models(&gpu.device, &gpu.queue, pack, &world.actor_models);
-        self.actors = Some(actors);
-        // Room for the marks' and the effect lights after the map's own.
-        let lights = &world.point_lights[..world
-            .point_lights
-            .len()
-            .min(MAX_POINT_LIGHTS - MAX_EFFECT_LIGHTS - MAX_MARK_LIGHTS)];
-        self.map_lights = lights.to_vec();
+        self.terrain = upload.terrain;
+        self.water = upload.water;
+        self.forest = upload.forest;
+        self.motes = upload.motes;
+        self.dressing = upload.dressing;
+        self.blockout = upload.blockout;
+        self.statics = Some(upload.statics);
+        self.actors = Some(upload.actors);
+        self.world_bytes = upload.bytes;
+        self.map_lights = upload.map_lights;
         self.lights_dirty = true;
         self.effect_frame.clear();
         self.rebuild(gpu);
-        Ok(())
     }
 
     /// Replaces the blockout alone, the rest of the world staying as loaded: the editor's
