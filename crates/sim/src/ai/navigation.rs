@@ -375,50 +375,30 @@ impl ObservedNavigation {
         if geo.layered() {
             return;
         }
+        let mut wanted: Vec<usize> = Vec::new();
         for m in movers.iter().filter(|m| !m.air) {
             let i = self.profile(geo, m);
-            self.mesh(geo, i);
-            self.warm(geo, i);
+            if !wanted.contains(&i) {
+                wanted.push(i);
+            }
         }
-    }
-
-    /// Computes every neighbour step of a profile's grid ahead of play.
-    fn warm(&mut self, geo: &Geography, i: usize) {
-        let _span = tracing::trace_span!("ai warm steps").entered();
-        let size = self.size;
-        let ground = Ground {
-            walk: &self.walk,
-            heights: geo.terrain.heights(),
-        };
-        let steep = geo.terrain.steep_edges();
-        let (_, p) = &mut self.profiles[i];
-        if p.grid.warmed() {
-            return;
-        }
-        let adjacent = &p.adjacent;
-        let table = self
-            .clearance
-            .as_ref()
-            .map(|c| adjacent.table(size, c.closed(), steep));
-        let mut step = |x: u32, y: u32| match &table {
-            Some(t) => t.passes(size, x, y),
-            None => adjacent.clear(size, x, y, |u, v| ground.step(u, v)),
-        };
-        p.grid.warm(&mut step);
+        // Each body's mesh and steps read only the shared knowledge: built side by side.
+        let (size, walk, clearance) = (self.size, &self.walk, self.clearance.as_ref());
+        let mut chosen: Vec<&mut Profile> = self
+            .profiles
+            .iter_mut()
+            .enumerate()
+            .filter(|(i, _)| wanted.contains(i))
+            .map(|(_, (_, p))| p)
+            .collect();
+        crate::parallel::each(&mut chosen, |p| {
+            mesh(size, walk, geo, p);
+            warm(size, walk, clearance, geo, p);
+        });
     }
 
     fn mesh(&mut self, geo: &Geography, i: usize) {
-        let _span = tracing::trace_span!("ai mesh").entered();
-        let input = MeshInput {
-            size: self.size,
-            walkable: &self.walk,
-            heights: geo.terrain.heights(),
-        };
-        let p = &mut self.profiles[i].1;
-        match &mut p.mesh {
-            Some(mesh) => mesh.prepare(input),
-            None => p.mesh = Some(GroundMesh::new(input, p.radius_cells)),
-        }
+        mesh(self.size, &self.walk, geo, &mut self.profiles[i].1);
     }
 
     /// Whether the body's sweep from `a` to `b` stays on known open ground.
@@ -699,6 +679,40 @@ impl ObservedNavigation {
         }
         self.scratch = scratch;
         found
+    }
+}
+
+/// Computes every neighbour step of a profile's grid ahead of play.
+fn warm(size: u32, walk: &[bool], clearance: Option<&Clearance>, geo: &Geography, p: &mut Profile) {
+    let _span = tracing::trace_span!("ai warm steps").entered();
+    let ground = Ground {
+        walk,
+        heights: geo.terrain.heights(),
+    };
+    let steep = geo.terrain.steep_edges();
+    if p.grid.warmed() {
+        return;
+    }
+    let adjacent = &p.adjacent;
+    let table = clearance.map(|c| adjacent.table(size, c.closed(), steep));
+    let mut step = |x: u32, y: u32| match &table {
+        Some(t) => t.passes(size, x, y),
+        None => adjacent.clear(size, x, y, |u, v| ground.step(u, v)),
+    };
+    p.grid.warm(&mut step);
+}
+
+/// Brings a profile's navigation mesh up to the knowledge.
+fn mesh(size: u32, walk: &[bool], geo: &Geography, p: &mut Profile) {
+    let _span = tracing::trace_span!("ai mesh").entered();
+    let input = MeshInput {
+        size,
+        walkable: walk,
+        heights: geo.terrain.heights(),
+    };
+    match &mut p.mesh {
+        Some(mesh) => mesh.prepare(input),
+        None => p.mesh = Some(GroundMesh::new(input, p.radius_cells)),
     }
 }
 

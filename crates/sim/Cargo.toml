@@ -1,6 +1,6 @@
 [package]
 name = "canopy-sim"
-description = "Deterministic lockstep simulation: no I/O, no clocks, no threads"
+description = "Deterministic lockstep simulation: no I/O, no clocks, threads only for order-merged independent work"
 version.workspace = true
 edition.workspace = true
 rust-version.workspace = true
@@ -11,6 +11,7 @@ publish.workspace = true
 canopy-content = { path = "../content" }
 libm.workspace = true
 mlua.workspace = true
+rayon.workspace = true
 serde.workspace = true
 serde_json.workspace = true
 serde_with.workspace = true

@@ -113,24 +113,56 @@ impl Builder {
         )
     }
 
-    fn axis(&mut self, index: i32, lo: i32, hi: i32) -> SampleAxis {
+    fn axis(&mut self, index: i32, lo: i32, hi: i32) {
         let radius = self.radius;
         self.axes
             .entry(index as u32)
-            .or_insert_with(|| sample_axis(lo, hi, radius))
-            .clone()
+            .or_insert_with(|| sample_axis(lo, hi, radius));
     }
 
     /// Recomputes tile `id`; returns its geometry when its clearance mask changed (or on
     /// the first build). `Some(None)` is a tile left without walkable area.
     pub fn rebuild(&mut self, input: MeshInput, id: u32) -> Option<Option<TileGeometry>> {
+        let mut rebuilt = self.rebuild_all(input, &[id]);
+        rebuilt.pop().map(|(_, geometry)| geometry)
+    }
+
+    /// [`Builder::rebuild`] of each tile of `ids`, side by side on the worker threads (a
+    /// tile reads only the collision and its own last mask): the tiles whose mask changed,
+    /// in the order of `ids`, with their geometry.
+    pub fn rebuild_all(
+        &mut self,
+        input: MeshInput,
+        ids: &[u32],
+    ) -> Vec<(u32, Option<TileGeometry>)> {
+        // The sample axes are shared between tiles: made first, then only read.
+        for &id in ids {
+            let (tx, tz) = ((id % self.width) as i32, (id / self.width) as i32);
+            let (min_x, min_z, max_x, max_z) = self.bounds(tx, tz);
+            self.axis(tx, min_x, max_x);
+            self.axis(tz, min_z, max_z);
+        }
+        let this = &*self;
+        let built = crate::parallel::map(ids, |&id| this.compute(input, id));
+        let mut rebuilt = Vec::new();
+        for (&id, tile) in ids.iter().zip(built) {
+            if let Some((mask, geometry)) = tile {
+                self.masks[id as usize] = Some(mask);
+                rebuilt.push((id, geometry));
+            }
+        }
+        rebuilt
+    }
+
+    /// Tile `id`'s new mask and geometry, or `None` when its mask is unchanged. The tile's
+    /// sample axes must exist.
+    fn compute(&self, input: MeshInput, id: u32) -> Option<(Vec<u8>, Option<TileGeometry>)> {
         let (tx, tz) = ((id % self.width) as i32, (id / self.width) as i32);
         let (min_x, min_z, max_x, max_z) = self.bounds(tx, tz);
-        let sx = self.axis(tx, min_x, max_x);
-        let sz = self.axis(tz, min_z, max_z);
-        let mask = self.mask(input, tx, tz, &sx, &sz);
-        let slot = &mut self.masks[id as usize];
-        if slot.as_ref() == Some(&mask) {
+        let sx = &self.axes[&(tx as u32)];
+        let sz = &self.axes[&(tz as u32)];
+        let mask = self.mask(input, tx, tz, sx, sz);
+        if self.masks[id as usize].as_ref() == Some(&mask) {
             return None;
         }
         let geometry =
@@ -144,8 +176,7 @@ impl Builder {
                 vertices,
                 triangles,
             });
-        *slot = Some(mask);
-        Some(geometry)
+        Some((mask, geometry))
     }
 
     fn mask(

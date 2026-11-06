@@ -1,7 +1,8 @@
 //! The deterministic simulation (docs/simulation.md).
 //!
-//! No I/O, clocks or threads: the same commands on the same content and map produce the
-//! same results on every machine.
+//! No I/O or clocks, and threads only for independent work merged in a fixed order
+//! ([`parallel`]): the same commands on the same content and map produce the same results
+//! on every machine.
 
 /// An encoded message (D96) the simulation keeps where it once kept English:
 /// `msg!("message.build-on", name = name(id))`, `msg!("message.build-within", cells = 12, name = name(id))`.
@@ -40,6 +41,7 @@ pub mod movement;
 pub mod navigation;
 pub mod neutrals;
 pub mod orders;
+pub mod parallel;
 pub mod setup;
 pub mod spatial;
 pub mod spawn;

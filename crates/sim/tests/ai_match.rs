@@ -148,6 +148,23 @@ fn an_ai_duel_on_a_shipped_map_is_deterministic_and_resumable() {
     assert_eq!(ticks, 1200);
 }
 
+#[test]
+fn a_match_plays_the_same_on_one_worker_thread_and_on_many() {
+    let content = content();
+    let map = maps().into_iter().last().expect("a shipped map");
+    let on = |threads: usize| {
+        rayon::ThreadPoolBuilder::new()
+            .num_threads(threads)
+            .build()
+            .expect("thread pool")
+            .install(|| play(&content, &map, 400, None))
+    };
+    let (alone, alone_world) = on(1);
+    let (many, many_world) = on(4);
+    assert_eq!(alone, many, "{}: thread count changes the match", map.name);
+    assert_eq!(alone_world.state(), many_world.state());
+}
+
 /// Cap for the full matches: an hour of game time.
 const CAP: u32 = 144_000;
 

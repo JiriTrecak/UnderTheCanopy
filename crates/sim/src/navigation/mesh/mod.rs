@@ -29,9 +29,10 @@ impl GroundMesh {
     pub fn new(input: MeshInput, radius: f64) -> Self {
         let mut builder = Builder::new(input.size, radius);
         let width = builder.width();
-        let tiles: Vec<_> = (0..width * width)
-            .map(|id| (id, builder.rebuild(input, id).expect("first build")))
-            .collect();
+        let ids: Vec<u32> = (0..width * width).collect();
+        // A first build changes every tile.
+        let tiles = builder.rebuild_all(input, &ids);
+        assert_eq!(tiles.len(), ids.len(), "first build");
         let mut query = MeshQuery::new(input.size, HEURISTIC_WEIGHT);
         let changed: Vec<_> = tiles.iter().map(|(id, g)| (*id, g.as_ref())).collect();
         query.update(&changed);
@@ -70,11 +71,8 @@ impl GroundMesh {
             return;
         }
         let _span = tracing::trace_span!("mesh tiles").entered();
-        let dirty = std::mem::take(&mut self.dirty);
-        let rebuilt: Vec<_> = dirty
-            .into_iter()
-            .filter_map(|id| self.builder.rebuild(input, id).map(|g| (id, g)))
-            .collect();
+        let dirty: Vec<u32> = std::mem::take(&mut self.dirty).into_iter().collect();
+        let rebuilt = self.builder.rebuild_all(input, &dirty);
         if !rebuilt.is_empty() {
             let changed: Vec<_> = rebuilt.iter().map(|(id, g)| (*id, g.as_ref())).collect();
             self.query.update(&changed);
