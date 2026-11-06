@@ -462,6 +462,8 @@ pub(crate) fn navigate(
             if input.key_down(key) && !typing {
                 camera.focus[0] += (dx * c + dz * s) * speed;
                 camera.focus[1] += (-dx * s + dz * c) * speed;
+                // It glides while the key is held: the next frame at once.
+                response.ctx.request_repaint();
             }
         }
     }

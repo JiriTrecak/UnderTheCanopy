@@ -64,6 +64,15 @@ pub struct Output {
     pub quit: bool,
     /// Test in game: play this content (unsaved edits included).
     pub test: Option<Test>,
+    /// When the interface's next frame is due: at once (a stage or the node previews
+    /// playing, an animation, work in flight), after a while (a tooltip, a blinking caret,
+    /// a notice going), or `None` until input or [`Editor::wants_frame`] says so. The
+    /// window draws the interface only on change.
+    pub repaint: Option<std::time::Duration>,
+    /// A model or map viewport shows: its picture moves with time (water, wind, a clip),
+    /// so every frame between the interface's draws it again
+    /// ([`Editor::redraw_viewports`]).
+    pub viewports: bool,
 }
 
 /// What Test in game plays.
@@ -113,12 +122,23 @@ pub struct Editor {
     stage_encounter: Option<Result<stage::Stage, String>>,
     /// A second viewport, opened for the map editor's split view: its generated world.
     stage_generated: Option<Result<stage::Stage, String>>,
+    /// What the model and map viewports drew last frame, drawn again while the interface
+    /// stands still ([`Editor::redraw_viewports`]).
+    again: Again,
     /// The effect graph's node previews (D113), made when a graph first shows, and the
     /// atlas's egui texture.
     thumbs: Option<(canopy_render::graph_thumbs::GraphThumbs, egui::TextureId)>,
     data: PathBuf,
     /// The last headless frame's widgets, from egui's accessibility tree (UI tests).
     widgets: Vec<Widget>,
+}
+
+/// The model and map viewports' last requests.
+#[derive(Default)]
+struct Again {
+    shot: Option<stage::Shot>,
+    scene: Option<stage::SceneShot>,
+    generated: Option<stage::SceneShot>,
 }
 
 /// A widget as the last headless frame laid it out (its accessibility node): what the UI
@@ -184,6 +204,7 @@ impl Editor {
             stage_scene: None,
             stage_encounter: None,
             stage_generated: None,
+            again: Again::default(),
             thumbs: None,
             data: setup.data,
             widgets: Vec::new(),
@@ -200,11 +221,45 @@ impl Editor {
         &self.widgets
     }
 
-    /// Feeds a window event.
-    pub fn event(&mut self, window: &Window, event: &WindowEvent) {
-        if let Some(state) = &mut self.state {
-            let _ = state.on_window_event(window, event);
+    /// Feeds a window event; whether the window should draw a frame for it.
+    pub fn event(&mut self, window: &Window, event: &WindowEvent) -> bool {
+        match &mut self.state {
+            Some(state) => state.on_window_event(window, event).repaint,
+            None => false,
         }
+    }
+
+    /// Whether a frame is wanted although no input came: MCP calls or files changed on
+    /// disk arrived, or work in flight. Cheap; the window asks between frames.
+    pub fn wants_frame(&mut self) -> bool {
+        self.shell.wants_frame()
+    }
+
+    /// Draws the model and map viewports again as they were last asked for, the interface
+    /// standing still: their pictures move with time as in a whole frame, and
+    /// [`Editor::paint`] shows them with the last frame's interface. Whether one drew.
+    pub fn redraw_viewports(&mut self, gpu: &canopy_render::Gpu) -> bool {
+        let _span = tracing::info_span!("editor_viewports_again").entered();
+        let mut drew = false;
+        let Again {
+            shot,
+            scene,
+            generated,
+        } = &self.again;
+        for (stage, scene) in [
+            (&mut self.stage_scene, scene),
+            (&mut self.stage_generated, generated),
+        ] {
+            if let (Some(Ok(stage)), Some(scene)) = (stage, scene) {
+                stage.draw_scene(gpu, &mut self.renderer, scene);
+                drew = true;
+            }
+        }
+        if let (Some(Ok(stage)), Some(shot)) = (&mut self.stage, shot) {
+            stage.draw(gpu, &mut self.renderer, shot);
+            drew = true;
+        }
+        drew
     }
 
     /// Builds this frame's interface and uploads what it draws.
@@ -576,6 +631,7 @@ impl Editor {
         size: [u32; 2],
         gpu: &canopy_render::Gpu,
     ) -> (Output, egui::PlatformOutput) {
+        let _span = tracing::info_span!("editor_frame").entered();
         let (device, queue) = (&gpu.device, &gpu.queue);
         // The viewport shows last frame's picture; this frame's is drawn below.
         let texture = |stage: &Option<Result<stage::Stage, String>>| match stage {
@@ -594,9 +650,14 @@ impl Editor {
             });
         self.shell.thumbs_texture = self.thumbs.as_ref().map(|(_, id)| *id);
         let shell = &mut self.shell;
-        let output = self.ctx.run_ui(input, |ui| shell.ui(ui));
+        let output = {
+            let _span = tracing::info_span!("editor_ui").entered();
+            self.ctx.run_ui(input, |ui| shell.ui(ui))
+        };
         // The node previews step and draw for the next frame.
+        let previews = self.shell.thumbs.is_some();
         if let Some(request) = self.shell.thumbs.take() {
+            let _span = tracing::info_span!("editor_node_previews").entered();
             let (thumbs, _) = self.thumbs.get_or_insert_with(|| {
                 let thumbs =
                     canopy_render::graph_thumbs::GraphThumbs::new(device, queue, gpu.features);
@@ -631,7 +692,14 @@ impl Editor {
                 }
             }
         }
-        if let Some(scene) = self.shell.scene_generated.take() {
+        let stages = tracing::info_span!("editor_viewports").entered();
+        let generated = self.shell.scene_generated.take();
+        self.again = Again {
+            shot: self.shell.shot.clone(),
+            scene: self.shell.scene.clone(),
+            generated: generated.clone(),
+        };
+        if let Some(scene) = generated {
             let stage = self
                 .stage_generated
                 .get_or_insert_with(|| stage::Stage::new(gpu, &self.data));
@@ -644,6 +712,10 @@ impl Editor {
             self.shell.scene.take(),
             self.shell.encounter.take(),
         );
+        // A stage plays in the interface's frames (its take steps there); model and map
+        // viewports are drawn again between them.
+        let playing = encounter.is_some();
+        let viewports = shot.is_some() || scene.is_some() || self.again.generated.is_some();
         if let Some(scene) = scene
             && let Ok(stage) = self
                 .stage_scene
@@ -665,18 +737,31 @@ impl Editor {
         {
             stage.draw(gpu, &mut self.renderer, &shot);
         }
+        drop(stages);
+        let _span = tracing::info_span!("editor_output").entered();
         let egui::FullOutput {
             platform_output,
             mut textures_delta,
             shapes,
             pixels_per_point,
-            ..
+            viewport_output,
         } = output;
+        let asked = viewport_output
+            .get(&egui::ViewportId::ROOT)
+            .map_or(std::time::Duration::ZERO, |v| v.repaint_delay);
+        let repaint = if playing || previews || self.shell.busy() {
+            Some(std::time::Duration::ZERO)
+        } else {
+            (asked != std::time::Duration::MAX).then_some(asked)
+        };
         self.screen = egui_wgpu::ScreenDescriptor {
             size_in_pixels: [size[0].max(1), size[1].max(1)],
             pixels_per_point,
         };
-        self.jobs = self.ctx.tessellate(shapes, pixels_per_point);
+        self.jobs = {
+            let _span = tracing::info_span!("editor_tessellate").entered();
+            self.ctx.tessellate(shapes, pixels_per_point)
+        };
         // Every delta must be taken (epaint checks on drop).
         let set: Vec<_> = textures_delta.set.drain().collect();
         for (id, deltas) in &set {
@@ -699,12 +784,15 @@ impl Editor {
             close: close == Some(shell::Leave::Menu),
             quit: close == Some(shell::Leave::Quit),
             test: self.shell.test.take(),
+            repaint,
+            viewports,
         };
         (output, platform_output)
     }
 
     /// Records the frame into `view`, clearing it first.
     pub fn paint(&self, encoder: &mut wgpu::CommandEncoder, view: &wgpu::TextureView) {
+        let _span = tracing::info_span!("editor_paint").entered();
         let [r, g, b, _] = theme::BG.to_array();
         let channel = |c: u8| f64::from(c) / 255.0;
         let pass = encoder.begin_render_pass(&wgpu::RenderPassDescriptor {

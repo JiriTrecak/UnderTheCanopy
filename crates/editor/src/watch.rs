@@ -11,6 +11,8 @@ pub struct Watch {
     /// Put before the names of what changed (a mounted folder's `@labs/`).
     prefix: String,
     rx: mpsc::Receiver<notify::Result<notify::Event>>,
+    /// Changes [`Watch::pending`] saw, for the next [`Watch::changed`].
+    seen: BTreeSet<String>,
     /// Kept alive: dropping it stops the watch.
     _watcher: RecommendedWatcher,
 }
@@ -43,6 +45,7 @@ impl Watch {
                 root,
                 prefix: prefix.to_string(),
                 rx,
+                seen: BTreeSet::new(),
                 _watcher: watcher,
             }),
             Err(error) => {
@@ -52,9 +55,23 @@ impl Watch {
         }
     }
 
+    /// Whether documents or grids changed since the last [`Watch::changed`] (it keeps them
+    /// for it): the window wakes for them.
+    pub fn pending(&mut self) -> bool {
+        let fresh = self.read();
+        self.seen.extend(fresh);
+        !self.seen.is_empty()
+    }
+
     /// Documents and grids (`/`-separated from the package root) changed since the last
     /// call.
-    pub fn changed(&self) -> BTreeSet<String> {
+    pub fn changed(&mut self) -> BTreeSet<String> {
+        let mut out = std::mem::take(&mut self.seen);
+        out.extend(self.read());
+        out
+    }
+
+    fn read(&self) -> BTreeSet<String> {
         let mut out = BTreeSet::new();
         while let Ok(event) = self.rx.try_recv() {
             let Ok(event) = event else {
@@ -98,7 +115,7 @@ mod tests {
         let root = std::env::temp_dir().join(format!("canopy-watch-{}", std::process::id()));
         let _ = std::fs::remove_dir_all(&root);
         std::fs::create_dir_all(root.join("units/ants")).unwrap();
-        let watch = Watch::new(&root).expect("watching works here");
+        let mut watch = Watch::new(&root).expect("watching works here");
         std::fs::write(root.join("units/ants/worker.json"), "{}").unwrap();
         std::fs::write(root.join("units/ants/notes.txt"), "not a document").unwrap();
         let start = Instant::now();

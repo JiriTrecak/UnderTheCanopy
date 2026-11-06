@@ -238,6 +238,11 @@ pub struct Shell {
         std::sync::mpsc::Sender<crate::mcp::Call>,
         std::sync::mpsc::Receiver<crate::mcp::Call>,
     ),
+    /// Calls that arrived while the window slept ([`Shell::wants_frame`]), served first.
+    queued_calls: Vec<crate::mcp::Call>,
+    /// When work held back this frame is due (a map's scene after a stroke): the window
+    /// draws only on change, so it wakes then.
+    wake: Option<Duration>,
     server: Option<crate::mcp::Server>,
     token: String,
     autostart: bool,
@@ -330,6 +335,8 @@ impl Shell {
         let autostart = serve::autostart(user.as_deref());
         Self {
             calls: std::sync::mpsc::channel(),
+            queued_calls: Vec::new(),
+            wake: None,
             server: None,
             token,
             autostart,
@@ -404,11 +411,13 @@ impl Shell {
     }
 
     pub fn ui(&mut self, ui: &mut Ui) {
+        let span = tracing::info_span!("shell_poll").entered();
         if let Some(checker) = &mut self.checker {
             checker.poll();
         }
         self.poll_cook();
         self.follow_disk();
+        drop(span);
         self.shortcuts(ui.ctx());
         self.rail(ui);
         // A call waiting for the user's approval brings the sidebar back.
@@ -421,12 +430,15 @@ impl Shell {
             self.assistant = true;
         }
         if self.assistant {
+            let _span = tracing::info_span!("shell_assistant").entered();
             self.assistant(ui);
         } else {
             self.chat.poll();
         }
+        let span = tracing::info_span!("shell_header").entered();
         self.header(ui);
         self.problems(ui);
+        drop(span);
         let Ok(package) = &self.package else {
             egui::CentralPanel::no_frame()
                 .frame(Frame::new().fill(MAIN))
@@ -437,6 +449,7 @@ impl Shell {
             return;
         };
         let package = package.clone();
+        let derived = tracing::info_span!("shell_derived").entered();
         self.refresh_libraries(&package);
         let kind = self.current;
         // The content lags behind edits that do not pass the check.
@@ -468,9 +481,12 @@ impl Shell {
             } else {
                 Default::default()
             };
+        let span = tracing::info_span!("campaign_lists").entered();
         let campaign_maps = self.campaign_maps();
         let campaign_list = self.campaign_list();
+        drop(span);
         let version = package.manifest.version.to_string();
+        drop(derived);
         let workspace = self
             .workspaces
             .get_mut(&kind)
@@ -490,6 +506,7 @@ impl Shell {
             import,
             cook,
         } = if self.library {
+            let _span = tracing::info_span!("shell_library").entered();
             library_panel(ui, kind, workspace, store, &package, unused, cooking)
         } else {
             LibraryAction::default()
@@ -503,6 +520,7 @@ impl Shell {
         {
             None
         } else {
+            let _span = tracing::info_span!("shell_inspector").entered();
             inspector::show(
                 ui,
                 &mut workspace.dock,
@@ -532,6 +550,11 @@ impl Shell {
             .is_some_and(|h| h.2.elapsed() > Duration::from_secs(2))
         {
             workspace.highlight = None;
+        }
+        // The window draws only on change: it wakes when the highlight goes.
+        if let Some(h) = &workspace.highlight {
+            ui.ctx()
+                .request_repaint_after(Duration::from_millis(2010).saturating_sub(h.2.elapsed()));
         }
         let highlight = workspace.highlight.clone();
         let mut opens = Vec::new();
@@ -567,6 +590,7 @@ impl Shell {
         };
         let mut encounter_size = None;
         let mut lab_size = None;
+        let documents = tracing::info_span!("shell_documents").entered();
         tabs::documents(
             ui,
             kind,
@@ -608,6 +632,8 @@ impl Shell {
                 version: &version,
             },
         );
+        drop(documents);
+        let span = tracing::info_span!("shell_after").entered();
         if let Some((document, size)) = encounter_size
             && let Some(session) = self.encounters.get(&document)
         {
@@ -730,13 +756,18 @@ impl Shell {
             Some(Request::Reveal(document)) => self.reveal_document(&document),
             None => {}
         }
+        drop(span);
         self.check();
         self.conflict_dialog(ui.ctx());
         self.leave_dialog(ui.ctx());
         self.save_dialog(ui.ctx());
         self.element_dialog(ui.ctx());
         self.mcp_dialog(ui.ctx());
+        let _span = tracing::info_span!("shell_serve").entered();
         self.serve_calls();
+        if let Some(after) = self.wake.take() {
+            ui.ctx().request_repaint_after(after);
+        }
     }
 
     /// Starts the MCP server when the setting asks for it.
@@ -799,6 +830,21 @@ impl Shell {
                     .generated_due
                     .is_some_and(|t| t.elapsed() >= crate::map::GENERATE_AFTER));
         if !due && !due_generated {
+            // What waits is built when its time comes: the window wakes for it.
+            let throttled = (session.stale && session.scene.is_some())
+                .then(|| {
+                    session
+                        .last_build
+                        .map(|t| Duration::from_millis(151).saturating_sub(t.elapsed()))
+                })
+                .flatten();
+            let generating = session.generated_due.filter(|_| split).map(|t| {
+                (crate::map::GENERATE_AFTER + Duration::from_millis(1)).saturating_sub(t.elapsed())
+            });
+            self.wake = [self.wake, throttled, generating]
+                .into_iter()
+                .flatten()
+                .min();
             return;
         }
         let Some(content) = self.checker.as_ref().and_then(|c| c.content().cloned()) else {
@@ -1945,10 +1991,10 @@ impl Shell {
     /// Takes in files changed on disk: documents reload or become conflicts, and the
     /// libraries that list them are read again.
     fn follow_disk(&mut self) {
-        let Some(mut changed) = self.watch.as_ref().map(Watch::changed) else {
+        let Some(mut changed) = self.watch.as_mut().map(Watch::changed) else {
             return;
         };
-        if let Some(labs) = &self.lab_watch {
+        if let Some(labs) = &mut self.lab_watch {
             changed.extend(labs.changed());
         }
         if changed.is_empty() {
@@ -2504,6 +2550,33 @@ impl Shell {
     }
 
     /// Whether the check of the latest edits has not finished yet.
+    /// Whether work in flight wants frames until it lands: a check, a cook, pictures being
+    /// painted, the assistant's turn, calls waiting for any of them.
+    pub fn busy(&self) -> bool {
+        let unchecked = self
+            .store
+            .as_ref()
+            .is_some_and(|s| self.checker.is_some() && self.checked != Some(s.generation()));
+        unchecked
+            || self.checking()
+            || self.cooking.is_some()
+            || !self.image_jobs.is_empty()
+            || !self.waiting.is_empty()
+            || !self.encounter_waiting.is_empty()
+            || !self.cook_waiting.is_empty()
+            || !self.queued_calls.is_empty()
+            || self.chat.running.is_some()
+    }
+
+    /// Whether something arrived that a frame must take in (MCP calls, files changed on
+    /// disk), or work is in flight; cheap enough to ask between frames.
+    pub fn wants_frame(&mut self) -> bool {
+        self.queued_calls.extend(self.calls.1.try_iter());
+        let disk = self.watch.as_mut().is_some_and(Watch::pending)
+            | self.lab_watch.as_mut().is_some_and(Watch::pending);
+        disk || self.busy()
+    }
+
     pub fn checking(&self) -> bool {
         self.checker.as_ref().is_some_and(|c| {
             c.busy()
@@ -2807,6 +2880,10 @@ impl Shell {
             .is_some_and(|n| n.2.elapsed() > Duration::from_secs(4))
         {
             self.notice = None;
+        }
+        if let Some(n) = &self.notice {
+            ui.ctx()
+                .request_repaint_after(Duration::from_millis(4010).saturating_sub(n.2.elapsed()));
         }
         let notice = self.notice.clone();
         let mut clicked = (false, false, false, false, false);

@@ -111,6 +111,9 @@ impl Target {
 #[path = "capture_ui.rs"]
 mod ui;
 
+#[path = "capture_bench.rs"]
+mod bench;
+
 struct Rig {
     gpu: Gpu,
     renderer: Renderer,
@@ -320,6 +323,8 @@ pub fn run(
             "cameras" => cameras(&mut rig, &paths)?,
             "editor-campaigns" => editor_campaigns(&mut rig, &paths)?,
             "editor-ui" => ui::editor_ui(&mut rig, &paths)?,
+            // Times every workbench in use; a benchmark, never in a sweep.
+            "editor-bench" => bench::editor_bench(&mut rig, &paths)?,
             "effect-graph" => effect_graph(&mut rig, &paths)?,
             // Real turns with the user's stored key: costs a few cents; never in a sweep.
             "assistant-live" => ui::assistant_live(&mut rig, &paths)?,

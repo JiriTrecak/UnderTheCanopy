@@ -109,6 +109,7 @@ pub struct Overlay {
 }
 
 /// A map's scene to draw this frame.
+#[derive(Clone)]
 pub struct SceneShot {
     pub root: String,
     pub version: u64,

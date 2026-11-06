@@ -28,6 +28,20 @@ pub(super) struct Ui<'a> {
     pub failures: Vec<String>,
     passed: usize,
     flow: String,
+    /// The frames' costs while the editor's benchmark measures (`capture_bench.rs`).
+    pub timing: Option<Vec<Sample>>,
+    /// The last frame asked for the next one at once (an idle editor must not).
+    pub at_once: bool,
+}
+
+/// One measured frame: its CPU time (the interface built, uploaded, painted and submitted)
+/// and the GPU's after it (submit to idle).
+#[derive(Debug, Clone, Copy)]
+pub struct Sample {
+    pub cpu: Duration,
+    pub gpu: Duration,
+    /// The editor asked for the next frame at once (else the window would sleep).
+    pub at_once: bool,
 }
 
 impl<'a> Ui<'a> {
@@ -39,6 +53,8 @@ impl<'a> Ui<'a> {
             failures: Vec::new(),
             passed: 0,
             flow: String::new(),
+            timing: None,
+            at_once: false,
         };
         ui.editor.record_widgets();
         ui.frames(4);
@@ -51,11 +67,30 @@ impl<'a> Ui<'a> {
     }
 
     pub fn send(&mut self, events: Vec<egui::Event>) {
+        let start = Instant::now();
         let output =
             self.editor
                 .run_headless_with(self.rig.size, self.rig.scale, &self.rig.gpu, events);
+        let at_once = output.repaint == Some(Duration::ZERO);
+        self.at_once = at_once;
         if output.test.is_some() {
             self.test = output.test;
+        }
+        if let Some(samples) = &mut self.timing {
+            // As the window does: paint the frame and submit it.
+            let gpu = &self.rig.gpu;
+            let mut encoder = gpu
+                .device
+                .create_command_encoder(&wgpu::CommandEncoderDescriptor::default());
+            self.editor.paint(&mut encoder, &self.rig.target.ui_view);
+            gpu.queue.submit([encoder.finish()]);
+            let submitted = Instant::now();
+            let _ = gpu.device.poll(wgpu::PollType::wait_indefinitely());
+            samples.push(Sample {
+                cpu: submitted - start,
+                gpu: submitted.elapsed(),
+                at_once,
+            });
         }
         std::thread::sleep(Duration::from_millis(12));
     }
@@ -334,7 +369,7 @@ impl<'a> Ui<'a> {
 
 /// A scratch copy of the base package: its documents copied, its asset folders linked
 /// (read, never written by the flows).
-fn scratch_package(base: &Path, to: &Path) -> Result<()> {
+pub(super) fn scratch_package(base: &Path, to: &Path) -> Result<()> {
     let _ = std::fs::remove_dir_all(to);
     std::fs::create_dir_all(to)?;
     for entry in std::fs::read_dir(base)? {
@@ -378,6 +413,12 @@ pub(super) fn editor_ui(rig: &mut Rig, paths: &Paths) -> Result<()> {
         ui.editor.select(kind);
         ui.editor.open_first(1);
         ui.settle();
+        // Nothing moving, nothing in flight: the window would sleep instead of drawing.
+        if kind == canopy_editor::Kind::Races {
+            ui.flow("idle");
+            ui.frames(4);
+            ui.check(!ui.at_once, "an idle editor asks for no frames");
+        }
         report.push_str(&format!("===== {kind:?}\n{}\n\n", ui.dump()));
     }
     std::fs::write(ui.rig.out.join("editor-ui-widgets.txt"), &report)?;

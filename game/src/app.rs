@@ -31,6 +31,9 @@ use std::{
 /// How often a hidden window's loop runs: the game keeps going (matches, the network)
 /// without drawing.
 const HIDDEN_FRAME: Duration = Duration::from_millis(16);
+/// How often the editor, drawing nothing new, looks for MCP calls and files changed on
+/// disk between frames.
+const EDITOR_POLL: Duration = Duration::from_millis(8);
 use winit::{
     application::ApplicationHandler,
     dpi::LogicalSize,
@@ -70,6 +73,29 @@ pub struct App {
     stats: Stats,
     stats_since: Instant,
     quality_override: Option<canopy_render::Quality>,
+    /// The editor builds its interface only on change: when its next frame is due
+    /// (`None`: on input), whether the next draw builds it, and whether its model or map
+    /// viewports move on their own (drawn again every frame in between).
+    /// `CANOPY_EDITOR_CONTINUOUS=1` builds every frame as the game does.
+    editor_due: Option<Instant>,
+    editor_whole: bool,
+    editor_viewports: bool,
+    editor_continuous: bool,
+    /// The editor's frames between two `CANOPY_EDITOR_STATS=1` log lines.
+    editor_stats: EditorStats,
+}
+
+/// The editor's frames between two log lines: their count and CPU times, and a sampled
+/// GPU time (submit to idle).
+#[derive(Default)]
+struct EditorStats {
+    on: bool,
+    frames: u32,
+    /// Frames that built the interface (the rest drew the viewports again).
+    whole: u32,
+    cpu_ms: f32,
+    cpu_max: f32,
+    gpu_ms: Option<f32>,
 }
 
 impl App {
@@ -86,6 +112,14 @@ impl App {
             quality_override: (options.quality != canopy_render::Quality::default())
                 .then_some(options.quality),
             options,
+            editor_due: None,
+            editor_whole: true,
+            editor_viewports: false,
+            editor_continuous: std::env::var("CANOPY_EDITOR_CONTINUOUS").is_ok_and(|v| v == "1"),
+            editor_stats: EditorStats {
+                on: std::env::var("CANOPY_EDITOR_STATS").is_ok_and(|v| v == "1"),
+                ..EditorStats::default()
+            },
         }
     }
 
@@ -197,6 +231,7 @@ impl App {
         ));
         session.game.audio.set_background(true);
         window.set_title(&tr!("app.title-editor"));
+        self.editor_whole = true;
     }
 
     /// A frame while the editor is open.
@@ -207,9 +242,29 @@ impl App {
         let Some(editor) = &mut session.editor else {
             return;
         };
-        // The game's data keeps loading behind the editor.
-        session.game.poll_boot();
-        let output = editor.run(window, &session.display.gpu);
+        let started = Instant::now();
+        // Between the interface's frames only the viewports are drawn again; any other
+        // draw (the system's too) builds the whole frame.
+        let whole = std::mem::take(&mut self.editor_whole)
+            || self.editor_continuous
+            || !self.editor_viewports;
+        if !whole {
+            editor.redraw_viewports(&session.display.gpu);
+        }
+        let output = if whole {
+            // The game's data keeps loading behind the editor.
+            session.game.poll_boot();
+            let output = editor.run(window, &session.display.gpu);
+            self.editor_due = match output.repaint {
+                _ if self.editor_continuous => Some(started),
+                Some(delay) => Some(started + delay),
+                None => None,
+            };
+            self.editor_viewports = output.viewports;
+            output
+        } else {
+            canopy_editor::Output::default()
+        };
         if output.quit {
             session.game.quit();
             event_loop.exit();
@@ -263,7 +318,44 @@ impl App {
             });
         editor.paint(&mut encoder, &view);
         gpu.queue.submit([encoder.finish()]);
+        let stats = &mut self.editor_stats;
+        if stats.on {
+            let cpu = started.elapsed().as_secs_f32() * 1000.0;
+            stats.frames += 1;
+            stats.whole += u32::from(whole);
+            stats.cpu_ms += cpu;
+            stats.cpu_max = stats.cpu_max.max(cpu);
+            // One frame in each log line is waited for: its GPU time.
+            if stats.gpu_ms.is_none() {
+                let submitted = Instant::now();
+                let _ = gpu.device.poll(wgpu::PollType::wait_indefinitely());
+                stats.gpu_ms = Some(submitted.elapsed().as_secs_f32() * 1000.0);
+            }
+        }
         session.display.present(frame);
+    }
+
+    /// The editor's log line every two seconds (`CANOPY_EDITOR_STATS=1`): frames drawn (an
+    /// idle editor draws none), their CPU time and a sampled GPU time.
+    fn log_editor_stats(&mut self, now: Instant) {
+        let stats = &mut self.editor_stats;
+        if !stats.on || (now - self.stats_since).as_secs_f32() < 2.0 {
+            return;
+        }
+        let frames = stats.frames.max(1) as f32;
+        tracing::info!(
+            frames = stats.frames,
+            interface = stats.whole,
+            cpu_ms = stats.cpu_ms / frames,
+            cpu_max_ms = stats.cpu_max,
+            gpu_ms = stats.gpu_ms,
+            "editor frame"
+        );
+        *stats = EditorStats {
+            on: true,
+            ..EditorStats::default()
+        };
+        self.stats_since = now;
     }
 
     fn redraw(&mut self, event_loop: &ActiveEventLoop) {
@@ -272,6 +364,7 @@ impl App {
         self.last_frame = now;
         if self.session.as_ref().is_some_and(|s| s.editor.is_some()) {
             self.redraw_editor(event_loop);
+            self.log_editor_stats(now);
             return;
         }
         let (Some(session), Some(window)) = (&mut self.session, &self.window) else {
@@ -304,6 +397,7 @@ impl App {
             session.editor = session.suspended.take();
             session.game.audio.set_background(true);
             window.set_title(&tr!("app.title-editor"));
+            self.editor_whole = true;
             return;
         }
         if let Some(vsync) = requests.vsync {
@@ -449,7 +543,11 @@ impl ApplicationHandler for App {
             WindowEvent::RedrawRequested => {
                 self.redraw(event_loop);
                 telemetry::frame_mark();
-                if let Some(window) = &self.window {
+                let editing = self.session.as_ref().is_some_and(|s| s.editor.is_some());
+                // The editor's next frame comes when it is due (`about_to_wait`).
+                if let Some(window) = &self.window
+                    && !editing
+                {
                     window.request_redraw();
                 }
                 return;
@@ -460,8 +558,46 @@ impl ApplicationHandler for App {
             return;
         };
         match (&mut session.editor, self.window.as_deref()) {
-            (Some(editor), Some(window)) => editor.event(window, &event),
+            (Some(editor), Some(window)) => {
+                if editor.event(window, &event) {
+                    self.editor_whole = true;
+                    window.request_redraw();
+                }
+            }
             _ => session.game.window_event(self.window.as_deref(), &event),
+        }
+    }
+
+    /// The editor draws only on change: a frame when one is due or when something arrived
+    /// for it (MCP calls, files changed on disk); between them the loop sleeps, waking
+    /// every [`EDITOR_POLL`] to ask. The game draws every frame (`RedrawRequested`).
+    fn about_to_wait(&mut self, event_loop: &ActiveEventLoop) {
+        let (Some(session), Some(window)) = (&mut self.session, &self.window) else {
+            return;
+        };
+        let Some(editor) = &mut session.editor else {
+            event_loop.set_control_flow(winit::event_loop::ControlFlow::Wait);
+            return;
+        };
+        let now = Instant::now();
+        // The log line comes while idle too (an idle editor draws no frames).
+        let wake_log = self
+            .editor_stats
+            .on
+            .then(|| self.stats_since + Duration::from_secs(2));
+        let due = self.editor_due.is_some_and(|at| at <= now);
+        if due || editor.wants_frame() {
+            self.editor_due = None;
+            self.editor_whole = true;
+            window.request_redraw();
+        } else if self.editor_viewports {
+            window.request_redraw();
+        }
+        let poll = now + EDITOR_POLL;
+        let wake = self.editor_due.map_or(poll, |at| at.min(poll));
+        event_loop.set_control_flow(winit::event_loop::ControlFlow::WaitUntil(wake));
+        if wake_log.is_some_and(|at| at <= now) {
+            self.log_editor_stats(now);
         }
     }
 }

@@ -127,7 +127,11 @@ impl Shell {
 
     /// Answers the tool calls that arrived; `problems` waits for the current check.
     pub fn serve_calls(&mut self) {
-        while let Ok(Call { tool, reply }) = self.calls.1.try_recv() {
+        let arrived: Vec<Call> = std::mem::take(&mut self.queued_calls)
+            .into_iter()
+            .chain(self.calls.1.try_iter())
+            .collect();
+        for Call { tool, reply } in arrived {
             if matches!(tool, Tool::Problems) {
                 self.waiting.push(reply);
                 continue;
