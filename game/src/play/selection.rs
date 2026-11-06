@@ -1,9 +1,11 @@
 //! Selection and control groups (old `presentation/selection.ts`, `controlGroups.ts`,
 //! `areaSelection` and the click rules of `session.ts`).
 //!
-//! The selection is an ordered list of entity ids whose first entry is the **focus**: it
-//! supplies the portrait, the special commands and the build menu. The order is a stable
-//! sort by rank (hero, army, worker, other), with an explicitly focused id first.
+//! A selection has a fixed **card order**, as Warcraft III and StarCraft II keep it:
+//! by rank (hero, army, worker, other), then by type, so each type's cards stand
+//! together as a subgroup, then in the order given. Its **focus** supplies the portrait,
+//! the special commands and the build menu; Tab moves the focus from subgroup to
+//! subgroup without moving any card.
 
 use std::time::Duration;
 
@@ -32,12 +34,21 @@ pub struct Candidate {
 
 #[derive(Debug, Clone, Default, PartialEq, Eq)]
 pub struct Selection {
+    /// The cards in their fixed order.
+    cards: Vec<u32>,
+    /// The focus, then the other cards in order: what commands read.
     ids: Vec<u32>,
 }
 
 impl Selection {
+    /// The focus first, then the rest in card order.
     pub fn ids(&self) -> &[u32] {
         &self.ids
+    }
+
+    /// The selection in the order its cards show.
+    pub fn cards(&self) -> &[u32] {
+        &self.cards
     }
 
     pub fn focus(&self) -> Option<u32> {
@@ -45,54 +56,69 @@ impl Selection {
     }
 
     pub fn contains(&self, id: u32) -> bool {
-        self.ids.contains(&id)
+        self.cards.contains(&id)
     }
 
-    /// Replaces the selection, ordered by rank with `focus` (if listed) first.
-    pub fn set(&mut self, ids: Vec<u32>, focus: Option<u32>, rank: impl Fn(u32) -> u8) {
-        let mut ids = dedup(ids);
-        // A stable sort keeps the given order within a rank.
-        ids.sort_by_key(|&id| (Some(id) != focus, std::cmp::Reverse(rank(id))));
-        self.ids = ids;
+    /// Replaces the selection. `order` gives each id's (rank, type): cards go by rank,
+    /// then type, then as given. The focus is `focus` if listed, else the first card.
+    pub fn set(&mut self, ids: Vec<u32>, focus: Option<u32>, order: impl Fn(u32) -> (u8, u16)) {
+        let mut cards = dedup(ids);
+        // A stable sort keeps the given order within a type.
+        cards.sort_by_key(|&id| {
+            let (rank, kind) = order(id);
+            (std::cmp::Reverse(rank), kind)
+        });
+        self.cards = cards;
+        self.focus_or_first(focus);
     }
 
-    /// Drops ids `keep` refuses. Returns whether the focus was lost (the rest is then
-    /// re-ordered by rank, as the old HUD did).
-    pub fn prune(&mut self, keep: impl Fn(u32) -> bool, rank: impl Fn(u32) -> u8) -> bool {
+    /// Drops ids `keep` refuses; the cards keep their order. Returns whether the focus
+    /// was lost (it then passes to the first card).
+    pub fn prune(&mut self, keep: impl Fn(u32) -> bool) -> bool {
         let focus = self.focus();
-        self.ids.retain(|&id| keep(id));
-        if self.focus() != focus && focus.is_some() {
-            let ids = std::mem::take(&mut self.ids);
-            self.set(ids, None, rank);
-            return true;
-        }
-        false
+        self.cards.retain(|&id| keep(id));
+        let lost = focus.is_some_and(|f| !self.cards.contains(&f));
+        self.focus_or_first(if lost { None } else { focus });
+        lost
     }
 
-    /// Moves `id` to the front as the focus.
+    /// Makes `id` the focus, if it is selected.
     pub fn focus_on(&mut self, id: u32) {
-        if let Some(i) = self.ids.iter().position(|&x| x == id) {
-            let id = self.ids.remove(i);
-            self.ids.insert(0, id);
+        if self.cards.contains(&id) {
+            self.focus_or_first(Some(id));
         }
     }
 
     /// Removes one id (shift-click on a selection card).
     pub fn remove(&mut self, id: u32) {
-        self.ids.retain(|&x| x != id);
+        let focus = self.focus().filter(|&f| f != id);
+        self.cards.retain(|&x| x != id);
+        self.focus_or_first(focus);
     }
 
-    /// Tab / Shift+Tab: focus the first entity of the next (or previous) type in the
-    /// selection, ordered by rank and then type; needs two types.
+    fn focus_or_first(&mut self, focus: Option<u32>) {
+        let focus = focus
+            .filter(|f| self.cards.contains(f))
+            .or_else(|| self.cards.first().copied());
+        self.ids.clear();
+        self.ids.extend(focus);
+        self.ids
+            .extend(self.cards.iter().copied().filter(|&id| Some(id) != focus));
+    }
+
+    /// Tab / Shift+Tab: focus the first card of the next (or previous) subgroup, in card
+    /// order; needs two types. No card moves.
     pub fn cycle(&mut self, candidates: &[Candidate], forward: bool) {
-        let mut kinds: Vec<(u8, u16)> = self
-            .ids
+        let mut kinds: Vec<(u8, u16)> = Vec::new();
+        for c in self
+            .cards
             .iter()
             .filter_map(|id| candidates.iter().find(|c| c.id == *id))
-            .map(|c| (c.rank, c.kind))
-            .collect();
-        kinds.sort_by_key(|&(rank, kind)| (std::cmp::Reverse(rank), kind));
-        kinds.dedup();
+        {
+            if !kinds.contains(&(c.rank, c.kind)) {
+                kinds.push((c.rank, c.kind));
+            }
+        }
         if kinds.len() < 2 {
             return;
         }
@@ -109,7 +135,7 @@ impl Selection {
         } else {
             (at + n - 1) % n
         }];
-        let first = self.ids.iter().copied().find(|id| {
+        let first = self.cards.iter().copied().find(|id| {
             candidates
                 .iter()
                 .any(|c| c.id == *id && (c.rank, c.kind) == next)
@@ -234,18 +260,39 @@ mod tests {
     }
 
     #[test]
-    fn selections_order_heroes_then_army_then_workers_and_keep_the_focus_first() {
-        let ranks = [(1, 1), (2, 2), (3, 3), (4, 2), (5, 0)];
-        let rank = |id: u32| ranks.iter().find(|r| r.0 == id).map_or(0, |r| r.1);
+    fn selections_order_cards_by_rank_then_type_and_focus_without_moving_them() {
+        // (id, rank, type)
+        let units = [
+            (1, 1, 5),
+            (2, 2, 7),
+            (3, 3, 9),
+            (4, 2, 6),
+            (5, 0, 1),
+            (6, 2, 7),
+        ];
+        let order = |id: u32| {
+            units
+                .iter()
+                .find(|u| u.0 == id)
+                .map_or((0, 0), |u| (u.1, u.2))
+        };
         let mut s = Selection::default();
-        s.set(vec![1, 2, 3, 4, 5, 2], None, rank);
-        assert_eq!(s.ids(), [3, 2, 4, 1, 5]);
-        s.set(vec![1, 2, 3, 4, 5], Some(1), rank);
-        assert_eq!(s.ids(), [1, 3, 2, 4, 5]);
-        // Losing the focus re-orders the rest by rank.
-        assert!(s.prune(|id| id != 1, rank));
-        assert_eq!(s.ids(), [3, 2, 4, 5]);
-        assert!(!s.prune(|id| id != 5, rank));
+        s.set(vec![1, 2, 3, 4, 5, 2, 6], None, order);
+        assert_eq!(s.cards(), [3, 4, 2, 6, 1, 5]);
+        assert_eq!(s.ids(), [3, 4, 2, 6, 1, 5]);
+        s.set(vec![1, 2, 3, 4, 5, 6], Some(1), order);
+        assert_eq!(s.cards(), [3, 4, 2, 6, 1, 5]);
+        assert_eq!(s.ids(), [1, 3, 4, 2, 6, 5]);
+        // Losing the focus passes it to the first card; the cards keep their order.
+        assert!(s.prune(|id| id != 1));
+        assert_eq!(s.cards(), [3, 4, 2, 6, 5]);
+        assert_eq!(s.focus(), Some(3));
+        assert!(!s.prune(|id| id != 5));
+        assert_eq!(s.focus(), Some(3));
+        s.focus_on(6);
+        assert_eq!(s.cards(), [3, 4, 2, 6]);
+        assert_eq!(s.ids(), [6, 3, 4, 2]);
+        s.remove(6);
         assert_eq!(s.focus(), Some(3));
     }
 
@@ -266,23 +313,25 @@ mod tests {
     }
 
     #[test]
-    fn tab_cycles_types_in_rank_order() {
-        let cands = [c(1, 2, 10), c(2, 2, 10), c(3, 1, 4), c(4, 3, 8)];
+    fn tab_moves_the_focus_through_subgroups_and_keeps_the_cards_in_place() {
+        let cands = [c(1, 2, 10), c(2, 2, 10), c(3, 1, 4), c(4, 3, 8), c(5, 2, 9)];
         let mut s = Selection::default();
-        s.set(vec![1, 2, 3, 4], None, |id| {
-            cands.iter().find(|c| c.id == id).unwrap().rank
+        s.set(vec![1, 2, 3, 4, 5], None, |id| {
+            let c = cands.iter().find(|c| c.id == id).unwrap();
+            (c.rank, c.kind)
         });
+        let cards = [4, 5, 1, 2, 3];
+        assert_eq!(s.cards(), cards);
         assert_eq!(s.focus(), Some(4));
-        s.cycle(&cands, true);
-        assert_eq!(s.focus(), Some(1));
-        s.cycle(&cands, true);
-        assert_eq!(s.focus(), Some(3));
-        s.cycle(&cands, true);
-        assert_eq!(s.focus(), Some(4));
+        for focus in [5, 1, 3, 4] {
+            s.cycle(&cands, true);
+            assert_eq!(s.focus(), Some(focus));
+            assert_eq!(s.cards(), cards);
+        }
         s.cycle(&cands, false);
         assert_eq!(s.focus(), Some(3));
-        // Everything stays selected.
-        assert_eq!(s.ids().len(), 4);
+        assert_eq!(s.cards(), cards);
+        assert_eq!(s.ids().len(), 5);
     }
 
     #[test]

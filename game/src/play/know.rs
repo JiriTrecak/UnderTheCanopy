@@ -165,6 +165,14 @@ impl Knowledge {
         self.def_of(id).map_or(0, rank)
     }
 
+    /// Where a selection card goes: its rank, then its type (definition index).
+    pub fn card_order(&self, id: u32) -> (u8, u16) {
+        (
+            self.rank_of(id),
+            self.entity(id).map_or(u16::MAX, |e| e.definition().0),
+        )
+    }
+
     /// The name and icon image of a content icon id (`icon.action.move`).
     pub fn icon_image(&self, icon: &str) -> Option<&str> {
         self.content.asset(icon).and_then(|a| a.image.as_deref())

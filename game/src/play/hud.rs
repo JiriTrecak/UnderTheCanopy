@@ -649,13 +649,13 @@ impl Hud {
     }
 
     fn selection(&mut self, ui: &mut Ui, n: &Nodes, play: &Play, k: &Knowledge) {
-        let ids = play.selection.ids();
-        let focus = ids.first().and_then(|&id| k.entity(id));
-        let group = ids.len() >= 2;
-        // Unit cards for groups.
+        let cards = play.selection.cards();
+        let focus = play.selection.focus().and_then(|id| k.entity(id));
+        let group = cards.len() >= 2;
+        // Unit cards for groups, in their fixed order; the focus's subgroup is lit.
         if group {
-            ui.set_count(n.cards, ids.len().min(48));
-            for (i, &id) in ids.iter().take(48).enumerate() {
+            ui.set_count(n.cards, cards.len().min(48));
+            for (i, &id) in cards.iter().take(48).enumerate() {
                 let (Some(cell), Some(e)) = (ui.child(n.cards, i), k.entity(id)) else {
                     continue;
                 };
@@ -671,7 +671,10 @@ impl Hud {
                     ui.set_color(bar, Some(health_color(ratio)));
                 }
                 set_mana(ui, cell, e);
-                ui.set_checked(cell, i == 0);
+                ui.set_checked(
+                    cell,
+                    focus.is_some_and(|f| f.definition() == e.definition()),
+                );
                 ui.set_tooltip(
                     cell,
                     Some(Tooltip {
@@ -1802,7 +1805,7 @@ impl Hud {
                         modifiers, count, ..
                     },
                 ) => {
-                    if let Some(&id) = play.selection.ids().get(index)
+                    if let Some(&id) = play.selection.cards().get(index)
                         && !play.target_unit(id)
                     {
                         play.card_click(id, modifiers.shift, *count >= 2);

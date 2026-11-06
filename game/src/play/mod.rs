@@ -475,7 +475,7 @@ impl Play {
     fn prune(&mut self) {
         let k = self.know.clone();
         let keep = |id: u32| k.entity(id).is_some_and(|e| k.selectable(e));
-        if self.selection.prune(keep, |id| k.rank_of(id)) {
+        if self.selection.prune(keep) {
             self.mode = Mode::Idle;
         }
         self.groups
@@ -1045,7 +1045,7 @@ impl Play {
             ));
             self.cues.push(Cue::Answer { unit, answer });
         }
-        self.selection.set(ids, focus, |id| k.rank_of(id));
+        self.selection.set(ids, focus, |id| k.card_order(id));
         self.mode = Mode::Idle;
         self.menu = None;
         self.page = 0;

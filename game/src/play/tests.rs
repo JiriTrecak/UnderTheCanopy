@@ -912,9 +912,14 @@ fn idle_workers_menu_keys_tab_and_chat() {
     ids.push(hero);
     h.play.select(ids.clone(), None);
     assert_eq!(h.play.selection.focus(), Some(hero));
+    let cards = h.play.selection.cards().to_vec();
+    assert_eq!(cards[0], hero, "heroes lead the cards");
     h.key("Tab");
-    assert_ne!(h.play.selection.focus(), Some(hero));
-    assert_eq!(h.play.selection.ids().len(), ids.len());
+    assert_eq!(h.play.selection.focus(), Some(cards[1]));
+    assert_eq!(h.play.selection.cards(), cards, "the cards stay in place");
+    h.key("Tab");
+    assert_eq!(h.play.selection.focus(), Some(hero));
+    assert_eq!(h.play.selection.cards(), cards);
     // Enter opens the chat; a line is echoed and handed to the game.
     h.key("Enter");
     assert!(h.play.chat_open);

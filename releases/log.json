@@ -21,7 +21,9 @@
       "Editor: the Effects stage plays the effect by itself on repeat, with a player colour picker and only the settings that change its look.",
       "Units killed in melee are knocked back a step or two as they fall."
     ],
-    "fixed": [],
+    "fixed": [
+      "Tab keeps a group's unit cards in place and lights the active subgroup, as cards are now grouped by type."
+    ],
     "knownIssues": []
   },
   "releases": [
