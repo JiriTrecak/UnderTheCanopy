@@ -558,10 +558,10 @@ amber('bog', 70, 298, (90, 272))
 building('building.neutral.corrupted-root', 'substance-spring', 260, 232, 8)
 
 # The feral brood (player 2): burrows on the ridge and in the den, spires, defenders.
-building('building.ants.barracks', 'burrow.ne.1', 314, 70, 16, 'player.2')
-building('building.ants.barracks', 'burrow.ne.2', 344, 96, 16, 'player.2')
+building('building.ants.barracks', 'burrow.ne.1', 314, 70, 12, 'player.2')
+building('building.ants.barracks', 'burrow.ne.2', 344, 96, 12, 'player.2')
 building('building.ants.tower', 'spire.ne', 300, 116, 8, 'player.2')
-building('building.ants.barracks', 'burrow.nw', 82, 88, 16, 'player.2')
+building('building.ants.barracks', 'burrow.nw', 82, 88, 12, 'player.2')
 building('building.ants.tower', 'spire.nw', 106, 116, 8, 'player.2')
 FERAL = [('unit.ants.warrior', 302, 92), ('unit.ants.warrior', 306, 96), ('unit.ants.warrior', 326, 86),
          ('unit.ants.warrior', 330, 90), ('unit.ants.archer', 316, 104), ('unit.ants.archer', 340, 72),
@@ -652,14 +652,13 @@ FERAL_WAVES = [
     # Raiders from 3:00, a wave every 90 s, one more every second wave.
     {'after': 180, 'every': 90, 'units': [{'unit': 'unit.ants.warrior', 'count': 3}],
      'grow': {'every': 2, 'unit': 'unit.ants.warrior', 'count': 1}, 'from': 'trained', 'target': {'region': 'front'}},
-    # From 8:00 a Raider with a Spitter, one more Raider every second wave (the War Nest
-    # trains only these two while the ants' army is redesigned).
-    {'after': 480, 'every': 90, 'units': [{'unit': 'unit.ants.warrior', 'count': 1},
-                                          {'unit': 'unit.ants.spitter', 'count': 1}],
-     'grow': {'every': 2, 'unit': 'unit.ants.warrior', 'count': 1}, 'from': 'trained', 'target': {'region': 'front'}},
-    # From 12:00 a pair of Spitters every other minute or so.
-    {'after': 720, 'every': 130, 'units': [{'unit': 'unit.ants.spitter', 'count': 2}],
-     'grow': {'every': 3, 'unit': 'unit.ants.spitter', 'count': 1}, 'from': 'trained', 'target': {'region': 'front'}},
+    # From 8:00 the mutated join: Bursters with a Needler, one more Burster every second wave.
+    {'after': 480, 'every': 90, 'units': [{'unit': 'unit.ants.burster', 'count': 1},
+                                          {'unit': 'unit.ants.archer', 'count': 1}],
+     'grow': {'every': 2, 'unit': 'unit.ants.burster', 'count': 1}, 'from': 'trained', 'target': {'region': 'front'}},
+    # From 12:00 a column of Needlers every other minute or so.
+    {'after': 720, 'every': 130, 'units': [{'unit': 'unit.ants.archer', 'count': 2}],
+     'grow': {'every': 3, 'unit': 'unit.ants.archer', 'count': 1}, 'from': 'trained', 'target': {'region': 'front'}},
 ]
 # Saved cameras for the scenes (docs/campaign.md "Scenes"): yaw 0 puts the eye due south
 # looking north, 90 east; eyes stand over open ground or high above the giants.

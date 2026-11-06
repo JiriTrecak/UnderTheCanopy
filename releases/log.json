@@ -6,7 +6,6 @@
       "The campaign now ends early access with its own end card, and players carry on from there when new missions arrive",
       "The campaign editor can outline whole campaigns: draft steps, a tabletop for sketching missions, story beats, cinematic shots and a read-through of every step",
       "The editor's assistant helps design campaign missions: it knows the step you are on, reads the whole story's outlines, pitches ideas and paints concept pictures into an outline (with an OpenAI key)",
-      "The ants' army is cut down to the new look while it is redesigned: the barracks, now the War Nest, trains only the Raider, now a chitin knight with a spiked sword, and the new Spitter, each at 1 Amber, a second's training and no supply; the other ant units can't be trained for now",
       "Units fall as ragdolls when they die: bodies topple from the killing blow and drop their weapons."
     ],
     "improved": [
@@ -21,9 +20,7 @@
       "Effects editor: a whole effect on one screen, each layer a row of purpose-made nodes read left to right into one Effect node that plays it all.",
       "Editor: the Effects stage plays the effect by itself on repeat, with a player colour picker and only the settings that change its look."
     ],
-    "fixed": [
-      "Founding: the enemy's later waves arrive again, now Raiders and Spitters."
-    ],
+    "fixed": [],
     "knownIssues": []
   },
   "releases": [

@@ -41,6 +41,16 @@
         "item.amber",
         "item.root"
       ]
+    },
+    "production": {
+      "mode": "queued",
+      "outputs": [
+        "unit.ants.bombardier",
+        "unit.ants.winglancer",
+        "unit.ants.thornblade"
+      ],
+      "workerSlots": 0,
+      "queueCapacity": 6
     }
   },
   "category": "category.build-advanced",

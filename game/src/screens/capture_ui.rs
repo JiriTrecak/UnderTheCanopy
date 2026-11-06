@@ -1114,7 +1114,7 @@ fn workbench_flows(ui: &mut Ui) {
         (
             "Buildings",
             "Search items and buildings",
-            "War Nest",
+            "Soldier Burrow",
             "Trains",
         ),
         (

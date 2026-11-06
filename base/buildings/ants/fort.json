@@ -1,6 +1,6 @@
 {
   "id": "building.ants.fort",
-  "model": "asset.models.buildings.ants-baobab-nest",
+  "model": "asset.models.buildings.ants-nest",
   "icon": "asset.portraits.buildings.ants-nest",
   "body": {
     "maxHp": 1800,

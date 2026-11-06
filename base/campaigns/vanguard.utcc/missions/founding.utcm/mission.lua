@@ -348,7 +348,7 @@ function on_tick()
     return
   end
   local tick = mission.tick()
-  -- The colony: a Brood Mound and a War Nest.
+  -- The colony: a Brood Mound and a Soldier Burrow.
   if not mission.get("colony-done") and tick > 5 * SECOND and mission.count(P1, "building.ants.house") >= 1
       and mission.count(P1, "building.ants.barracks") >= 1 then
     mission.set("colony-done", true)

@@ -1,12 +1,13 @@
 {
-  "id": "asset.models.buildings.ants-brood-crater",
-  "name": "Brood Crater",
+  "id": "asset.models.buildings.ants-brood-mound",
+  "name": "Brood Mound",
   "kind": "building",
   "tags": [
     "ants",
     "tripo",
     "team-mask",
-    "nest-cast"
+    "animated",
+    "tunnel"
   ],
   "race": "ants",
   "resources": [
@@ -35,7 +36,7 @@
     "teamColor": {
       "mode": "mask",
       "slots": [
-        "TC_ants_brood_crater_body"
+        "TC_ants_brood_mound_body"
       ]
     },
     "animations": [
@@ -52,7 +53,7 @@
         "events": [
           {
             "name": "bloom",
-            "time": 1.0
+            "time": 2.0
           }
         ]
       }
@@ -60,23 +61,23 @@
     "blocker": {
       "shape": "box",
       "size": [
-        8.0,
-        8.0
+        8,
+        8
       ],
       "offset": [
         0,
         0
       ]
     },
-    "vegetationClearance": 4.0,
+    "vegetationClearance": 4,
     "groundContact": {
       "mode": "pivot"
     }
   },
   "display": {
     "scale": 1,
-    "healthHeight": 4.7
+    "healthHeight": 5.0
   },
   "shading": "building",
-  "license": "Generated with Tripo (image to 3D, retopology) from an ImageGen (gpt-image-2.5) concept for Under the Canopy; made game-ready by tools/buildings/nest_cast.py."
+  "license": "Generated with Tripo (image to 3D, segmentation) from an ImageGen (gpt-image-2) concept for Under the Canopy; made game-ready and animated by tools/buildings/ant_building.py with tools/buildings/ants/brood-mound.json."
 }

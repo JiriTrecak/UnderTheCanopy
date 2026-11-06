@@ -122,7 +122,5 @@
   "unit.neutral.willow-wisp.name": "Willow Wisp",
   "unit.neutral.willow-wisp.description": "Ranged forest creature.",
   "unit.neutral.young-toad.name": "Young Toad",
-  "unit.neutral.young-toad.description": "Melee forest creature.",
-  "unit.ants.spitter.name": "Spitter",
-  "unit.ants.spitter.description": "Ranged bile spitter."
+  "unit.neutral.young-toad.description": "Melee forest creature."
 }

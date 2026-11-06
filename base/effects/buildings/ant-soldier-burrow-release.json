@@ -1,0 +1,91 @@
+{
+  "id": "effect.buildings.ant-soldier-burrow-release",
+  "name": "Soldier Burrow gate release",
+  "description": "Sandy clay dust and a few violet motes rolling out of the gate as its mandibles open for a soldier marching out.",
+  "durationTicks": 60,
+  "loop": false,
+  "layers": [
+    {
+      "id": "puff",
+      "enabled": true,
+      "startTick": 0,
+      "emitter": {
+        "mode": "burst",
+        "lifetimeTicks": 56,
+        "rate": 12,
+        "speed": 2.0,
+        "speedVariation": 0.45,
+        "direction": {
+          "x": 0,
+          "y": 1,
+          "z": 0
+        },
+        "coneDegrees": 80,
+        "gravity": -0.3,
+        "drag": 1.5,
+        "spawnRadius": 1.0,
+        "startSize": 0.9,
+        "endSize": 3.0,
+        "spin": 0.3,
+        "fadeIn": 0.06,
+        "fadeOut": 0.8
+      },
+      "anchor": "target",
+      "shape": "particles",
+      "colour": "#a8936f",
+      "accent": "#cdbb98",
+      "durationTicks": 58,
+      "count": 12,
+      "size": 0.9,
+      "height": 0,
+      "blend": "normal",
+      "intensity": 0.85,
+      "texture": {
+        "asset": "asset.effects.construction-dust",
+        "role": "image",
+        "index": 1
+      }
+    },
+    {
+      "id": "motes",
+      "enabled": true,
+      "startTick": 0,
+      "emitter": {
+        "mode": "burst",
+        "lifetimeTicks": 40,
+        "rate": 12,
+        "speed": 1.4,
+        "speedVariation": 0.5,
+        "direction": {
+          "x": 0,
+          "y": 1,
+          "z": 0
+        },
+        "coneDegrees": 50,
+        "gravity": -0.2,
+        "drag": 0.3,
+        "spawnRadius": 0.8,
+        "startSize": 0.3,
+        "endSize": 0.05,
+        "spin": 1.5,
+        "fadeIn": 0.1,
+        "fadeOut": 0.55
+      },
+      "anchor": "target",
+      "shape": "particles",
+      "colour": "#a07cff",
+      "accent": "#e6dcff",
+      "durationTicks": 40,
+      "count": 12,
+      "size": 0.24,
+      "height": 0,
+      "blend": "additive",
+      "intensity": 2.4,
+      "texture": {
+        "asset": "asset.effects.holy-light-spark",
+        "role": "image",
+        "index": 1
+      }
+    }
+  ]
+}

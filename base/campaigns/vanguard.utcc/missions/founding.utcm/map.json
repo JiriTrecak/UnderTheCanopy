@@ -564,8 +564,8 @@
       "id": "burrow.ne.1",
       "owner": "player.2",
       "position": {
-        "x": 315.5,
-        "y": 71.5
+        "x": 313.5,
+        "y": 69.5
       },
       "rotation": 0.0,
       "initialState": {
@@ -577,8 +577,8 @@
       "id": "burrow.ne.2",
       "owner": "player.2",
       "position": {
-        "x": 343.5,
-        "y": 95.5
+        "x": 345.5,
+        "y": 97.5
       },
       "rotation": 0.0,
       "initialState": {
@@ -603,8 +603,8 @@
       "id": "burrow.nw",
       "owner": "player.2",
       "position": {
-        "x": 83.5,
-        "y": 87.5
+        "x": 81.5,
+        "y": 89.5
       },
       "rotation": 0.0,
       "initialState": {
@@ -1250,17 +1250,17 @@
               "every": 90,
               "units": [
                 {
-                  "unit": "unit.ants.warrior",
+                  "unit": "unit.ants.burster",
                   "count": 1
                 },
                 {
-                  "unit": "unit.ants.spitter",
+                  "unit": "unit.ants.archer",
                   "count": 1
                 }
               ],
               "grow": {
                 "every": 2,
-                "unit": "unit.ants.warrior",
+                "unit": "unit.ants.burster",
                 "count": 1
               },
               "from": "trained",
@@ -1273,13 +1273,13 @@
               "every": 130,
               "units": [
                 {
-                  "unit": "unit.ants.spitter",
+                  "unit": "unit.ants.archer",
                   "count": 2
                 }
               ],
               "grow": {
                 "every": 3,
-                "unit": "unit.ants.spitter",
+                "unit": "unit.ants.archer",
                 "count": 1
               },
               "from": "trained",

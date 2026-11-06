@@ -66,6 +66,14 @@
         "item.amber",
         "item.root"
       ]
+    },
+    "production": {
+      "mode": "queued",
+      "outputs": [
+        "unit.ants.reaver-queen"
+      ],
+      "workerSlots": 0,
+      "queueCapacity": 1
     }
   },
   "requires": [
