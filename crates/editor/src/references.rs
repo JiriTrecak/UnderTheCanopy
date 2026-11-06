@@ -24,7 +24,9 @@ fn token(key: &str) -> String {
 
 /// Every use of `id` in `value`, the document `document`.
 pub fn find(document: &str, value: &Value, id: &str, out: &mut Vec<Use>) {
-    walk(document, value, id, String::new(), out);
+    // One pointer grows and shrinks along the walk: only a use copies it.
+    let mut pointer = String::new();
+    walk(document, value, id, &mut pointer, out);
 }
 
 /// A text library key naming `id` (`<id>.<field>` or `race.<id>.<field>`) in a text file:
@@ -40,40 +42,56 @@ fn text_key(document: &str, key: &str, id: &str) -> Option<(String, String)> {
     })
 }
 
-fn walk(document: &str, value: &Value, id: &str, pointer: String, out: &mut Vec<Use>) {
+/// Appends `key` to `pointer` as a JSON pointer token (`~` as `~0`, `/` as `~1`).
+fn push_token(pointer: &mut String, key: &str) {
+    if key.contains(['~', '/']) {
+        pointer.push_str(&token(key));
+    } else {
+        pointer.push_str(key);
+    }
+}
+
+fn walk(document: &str, value: &Value, id: &str, pointer: &mut String, out: &mut Vec<Use>) {
     match value {
         Value::String(text) if text == id => out.push(Use {
             document: document.to_string(),
-            pointer,
+            pointer: pointer.clone(),
             key: false,
             around: None,
         }),
         Value::Array(items) => {
+            let len = pointer.len();
             for (i, item) in items.iter().enumerate() {
-                walk(document, item, id, format!("{pointer}/{i}"), out);
+                use std::fmt::Write as _;
+                let _ = write!(pointer, "/{i}");
+                walk(document, item, id, pointer, out);
+                pointer.truncate(len);
             }
         }
         Value::Object(object) => {
+            let len = pointer.len();
             for (key, item) in object {
-                let child = format!("{pointer}/{}", token(key));
+                pointer.push('/');
+                push_token(pointer, key);
                 if key == id {
                     out.push(Use {
                         document: document.to_string(),
-                        pointer: child.clone(),
+                        pointer: pointer.clone(),
                         key: true,
                         around: None,
                     });
-                } else if pointer.is_empty()
+                } else if len == 0
                     && let Some(around) = text_key(document, key, id)
                 {
                     out.push(Use {
                         document: document.to_string(),
-                        pointer: child.clone(),
+                        pointer: pointer.clone(),
                         key: true,
                         around: Some(around),
                     });
                 }
-                walk(document, item, id, child, out);
+                walk(document, item, id, pointer, out);
+                pointer.truncate(len);
             }
         }
         _ => {}

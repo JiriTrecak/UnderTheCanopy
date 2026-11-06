@@ -226,7 +226,8 @@ pub struct Shell {
     /// (structure, the latest change of a campaign's own documents): the Maps library
     /// lists missions in their campaign's step order.
     structure: Option<(u64, u64)>,
-    /// Uses of an id: (document, store generation, uses).
+    /// Uses of an id: (document, the latest change of a JSON document, uses). Grids hold
+    /// no ids, so a brush stroke keeps them.
     uses: Option<(String, u64, Vec<Use>)>,
     /// An open rename, delete or create dialog.
     dialog: Option<Dialog>,
@@ -1198,13 +1199,17 @@ impl Shell {
 
     /// Every use of the id held by `document`, across the package (cached per change).
     fn uses_of(&mut self, document: &str) -> Vec<Use> {
-        let generation = self.store.as_ref().map_or(0, Store::generation);
+        let generation = self
+            .store
+            .as_ref()
+            .map_or(0, |s| s.latest_revision(|p| !crate::document::is_grid(p)));
         if let Some((cached, at, uses)) = &self.uses
             && cached == document
             && *at == generation
         {
             return uses.clone();
         }
+        let _span = tracing::info_span!("uses_of").entered();
         let id = self.id_of(document);
         let uses = if id.is_empty() {
             Vec::new()
