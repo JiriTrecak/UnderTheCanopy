@@ -470,15 +470,8 @@ impl WorldUiGpu {
         self.overlay_count > 0
     }
 
-    /// Draws the overlay onto `output` (its own pass, after the final pass).
-    pub fn encode_overlay(
-        &mut self,
-        device: &wgpu::Device,
-        encoder: &mut wgpu::CommandEncoder,
-        output: &wgpu::TextureView,
-        format: wgpu::TextureFormat,
-        timestamps: Option<wgpu::RenderPassTimestampWrites<'_>>,
-    ) -> u32 {
+    /// Makes the overlay's pipeline for outputs of `format` (once per format).
+    pub fn prepare_overlay(&mut self, device: &wgpu::Device, format: wgpu::TextureFormat) {
         if self
             .overlay_pipeline
             .as_ref()
@@ -518,6 +511,33 @@ impl WorldUiGpu {
             });
             self.overlay_pipeline = Some((format, pipeline));
         }
+    }
+
+    /// Draws the overlay inside a pass over the output, after the final pass's draw
+    /// ([`Self::prepare_overlay`] first).
+    pub fn draw_overlay(&self, pass: &mut wgpu::RenderPass<'_>) -> u32 {
+        if self.overlay_count == 0 {
+            return 0;
+        }
+        let (_, pipeline) = self.overlay_pipeline.as_ref().expect("prepared");
+        pass.set_pipeline(pipeline);
+        pass.set_bind_group(1, &self.atlas_group, &[]);
+        pass.set_vertex_buffer(0, self.overlay.slice(..));
+        pass.draw(0..self.overlay_count, 0..1);
+        1
+    }
+
+    /// Draws the overlay onto `output` in its own pass (timed frames; the final pass
+    /// draws it otherwise).
+    pub fn encode_overlay(
+        &mut self,
+        device: &wgpu::Device,
+        encoder: &mut wgpu::CommandEncoder,
+        output: &wgpu::TextureView,
+        format: wgpu::TextureFormat,
+        timestamps: Option<wgpu::RenderPassTimestampWrites<'_>>,
+    ) -> u32 {
+        self.prepare_overlay(device, format);
         let mut pass = encoder.begin_render_pass(&wgpu::RenderPassDescriptor {
             label: Some("world ui"),
             color_attachments: &[Some(wgpu::RenderPassColorAttachment {
@@ -534,14 +554,6 @@ impl WorldUiGpu {
             occlusion_query_set: None,
             multiview_mask: None,
         });
-        if self.overlay_count == 0 {
-            return 0;
-        }
-        let (_, pipeline) = self.overlay_pipeline.as_ref().expect("made above");
-        pass.set_pipeline(pipeline);
-        pass.set_bind_group(1, &self.atlas_group, &[]);
-        pass.set_vertex_buffer(0, self.overlay.slice(..));
-        pass.draw(0..self.overlay_count, 0..1);
-        1
+        self.draw_overlay(&mut pass)
     }
 }

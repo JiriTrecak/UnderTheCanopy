@@ -212,6 +212,32 @@ fn draw_fullscreen(
     frame: &wgpu::BindGroup,
     group: &wgpu::BindGroup,
 ) {
+    draw_fullscreen_then(
+        encoder,
+        label,
+        view,
+        timestamps,
+        pipeline,
+        frame,
+        group,
+        |_| 0,
+    );
+}
+
+/// [`draw_fullscreen`], then `then`'s draws in the same pass (what the pass adds over the
+/// full-screen draw without storing and loading the target in between). Returns `then`'s
+/// draw calls.
+#[allow(clippy::too_many_arguments)]
+fn draw_fullscreen_then(
+    encoder: &mut wgpu::CommandEncoder,
+    label: &str,
+    view: &wgpu::TextureView,
+    timestamps: Option<wgpu::RenderPassTimestampWrites<'_>>,
+    pipeline: &wgpu::RenderPipeline,
+    frame: &wgpu::BindGroup,
+    group: &wgpu::BindGroup,
+    then: impl FnOnce(&mut wgpu::RenderPass<'_>) -> u32,
+) -> u32 {
     let mut rp = encoder.begin_render_pass(&wgpu::RenderPassDescriptor {
         label: Some(label),
         color_attachments: &[Some(wgpu::RenderPassColorAttachment {
@@ -232,6 +258,7 @@ fn draw_fullscreen(
     rp.set_bind_group(0, frame, &[]);
     rp.set_bind_group(1, group, &[]);
     rp.draw(0..3, 0..1);
+    then(&mut rp)
 }
 
 /// Neutral stand-ins for effects that do not run.
@@ -1032,15 +1059,16 @@ impl PostStack {
         2
     }
 
-    /// The final pass into `output`.
+    /// The final pass into `output`, then `then`'s draws over it in the same pass.
     pub fn encode_final(
         &self,
         encoder: &mut wgpu::CommandEncoder,
         frame: &wgpu::BindGroup,
         output: &wgpu::TextureView,
         timestamps: Option<wgpu::RenderPassTimestampWrites<'_>>,
+        then: impl FnOnce(&mut wgpu::RenderPass<'_>) -> u32,
     ) -> u32 {
-        draw_fullscreen(
+        1 + draw_fullscreen_then(
             encoder,
             "post",
             output,
@@ -1048,8 +1076,8 @@ impl PostStack {
             &self.composite_pipeline,
             frame,
             &self.composite_group,
-        );
-        1
+            then,
+        )
     }
 }
 

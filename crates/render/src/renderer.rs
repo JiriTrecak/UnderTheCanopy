@@ -1503,6 +1503,9 @@ impl Renderer {
         });
         // Skinning recorded in the culling's compute pass (one pass begun, not two).
         let mut skinned = false;
+        // The world UI overlay drawn in the final pass (the output stored once, not loaded
+        // and stored again).
+        let mut overlaid = false;
         for (index, pass) in self.graph.passes().iter().enumerate() {
             let pass_start = Instant::now();
             let _span = tracing::trace_span!("pass", name = pass.name).entered();
@@ -1731,10 +1734,31 @@ impl Renderer {
                         .encode_haze(&mut encoder, &self.frame_group, writes);
                 }
                 (passes::POST, PassKind::Render) => {
-                    report.draws +=
-                        self.post
-                            .encode_final(&mut encoder, &self.frame_group, output, writes);
+                    // Unless the passes are timed apart, the world UI overlay follows in the
+                    // same pass: it blends over the finished frame in the same view.
+                    let next = self.graph.passes().get(index + 1).map(|p| p.name);
+                    overlaid =
+                        next == Some(passes::WORLD_UI) && writes.is_none() && !self.isolate_passes;
+                    let overlay = overlaid && !self.baking && self.world_ui.has_overlay();
+                    if overlay {
+                        self.world_ui.prepare_overlay(device, self.output_format);
+                    }
+                    let world_ui = &self.world_ui;
+                    report.draws += self.post.encode_final(
+                        &mut encoder,
+                        &self.frame_group,
+                        output,
+                        writes,
+                        |rp| {
+                            if overlay {
+                                world_ui.draw_overlay(rp)
+                            } else {
+                                0
+                            }
+                        },
+                    );
                 }
+                (passes::WORLD_UI, PassKind::Render) if overlaid => {}
                 (passes::MINIMAP, PassKind::Render) => {
                     if let Some(minimap) = &self.minimap {
                         report.draws += minimap.encode(&mut encoder, writes);
