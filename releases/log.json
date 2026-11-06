@@ -2,29 +2,24 @@
   "schemaVersion": 1,
   "unreleased": {
     "added": [
-      "The Glass Road: two new optional objectives that lead off the main road",
-      "The campaign now ends early access with its own end card, and players carry on from there when new missions arrive",
-      "The campaign editor can outline whole campaigns: draft steps, a tabletop for sketching missions, story beats, cinematic shots and a read-through of every step",
-      "The editor's assistant helps design campaign missions: it knows the step you are on, reads the whole story's outlines, pitches ideas and paints concept pictures into an outline (with an OpenAI key)",
-      "Units fall as ragdolls when they die: bodies topple from the killing blow and drop their weapons."
+      "Units fall as ragdolls when they die, knocked back by the killing blow and dropping their weapons",
+      "Heroes level up in a burst of golden light",
+      "The campaign ends early access with its own end card; new missions carry on from there",
+      "Campaign editor: outline whole campaigns with draft steps, a tabletop for sketching missions, story beats, shots and a read-through",
+      "The editor's assistant helps design missions: it reads the story's outlines, pitches ideas and paints concept pictures (with an OpenAI key)",
+      "Effects editor: whole effects as node graphs on one screen, read left to right with live previews, played on repeat on the Effects stage"
     ],
     "improved": [
-      "Cutscenes frame whole units with room around them, centred, instead of close-ups",
-      "The Hollow Brood: smaller neutral camps (three at most), fewer of them on the road",
-      "The Glass Road is rebuilt: a larger, more open map with wide roads, ramps and gates, natural timber-and-stone beetle outposts, and fewer, smaller camps off the main road",
-      "Founding: a roomier map that uses the whole forest, with wide ramps and passages, side paths with two new optional objectives, smaller neutral camps and cutscenes framed on whole units",
-      "At night in the forest, units and buildings no longer seem to glow: they take the night's light like the ground around them.",
-      "Clearer, shorter text everywhere: unit, building, ability, item and research descriptions, tooltips, messages and mission objectives now say what matters in a few words.",
-      "Editor stages stand on plain dark ground with a fine grid.",
-      "A building going up shows its progress on its health bar in the selection panel; health bars run from red to green.",
-      "Effects editor: a whole effect on one screen, each layer a row of purpose-made nodes read left to right into one Effect node that plays it all.",
-      "Editor: the Effects stage plays the effect by itself on repeat, with a player colour picker and only the settings that change its look.",
-      "Units killed in melee are knocked back a step or two as they fall.",
-      "Heroes level up in a burst of golden light: a flash, a rising column, rings climbing the hero and a flower of light blooming beneath."
+      "The campaign's maps are rebuilt roomier: wide ramps and passages, side paths with new optional objectives, and fewer, smaller neutral camps",
+      "Cutscenes frame whole units, centred, instead of close-ups",
+      "Clearer, shorter text everywhere: descriptions, tooltips, messages and objectives",
+      "At night in the forest, units and buildings take the night's light instead of seeming to glow",
+      "A building going up shows its progress on its health bar; health bars run from red to green",
+      "Editor stages stand on plain dark ground with a fine grid"
     ],
     "fixed": [
-      "Tab keeps a group's unit cards in place and lights the active subgroup, as cards are now grouped by type.",
-      "Editor: the Effect node's preview plays the whole effect, not only its first layer."
+      "Tab keeps a group's cards in place and lights the active subgroup; cards are grouped by type",
+      "Editor: the Effect node's preview plays every layer"
     ],
     "knownIssues": []
   },
