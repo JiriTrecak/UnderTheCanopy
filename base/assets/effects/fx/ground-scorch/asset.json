@@ -1,0 +1,17 @@
+{
+  "id": "asset.effects.fx.ground-scorch",
+  "name": "FX · Ground scorch",
+  "kind": "texture",
+  "tags": [
+    "effect",
+    "fx"
+  ],
+  "resources": [
+    {
+      "role": "image",
+      "index": 1,
+      "format": "png"
+    }
+  ],
+  "license": "Original for Under the Canopy, simulated by tools/effects/fire_textures.py."
+}

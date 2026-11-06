@@ -1,0 +1,18 @@
+{
+  "id": "asset.effects.fx.fire-loop",
+  "name": "FX · Fire loop 8×8",
+  "kind": "texture",
+  "tags": [
+    "effect",
+    "fx",
+    "flipbook-8x8"
+  ],
+  "resources": [
+    {
+      "role": "image",
+      "index": 1,
+      "format": "png"
+    }
+  ],
+  "license": "Original for Under the Canopy, simulated by tools/effects/fire_textures.py."
+}

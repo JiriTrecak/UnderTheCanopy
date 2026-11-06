@@ -1,0 +1,1469 @@
+{
+  "id": "effect.fire.ground",
+  "name": "Ground fire",
+  "durationTicks": 120,
+  "loop": true,
+  "layers": [
+    {
+      "id": "light",
+      "enabled": true,
+      "shape": "light",
+      "sustain": true,
+      "colour": "#ff8a3a",
+      "accent": "#ff8a3a",
+      "durationTicks": 40,
+      "count": 1,
+      "size": 17.0,
+      "height": 2.0,
+      "intensity": 16.0,
+      "motion": {
+        "opacity": {
+          "periodTicks": 5,
+          "min": 0.72,
+          "max": 1.0,
+          "easing": "sine"
+        },
+        "scale": {
+          "periodTicks": 9,
+          "min": 0.9,
+          "max": 1.0,
+          "easing": "sine",
+          "phase": 0.3
+        }
+      }
+    }
+  ],
+  "description": "Burning ground.",
+  "graphs": [
+    {
+      "id": "char",
+      "name": "Scorch",
+      "graph": {
+        "nodes": [
+          {
+            "id": "spawner0",
+            "kind": "spawner",
+            "at": [
+              0.0,
+              0.0
+            ],
+            "inputs": {
+              "mode": "burst",
+              "count": 1,
+              "ends": "effect"
+            }
+          },
+          {
+            "id": "shape1",
+            "kind": "shape",
+            "at": [
+              0.0,
+              150.0
+            ],
+            "inputs": {
+              "shape": "point",
+              "offset": [
+                0.0,
+                0.04,
+                0.0
+              ]
+            }
+          },
+          {
+            "id": "sizeOverLife2",
+            "kind": "sizeOverLife",
+            "at": [
+              0.0,
+              300.0
+            ],
+            "inputs": {
+              "size": [
+                7.5,
+                8.0
+              ],
+              "curve": {
+                "keys": [
+                  {
+                    "t": 0,
+                    "v": [
+                      1.0
+                    ]
+                  },
+                  {
+                    "t": 1,
+                    "v": [
+                      1.0
+                    ]
+                  }
+                ]
+              }
+            }
+          },
+          {
+            "id": "colourOverLife3",
+            "kind": "colourOverLife",
+            "at": [
+              0.0,
+              450.0
+            ],
+            "inputs": {
+              "gradient": {
+                "keys": [
+                  {
+                    "t": 0,
+                    "v": [
+                      1,
+                      1,
+                      1,
+                      0.9
+                    ]
+                  },
+                  {
+                    "t": 1,
+                    "v": [
+                      1,
+                      1,
+                      1,
+                      0.9
+                    ]
+                  }
+                ]
+              },
+              "brightness": [
+                1.0,
+                1.0
+              ],
+              "shift": [
+                0.0,
+                0.0,
+                0.0
+              ]
+            }
+          },
+          {
+            "id": "spin4",
+            "kind": "spin",
+            "at": [
+              0.0,
+              600.0
+            ],
+            "inputs": {
+              "angle": [
+                0.0,
+                360.0
+              ],
+              "speed": [
+                0.0,
+                0.0
+              ]
+            }
+          },
+          {
+            "id": "billboard5",
+            "kind": "billboard",
+            "at": [
+              0.0,
+              750.0
+            ],
+            "inputs": {
+              "texture": "asset.effects.fx.ground-scorch",
+              "facing": "ground",
+              "blend": "alpha",
+              "soft": 0.2
+            }
+          }
+        ],
+        "wires": [
+          {
+            "from": "spawner0.out",
+            "to": "shape1.in"
+          },
+          {
+            "from": "shape1.out",
+            "to": "sizeOverLife2.in"
+          },
+          {
+            "from": "sizeOverLife2.out",
+            "to": "colourOverLife3.in"
+          },
+          {
+            "from": "colourOverLife3.out",
+            "to": "spin4.in"
+          },
+          {
+            "from": "spin4.out",
+            "to": "billboard5.in"
+          }
+        ]
+      }
+    },
+    {
+      "id": "glow",
+      "name": "Ground glow",
+      "graph": {
+        "nodes": [
+          {
+            "id": "spawner0",
+            "kind": "spawner",
+            "at": [
+              0.0,
+              0.0
+            ],
+            "inputs": {
+              "mode": "stream",
+              "rate": 10,
+              "duration": 0.0,
+              "delay": 0.0,
+              "life": [
+                0.25,
+                0.5
+              ]
+            }
+          },
+          {
+            "id": "shape2",
+            "kind": "shape",
+            "at": [
+              0.0,
+              300.0
+            ],
+            "inputs": {
+              "shape": "disc",
+              "offset": [
+                0.0,
+                0.3,
+                0.0
+              ],
+              "radius": 0.6
+            }
+          },
+          {
+            "id": "sizeOverLife3",
+            "kind": "sizeOverLife",
+            "at": [
+              0.0,
+              450.0
+            ],
+            "inputs": {
+              "size": [
+                6.0,
+                7.5
+              ],
+              "curve": {
+                "keys": [
+                  {
+                    "t": 0,
+                    "v": [
+                      1.0
+                    ]
+                  },
+                  {
+                    "t": 1,
+                    "v": [
+                      1.0
+                    ]
+                  }
+                ]
+              }
+            }
+          },
+          {
+            "id": "colourOverLife4",
+            "kind": "colourOverLife",
+            "at": [
+              0.0,
+              600.0
+            ],
+            "inputs": {
+              "gradient": {
+                "keys": [
+                  {
+                    "t": 0,
+                    "v": [
+                      1.0,
+                      0.35,
+                      0.06,
+                      0
+                    ]
+                  },
+                  {
+                    "t": 0.3,
+                    "v": [
+                      1.0,
+                      0.35,
+                      0.06,
+                      1
+                    ]
+                  },
+                  {
+                    "t": 0.7,
+                    "v": [
+                      0.9,
+                      0.28,
+                      0.04,
+                      1
+                    ]
+                  },
+                  {
+                    "t": 1,
+                    "v": [
+                      1.0,
+                      0.35,
+                      0.06,
+                      0
+                    ]
+                  }
+                ]
+              },
+              "brightness": [
+                0.12,
+                0.2
+              ],
+              "shift": [
+                0,
+                0.1,
+                0.3
+              ]
+            }
+          },
+          {
+            "id": "spin5",
+            "kind": "spin",
+            "at": [
+              0.0,
+              750.0
+            ],
+            "inputs": {
+              "angle": [
+                0.0,
+                360.0
+              ],
+              "speed": [
+                0.0,
+                0.0
+              ]
+            }
+          },
+          {
+            "id": "billboard6",
+            "kind": "billboard",
+            "at": [
+              0.0,
+              900.0
+            ],
+            "inputs": {
+              "texture": "asset.effects.fx.soft-disc",
+              "facing": "ground",
+              "soft": 0.2
+            }
+          }
+        ],
+        "wires": [
+          {
+            "from": "spawner0.out",
+            "to": "shape2.in"
+          },
+          {
+            "from": "shape2.out",
+            "to": "sizeOverLife3.in"
+          },
+          {
+            "from": "sizeOverLife3.out",
+            "to": "colourOverLife4.in"
+          },
+          {
+            "from": "colourOverLife4.out",
+            "to": "spin5.in"
+          },
+          {
+            "from": "spin5.out",
+            "to": "billboard6.in"
+          }
+        ]
+      }
+    },
+    {
+      "id": "coals",
+      "name": "Coals",
+      "graph": {
+        "nodes": [
+          {
+            "id": "spawner0",
+            "kind": "spawner",
+            "at": [
+              0.0,
+              0.0
+            ],
+            "inputs": {
+              "mode": "stream",
+              "rate": 45,
+              "duration": 0.0,
+              "delay": 0.0,
+              "life": [
+                0.6,
+                1.4
+              ]
+            }
+          },
+          {
+            "id": "shape2",
+            "kind": "shape",
+            "at": [
+              0.0,
+              300.0
+            ],
+            "inputs": {
+              "shape": "disc",
+              "offset": [
+                0.0,
+                0.1,
+                0.0
+              ],
+              "radius": 2.4
+            }
+          },
+          {
+            "id": "sizeOverLife3",
+            "kind": "sizeOverLife",
+            "at": [
+              0.0,
+              450.0
+            ],
+            "inputs": {
+              "size": [
+                0.2,
+                0.5
+              ],
+              "curve": {
+                "keys": [
+                  {
+                    "t": 0,
+                    "v": [
+                      0.0
+                    ]
+                  },
+                  {
+                    "t": 0.15,
+                    "v": [
+                      1.0
+                    ]
+                  },
+                  {
+                    "t": 0.4,
+                    "v": [
+                      0.75
+                    ]
+                  },
+                  {
+                    "t": 0.65,
+                    "v": [
+                      1.0
+                    ]
+                  },
+                  {
+                    "t": 1,
+                    "v": [
+                      0.0
+                    ]
+                  }
+                ]
+              }
+            }
+          },
+          {
+            "id": "colourOverLife4",
+            "kind": "colourOverLife",
+            "at": [
+              0.0,
+              600.0
+            ],
+            "inputs": {
+              "gradient": {
+                "keys": [
+                  {
+                    "t": 0,
+                    "v": [
+                      0,
+                      0,
+                      0,
+                      0
+                    ]
+                  },
+                  {
+                    "t": 0.1,
+                    "v": [
+                      1.6,
+                      0.9,
+                      0.35,
+                      1
+                    ]
+                  },
+                  {
+                    "t": 0.6,
+                    "v": [
+                      1.1,
+                      0.3,
+                      0.03,
+                      1
+                    ]
+                  },
+                  {
+                    "t": 1,
+                    "v": [
+                      0.4,
+                      0.04,
+                      0,
+                      0
+                    ]
+                  }
+                ]
+              },
+              "brightness": [
+                0.6,
+                2.5
+              ],
+              "shift": [
+                0,
+                0.2,
+                1.2
+              ]
+            }
+          },
+          {
+            "id": "billboard5",
+            "kind": "billboard",
+            "at": [
+              0.0,
+              750.0
+            ],
+            "inputs": {
+              "texture": "asset.effects.fx.soft-dot-tight"
+            }
+          }
+        ],
+        "wires": [
+          {
+            "from": "spawner0.out",
+            "to": "shape2.in"
+          },
+          {
+            "from": "shape2.out",
+            "to": "sizeOverLife3.in"
+          },
+          {
+            "from": "sizeOverLife3.out",
+            "to": "colourOverLife4.in"
+          },
+          {
+            "from": "colourOverLife4.out",
+            "to": "billboard5.in"
+          }
+        ]
+      }
+    },
+    {
+      "id": "flames",
+      "name": "Flames",
+      "graph": {
+        "nodes": [
+          {
+            "id": "spawner0",
+            "kind": "spawner",
+            "at": [
+              0.0,
+              0.0
+            ],
+            "inputs": {
+              "mode": "stream",
+              "rate": 9,
+              "duration": 0.0,
+              "delay": 0.0,
+              "life": [
+                1.0,
+                1.6
+              ]
+            }
+          },
+          {
+            "id": "shape2",
+            "kind": "shape",
+            "at": [
+              0.0,
+              300.0
+            ],
+            "inputs": {
+              "shape": "disc",
+              "offset": [
+                0.0,
+                1.35,
+                0.0
+              ],
+              "radius": 1.9
+            }
+          },
+          {
+            "id": "sizeOverLife3",
+            "kind": "sizeOverLife",
+            "at": [
+              0.0,
+              450.0
+            ],
+            "inputs": {
+              "size": [
+                3.0,
+                4.4
+              ],
+              "curve": {
+                "keys": [
+                  {
+                    "t": 0,
+                    "v": [
+                      0.7
+                    ]
+                  },
+                  {
+                    "t": 0.3,
+                    "v": [
+                      1.0
+                    ]
+                  },
+                  {
+                    "t": 1,
+                    "v": [
+                      0.85
+                    ]
+                  }
+                ]
+              }
+            }
+          },
+          {
+            "id": "colourOverLife4",
+            "kind": "colourOverLife",
+            "at": [
+              0.0,
+              600.0
+            ],
+            "inputs": {
+              "gradient": {
+                "keys": [
+                  {
+                    "t": 0,
+                    "v": [
+                      1,
+                      0.95,
+                      0.9,
+                      0
+                    ]
+                  },
+                  {
+                    "t": 0.25,
+                    "v": [
+                      1,
+                      0.95,
+                      0.9,
+                      1
+                    ]
+                  },
+                  {
+                    "t": 0.75,
+                    "v": [
+                      1,
+                      0.92,
+                      0.85,
+                      1
+                    ]
+                  },
+                  {
+                    "t": 1,
+                    "v": [
+                      1,
+                      0.85,
+                      0.75,
+                      0
+                    ]
+                  }
+                ]
+              },
+              "brightness": [
+                0.7,
+                1.0
+              ],
+              "shift": [
+                0,
+                0.06,
+                0.7
+              ]
+            }
+          },
+          {
+            "id": "spin5",
+            "kind": "spin",
+            "at": [
+              0.0,
+              750.0
+            ],
+            "inputs": {
+              "angle": [
+                -8,
+                8
+              ],
+              "speed": [
+                0.0,
+                0.0
+              ]
+            }
+          },
+          {
+            "id": "flipbook6",
+            "kind": "flipbook",
+            "at": [
+              0.0,
+              900.0
+            ],
+            "inputs": {
+              "play": "rate",
+              "fps": 30,
+              "start": "random"
+            }
+          },
+          {
+            "id": "billboard7",
+            "kind": "billboard",
+            "at": [
+              0.0,
+              1050.0
+            ],
+            "inputs": {
+              "texture": "asset.effects.fx.fire-loop",
+              "soft": 0.4
+            }
+          }
+        ],
+        "wires": [
+          {
+            "from": "spawner0.out",
+            "to": "shape2.in"
+          },
+          {
+            "from": "shape2.out",
+            "to": "sizeOverLife3.in"
+          },
+          {
+            "from": "sizeOverLife3.out",
+            "to": "colourOverLife4.in"
+          },
+          {
+            "from": "colourOverLife4.out",
+            "to": "spin5.in"
+          },
+          {
+            "from": "spin5.out",
+            "to": "flipbook6.in"
+          },
+          {
+            "from": "flipbook6.out",
+            "to": "billboard7.in"
+          }
+        ]
+      }
+    },
+    {
+      "id": "core",
+      "name": "Core flames",
+      "graph": {
+        "nodes": [
+          {
+            "id": "spawner0",
+            "kind": "spawner",
+            "at": [
+              0.0,
+              0.0
+            ],
+            "inputs": {
+              "mode": "stream",
+              "rate": 3.5,
+              "duration": 0.0,
+              "delay": 0.0,
+              "life": [
+                1.2,
+                1.8
+              ]
+            }
+          },
+          {
+            "id": "shape2",
+            "kind": "shape",
+            "at": [
+              0.0,
+              300.0
+            ],
+            "inputs": {
+              "shape": "disc",
+              "offset": [
+                0.0,
+                2.2,
+                0.0
+              ],
+              "radius": 0.7
+            }
+          },
+          {
+            "id": "sizeOverLife3",
+            "kind": "sizeOverLife",
+            "at": [
+              0.0,
+              450.0
+            ],
+            "inputs": {
+              "size": [
+                5.5,
+                6.5
+              ],
+              "curve": {
+                "keys": [
+                  {
+                    "t": 0,
+                    "v": [
+                      0.8
+                    ]
+                  },
+                  {
+                    "t": 0.3,
+                    "v": [
+                      1.0
+                    ]
+                  },
+                  {
+                    "t": 1,
+                    "v": [
+                      0.9
+                    ]
+                  }
+                ]
+              }
+            }
+          },
+          {
+            "id": "colourOverLife4",
+            "kind": "colourOverLife",
+            "at": [
+              0.0,
+              600.0
+            ],
+            "inputs": {
+              "gradient": {
+                "keys": [
+                  {
+                    "t": 0,
+                    "v": [
+                      1,
+                      0.95,
+                      0.9,
+                      0
+                    ]
+                  },
+                  {
+                    "t": 0.25,
+                    "v": [
+                      1,
+                      0.95,
+                      0.9,
+                      1
+                    ]
+                  },
+                  {
+                    "t": 0.75,
+                    "v": [
+                      1,
+                      0.92,
+                      0.85,
+                      1
+                    ]
+                  },
+                  {
+                    "t": 1,
+                    "v": [
+                      1,
+                      0.85,
+                      0.75,
+                      0
+                    ]
+                  }
+                ]
+              },
+              "brightness": [
+                0.7,
+                0.95
+              ],
+              "shift": [
+                0,
+                0.06,
+                0.7
+              ]
+            }
+          },
+          {
+            "id": "spin5",
+            "kind": "spin",
+            "at": [
+              0.0,
+              750.0
+            ],
+            "inputs": {
+              "angle": [
+                -5,
+                5
+              ],
+              "speed": [
+                0.0,
+                0.0
+              ]
+            }
+          },
+          {
+            "id": "flipbook6",
+            "kind": "flipbook",
+            "at": [
+              0.0,
+              900.0
+            ],
+            "inputs": {
+              "play": "rate",
+              "fps": 30,
+              "start": "random"
+            }
+          },
+          {
+            "id": "billboard7",
+            "kind": "billboard",
+            "at": [
+              0.0,
+              1050.0
+            ],
+            "inputs": {
+              "texture": "asset.effects.fx.fire-loop",
+              "soft": 0.5
+            }
+          }
+        ],
+        "wires": [
+          {
+            "from": "spawner0.out",
+            "to": "shape2.in"
+          },
+          {
+            "from": "shape2.out",
+            "to": "sizeOverLife3.in"
+          },
+          {
+            "from": "sizeOverLife3.out",
+            "to": "colourOverLife4.in"
+          },
+          {
+            "from": "colourOverLife4.out",
+            "to": "spin5.in"
+          },
+          {
+            "from": "spin5.out",
+            "to": "flipbook6.in"
+          },
+          {
+            "from": "flipbook6.out",
+            "to": "billboard7.in"
+          }
+        ]
+      }
+    },
+    {
+      "id": "sparks",
+      "name": "Sparks",
+      "graph": {
+        "nodes": [
+          {
+            "id": "spawner0",
+            "kind": "spawner",
+            "at": [
+              0.0,
+              0.0
+            ],
+            "inputs": {
+              "mode": "stream",
+              "rate": 22,
+              "duration": 0.0,
+              "delay": 0.0,
+              "life": [
+                0.8,
+                2.0
+              ]
+            }
+          },
+          {
+            "id": "shape2",
+            "kind": "shape",
+            "at": [
+              0.0,
+              300.0
+            ],
+            "inputs": {
+              "shape": "disc",
+              "offset": [
+                0.0,
+                0.8,
+                0.0
+              ],
+              "radius": 1.8
+            }
+          },
+          {
+            "id": "launch3",
+            "kind": "launch",
+            "at": [
+              0.0,
+              450.0
+            ],
+            "inputs": {
+              "direction": "cone",
+              "angle": 25,
+              "speed": [
+                2,
+                5
+              ]
+            }
+          },
+          {
+            "id": "physics4",
+            "kind": "physics",
+            "at": [
+              0.0,
+              600.0
+            ],
+            "inputs": {
+              "gravity": [
+                0,
+                1.5,
+                0
+              ],
+              "drag": 0.5
+            }
+          },
+          {
+            "id": "turbulence5",
+            "kind": "turbulence",
+            "at": [
+              0.0,
+              750.0
+            ],
+            "inputs": {
+              "strength": 8,
+              "scale": 1.2,
+              "speed": 1.2
+            }
+          },
+          {
+            "id": "sizeOverLife6",
+            "kind": "sizeOverLife",
+            "at": [
+              0.0,
+              900.0
+            ],
+            "inputs": {
+              "size": [
+                0.08,
+                0.18
+              ],
+              "curve": {
+                "keys": [
+                  {
+                    "t": 0,
+                    "v": [
+                      0.0
+                    ]
+                  },
+                  {
+                    "t": 0.1,
+                    "v": [
+                      1.0
+                    ]
+                  },
+                  {
+                    "t": 0.6,
+                    "v": [
+                      0.6
+                    ]
+                  },
+                  {
+                    "t": 1,
+                    "v": [
+                      0.0
+                    ]
+                  }
+                ]
+              },
+              "stretch": 0.03
+            }
+          },
+          {
+            "id": "colourOverLife7",
+            "kind": "colourOverLife",
+            "at": [
+              0.0,
+              1050.0
+            ],
+            "inputs": {
+              "gradient": {
+                "keys": [
+                  {
+                    "t": 0,
+                    "v": [
+                      0,
+                      0,
+                      0,
+                      0
+                    ]
+                  },
+                  {
+                    "t": 0.1,
+                    "v": [
+                      1.6,
+                      0.9,
+                      0.35,
+                      1
+                    ]
+                  },
+                  {
+                    "t": 0.6,
+                    "v": [
+                      1.1,
+                      0.3,
+                      0.03,
+                      1
+                    ]
+                  },
+                  {
+                    "t": 1,
+                    "v": [
+                      0.4,
+                      0.04,
+                      0,
+                      0
+                    ]
+                  }
+                ]
+              },
+              "brightness": [
+                1.0,
+                5.0
+              ],
+              "shift": [
+                0,
+                0.2,
+                2.0
+              ]
+            }
+          },
+          {
+            "id": "billboard8",
+            "kind": "billboard",
+            "at": [
+              0.0,
+              1200.0
+            ],
+            "inputs": {
+              "texture": "asset.effects.fx.pin-dot",
+              "facing": "velocity"
+            }
+          }
+        ],
+        "wires": [
+          {
+            "from": "spawner0.out",
+            "to": "shape2.in"
+          },
+          {
+            "from": "shape2.out",
+            "to": "launch3.in"
+          },
+          {
+            "from": "launch3.out",
+            "to": "physics4.in"
+          },
+          {
+            "from": "physics4.out",
+            "to": "turbulence5.in"
+          },
+          {
+            "from": "turbulence5.out",
+            "to": "sizeOverLife6.in"
+          },
+          {
+            "from": "sizeOverLife6.out",
+            "to": "colourOverLife7.in"
+          },
+          {
+            "from": "colourOverLife7.out",
+            "to": "billboard8.in"
+          }
+        ]
+      }
+    },
+    {
+      "id": "smoke",
+      "name": "Smoke",
+      "graph": {
+        "nodes": [
+          {
+            "id": "spawner0",
+            "kind": "spawner",
+            "at": [
+              0.0,
+              0.0
+            ],
+            "inputs": {
+              "mode": "stream",
+              "rate": 6,
+              "duration": 0.0,
+              "delay": 0.0,
+              "life": [
+                3.0,
+                4.2
+              ]
+            }
+          },
+          {
+            "id": "shape2",
+            "kind": "shape",
+            "at": [
+              0.0,
+              300.0
+            ],
+            "inputs": {
+              "shape": "disc",
+              "offset": [
+                0.0,
+                5.0,
+                0.0
+              ],
+              "radius": 1.2
+            }
+          },
+          {
+            "id": "launch3",
+            "kind": "launch",
+            "at": [
+              0.0,
+              450.0
+            ],
+            "inputs": {
+              "direction": "cone",
+              "angle": 12,
+              "speed": [
+                1.6,
+                2.6
+              ]
+            }
+          },
+          {
+            "id": "physics4",
+            "kind": "physics",
+            "at": [
+              0.0,
+              600.0
+            ],
+            "inputs": {
+              "drag": 0.2,
+              "wind": [
+                0.6,
+                0,
+                0.2
+              ]
+            }
+          },
+          {
+            "id": "turbulence5",
+            "kind": "turbulence",
+            "at": [
+              0.0,
+              750.0
+            ],
+            "inputs": {
+              "strength": 1.5,
+              "scale": 3.0,
+              "speed": 0.5
+            }
+          },
+          {
+            "id": "sizeOverLife6",
+            "kind": "sizeOverLife",
+            "at": [
+              0.0,
+              900.0
+            ],
+            "inputs": {
+              "size": [
+                3.5,
+                5.5
+              ],
+              "curve": {
+                "keys": [
+                  {
+                    "t": 0,
+                    "v": [
+                      0.45
+                    ]
+                  },
+                  {
+                    "t": 1,
+                    "v": [
+                      1.0
+                    ]
+                  }
+                ]
+              }
+            }
+          },
+          {
+            "id": "spin7",
+            "kind": "spin",
+            "at": [
+              0.0,
+              1050.0
+            ],
+            "inputs": {
+              "angle": [
+                0,
+                360
+              ],
+              "speed": [
+                -15,
+                15
+              ]
+            }
+          },
+          {
+            "id": "flipbook8",
+            "kind": "flipbook",
+            "at": [
+              0.0,
+              1200.0
+            ],
+            "inputs": {
+              "first": 14,
+              "last": 63
+            }
+          },
+          {
+            "id": "colourOverLife9",
+            "kind": "colourOverLife",
+            "at": [
+              0.0,
+              1350.0
+            ],
+            "inputs": {
+              "gradient": {
+                "keys": [
+                  {
+                    "t": 0,
+                    "v": [
+                      0.3,
+                      0.2,
+                      0.14,
+                      0
+                    ]
+                  },
+                  {
+                    "t": 0.2,
+                    "v": [
+                      0.13,
+                      0.11,
+                      0.1,
+                      0.42
+                    ]
+                  },
+                  {
+                    "t": 0.6,
+                    "v": [
+                      0.12,
+                      0.11,
+                      0.11,
+                      0.26
+                    ]
+                  },
+                  {
+                    "t": 1,
+                    "v": [
+                      0.12,
+                      0.12,
+                      0.12,
+                      0
+                    ]
+                  }
+                ]
+              },
+              "brightness": [
+                1.0,
+                1.0
+              ],
+              "shift": [
+                0.0,
+                0.0,
+                0.0
+              ]
+            }
+          },
+          {
+            "id": "billboard10",
+            "kind": "billboard",
+            "at": [
+              0.0,
+              1500.0
+            ],
+            "inputs": {
+              "texture": "asset.effects.fx.fire-smoke",
+              "blend": "alpha",
+              "soft": 1.2
+            }
+          }
+        ],
+        "wires": [
+          {
+            "from": "spawner0.out",
+            "to": "shape2.in"
+          },
+          {
+            "from": "shape2.out",
+            "to": "launch3.in"
+          },
+          {
+            "from": "launch3.out",
+            "to": "physics4.in"
+          },
+          {
+            "from": "physics4.out",
+            "to": "turbulence5.in"
+          },
+          {
+            "from": "turbulence5.out",
+            "to": "sizeOverLife6.in"
+          },
+          {
+            "from": "sizeOverLife6.out",
+            "to": "spin7.in"
+          },
+          {
+            "from": "spin7.out",
+            "to": "flipbook8.in"
+          },
+          {
+            "from": "flipbook8.out",
+            "to": "colourOverLife9.in"
+          },
+          {
+            "from": "colourOverLife9.out",
+            "to": "billboard10.in"
+          }
+        ]
+      }
+    }
+  ]
+}
