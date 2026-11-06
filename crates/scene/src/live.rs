@@ -1053,6 +1053,13 @@ impl Presenter {
         self.jumped = true;
     }
 
+    /// Lets the falling bodies take the next tick's step now, on a thread of their own,
+    /// while the caller simulates that tick ([`crate::ragdoll::Ragdolls::step_ahead`]). For
+    /// a caller whose next [`Presenter::update`] is of a later tick (or follows a reset).
+    pub fn step_ahead(&mut self) {
+        self.ragdolls.step_ahead();
+    }
+
     /// The model of render asset `id`, if it has one.
     fn asset_model(&mut self, id: &str) -> Option<u32> {
         let file = self.content.asset(id)?.file.clone()?;
@@ -1169,6 +1176,7 @@ impl Presenter {
             .collect();
         // Towers fight through their crew (D68): what each lookout's crew aims at, and
         // whether it fired this tick, for the tower's attack clip and turret.
+        let section = tracing::trace_span!("present_prelude").entered();
         let mut towers: BTreeMap<EntityId, Tower> = BTreeMap::new();
         for a in &view.entities {
             let Some(combat) = a.combat.as_ref() else {
@@ -1287,6 +1295,8 @@ impl Presenter {
             });
         }
 
+        drop(section);
+        let section = tracing::trace_span!("present_entities").entered();
         for e in &view.entities {
             let id = e.id();
             if fallen.contains(&id) || held(id) || covered.contains(&id) {
@@ -1898,6 +1908,8 @@ impl Presenter {
             }
         }
 
+        drop(section);
+        let section = tracing::trace_span!("present_corpses").entered();
         // Units that left the view: deaths in sight become corpses; the rest vanish.
         let stale: Vec<EntityId> = self
             .buildings
@@ -2093,9 +2105,13 @@ impl Presenter {
                 bits: Arc::new(bits),
             };
         }
+        drop(section);
+        let section = tracing::trace_span!("present_flights").entered();
         self.trees(catalog, view, &mut actors, &mut counts);
         self.flights(catalog, view, &by_id, &mut actors, &mut counts);
         self.weapon_effects(catalog, view, &by_id);
+        drop(section);
+        let _section = tracing::trace_span!("present_tail").entered();
 
         self.health = health;
         self.last_tick = Some(tick);

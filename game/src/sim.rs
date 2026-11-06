@@ -880,6 +880,9 @@ fn present_step(
         held(world, id)
     });
     let presented = Instant::now();
+    // The next presentation is of a later tick (or follows a reset): the falling bodies
+    // take their next step meanwhile, while the world takes its.
+    presenter.step_ahead();
     let ms = |a: Instant, b: Instant| (b - a).as_secs_f32() * 1000.0;
     Advanced {
         held: Arc::new(held_units(&view)),
