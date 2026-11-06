@@ -11,7 +11,8 @@
       "Cutscenes frame whole units with room around them, centred, instead of close-ups",
       "The Hollow Brood: smaller neutral camps (three at most), fewer of them on the road",
       "The Glass Road is rebuilt: a larger, more open map with wide roads, ramps and gates, natural timber-and-stone beetle outposts, and fewer, smaller camps off the main road",
-      "Founding: a roomier map that uses the whole forest, with wide ramps and passages, side paths with two new optional objectives, smaller neutral camps and cutscenes framed on whole units"
+      "Founding: a roomier map that uses the whole forest, with wide ramps and passages, side paths with two new optional objectives, smaller neutral camps and cutscenes framed on whole units",
+      "A building going up shows its progress on its health bar in the selection panel; health bars run from red to green."
     ],
     "fixed": [],
     "knownIssues": []
