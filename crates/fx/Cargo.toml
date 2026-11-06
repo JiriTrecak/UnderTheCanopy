@@ -1,0 +1,19 @@
+[package]
+name = "canopy-fx"
+description = "Effect graphs (D113, docs/effect-graph.md): the node format, the node catalogue, checking, stage inference and the WGSL compiler"
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+publish.workspace = true
+
+[dependencies]
+schemars.workspace = true
+serde.workspace = true
+serde_json.workspace = true
+
+[dev-dependencies]
+naga = { version = "30", features = ["wgsl-in"] }
+
+[lints]
+workspace = true

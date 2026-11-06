@@ -12,8 +12,10 @@ mod assistant;
 mod campaign;
 mod checker;
 mod document;
+pub mod effect_preview;
 mod encounter;
 mod forms;
+pub mod graph_canvas;
 mod icons;
 mod images;
 mod inspector;
@@ -21,6 +23,7 @@ mod lab;
 mod library;
 mod map;
 mod mcp;
+pub mod node_previews;
 mod overview;
 mod references;
 mod sandbox;
@@ -105,6 +108,9 @@ pub struct Editor {
     stage: Option<Result<stage::Stage, String>>,
     /// A second viewport, opened for the map editor's split view: its generated world.
     stage_generated: Option<Result<stage::Stage, String>>,
+    /// The effect graph's node previews (D113), made when a graph first shows, and the
+    /// atlas's egui texture.
+    thumbs: Option<(canopy_render::graph_thumbs::GraphThumbs, egui::TextureId)>,
     data: PathBuf,
     /// The last headless frame's widgets, from egui's accessibility tree (UI tests).
     widgets: Vec<Widget>,
@@ -171,6 +177,7 @@ impl Editor {
             shell: shell::Shell::new(package, setup.user, Some(setup.data.clone())),
             stage: None,
             stage_generated: None,
+            thumbs: None,
             data: setup.data,
             widgets: Vec::new(),
         }
@@ -424,6 +431,11 @@ impl Editor {
         self.shell.open_stage(id);
     }
 
+    /// Shows the open effect's graph view, with its stage (captures).
+    pub fn show_graph(&mut self) {
+        self.shell.show_graph();
+    }
+
     /// Casts the open ability on its stage at the first target (captures).
     pub fn stage_cast(&mut self) {
         self.shell.stage(encounter::Command::Cast);
@@ -571,8 +583,30 @@ impl Editor {
             Some(Err(error)) => Some(error.clone()),
             _ => None,
         };
+        self.shell.thumbs_texture = self.thumbs.as_ref().map(|(_, id)| *id);
         let shell = &mut self.shell;
         let output = self.ctx.run_ui(input, |ui| shell.ui(ui));
+        // The node previews step and draw for the next frame.
+        if let Some(request) = self.shell.thumbs.take() {
+            let (thumbs, _) = self.thumbs.get_or_insert_with(|| {
+                let thumbs =
+                    canopy_render::graph_thumbs::GraphThumbs::new(device, queue, gpu.features);
+                let view = thumbs.atlas().create_view(&wgpu::TextureViewDescriptor {
+                    format: Some(canopy_render::graph_thumbs::SHOWN),
+                    ..Default::default()
+                });
+                let id =
+                    self.renderer
+                        .register_native_texture(device, &view, wgpu::FilterMode::Linear);
+                (thumbs, id)
+            });
+            if let Some(programs) = &request.programs {
+                let wgsl: Vec<&str> = programs.iter().map(String::as_str).collect();
+                thumbs.set_programs(device, &wgsl);
+            }
+            thumbs.load_textures(device, queue, &request.pack, &request.textures);
+            thumbs.render(device, queue, &request.frame);
+        }
         // A cook finished: the stage opens the new pack.
         if std::mem::take(&mut self.shell.reload_pack) {
             for stage in [self.stage.take(), self.stage_generated.take()] {

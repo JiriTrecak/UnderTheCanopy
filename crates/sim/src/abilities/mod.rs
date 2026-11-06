@@ -178,6 +178,8 @@ pub struct Extra {
     pub until_death: bool,
     pub spawned: Vec<EntityId>,
     pub origin: Option<EventPoint>,
+    /// The centre of the area an operation struck, for its recipients' events.
+    pub centre: Option<Milli>,
 }
 
 impl Extra {
@@ -323,6 +325,18 @@ pub fn emit(
         radius,
         until_death: extra.until_death,
         spawned: extra.spawned,
+        centre: extra.centre.map(|position| {
+            point_of(
+                ctx,
+                state,
+                &Mark {
+                    id: None,
+                    position,
+                    surface: None,
+                    height: None,
+                },
+            )
+        }),
     });
 }
 

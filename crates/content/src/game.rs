@@ -715,6 +715,9 @@ pub struct DefinitionPresentation {
     pub sounds: Option<Vec<crate::sounds::SoundBinding>>,
     /// How a unit answers its commanding player.
     pub voice: Option<crate::sounds::Voice>,
+    /// How hard a body its weapon kills is thrown along the blow (D114): world units per
+    /// second at the top of the body; the game's default without.
+    pub push: Option<f64>,
 }
 
 /// An effect a building or unit plays from one of its model's sockets: looping for as

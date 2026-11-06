@@ -7,7 +7,7 @@ use serde::{Deserialize, Serialize};
 /// First bytes of every pack.
 pub const MAGIC: [u8; 8] = *b"CANOPYPK";
 /// Version of the pack layout and of every metadata type.
-pub const FORMAT_VERSION: u32 = 5;
+pub const FORMAT_VERSION: u32 = 6;
 /// Alignment of blobs and of every array inside one.
 pub const ALIGN: usize = 16;
 /// Rate at which clips are baked, in frames per second.
@@ -338,6 +338,45 @@ pub struct Joint {
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 pub struct Skeleton {
     pub joints: Vec<Joint>,
+    /// How the body falls when it dies (D114), for units and creatures with a skin.
+    pub ragdoll: Option<Ragdoll>,
+}
+
+/// A body of rigid parts fitted to a skin: every joint rides one part, parts hang from
+/// their parents by ball joints at the joint that starts them, and held equipment (a
+/// rigid node under a bone) comes loose. Model space, rest pose.
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+pub struct Ragdoll {
+    pub parts: Vec<RagdollPart>,
+    /// The part each joint of [`Skeleton::joints`] rides.
+    pub joint_part: Vec<u32>,
+}
+
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+pub struct RagdollPart {
+    /// The joint the part hangs from its parent at (its pivot).
+    pub joint: u32,
+    /// The part it hangs from; none for the root and for loose equipment.
+    pub parent: Option<u32>,
+    pub shape: RagdollShape,
+    /// Kilograms, from the shape's volume (a unit 1 m tall weighs about 30).
+    pub mass: f32,
+}
+
+#[derive(Debug, Clone, Copy, PartialEq, Serialize, Deserialize)]
+pub enum RagdollShape {
+    /// Two end points and a radius.
+    Capsule {
+        a: [f32; 3],
+        b: [f32; 3],
+        radius: f32,
+    },
+    /// A box: centre, rotation (x, y, z, w) and half extents.
+    Box {
+        centre: [f32; 3],
+        rotation: [f32; 4],
+        half: [f32; 3],
+    },
 }
 
 /// A clip baked at [`CLIP_FRAME_RATE`]: frame `f` is time `min(f / rate, duration)`.

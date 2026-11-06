@@ -15,6 +15,7 @@ mod inspect;
 pub mod math;
 pub mod model;
 pub mod plan;
+mod ragdoll;
 pub mod sound;
 pub mod texture;
 
@@ -53,6 +54,10 @@ pub struct Options {
     pub allow_lfs_pointers: bool,
     /// Also write the release's pack ([`RELEASE_PACK_FILE`]) for packaging.
     pub release: bool,
+    /// Resident bytes all effect images may take instead of
+    /// [`effects::MAX_RESIDENT_BYTES`] (the effect lab's imported reference effects; never
+    /// for the game's own pack).
+    pub effect_budget: Option<u64>,
 }
 
 #[derive(Debug, Default)]
@@ -101,7 +106,14 @@ pub fn cook(options: &Options) -> Result<Report> {
     let start = Instant::now();
     let inputs = plan::Inputs::load(&options.data)
         .map_err(|e| anyhow::anyhow!("the published data does not load:\n{e}"))?;
-    let plan = plan::plan(&inputs);
+    let mut plan = plan::plan(&inputs);
+    if let Some(budget) = options.effect_budget {
+        for job in &mut plan.jobs {
+            if let Job::Effects { budget: b, .. } = job {
+                *b = budget;
+            }
+        }
+    }
     let locator = &inputs.locator;
     let withheld = stage_documents(
         &options.data.join(canopy_content::BASE_DIR),
@@ -619,6 +631,7 @@ fn run(job: &Job, data: &plan::Locator, cache: &Cache, force: bool) -> Result<Jo
             table,
             images,
             warnings,
+            budget,
         } => {
             for warning in warnings {
                 diags.warn(warning.clone());
@@ -640,10 +653,9 @@ fn run(job: &Job, data: &plan::Locator, cache: &Cache, force: bool) -> Result<Jo
                     None => diags.error(format!("{path}: undecodable effect image")),
                 }
             }
-            if resident > effects::MAX_RESIDENT_BYTES {
+            if resident > *budget {
                 diags.error(format!(
-                    "effect images need {resident} resident bytes (at most {})",
-                    effects::MAX_RESIDENT_BYTES
+                    "effect images need {resident} resident bytes (at most {budget})"
                 ));
             }
             let blob = BlobBuilder::new().finish(EntryKind::Effects, table);

@@ -410,6 +410,10 @@ pub struct Presentation {
     pub icon: Option<Id>,
     pub animations: Animations,
     pub effects: Vec<EffectBinding>,
+    /// How hard a body its damage kills is thrown along the blow, from where it came to
+    /// where it landed (D114): world units per second at the top of the body; the game's
+    /// default without.
+    pub push: Option<f64>,
 }
 
 /// Every ability of the content, sorted by id.

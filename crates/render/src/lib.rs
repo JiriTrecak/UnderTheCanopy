@@ -14,6 +14,8 @@ pub mod environment;
 pub mod fog;
 pub mod frame;
 pub mod graph;
+pub mod graph_fx;
+pub mod graph_thumbs;
 pub mod material;
 pub mod minimap;
 pub mod motes;

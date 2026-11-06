@@ -65,18 +65,18 @@ Resolved ranges the loader enforces (`rules.rs`):
 | `cast.cooldown.ticks` | 0–144,000 |
 | `cast.channel.waves` / `intervalTicks` | 1–64 / 1–400 |
 | `targeting.range` | 0–4096 |
-| `targeting.radius` (point only) | 1–20 |
-| operation `query.radius` | 1–32 |
+| `targeting.radius` (point only) | 1–4096 |
+| operation `query.radius` | 1–4096 |
 | `scale.permille` | 0–10,000 |
 | status `amount` (duration) | 1–144,000; exactly 0 for `lifetime: untilDeath` |
 | status `heroDuration` | 0–144,000 |
 | status `shield` / `periodic.damage` | 0–1,000,000 |
 | status `damageTakenPermille` values | 0–5000 (1–16 types) |
-| status `detectionRadius` | 1–64 |
+| status `detectionRadius` | 1–4096 |
 | status `stacking.max` | 2–16 |
 | summon `amount` / `maxActive` / `durationTicks` | 0–8 / 1–128 / 1–144,000 |
-| summon `corpses.radius` / `corpses.maxTargets` | 1–32 / 1–8, `amount × maxTargets ≤ 8` |
-| resurrect `amount` / `corpses.radius` | 1–8 / 1–32 |
+| summon `corpses.radius` / `corpses.maxTargets` | 1–4096 / 1–8, `amount × maxTargets ≤ 8` |
+| resurrect `amount` / `corpses.radius` | 1–8 / 1–4096 |
 | teleport `amount` (landing search radius) | 0–12 |
 | vision `amount` / `radius` | 1–144,000 / 1–64 |
 | contain / split / revive `amount` | 1–144,000 ticks |
@@ -87,7 +87,7 @@ Resolved ranges the loader enforces (`rules.rs`):
 | trigger `intervalTicks` / `cooldownTicks` / `manaCost` | 1–144,000 / 0–144,000 / 0–1,000,000 |
 | critical `chancePermille` / `multiplierPermille` | 0–1000 / 1000–10,000 |
 | `evasionPermille`, cleave `damagePermille` | 0–1000 |
-| cleave `radius` | 1–32 |
+| cleave `radius` | 1–4096 |
 | all other operation amounts | 0–1,000,000 |
 
 Other bounds in these pages (speeds, hop radius, maximum targets, form scale, placement radius, …) are authoring limits from the old editor that the loader does not check yet; stay inside them.
@@ -101,7 +101,7 @@ Other bounds in these pages (speeds, hop radius, maximum targets, form scale, pl
 | `allowSelf` | Whether the caster may be the unit aim / default area recipient. Use `true` for `self`. |
 | `range` | Amount, 0–4096. A player cast order outside range walks into range first; AI and autocast only choose aims already in range. `self` uses 0. |
 | `visible` | Unit aims require `true`. Point aims may use `false` to target unseen/fogged ground (remote scouting). |
-| `radius` | Point aims only, 1–20: the default area for operations that use `target: "target"`. Required for point aims except with a `line` delivery. Unit/self aims must use operation queries for areas instead. |
+| `radius` | Point aims only, 1–4096: the default area for operations that use `target: "target"`. Required for point aims except with a `line` delivery. Unit/self aims must use operation queries for areas instead. |
 | `maxTargets` | Positive (1–128), cap for the point default area (stable entity-id order). Default 128. |
 | `includeBuildings` | Buildings can be the unit aim / default area recipients. |
 | `filter` | Trait filter for the aim and default area/chain/line/aura recipients. |

@@ -25,6 +25,8 @@ pub enum View {
     Campaign,
     /// A combat lab scenario (`crate::lab`).
     Lab,
+    /// An effect's graph layers on the node canvas, played on the stage beside it (D113).
+    Graph,
     /// The form, for documents with no view of their own.
     Form,
 }
@@ -46,11 +48,26 @@ fn views(document: &str) -> &'static [(View, &'static str)] {
         &[(View::Lab, "Lab")]
     } else if is_ability(document) {
         &[(View::Overview, "Overview"), (View::Stage, "Stage")]
+    } else if is_effect(document) {
+        &[
+            (View::Stage, "Stage"),
+            (View::Graph, "Graph"),
+            (View::Overview, "Overview"),
+        ]
     } else if crate::overview::has(document) {
         &[(View::Overview, "Overview")]
     } else {
         &[(View::Form, "Form")]
     }
+}
+
+/// An effect's graph page and stage: its canvas, its nodes' previews and what its stage
+/// plays.
+#[derive(Default)]
+pub struct GraphDoc {
+    pub canvas: crate::graph_canvas::Canvas,
+    pub nodes: crate::node_previews::NodePreviews,
+    pub preview: crate::effect_preview::Preview,
 }
 
 /// One open document.
@@ -101,8 +118,15 @@ impl Doc {
 
     /// Shows the ability stage (abilities only).
     pub fn show_stage(&mut self) {
-        if is_ability(&self.document) {
+        if is_ability(&self.document) || is_effect(&self.document) {
             self.view = View::Stage;
+        }
+    }
+
+    /// Shows an effect's graph view (captures).
+    pub fn show_graph(&mut self) {
+        if is_effect(&self.document) {
+            self.view = View::Graph;
         }
     }
 }
@@ -110,6 +134,10 @@ impl Doc {
 /// Whether `document` is an ability (it has a stage).
 pub fn is_ability(document: &str) -> bool {
     document.starts_with("abilities/") && document.ends_with(".json")
+}
+
+pub fn is_effect(document: &str) -> bool {
+    document.starts_with("effects/") && document.ends_with(".json")
 }
 
 /// Whether `document`'s element has unsaved changes: for a map, any file of its package
@@ -167,6 +195,11 @@ pub struct Viewer<'a> {
     /// stage's size this frame, and whether the content lags behind the edits (the
     /// latest ones do not pass the check).
     pub encounters: &'a mut std::collections::HashMap<String, crate::encounter::Session>,
+    /// Effects' graph canvases, node previews and stage previews, by document.
+    pub graphs: &'a mut std::collections::HashMap<String, GraphDoc>,
+    /// The node previews to draw after this frame, and the atlas showing the last ones.
+    pub thumbs: &'a mut Option<crate::node_previews::Request>,
+    pub thumbs_texture: Option<egui::TextureId>,
     pub pack: Option<&'a std::sync::Arc<canopy_assets::Pack>>,
     pub looks: &'a std::collections::HashMap<String, canopy_scene::Look>,
     pub wanted_looks: &'a mut Vec<String>,
@@ -306,6 +339,52 @@ impl TabViewer for Viewer<'_> {
                     *self.map_size = Some((root, size));
                 }
             }
+            View::Stage if is_effect(&tab.document) => {
+                let doc = self.graphs.entry(tab.document.clone()).or_default();
+                let (Some(content), Some(pack)) = (&self.content, self.pack) else {
+                    return;
+                };
+                for problem in &doc.preview.problems {
+                    ui.colored_label(crate::theme::ERROR, problem);
+                }
+                let Some((content, table)) = doc.preview.prepare(content, pack, &value) else {
+                    return;
+                };
+                let session = self
+                    .encounters
+                    .entry(tab.document.clone())
+                    .or_insert_with(|| {
+                        crate::encounter::Session::new(crate::effect_preview::ABILITY)
+                    });
+                session.effects = Some(table);
+                // The effect plays by itself (D115): its length, whether it loops, where.
+                let ticks = value.get("durationTicks").and_then(Value::as_u64);
+                let at = doc.preview.anchor();
+                session.showcase = Some(crate::encounter::Showcase {
+                    ticks: ticks.unwrap_or(40).clamp(1, 2400) as u32,
+                    looping: value.get("loop").and_then(Value::as_bool) == Some(true),
+                    at,
+                });
+                match self.looks.get(session.look_biome()) {
+                    Some(look) => session.prepare(&content, pack, look),
+                    None => self.wanted_looks.push(session.look_biome().to_string()),
+                }
+                let out = crate::encounter::show(
+                    ui,
+                    session,
+                    Some(&content),
+                    self.scene_texture,
+                    self.stale,
+                );
+                if let Some(show) = session.showcase
+                    && show.at != at
+                {
+                    doc.preview.anchor = Some(show.at);
+                }
+                if let Some(size) = out.size {
+                    *self.encounter_size = Some((tab.document.clone(), size));
+                }
+            }
             View::Stage => {
                 let id = value.get("id").and_then(Value::as_str).unwrap_or(&tab.id);
                 let session = self
@@ -331,6 +410,37 @@ impl TabViewer for Viewer<'_> {
                 );
                 if let Some(size) = out.size {
                     *self.encounter_size = Some((tab.document.clone(), size));
+                }
+            }
+            View::Graph => {
+                let doc = self.graphs.entry(tab.document.clone()).or_default();
+                if let (Some(content), Some(pack)) = (&self.content, self.pack) {
+                    doc.nodes.update(content, &value);
+                    *self.thumbs = doc.nodes.request(pack);
+                }
+                let previews = Some((&doc.nodes, self.thumbs_texture));
+                let out = doc.canvas.show(ui, &tab.document, &value, previews);
+                if let Some(zoom) = out.preview_zoom {
+                    let camera = &mut doc.nodes.camera;
+                    camera.distance = (camera.distance * zoom).clamp(2.0, 200.0);
+                    camera.focus = camera.distance * 0.16;
+                }
+                // The previews play.
+                ui.ctx().request_repaint();
+                for change in out.changes {
+                    let merge = change
+                        .merge
+                        .then(|| format!("{}{}", tab.document, change.pointer));
+                    self.edits.push(Edit {
+                        label: change.label,
+                        context: Context {
+                            editor: self.kind,
+                            document: tab.document.clone(),
+                            pointer: Some(change.pointer),
+                        },
+                        commands: change.commands,
+                        merge,
+                    });
                 }
             }
             View::Lab => {

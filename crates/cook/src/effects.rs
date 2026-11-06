@@ -10,8 +10,9 @@
 
 use canopy_assets::{
     ColourCurve, CookedAttachment, CookedCueMotion, CookedEffect, CookedEmitter, CookedFlipbook,
-    CookedImpact, CookedModel, CookedPulse, CookedRain, CookedRibbon, CookedTrail, Curve, Easing,
-    EffectBlend, EffectLayer, EffectTable, FlipbookPlay, Motion, Primitive,
+    CookedGraph, CookedImpact, CookedModel, CookedPulse, CookedRain, CookedRibbon, CookedTrail,
+    Curve, Easing, EffectBlend, EffectLayer, EffectTable, FlipbookPlay, GraphPlacement, Motion,
+    Primitive, cook_graph,
 };
 use canopy_content::{
     assets::Manifest,
@@ -181,6 +182,7 @@ fn layer(
     let v3 = |v: &fx::Vec3| [v.x as f32, v.y as f32, v.z as f32];
     EffectLayer {
         id: l.id.clone(),
+        graph: None,
         primitive,
         motion,
         start: seconds(l.start_tick),
@@ -357,22 +359,107 @@ fn rain(l: &VisualLayer) -> CookedRain {
     }
 }
 
+/// A graph layer compiled for the GPU (D113), with the hidden parts it needs
+/// (`canopy_fx::flow::parts`); none (with a warning) when its graph has problems, which
+/// the content check reports too.
+fn graph(
+    effect: &VisualEffect,
+    g: &fx::GraphLayer,
+    manifest: &Manifest,
+    images: &mut Vec<String>,
+    warnings: &mut Vec<String>,
+) -> Vec<CookedGraph> {
+    canopy_fx::flow::parts(&g.id, &g.graph)
+        .into_iter()
+        .filter_map(|(id, part)| graph_part(effect, g, id, &part, manifest, images, warnings))
+        .collect()
+}
+
+fn graph_part(
+    effect: &VisualEffect,
+    g: &fx::GraphLayer,
+    id: String,
+    part: &canopy_fx::Graph,
+    manifest: &Manifest,
+    images: &mut Vec<String>,
+    warnings: &mut Vec<String>,
+) -> Option<CookedGraph> {
+    let placement = GraphPlacement {
+        id,
+        start: seconds(g.start_tick),
+        at_source: g.anchor == fx::LayerAnchor::Source,
+        follow: g.follow.unwrap_or(true),
+        offset: g
+            .offset
+            .as_ref()
+            .map_or([0.0; 3], |o| [o.x as f32, o.y as f32, o.z as f32]),
+    };
+    let duration = seconds(effect.duration_ticks.max(1));
+    match cook_graph(placement, part, duration, |asset| {
+        output(manifest, asset, "image", 1)
+    }) {
+        Ok((cooked, missing)) => {
+            for asset in missing {
+                warnings.push(format!(
+                    "{}/graphs/{}: no image in asset {asset}",
+                    effect.id, g.id
+                ));
+            }
+            for entry in cooked.renderers.iter().filter_map(|r| r.texture.as_ref()) {
+                if !images.contains(entry) {
+                    images.push(entry.clone());
+                }
+            }
+            Some(cooked)
+        }
+        Err(problems) => {
+            for problem in problems {
+                warnings.push(format!("{}/graphs/{}: {problem}", effect.id, g.id));
+            }
+            None
+        }
+    }
+}
+
 /// Converts every effect (enabled layers only), sorted by id.
 pub fn convert(effects: &[VisualEffect], manifest: &Manifest) -> Converted {
     let mut images = Vec::new();
     let mut warnings = Vec::new();
     let mut out: Vec<CookedEffect> = effects
         .iter()
-        .map(|effect| CookedEffect {
-            id: effect.id.to_string(),
-            duration: seconds(effect.duration_ticks.max(1)),
-            looping: effect.looping,
-            layers: effect
+        .map(|effect| {
+            let mut layers: Vec<EffectLayer> = effect
                 .layers
                 .iter()
                 .filter(|l| l.enabled)
                 .map(|l| layer(effect, l, manifest, &mut images, &mut warnings))
-                .collect(),
+                .collect();
+            let mut graphs: Vec<CookedGraph> = effect
+                .graphs
+                .iter()
+                .filter(|g| g.enabled)
+                .flat_map(|g| graph(effect, g, manifest, &mut images, &mut warnings))
+                .collect();
+            for warning in canopy_assets::link_events(&mut graphs) {
+                warnings.push(format!("{}/graphs/{warning}", effect.id));
+            }
+            // Each graph gets a layer of its own, so cues time and anchor it as any layer;
+            // event-born graphs are stepped by their parent's instance instead.
+            let duration = seconds(effect.duration_ticks.max(1));
+            layers.extend(
+                graphs
+                    .iter()
+                    .enumerate()
+                    .filter(|(_, g)| g.listens.is_none())
+                    .map(|(i, g)| EffectLayer::for_graph(i as u32, g, duration)),
+            );
+            CookedEffect {
+                id: effect.id.to_string(),
+                duration: seconds(effect.duration_ticks.max(1)),
+                looping: effect.looping,
+                layers,
+                graphs,
+            }
         })
         .collect();
     out.sort_by(|a, b| a.id.cmp(&b.id));

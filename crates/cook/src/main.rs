@@ -30,6 +30,7 @@ struct Args {
     allow_lfs_pointers: bool,
     release: bool,
     verbose: bool,
+    effect_budget: Option<u64>,
 }
 
 fn parse(mut args: impl Iterator<Item = String>) -> Result<Args> {
@@ -41,6 +42,7 @@ fn parse(mut args: impl Iterator<Item = String>) -> Result<Args> {
         allow_lfs_pointers: false,
         release: false,
         verbose: false,
+        effect_budget: None,
     };
     while let Some(arg) = args.next() {
         let mut value = |name: &str| args.next().with_context(|| format!("{name} needs a value"));
@@ -53,8 +55,14 @@ fn parse(mut args: impl Iterator<Item = String>) -> Result<Args> {
             "--allow-lfs-pointers" => parsed.allow_lfs_pointers = true,
             "--release" => parsed.release = true,
             "--verbose" | "-v" => parsed.verbose = true,
+            "--effect-budget" => {
+                let mib: u64 = value("--effect-budget")?
+                    .parse()
+                    .context("--effect-budget <MiB>")?;
+                parsed.effect_budget = Some(mib * 1024 * 1024);
+            }
             other => bail!(
-                "unknown option {other} (expected --data, --out, --force, --allow-lfs-pointers, --release, --verbose, --inspect <id>, --stats)"
+                "unknown option {other} (expected --data, --out, --force, --allow-lfs-pointers, --release, --verbose, --effect-budget <MiB>, --inspect <id>, --stats)"
             ),
         }
     }
@@ -106,6 +114,7 @@ fn run() -> Result<ExitCode> {
         force: args.force,
         allow_lfs_pointers: args.allow_lfs_pointers,
         release: args.release,
+        effect_budget: args.effect_budget,
     })?;
     let warnings = report
         .diagnostics

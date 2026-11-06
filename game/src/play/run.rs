@@ -246,6 +246,7 @@ impl InMatch {
             &loaded.pack,
             game.presenter.effects.effect_table().clone(),
         );
+        live.prewarm_effects(renderer, gpu, &game.presenter.effects.bound_effects());
         live.attach_world_ui(
             &loaded.data,
             &loaded.pack,

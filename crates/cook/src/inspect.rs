@@ -153,6 +153,40 @@ fn describe(pack: &Pack, entry: &IndexEntry, out: &mut String) -> Result<()> {
             }
             if let Some(skeleton) = &m.skeleton {
                 writeln!(out, "  skeleton: {} joints", skeleton.joints.len())?;
+                if let Some(ragdoll) = &skeleton.ragdoll {
+                    writeln!(out, "  ragdoll: {} parts", ragdoll.parts.len())?;
+                    for part in &ragdoll.parts {
+                        let joint = &skeleton.joints[part.joint as usize].name;
+                        let parent = part
+                            .parent
+                            .map(|p| {
+                                skeleton.joints[ragdoll.parts[p as usize].joint as usize]
+                                    .name
+                                    .as_str()
+                            })
+                            .unwrap_or(if part.parent.is_none() { "-" } else { "" });
+                        let shape = match part.shape {
+                            canopy_assets::RagdollShape::Capsule { a, b, radius } => {
+                                let l = ((a[0] - b[0]).powi(2)
+                                    + (a[1] - b[1]).powi(2)
+                                    + (a[2] - b[2]).powi(2))
+                                .sqrt();
+                                format!("capsule {l:.2} × r {radius:.2}")
+                            }
+                            canopy_assets::RagdollShape::Box { half, .. } => format!(
+                                "box {:.2} × {:.2} × {:.2}",
+                                2.0 * half[0],
+                                2.0 * half[1],
+                                2.0 * half[2]
+                            ),
+                        };
+                        writeln!(
+                            out,
+                            "    {joint} (on {parent}): {shape}, {:.1} kg",
+                            part.mass
+                        )?;
+                    }
+                }
             }
             for clip in &m.clips {
                 writeln!(

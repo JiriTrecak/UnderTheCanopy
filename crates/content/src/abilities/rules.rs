@@ -61,6 +61,9 @@ pub(crate) fn check(
     }
 }
 
+/// The widest reach an ability may name (cells): ranges and every area alike. Queries test
+/// exact integer distances over all units, so wide areas cost nothing extra.
+const MAX_AREA: i64 = 4096;
 struct Check<'a> {
     ability: &'a Ability,
     problems: Vec<String>,
@@ -368,7 +371,7 @@ impl<'a> Check<'a> {
                 "combatModifiers.cleave.damagePermille",
                 1000,
             );
-            self.amount(&cleave.radius, "combatModifiers.cleave.radius", 32);
+            self.amount(&cleave.radius, "combatModifiers.cleave.radius", MAX_AREA);
             if self.below_one(&cleave.radius) {
                 self.fail("Cleave radius must be positive");
             }
@@ -393,7 +396,7 @@ impl<'a> Check<'a> {
     fn targeting(&mut self) {
         let a = self.ability;
         let t = &a.targeting;
-        self.amount(&t.range, "targeting.range", 4096);
+        self.amount(&t.range, "targeting.range", MAX_AREA);
         if !t.visible && t.kind == TargetingKind::Unit {
             self.fail("Unit aims require visibility; remote scouting uses a point aim");
         }
@@ -408,7 +411,7 @@ impl<'a> Check<'a> {
             self.fail("Use an operation recipient query for unit/self area effects");
         }
         if let Some(radius) = &t.radius {
-            self.amount(radius, "targeting.radius", 20);
+            self.amount(radius, "targeting.radius", MAX_AREA);
         }
         if let Some(channel) = &a.cast.channel {
             self.amount(&channel.waves, "cast.channel.waves", 64);
@@ -473,7 +476,6 @@ impl<'a> Check<'a> {
                     ("contain", StatusOrEffect::Effect(Effect::Contain(e))) => Some(e.id.as_str()),
                     ("revive", StatusOrEffect::Effect(Effect::Revive(e))) => Some(e.id.as_str()),
                     ("vision", StatusOrEffect::Effect(Effect::Vision(e))) => Some(e.id.as_str()),
-                    ("status", entry) => entry.status().map(|s| s.id.as_str()),
                     _ => None,
                 })
                 .collect()
@@ -485,10 +487,22 @@ impl<'a> Check<'a> {
             ),
             ("revive", "Revival IDs must be unique within an ability"),
             ("vision", "Vision IDs must be unique within an ability"),
-            ("status", "Status IDs must be unique within an ability"),
         ] {
             if has_duplicates(&ids(kind)) {
                 self.fail(message);
+            }
+        }
+        // A status given again exactly as before (a persistent pulse refreshing what its
+        // release applied: "while inside") is one status; two different ones under one id
+        // would make its references ambiguous.
+        let mut statuses: Vec<&StatusEffect> = Vec::new();
+        for status in effects.iter().filter_map(|entry| entry.status()) {
+            if statuses.iter().any(|s| s.id == status.id && *s != status) {
+                self.fail("Status IDs must be unique within an ability");
+                break;
+            }
+            if !statuses.contains(&status) {
+                statuses.push(status);
             }
         }
     }
@@ -503,7 +517,7 @@ impl<'a> Check<'a> {
         };
         self.filter(filter);
         if let Some(query) = query {
-            self.amount(&query.radius, "onRelease.query.radius", 32);
+            self.amount(&query.radius, "onRelease.query.radius", MAX_AREA);
             if self.below_one(&query.radius) {
                 self.fail("Recipient query radius must be positive");
             }
@@ -537,7 +551,7 @@ impl<'a> Check<'a> {
                 }
                 self.at_least(e.radius, 1.0, "Summon radius");
                 if let Some(corpses) = &e.corpses {
-                    self.amount(&corpses.radius, "onRelease.corpses.radius", 32);
+                    self.amount(&corpses.radius, "onRelease.corpses.radius", MAX_AREA);
                     self.amount(&corpses.max_targets, "onRelease.corpses.maxTargets", 8);
                     self.filter(corpses.filter.as_ref());
                     let bad_rank = a.ranks.iter().any(|r| {
@@ -575,7 +589,7 @@ impl<'a> Check<'a> {
                     }
                 }
                 self.amount(&e.amount, "onRelease.amount", 8);
-                self.amount(&e.corpses.radius, "onRelease.corpses.radius", 32);
+                self.amount(&e.corpses.radius, "onRelease.corpses.radius", MAX_AREA);
                 self.amount(&e.health_permille, "onRelease.healthPermille", 1000);
                 self.amount(&e.mana_permille, "onRelease.manaPermille", 1000);
                 self.filter(e.corpses.filter.as_ref());
@@ -814,7 +828,7 @@ impl<'a> Check<'a> {
             self.fail("A barrier needs a 1–16 radius and a 10–360° arc");
         }
         if let Some(radius) = &e.detection_radius {
-            self.amount(radius, "onRelease.detectionRadius", 64);
+            self.amount(radius, "onRelease.detectionRadius", MAX_AREA);
             if self.below_one(radius) {
                 self.fail("Detection radius must be positive");
             }
@@ -1204,6 +1218,24 @@ mod tests {
     #[test]
     fn a_plain_spell_passes() {
         assert_eq!(problems(bolt()), Vec::<String>::new());
+    }
+
+    #[test]
+    fn a_pulse_refreshes_the_status_its_release_applied() {
+        let burn = json!({"op": "status", "target": "target", "id": "burning", "amount": 44,
+            "polarity": "negative", "dispel": true});
+        let mut zone = bolt();
+        zone["targeting"] = json!({"kind": "point", "radius": 4, "relations": ["enemy"],
+            "allowSelf": false, "alive": true, "visible": true, "range": 18, "outOfRange": "reject"});
+        zone["persistent"] = json!({"durationTicks": 360, "intervalTicks": 40, "anchor": "point",
+            "endsWithCaster": false, "pulse": [burn.clone()]});
+        zone["onRelease"] = json!([burn]);
+        zone["ranks"] = json!([{}]);
+        zone["presentation"]["effects"] = json!([]);
+        assert_eq!(problems(zone.clone()), Vec::<String>::new());
+        // Another status under the same id is ambiguous.
+        zone["persistent"]["pulse"][0]["amount"] = json!(80);
+        assert_only(zone, "Status IDs must be unique within an ability");
     }
 
     #[test]

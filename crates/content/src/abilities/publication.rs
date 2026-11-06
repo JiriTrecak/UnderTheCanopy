@@ -101,6 +101,13 @@ pub(crate) fn presentation_resources<'a>(
         for layer in effect.layers.iter().filter(|l| l.enabled) {
             refs.extend(layer_resources(layer));
         }
+        for graph in effect.graphs.iter().filter(|g| g.enabled) {
+            refs.extend(graph.textures().map(|asset| ResourceRef {
+                asset,
+                role: "image",
+                index: 1,
+            }));
+        }
     }
     Ok(refs)
 }

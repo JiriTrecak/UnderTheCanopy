@@ -34,7 +34,7 @@ The content formats are in the other skills. Read the matching one before changi
 | Campaigns | `campaigns/<id>.utcc` | The steps list (chapters, stories, missions, cinematics) and its panel |
 | Units | `units/**` (heroes under `heroes/`) | Overview: stat card, a hero's levels, bound abilities with hotkeys, trained by |
 | Abilities | `abilities/**` | Overview (ranks, the cast to scale, targeting, bound by) and **Stage** (the real simulation casting it) |
-| Effects | `effects/**` | Overview: layers on a timeline |
+| Effects | `effects/**` | Overview: layers on a timeline; **Stage**: the effect playing by itself, again after each end (where it plays, the units, their player colour, the ground) |
 | Buildings | `buildings/**`, `items/**`, `loot-pools/**` | Overview: trains, researches, cost, footprint; an item's stats |
 | Races | `races/`, `research/`, `resources/`, `behaviors/`, `rules/` | A race's roster and starting setup |
 | Assets | `assets/**/asset.json`, `sounds/`, `scenery/`, `landscape/biomes/`, `landscape/water/` | An asset's files, clips and users; Import…, Cook, unused assets |

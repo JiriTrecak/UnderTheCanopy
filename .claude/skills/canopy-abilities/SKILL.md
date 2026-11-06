@@ -87,6 +87,8 @@ The caster's unit definition binds abilities in `behaviors.abilities` (a fragmen
 
 ## Effects
 
+How an effect should look and how to build it as graph layers (anatomy, timing, colour, motion, recipes) is skill **canopy-effect-design**; read it before designing any effect.
+
 An effect is a reusable stack of render-only layers (`ring`, `glow`, `pillar`, `burst`, `billboard`, `streaks`, `light`, `rain`, `missile`, `beam`, `wavefront`, `particles`, `sound`, `mesh`):
 
 ```json effect
@@ -107,6 +109,7 @@ An effect is a reusable stack of render-only layers (`ring`, `glow`, `pillar`, `
 
 - An ability's `presentation.effects` binds an effect by id to a simulation `event` (`released`, `projectile`, `impact`, `damaged`, `statusApplied`, …) at the `caster` or `target` anchor. `lifetime: "status"` (only with `statusApplied` and `anchor: "target"`) keeps it as long as the status; `durationFrom: "delivery"` and `sizeFrom`/`spreadFrom: "radius"` take timing and size from the event.
 - **Assets.** `presentation.icon` and `command.icon` are asset ids (folders under `assets/`, e.g. `asset.spells.marshal.rally-icon`) whose folder has an image. Layers name an asset's file by `{asset, role, index}` with role `image` (`texture`), `audio` (`sound`) or `geometry` (`model`): index 1 is `<role>.<ext>`, index 2 `<role>_2.<ext>`. The loader checks every one exists. New art is a new asset folder (skill **canopy-assets**).
+- An ability's `presentation.push` sets how hard a body its damage kills is thrown (D114): world units per second at the top of the body, outward from the centre when the damage strikes an area (a grenade, Flame Strike), else along the damage's flight from origin to point (the default is 2.6). A fireball throws hard; a curse barely nudges.
 - Presentation never changes the simulation: no damage, targeting or timing comes from effects.
 
 Layers, sub-objects, every event and its payload: `reference/presentation.md`.

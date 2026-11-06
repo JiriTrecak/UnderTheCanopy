@@ -28,6 +28,24 @@ pub(crate) fn check(
             fail(at, "Effect duration must be positive");
         }
         let mut layer_ids = BTreeSet::new();
+        for graph in &effect.graphs {
+            if !layer_ids.insert(graph.id.as_str()) {
+                fail(at, "Layer IDs must be unique");
+            }
+            // Layers are authored in the effect nodes (D115): a Spawner and what follows;
+            // the compiler's primitives are not authoring nodes.
+            if !canopy_fx::flow::is_flow(&graph.graph) {
+                fail(
+                    &format!("{at}/graphs/{}", graph.id),
+                    "A layer starts with a Spawner node",
+                );
+            } else if let Err(problems) = canopy_fx::check(&graph.graph) {
+                let location = format!("{at}/graphs/{}", graph.id);
+                for problem in problems {
+                    fail(&location, &problem.to_string());
+                }
+            }
+        }
         for layer in &effect.layers {
             if !layer_ids.insert(layer.id.as_str()) {
                 fail(at, "Layer IDs must be unique");

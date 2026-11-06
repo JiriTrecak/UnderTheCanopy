@@ -263,6 +263,8 @@ pub struct EffectFrame {
     pub paths: Vec<[f32; 4]>,
     /// At most [`MAX_EFFECT_LIGHTS`] are used.
     pub lights: Vec<PointLight>,
+    /// Effect graph layers to simulate and draw (D113).
+    pub graph: crate::graph_fx::GraphFrame,
 }
 
 impl EffectFrame {
@@ -274,10 +276,11 @@ impl EffectFrame {
         self.ribbon_draws.clear();
         self.paths.clear();
         self.lights.clear();
+        self.graph.clear();
     }
 
     pub fn is_empty(&self) -> bool {
-        self.parts.is_empty() && self.ribbons.is_empty()
+        self.parts.is_empty() && self.ribbons.is_empty() && self.graph.draws.is_empty()
     }
 }
 
@@ -325,6 +328,8 @@ pub struct EffectsGpu {
     pub stats: EffectStats,
     /// Bytes of texture memory.
     pub bytes: u64,
+    /// Effect graph particles (D113).
+    pub graphs: crate::graph_fx::GraphFx,
 }
 
 impl EffectsGpu {
@@ -387,18 +392,20 @@ impl EffectsGpu {
                 storage(5, vertex),
             ],
         });
+        let scene_texture = |binding| wgpu::BindGroupLayoutEntry {
+            binding,
+            visibility: frag,
+            ty: wgpu::BindingType::Texture {
+                sample_type: wgpu::TextureSampleType::Float { filterable: false },
+                view_dimension: wgpu::TextureViewDimension::D2,
+                multisampled: false,
+            },
+            count: None,
+        };
+        // The scene's linear depth, and a copy of its colour (what distortion bends).
         let depth_layout = device.create_bind_group_layout(&wgpu::BindGroupLayoutDescriptor {
             label: Some("effect depth"),
-            entries: &[wgpu::BindGroupLayoutEntry {
-                binding: 0,
-                visibility: frag,
-                ty: wgpu::BindingType::Texture {
-                    sample_type: wgpu::TextureSampleType::Float { filterable: false },
-                    view_dimension: wgpu::TextureViewDimension::D2,
-                    multisampled: false,
-                },
-                count: None,
-            }],
+            entries: &[scene_texture(0), scene_texture(1)],
         });
         let module = crate::shader::module(
             device,
@@ -465,6 +472,9 @@ impl EffectsGpu {
         let ribbon_pipeline = pipeline("effect ribbons", "vs_ribbon", "fs_ribbon");
         let sampler = device.create_sampler(&wgpu::SamplerDescriptor {
             label: Some("effects"),
+            // Ribbons tile their texture down their length; sprites fall to black at
+            // their edges, so wrapping never shows.
+            address_mode_u: wgpu::AddressMode::Repeat,
             mag_filter: wgpu::FilterMode::Linear,
             min_filter: wgpu::FilterMode::Linear,
             mipmap_filter: wgpu::MipmapFilterMode::Linear,
@@ -511,6 +521,13 @@ impl EffectsGpu {
             &data_layout,
             [&emitters, &parts, &ribbons, &view, &curves, &paths],
         );
+        let graphs = crate::graph_fx::GraphFx::new(
+            device,
+            frame_layout,
+            &texture_layout,
+            &depth_layout,
+            &view,
+        );
         Self {
             features,
             pipelines,
@@ -534,19 +551,32 @@ impl EffectsGpu {
             ribbon_count: 0,
             stats: EffectStats::default(),
             bytes: 0,
+            graphs,
         }
     }
 
-    /// Binds the scene's resolved linear depth (`targets::Targets::linear_resolved`);
-    /// again whenever the targets are remade.
-    pub fn bind_depth(&mut self, device: &wgpu::Device, linear_depth: &wgpu::TextureView) {
+    /// Binds the scene's resolved linear depth (`targets::Targets::linear_resolved`)
+    /// and the copy of its colour distortion reads (`Targets::scene_copy`); again
+    /// whenever the targets are remade.
+    pub fn bind_depth(
+        &mut self,
+        device: &wgpu::Device,
+        linear_depth: &wgpu::TextureView,
+        scene_copy: &wgpu::TextureView,
+    ) {
         self.depth = Some(device.create_bind_group(&wgpu::BindGroupDescriptor {
             label: Some("effect depth"),
             layout: &self.depth_layout,
-            entries: &[wgpu::BindGroupEntry {
-                binding: 0,
-                resource: wgpu::BindingResource::TextureView(linear_depth),
-            }],
+            entries: &[
+                wgpu::BindGroupEntry {
+                    binding: 0,
+                    resource: wgpu::BindingResource::TextureView(linear_depth),
+                },
+                wgpu::BindGroupEntry {
+                    binding: 1,
+                    resource: wgpu::BindingResource::TextureView(scene_copy),
+                },
+            ],
         }));
     }
 
@@ -609,6 +639,7 @@ impl EffectsGpu {
     /// Uploads a frame's emitters, parts, ribbons and paths (clipped to the budgets).
     pub fn prepare(
         &mut self,
+        device: &wgpu::Device,
         queue: &impl crate::upload::Writes,
         frame: &EffectFrame,
         camera: &crate::CameraView,
@@ -619,6 +650,7 @@ impl EffectsGpu {
             up: inverse.y_axis.to_array(),
         };
         queue.write_buffer(&self.view, 0, bytemuck::bytes_of(&view));
+        self.graphs.prepare(device, queue, &frame.graph);
         let emitters = &frame.emitters[..frame.emitters.len().min(MAX_EMITTERS)];
         if !emitters.is_empty() {
             queue.write_buffer(&self.emitters, 0, bytemuck::cast_slice(emitters));
@@ -677,14 +709,14 @@ impl EffectsGpu {
             parts: parts.len() as u32,
             ribbons: self.ribbon_count,
             lights: frame.lights.len().min(MAX_EFFECT_LIGHTS) as u32,
-            draws: (self.draws.len() + self.ribbon_draws.len()) as u32,
+            draws: (self.draws.len() + self.ribbon_draws.len() + frame.graph.draws.len()) as u32,
         };
     }
 
     /// Whether the latest prepared frame draws anything (the effects pass is skipped
     /// otherwise).
     pub fn has_draws(&self) -> bool {
-        !self.draws.is_empty() || !self.ribbon_draws.is_empty()
+        !self.draws.is_empty() || !self.ribbon_draws.is_empty() || self.graphs.has_draws()
     }
 
     /// Draws the effects (in their own pass over the resolved scene colour, after the
@@ -695,9 +727,14 @@ impl EffectsGpu {
             return 0;
         }
         pass.set_bind_group(0, frame, &[]);
-        pass.set_bind_group(2, &self.group, &[]);
         pass.set_bind_group(3, depth, &[]);
-        let mut draws = 0;
+        let textures = |t: Option<u32>| {
+            t.and_then(|t| self.textures.get(t as usize))
+                .unwrap_or(&self.white)
+        };
+        // What bends the scene reads a copy of it taken before any effect drew.
+        let mut draws = self.graphs.draw(pass, true, textures);
+        pass.set_bind_group(2, &self.group, &[]);
         for d in &self.draws {
             let (pipeline, vertices) = match d.geometry {
                 Geometry::Quad => (&self.pipelines[0], 6),
@@ -724,6 +761,7 @@ impl EffectsGpu {
                 draws += 1;
             }
         }
+        draws += self.graphs.draw(pass, false, textures);
         draws
     }
 }

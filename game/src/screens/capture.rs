@@ -320,6 +320,7 @@ pub fn run(
             "cameras" => cameras(&mut rig, &paths)?,
             "editor-campaigns" => editor_campaigns(&mut rig, &paths)?,
             "editor-ui" => ui::editor_ui(&mut rig, &paths)?,
+            "effect-graph" => effect_graph(&mut rig, &paths)?,
             // Real turns with the user's stored key: costs a few cents; never in a sweep.
             "assistant-live" => ui::assistant_live(&mut rig, &paths)?,
             // An ideation session with one painted picture: real turns and a real image.
@@ -1048,6 +1049,68 @@ fn blocks(rig: &mut Rig, paths: &Paths) -> Result<()> {
         settle(&mut editor, rig, 60);
         shoot(&mut editor, rig, "editor-blocks-underleaf-generated")?;
         editor.set_block_view("blocks");
+    }
+    Ok(())
+}
+
+/// An effect's graph view (D113): its canvas, and its stage casting it at moments of the
+/// take. `CANOPY_CAPTURE_EFFECT` names the effect document (default: the first effect
+/// with graph layers).
+fn effect_graph(rig: &mut Rig, paths: &Paths) -> Result<()> {
+    use canopy_editor::Editor;
+    let format = CAPTURE_FORMAT.remove_srgb_suffix();
+    let mut editor = Editor::headless(&rig.gpu, format, crate::app::editor_setup(paths));
+    let shoot = |editor: &mut Editor, rig: &mut Rig, name: &str, frames: u32| -> Result<()> {
+        let start = Instant::now();
+        let mut n = 0;
+        while n < frames || (editor.checking() && start.elapsed() < Duration::from_secs(20)) {
+            editor.run_headless(rig.size, rig.scale, &rig.gpu);
+            std::thread::sleep(Duration::from_millis(10));
+            n += 1;
+        }
+        let mut encoder = rig
+            .gpu
+            .device
+            .create_command_encoder(&wgpu::CommandEncoderDescriptor::default());
+        editor.paint(&mut encoder, &rig.target.ui_view);
+        rig.gpu.queue.submit([encoder.finish()]);
+        rig.save(name)
+    };
+    // `CANOPY_CAPTURE_TICKS` (comma-separated) picks the moments.
+    let ticks: Vec<u32> = std::env::var("CANOPY_CAPTURE_TICKS")
+        .ok()
+        .map(|t| t.split(',').filter_map(|n| n.trim().parse().ok()).collect())
+        .unwrap_or_else(|| vec![8, 14, 20]);
+    // `CANOPY_CAPTURE_ABILITY` shoots that ability's stage instead, at those ticks.
+    if let Ok(id) = std::env::var("CANOPY_CAPTURE_ABILITY") {
+        editor.select(canopy_editor::Kind::Abilities);
+        // The library knows the ability once the first check is in.
+        shoot(&mut editor, rig, "ability-library", 4)?;
+        editor.open_stage(&id);
+        shoot(&mut editor, rig, "ability-stage-open", 30)?;
+        editor.stage_cast();
+        for tick in ticks {
+            editor.stage_seek(tick);
+            shoot(&mut editor, rig, &format!("ability-stage-{tick}"), 8)?;
+        }
+        return Ok(());
+    }
+    let document = std::env::var("CANOPY_CAPTURE_EFFECT")
+        .unwrap_or_else(|_| "effects/wc3lab/holy-light.json".to_string());
+    editor.open_document(&document);
+    editor.show_graph();
+    // The previews loop: a few moments of them.
+    for (i, frames) in [40u32, 12, 12].into_iter().enumerate() {
+        shoot(&mut editor, rig, &format!("effect-graph-{i}"), frames)?;
+    }
+    let id = std::env::var("CANOPY_CAPTURE_EFFECT_ID")
+        .unwrap_or_else(|_| "effect.wc3lab.holy-light".to_string());
+    editor.open_stage(&id);
+    shoot(&mut editor, rig, "effect-stage-open", 30)?;
+    editor.stage_cast();
+    for tick in ticks {
+        editor.stage_seek(tick);
+        shoot(&mut editor, rig, &format!("effect-stage-{tick}"), 8)?;
     }
     Ok(())
 }

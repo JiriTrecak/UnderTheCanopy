@@ -9,6 +9,7 @@ publish.workspace = true
 
 [dependencies]
 block_compression.workspace = true
+canopy-fx = { path = "../fx" }
 bytemuck.workspace = true
 postcard.workspace = true
 serde.workspace = true

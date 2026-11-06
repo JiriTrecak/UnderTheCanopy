@@ -160,6 +160,7 @@ mod tests {
 
     fn layer(motion: Motion, primitive: Primitive) -> EffectLayer {
         EffectLayer {
+            graph: None,
             id: "layer".into(),
             primitive,
             motion,
@@ -215,6 +216,7 @@ mod tests {
                     },
                     primitive,
                 )],
+                graphs: Vec::new(),
             })
             .collect();
         effects.sort_by(|a, b| a.id.cmp(&b.id));

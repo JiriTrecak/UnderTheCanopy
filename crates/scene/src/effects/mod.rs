@@ -23,6 +23,7 @@
 //! [`MAX_MODEL_TRIANGLES`] triangles (old `EFFECT_MODEL_LIMITS`).
 
 pub mod frame;
+pub mod graphs;
 
 #[cfg(test)]
 mod tests;
@@ -172,6 +173,10 @@ pub trait EffectScene {
     fn floor(&self, position: Milli, surface: Option<&str>) -> f32;
     /// The pose of a weapon missile carrying cast `cast` (position, direction).
     fn missile_pose(&self, cast: u32) -> Option<(Vec3, Vec3)>;
+    /// An entity's owner colour (linear rgb), if it has one.
+    fn team(&self, _entity: u32) -> Option<[f32; 3]> {
+        None
+    }
 }
 
 /// A sample of a travelling layer's path.
@@ -218,6 +223,8 @@ pub struct CueView {
     pub destination: Vec3,
     /// Travelling layers riding a delivery or a weapon missile.
     pub flight: Option<Flight>,
+    /// The owner's team colour (graph layers' Team colour).
+    pub team: Option<[f32; 3]>,
     /// The flight so far, at the layer's height.
     pub trail: Option<Arc<[TrailPoint]>>,
     /// Mesh layers: the model's index in the live model catalog, and its clip with the
@@ -344,6 +351,8 @@ struct Cue {
     cast: Option<u32>,
     /// The anchored entity.
     entity: Option<u32>,
+    /// The event's caster and target: a graph layer's two ends follow them.
+    ends: (Option<u32>, Option<u32>),
     /// Status cues: holder and status name hash.
     holder: Option<(u32, u64)>,
     /// `revivalStarted` cues: the hero.
@@ -638,6 +647,12 @@ impl EffectDirector {
         &self.table
     }
 
+    /// The effects the match's abilities can play (their presentation bindings): what a
+    /// match compiles ahead so a spell's first cast does not stall.
+    pub fn bound_effects(&self) -> BTreeSet<u16> {
+        self.recipes.iter().map(|r| r.effect).collect()
+    }
+
     /// Recipes bound to abilities.
     pub fn recipe_count(&self) -> usize {
         self.recipes.len()
@@ -833,9 +848,14 @@ impl EffectDirector {
                 spread: rl.spread.unwrap_or(1.0),
             }
         });
-        let finite_end =
-            (recipe.is_some() && !status_lifetime && (l.sustain || effect_def.looping))
-                .then_some(start + if duration_from { duration } else { period });
+        // A graph riding a delivery's flight plays until the delivery lands (the flight's
+        // estimate can run short, and its end is when the missile's impact layers fire).
+        let rides_flight = l.motion == Motion::Graph && trigger.event == EffectEvent::Projectile;
+        let finite_end = (recipe.is_some()
+            && !status_lifetime
+            && !rides_flight
+            && (l.sustain || effect_def.looping))
+            .then_some(start + if duration_from { duration } else { period });
         let point = if caster {
             trigger.origin
         } else {
@@ -873,6 +893,7 @@ impl EffectDirector {
                 origin: trigger.origin + lift,
                 destination: trigger.point + lift,
                 flight: None,
+                team: None,
                 trail: None,
                 model,
                 ride,
@@ -883,6 +904,7 @@ impl EffectDirector {
             ability: trigger.ability,
             cast: trigger.cast,
             entity,
+            ends: (trigger.caster, trigger.target),
             holder,
             hero: (trigger.event == EffectEvent::RevivalStarted)
                 .then_some(trigger.target)
@@ -890,7 +912,12 @@ impl EffectDirector {
             base,
             offset,
             follow: l.follow,
-            travels: ridden.map_or(l.motion, |(_, rl)| rl.motion).travels(),
+            // A graph bound to a delivery's launch rides its flight (its emitter is carried).
+            travels: {
+                let motion = ridden.map_or(l.motion, |(_, rl)| rl.motion);
+                motion.travels()
+                    || (motion == Motion::Graph && trigger.event == EffectEvent::Projectile)
+            },
             riding: ridden.is_some(),
             path_layer: ridden.map_or(layer_index as u16, |(r, _)| r),
             history: (l.follow && ridden.is_none() && l.emitter.as_ref().is_some_and(|e| e.world)
@@ -1543,6 +1570,17 @@ impl EffectDirector {
                         c.view.hidden = a.hide;
                     }
                 }
+            }
+            if own.graph.is_some() {
+                // A graph layer's ends stay on its caster and target as they move.
+                let lift = Vec3::Y * own.height;
+                if let Some(a) = c.ends.0.and_then(|e| scene.anchor(e)) {
+                    c.view.origin = a + lift;
+                }
+                if let Some(a) = c.ends.1.and_then(|e| scene.anchor(e)) {
+                    c.view.destination = a + lift;
+                }
+                c.view.team = c.ends.0.or(c.entity).and_then(|e| scene.team(e));
             }
             if c.travels {
                 // Missiles home on their anchored unit (at the cue's own height: a riding

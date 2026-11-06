@@ -278,6 +278,11 @@ pub struct Shell {
     /// Abilities' stages by document, the looks their grounds asked for, and the
     /// encounter to draw this frame.
     encounters: HashMap<String, crate::encounter::Session>,
+    /// Effects' graph canvases and previews (D113).
+    graphs: HashMap<String, crate::tabs::GraphDoc>,
+    /// The node previews to draw after this frame's UI, and the atlas showing the last.
+    pub thumbs: Option<crate::node_previews::Request>,
+    pub thumbs_texture: Option<egui::TextureId>,
     /// The lab's open scenarios, by document.
     labs: HashMap<String, crate::lab::Session>,
     wanted_looks: Vec<String>,
@@ -349,6 +354,9 @@ impl Shell {
             scene: None,
             scene_generated: None,
             encounters: HashMap::new(),
+            graphs: HashMap::new(),
+            thumbs: None,
+            thumbs_texture: None,
             labs: HashMap::new(),
             wanted_looks: Vec::new(),
             encounter: None,
@@ -527,8 +535,9 @@ impl Shell {
         let mut generated_size = None;
         let mut preview: Option<String> = None;
         let content = self.checker.as_ref().and_then(|c| c.content().cloned());
-        // The ability stages' and the lab's grounds: the pack, and the looks they asked for.
-        if kind == Kind::Abilities || kind == Kind::Lab {
+        // The ability stages', the effect previews' and the lab's grounds: the pack, and the
+        // looks they asked for.
+        if kind == Kind::Abilities || kind == Kind::Lab || kind == Kind::Effects {
             let resources = self
                 .resources
                 .get_or_insert_with(|| Resources::open(self.data.as_deref()));
@@ -576,6 +585,9 @@ impl Shell {
                 preview: &mut preview,
                 root: Some(package.root.clone()),
                 encounters: &mut self.encounters,
+                graphs: &mut self.graphs,
+                thumbs: &mut self.thumbs,
+                thumbs_texture: self.thumbs_texture,
                 labs: &mut self.labs,
                 lab_size: &mut lab_size,
                 pack,
@@ -2282,6 +2294,15 @@ impl Shell {
             && let Some((_, doc)) = workspace.dock.main_surface_mut().find_active_focused()
         {
             doc.show_stage();
+        }
+    }
+
+    /// Shows the focused effect's graph view (captures).
+    pub fn show_graph(&mut self) {
+        if let Some(workspace) = self.workspaces.get_mut(&self.current)
+            && let Some((_, doc)) = workspace.dock.main_surface_mut().find_active_focused()
+        {
+            doc.show_graph();
         }
     }
 

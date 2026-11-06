@@ -14,6 +14,7 @@ use serde_json::json;
 
 fn layer(motion: Motion, primitive: Primitive) -> EffectLayer {
     EffectLayer {
+        graph: None,
         id: "layer".into(),
         primitive,
         motion,
@@ -60,6 +61,7 @@ fn effect(id: &str, looping: bool, layers: Vec<EffectLayer>) -> CookedEffect {
         duration: 1.0,
         looping,
         layers,
+        graphs: Vec::new(),
     }
 }
 
@@ -120,6 +122,7 @@ fn event(id: u32, tick: u32, kind: EventKind, cast: u32) -> AbilityEvent {
         radius: None,
         until_death: false,
         spawned: Vec::new(),
+        centre: None,
     }
 }
 
@@ -239,6 +242,7 @@ fn a_cancelled_cast_ends_its_cues() {
             "effect.test.charge",
             false,
             vec![EffectLayer {
+                graph: None,
                 sustain: true,
                 ..layer(Motion::Billboard, Primitive::Particle)
             }],

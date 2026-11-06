@@ -1,0 +1,21 @@
+{
+  "id": "asset.terrain.editor-stage-grid",
+  "name": "Editor stage grid · albedo/roughness",
+  "kind": "terrain-material",
+  "tags": [
+    "editor"
+  ],
+  "resources": [
+    {
+      "role": "albedo",
+      "index": 1,
+      "format": "png"
+    },
+    {
+      "role": "data",
+      "index": 1,
+      "format": "bin"
+    }
+  ],
+  "license": "Original for Under the Canopy: a generated grid (1 m and 4 m lines on zinc) for the editor stages, packed by tools/terrain/pack_ground.py."
+}

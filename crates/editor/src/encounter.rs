@@ -26,6 +26,20 @@ use std::sync::Arc;
 const TICKS: f32 = 40.0;
 /// Playback speeds.
 const SPEEDS: [(f32, &str); 4] = [(0.25, "¼"), (0.5, "½"), (1.0, "1×"), (2.0, "2×")];
+/// An effect's stage rests this long after the effect ends before playing it again.
+const REST: u32 = 20;
+
+/// The Effects workbench's stage (D115): nothing is cast by hand. The effect plays by
+/// itself, again after a short rest, and from its start after every edit.
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub struct Showcase {
+    /// The effect's length.
+    pub ticks: u32,
+    /// A looping effect plays on and is never started again.
+    pub looping: bool,
+    /// Where it plays.
+    pub at: crate::effect_preview::Anchor,
+}
 
 /// An orbiting camera over the encounter.
 #[derive(Debug, Clone, Copy, PartialEq)]
@@ -102,12 +116,24 @@ pub struct Session {
     camera: Camera,
     /// The camera follows the units until the user moves it.
     fit: bool,
+    /// What the camera framed since the take began: it only grows, so a unit that dies
+    /// (and is thrown, D114) stays in view instead of the camera jumping to the living.
+    framed: Option<(Vec3, Vec3)>,
     page: Page,
     error: Option<String>,
     /// Commands from outside the panel (captures, MCP), run at the next frame.
     queued: Vec<Command>,
     /// A caster asked for before the settings exist (the Overview's Stage link).
     caster: Option<String>,
+    /// Effects to play instead of the pack's (the Effects workbench's live preview, D113).
+    pub effects: Option<Arc<canopy_assets::EffectTable>>,
+    /// An effect's stage rather than an ability's.
+    pub showcase: Option<Showcase>,
+    /// The palette slot the units (and the effect's team colour) wear on an effect's
+    /// stage.
+    colour: usize,
+    /// The player colours (linear) and their names.
+    palette: Vec<([f32; 3], String)>,
 }
 
 /// What can be asked of the stage from outside its panel.
@@ -146,10 +172,15 @@ impl Session {
             hover: None,
             camera: Camera::default(),
             fit: true,
+            framed: None,
             page: Page::Timeline,
             error: None,
             queued: Vec::new(),
             caster: None,
+            effects: None,
+            showcase: None,
+            colour: 0,
+            palette: Vec::new(),
         }
     }
 
@@ -178,6 +209,21 @@ impl Session {
     /// replays the take to the same tick, so a change shows at the same moment.
     pub fn prepare(&mut self, content: &Arc<Content>, pack: &Arc<Pack>, look: &canopy_scene::Look) {
         self.pack = Some(pack.clone());
+        if self.palette.is_empty() {
+            let players = &look.players;
+            self.palette = players
+                .colors
+                .iter()
+                .enumerate()
+                .map(|(i, c)| {
+                    let name = players.names.get(i).cloned();
+                    (
+                        c.linear().to_array(),
+                        name.unwrap_or(format!("Player {}", i + 1)),
+                    )
+                })
+                .collect();
+        }
         let wanted = self.caster.take();
         let settings = self.settings.get_or_insert_with(|| {
             let mut s = sim::suggest(content, &self.ability);
@@ -186,6 +232,17 @@ impl Session {
             }
             s
         });
+        // An effect plays on one ally standing still (both wear the stage's colour), or on
+        // open ground beside the caster alone.
+        if let Some(show) = self.showcase {
+            if self.built.is_none() {
+                settings.distance = 7.0;
+            }
+            settings.targets = u32::from(show.at != crate::effect_preview::Anchor::Ground);
+            settings.relation = Relation::Ally;
+            settings.combat = false;
+            settings.fallen = false;
+        }
         // An ability that lost ranks is cast (and shown) at its highest.
         if let Some(ranks) = content
             .abilities
@@ -220,6 +277,8 @@ impl Session {
                         None => Take::new(fixture, None),
                     };
                     match take {
+                        // An effect's stage plays the effect from its start.
+                        Ok(_) if self.showcase.is_some() => self.replay(),
                         Ok(take) => {
                             self.begin(take);
                             if let Some(tick) = tick {
@@ -246,17 +305,57 @@ impl Session {
                     // tells the grounds apart by it.
                     self.version = crate::sandbox::next_version();
                     // The presenter takes the scene's player colours.
-                    if let Some(take) = &self.take
-                        && let Ok(fresh) = take.restart()
-                    {
-                        let tick = take.tick();
-                        self.begin(fresh);
-                        self.seek(tick);
-                    }
+                    self.represent();
                 }
                 Err(error) => self.error = Some(error),
             }
         }
+    }
+
+    /// The take presented afresh at the same tick (new colours or ground).
+    fn represent(&mut self) {
+        if let Some(take) = &self.take
+            && let Ok(fresh) = take.restart()
+        {
+            let tick = take.tick();
+            let playing = self.playing;
+            self.begin(fresh);
+            self.seek(tick);
+            self.playing = playing;
+        }
+    }
+
+    /// An effect's stage: the effect from its start, playing.
+    fn replay(&mut self) {
+        let Some(fixture) = self.fixture.clone() else {
+            return;
+        };
+        match Take::new(fixture, None) {
+            Ok(idle) => self.fire(idle.first_aim()),
+            Err(error) => self.fail(error),
+        }
+    }
+
+    /// The ticks a take shows: an effect's stage ends a rest after the effect does.
+    fn length(&self) -> u32 {
+        let Some(take) = &self.take else { return 0 };
+        let duration = take.fixture().duration;
+        let Some(show) = self.showcase else {
+            return duration;
+        };
+        match self.released() {
+            Some(at) => at + show.ticks + REST,
+            None => duration,
+        }
+    }
+
+    /// When the take's cast released (an effect's stage plays the effect from there).
+    fn released(&self) -> Option<u32> {
+        let take = self.take.as_ref()?;
+        take.events()
+            .iter()
+            .find(|e| e.kind == canopy_sim::abilities::EventKind::Released)
+            .map(|e| e.tick)
     }
 
     fn fail(&mut self, error: String) {
@@ -272,17 +371,25 @@ impl Session {
     /// Shows `take` from its start: a presenter of its own, its first presentation.
     fn begin(&mut self, take: Take) {
         self.owed = 0.0;
+        self.framed = None;
         self.shown = [None, None];
         let (Some(pack), Some(fixture)) = (&self.pack, &self.fixture) else {
             self.take = Some(take);
             return;
         };
-        let colors = self
+        let mut colors = self
             .scene
             .as_ref()
             .map(|(_, s)| s.colors.clone())
             .unwrap_or_default();
-        self.presenter = Some(Presenter::new(
+        // An effect's stage: its units (both the first player's) wear the chosen colour.
+        if self.showcase.is_some()
+            && let (Some(slot), Some((colour, _))) =
+                (colors.first_mut(), self.palette.get(self.colour))
+        {
+            *slot = *colour;
+        }
+        self.presenter = Some(Presenter::with_effects(
             take.world(),
             &fixture.map,
             Some(pack.clone()),
@@ -291,6 +398,7 @@ impl Session {
                 tree_slots: Default::default(),
                 statics: 0,
             },
+            self.effects.clone(),
         ));
         self.take = Some(take);
         self.present();
@@ -327,7 +435,7 @@ impl Session {
         let Some(take) = &self.take else { return };
         let _span = tracing::trace_span!("encounter_seek").entered();
         let started = std::time::Instant::now();
-        let tick = tick.min(take.fixture().duration);
+        let tick = tick.min(self.length());
         let back = tick < take.tick();
         if back {
             match take.restart() {
@@ -383,6 +491,9 @@ impl Session {
     }
 
     fn reset(&mut self) {
+        if self.showcase.is_some() {
+            return self.replay();
+        }
         self.targeting = false;
         if let Some(fixture) = self.fixture.clone() {
             match Take::new(fixture, None) {
@@ -394,7 +505,14 @@ impl Session {
     }
 
     fn toggle(&mut self) {
-        if self.take.as_ref().is_some_and(Take::done) {
+        if self.showcase.is_some()
+            && self
+                .take
+                .as_ref()
+                .is_some_and(|t| t.tick() >= self.length())
+        {
+            self.replay();
+        } else if self.take.as_ref().is_some_and(Take::done) {
             self.seek(0);
             self.playing = true;
         } else {
@@ -417,6 +535,18 @@ impl Session {
             return;
         }
         self.owed += dt.min(0.1) * TICKS * self.speed;
+        if let Some(show) = self.showcase {
+            while self.owed >= 1.0 {
+                let Some(take) = &self.take else { return };
+                if !show.looping && take.tick() >= self.length() {
+                    self.replay();
+                    return;
+                }
+                self.step();
+                self.owed -= 1.0;
+            }
+            return;
+        }
         while self.owed >= 1.0 {
             if self.take.as_ref().is_none_or(Take::done) {
                 self.playing = false;
@@ -439,16 +569,35 @@ impl Session {
             lo = lo.min(body.position - Vec3::new(r, 0.0, r));
             hi = hi.max(body.position + Vec3::new(r, body.height, r));
         }
+        // An effect played on the ground: its spot, and room for it to rise.
+        if self.showcase.is_some()
+            && let Some(Aim::Point { x, y }) = self.take.as_ref().and_then(Take::aim)
+        {
+            let at = Vec3::new(x as f32, 0.0, y as f32);
+            lo = lo.min(at - Vec3::new(3.0, 0.0, 3.0));
+            hi = hi.max(at + Vec3::new(3.0, 5.0, 3.0));
+        }
+        if let Some((before_lo, before_hi)) = self.framed {
+            lo = lo.min(before_lo);
+            hi = hi.max(before_hi);
+        }
         if lo.x > hi.x {
             return;
         }
+        self.framed = Some((lo, hi));
         let centre = (lo + hi) * 0.5;
         let across = (hi.x - lo.x)
             .max((hi.z - lo.z) * aspect.max(0.5))
             .max(hi.y - lo.y);
         let half = (crate::map::view::FOV * 0.5).tan();
         self.camera.focus = Vec3::new(centre.x, lo.y, centre.z);
-        self.camera.distance = (across / aspect.clamp(0.5, 3.0) / half * 0.85 + 8.0).max(12.0);
+        // An effect's stage frames closer: the effect is the subject, not a fight.
+        let (margin, least) = if self.showcase.is_some() {
+            (4.0, 10.0)
+        } else {
+            (14.0, 20.0)
+        };
+        self.camera.distance = (across / aspect.clamp(0.5, 3.0) / half + margin).max(least);
     }
 
     /// The shot the stage draws this frame.
@@ -464,9 +613,14 @@ impl Session {
             1.0
         };
         let caster = take.caster().0;
+        let showcase = self.showcase.is_some();
         let mut ui = WorldUiInput {
-            selected: vec![caster],
-            health: HealthBars::Always,
+            selected: if showcase { Vec::new() } else { vec![caster] },
+            health: if showcase {
+                HealthBars::Selected
+            } else {
+                HealthBars::Always
+            },
             scale: 1.0,
             ..Default::default()
         };
@@ -626,6 +780,9 @@ fn settings_panel(ui: &mut Ui, session: &mut Session, content: Option<&Content>)
         .fixture
         .as_ref()
         .map_or(1, |f| f.ability.ranks.len().max(1));
+    if session.showcase.is_some() {
+        return showcase_panel(ui, session, content);
+    }
     let Some(settings) = &mut session.settings else {
         return;
     };
@@ -722,18 +879,7 @@ fn settings_panel(ui: &mut Ui, session: &mut Session, content: Option<&Content>)
         *settings = s;
     }
     ui.add_space(6.0);
-    ui.label(eyebrow("Ground"));
-    let mut biome = session.biome.clone();
-    egui::ComboBox::from_id_salt(("encounter-ground", &session.ability))
-        .selected_text(biome.as_deref().unwrap_or("Zinc stage"))
-        .width(196.0)
-        .show_ui(ui, |ui| {
-            ui.selectable_value(&mut biome, None, "Zinc stage");
-            for b in canopy_content::map::BIOMES {
-                ui.selectable_value(&mut biome, Some(b.to_string()), b);
-            }
-        });
-    session.biome = biome;
+    ground_picker(ui, session);
     if let Some(fixture) = &session.fixture {
         ui.add_space(6.0);
         ui.label(
@@ -751,8 +897,180 @@ fn settings_panel(ui: &mut Ui, session: &mut Session, content: Option<&Content>)
     }
 }
 
+/// The ground's picker.
+fn ground_picker(ui: &mut Ui, session: &mut Session) {
+    ui.label(eyebrow("Ground"));
+    let mut biome = session.biome.clone();
+    egui::ComboBox::from_id_salt(("encounter-ground", &session.ability))
+        .selected_text(biome.as_deref().unwrap_or("Zinc stage"))
+        .width(196.0)
+        .show_ui(ui, |ui| {
+            ui.selectable_value(&mut biome, None, "Zinc stage");
+            for b in canopy_content::map::BIOMES {
+                ui.selectable_value(&mut biome, Some(b.to_string()), b);
+            }
+        });
+    session.biome = biome;
+}
+
+/// An effect's stage settings: where it plays, the units beside it, their colour and the
+/// ground.
+fn showcase_panel(ui: &mut Ui, session: &mut Session, content: &Content) {
+    let (Some(settings), Some(show)) = (&mut session.settings, &mut session.showcase) else {
+        return;
+    };
+    use crate::effect_preview::Anchor;
+    ui.label(eyebrow("Plays"));
+    let place = |a: Anchor| match a {
+        Anchor::Target => "On the target",
+        Anchor::Caster => "From the caster",
+        Anchor::Ground => "On the ground",
+    };
+    egui::ComboBox::from_id_salt(("showcase-at", &session.ability))
+        .selected_text(place(show.at))
+        .width(196.0)
+        .show_ui(ui, |ui| {
+            ui.selectable_value(&mut show.at, Anchor::Target, place(Anchor::Target));
+            ui.selectable_value(&mut show.at, Anchor::Caster, place(Anchor::Caster))
+                .on_hover_text("Beams and drains run from the caster to the target");
+            ui.selectable_value(&mut show.at, Anchor::Ground, place(Anchor::Ground))
+                .on_hover_text("On open ground, the distance from a unit standing aside");
+        });
+    ui.add_space(6.0);
+    ui.label(eyebrow("Units"));
+    let units = sim::units(content);
+    let name = |id: &str| {
+        content
+            .definition(id)
+            .map_or(id.to_string(), |d| d.name.clone())
+    };
+    let mut s = settings.clone();
+    egui::ComboBox::from_id_salt(("showcase-unit", &session.ability))
+        .selected_text(name(&s.target))
+        .width(196.0)
+        .height(320.0)
+        .show_ui(ui, |ui| {
+            for d in &units {
+                let id = d.id.to_string();
+                if ui
+                    .selectable_label(s.target == id, &d.name)
+                    .on_hover_text(&id)
+                    .clicked()
+                {
+                    s.caster = id.clone();
+                    s.target = id;
+                }
+            }
+        });
+    ui.add(
+        egui::Slider::new(&mut s.distance, 1.0..=30.0)
+            .step_by(0.5)
+            .text("Distance"),
+    );
+    if s != *settings {
+        *settings = s;
+    }
+    ui.add_space(6.0);
+    ui.label(eyebrow("Player colour"));
+    let mut colour = session.colour;
+    let swatch = |c: [f32; 3]| {
+        let c = egui::Rgba::from_rgb(c[0], c[1], c[2]);
+        Color32::from(c)
+    };
+    egui::ComboBox::from_id_salt(("showcase-colour", &session.ability))
+        .selected_text(
+            session
+                .palette
+                .get(colour)
+                .map_or("", |(_, name)| name.as_str()),
+        )
+        .width(196.0)
+        .show_ui(ui, |ui| {
+            for (i, (c, name)) in session.palette.iter().enumerate() {
+                ui.selectable_value(
+                    &mut colour,
+                    i,
+                    RichText::new(format!("■  {name}")).color(swatch(*c)),
+                );
+            }
+        });
+    if colour != session.colour {
+        session.colour = colour;
+        session.represent();
+    }
+    ui.add_space(6.0);
+    ground_picker(ui, session);
+    ui.add_space(6.0);
+    ui.label(
+        RichText::new("Plays by itself, again after it ends; an edit starts it over.")
+            .color(FAINT)
+            .size(11.0),
+    );
+    if let Some(error) = &session.error {
+        ui.add_space(6.0);
+        ui.label(RichText::new(error).color(ERROR).size(11.0));
+    }
+}
+
+/// An effect's transport: Pause, Restart, a tick on, the speed and the time.
+fn showcase_transport(ui: &mut Ui, session: &mut Session) {
+    let ready = session.fixture.is_some();
+    ui.horizontal(|ui| {
+        let play = if session.playing { "Pause" } else { "Play" };
+        if ui
+            .add_enabled(ready, egui::Button::new(format!("{play}  Space")))
+            .clicked()
+        {
+            session.toggle();
+        }
+        if ui
+            .add_enabled(ready, egui::Button::new("Restart  R"))
+            .clicked()
+        {
+            session.replay();
+        }
+        if ui
+            .add_enabled(ready, egui::Button::new("+1 tick"))
+            .clicked()
+        {
+            session.playing = false;
+            session.step();
+        }
+        ui.add_space(6.0);
+        for (speed, label) in SPEEDS {
+            if ui.selectable_label(session.speed == speed, label).clicked() {
+                session.speed = speed;
+            }
+        }
+        ui.add_space(6.0);
+        if ui
+            .button("Fit")
+            .on_hover_text("Frame the units (double-click the viewport)")
+            .clicked()
+        {
+            session.fit = true;
+            session.framed = None;
+        }
+        ui.with_layout(egui::Layout::right_to_left(egui::Align::Center), |ui| {
+            if let (Some(take), Some(show)) = (&session.take, session.showcase) {
+                let at = session.released().unwrap_or(0);
+                let now = take.tick().saturating_sub(at).min(show.ticks);
+                ui.label(
+                    RichText::new(format!("{} / {}", seconds(now), seconds(show.ticks)))
+                        .color(MUTED)
+                        .size(11.0)
+                        .monospace(),
+                );
+            }
+        });
+    });
+}
+
 /// The transport: Cast, Interrupt, Reset, Play, a tick on, the speed and the time.
 fn transport(ui: &mut Ui, session: &mut Session) {
+    if session.showcase.is_some() {
+        return showcase_transport(ui, session);
+    }
     let ready = session.fixture.is_some();
     ui.horizontal(|ui| {
         let label = if session.targeting {
@@ -806,6 +1124,7 @@ fn transport(ui: &mut Ui, session: &mut Session) {
         ui.add_space(6.0);
         if ui.button("Fit").on_hover_text("Frame the units (double-click the viewport)").clicked() {
             session.fit = true;
+            session.framed = None;
         }
         ui.with_layout(egui::Layout::right_to_left(egui::Align::Center), |ui| {
             if let Some(take) = &session.take {
@@ -828,7 +1147,13 @@ fn transport(ui: &mut Ui, session: &mut Session) {
 /// The timeline: a playhead to drag and the lanes (animation, impacts, statuses); or the
 /// events list.
 fn lower(ui: &mut Ui, session: &mut Session) {
+    if session.showcase.is_some() {
+        session.page = Page::Timeline;
+    }
     ui.horizontal(|ui| {
+        if session.showcase.is_some() {
+            return;
+        }
         for (page, label) in [(Page::Timeline, "Timeline"), (Page::Events, "Events")] {
             if ui.selectable_label(session.page == page, label).clicked() {
                 session.page = page;
@@ -853,9 +1178,21 @@ fn lower(ui: &mut Ui, session: &mut Session) {
     let Some(take) = &session.take else {
         return;
     };
-    let duration = take.fixture().duration.max(1);
+    let duration = session.length().max(1);
     let now = take.tick();
     let mut seek = None;
+    // An effect's stage: one lane, the effect from its release.
+    let effect: Vec<Span> = session
+        .showcase
+        .zip(session.released())
+        .map(|(show, at)| Span {
+            label: "Effect".into(),
+            start: at,
+            end: at + show.ticks,
+            kind: SpanKind::Impact,
+        })
+        .into_iter()
+        .collect();
     match session.page {
         Page::Events => {
             egui::ScrollArea::vertical()
@@ -920,11 +1257,16 @@ fn lower(ui: &mut Ui, session: &mut Session) {
             const LABEL: f32 = 86.0;
             const ROW: f32 = 24.0;
             let width = ui.available_width();
-            let lanes: [(&str, &Vec<Span>); 3] = [
+            let all: [(&str, &Vec<Span>); 3] = [
                 ("Animation", &timeline.animation),
                 ("Impacts", &timeline.impacts),
                 ("Statuses", &timeline.statuses),
             ];
+            let lanes: &[(&str, &Vec<Span>)] = if session.showcase.is_some() {
+                &[("Effect", &effect)]
+            } else {
+                &all
+            };
             let height = 22.0 + 14.0 + ROW * lanes.len() as f32;
             let (rect, response) =
                 ui.allocate_exact_size(vec2(width, height), Sense::click_and_drag());
@@ -1047,7 +1389,10 @@ fn lower(ui: &mut Ui, session: &mut Session) {
             {
                 seek = Some(tick_of(p.x));
             }
-            if timeline.animation.is_empty() && timeline.impacts.is_empty() {
+            if session.showcase.is_none()
+                && timeline.animation.is_empty()
+                && timeline.impacts.is_empty()
+            {
                 let hint = if session.targeting {
                     "Choose a target in the scene to cast. Escape cancels."
                 } else {
@@ -1129,7 +1474,7 @@ pub fn show(
                 i.key_pressed(egui::Key::Escape),
             )
         });
-        if q && session.fixture.is_some() {
+        if q && session.fixture.is_some() && session.showcase.is_none() {
             session.cast();
         }
         if r && session.fixture.is_some() {
@@ -1208,6 +1553,7 @@ pub fn show(
     }
     if response.double_clicked() {
         session.fit = true;
+        session.framed = None;
     }
     if session.fit {
         session.frame_units(aspect);
@@ -1400,6 +1746,45 @@ mod abilities_fixture;
 mod tests {
     use super::abilities_fixture::*;
     use serde_json::{Value, json};
+
+    #[test]
+    fn an_effects_stage_plays_the_effect_by_itself_and_again_after_it_ends() {
+        use super::*;
+        use crate::effect_preview::{ABILITY, Anchor, with_test_ability};
+        let data = std::path::Path::new(concat!(env!("CARGO_MANIFEST_DIR"), "/../.."));
+        let content = Content::load(data).unwrap_or_else(|e| panic!("{e}"));
+        let content = with_test_ability(&content, "effect.test.preview", Anchor::Target).unwrap();
+        let settings = sim::suggest(&content, ABILITY);
+        let mut stage = Session::new(ABILITY);
+        stage.showcase = Some(Showcase {
+            ticks: 10,
+            looping: false,
+            at: Anchor::Target,
+        });
+        stage.fixture = Some(Arc::new(
+            Fixture::new(&content, ABILITY, &settings).unwrap(),
+        ));
+        stage.replay();
+        assert!(stage.playing, "it plays without a cast");
+        let mut last = 0;
+        for _ in 0..400 {
+            stage.advance(1.0 / TICKS);
+            let tick = stage.take.as_ref().map_or(0, Take::tick);
+            if tick < last {
+                let released = stage.released();
+                assert!(released.is_none(), "a fresh take has not released yet");
+                return;
+            }
+            last = tick;
+            if let Some(at) = stage.released() {
+                assert!(
+                    tick <= at + 10 + REST,
+                    "it ran past the effect and its rest"
+                );
+            }
+        }
+        panic!("the effect never started again");
+    }
 
     fn args(value: Value) -> crate::mcp::EncounterArgs {
         serde_json::from_value(value).unwrap()

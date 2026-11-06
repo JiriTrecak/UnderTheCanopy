@@ -310,6 +310,50 @@ fn related(
     .is(relations)
 }
 
+/// Where an area query is centred.
+fn query_centre(
+    state: &State,
+    anchor: Anchor,
+    caster: &Actor,
+    aim: &Aim,
+    pool: Option<&[Actor]>,
+) -> Milli {
+    match anchor {
+        Anchor::Caster => caster.position,
+        Anchor::Target => match aim {
+            Aim::Unit(a) => match pool {
+                Some(list) => list
+                    .iter()
+                    .find(|t| t.id == a.id)
+                    .map_or(a.position, |t| t.position),
+                None => state.entities.get(a.id).map_or(a.position, |e| e.position),
+            },
+            Aim::Point(p) => *p,
+        },
+        Anchor::Point => aim.position(),
+    }
+}
+
+/// The centre of the area an operation strikes, as [`recipients`] chooses it; none when
+/// it strikes a single target, the caster or a point.
+pub fn area_centre(
+    state: &State,
+    effect: &Effect,
+    spell: &Ability,
+    caster: &Actor,
+    aim: &Aim,
+    area_defaults: bool,
+) -> Option<Milli> {
+    if effect.target() == Anchor::Point {
+        return None;
+    }
+    if let Some(q) = effect.query() {
+        return Some(query_centre(state, q.center, caster, aim, None));
+    }
+    (effect.target() != Anchor::Caster && area_defaults && spell.targeting.radius.is_some())
+        .then(|| aim.position())
+}
+
 /// The recipients of one operation (old `operationTargets`).
 #[allow(clippy::too_many_arguments)]
 pub fn recipients(
@@ -331,20 +375,7 @@ pub fn recipients(
     }
     let filter = effect.filter();
     if let Some(q) = effect.query() {
-        let center = match q.center {
-            Anchor::Caster => caster.position,
-            Anchor::Target => match aim {
-                Aim::Unit(a) => match pool {
-                    Some(list) => list
-                        .iter()
-                        .find(|t| t.id == a.id)
-                        .map_or(a.position, |t| t.position),
-                    None => state.entities.get(a.id).map_or(a.position, |e| e.position),
-                },
-                Aim::Point(p) => *p,
-            },
-            Anchor::Point => aim.position(),
-        };
+        let center = query_centre(state, q.center, caster, aim, pool);
         let radius = library::value(spell, rank, &q.radius).max(0) * 1000;
         let near;
         let candidates: &[Actor] = match pool {
@@ -604,6 +635,7 @@ pub fn run(ctx: &mut Ctx, state: &mut State, mut run: Run) {
                 run.area_defaults,
                 None,
             );
+            let centre = area_centre(state, effect, spell, selector, &run.aim, run.area_defaults);
             for target in targets {
                 let live = target
                     .id()
@@ -945,6 +977,7 @@ pub fn run(ctx: &mut Ctx, state: &mut State, mut run: Run) {
                         applied
                     }),
                     origin: run.visual_origin,
+                    centre,
                     ..Extra::default()
                 };
                 if let (Some(_), Some(before)) = (&moved, &live) {

@@ -19,6 +19,7 @@ canopy-assets = { path = "../assets" }
 canopy-net = { path = "../net" }
 reqwest.workspace = true
 canopy-content = { path = "../content" }
+canopy-fx = { path = "../fx" }
 canopy-render = { path = "../render" }
 canopy-scene = { path = "../scene" }
 canopy-sim = { path = "../sim" }

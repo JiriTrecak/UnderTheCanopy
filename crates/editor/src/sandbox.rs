@@ -10,6 +10,11 @@ use canopy_scene::MapScene;
 /// The zinc stage's ground, linear (its texture's average is tinted to this).
 pub const GROUND: f32 = 0.05;
 
+/// The zinc stage's grid: a terrain material whose 1024² tile is 16 m across.
+const GRID: &str = "asset.terrain.editor-stage-grid";
+/// The terrain shader repeats a tile every 1 / (tiling × 0.08) m.
+const GRID_TILING: f32 = 1.0 / (16.0 * 0.08);
+
 /// The next scene version: unique across stages, since one renderer draws them all and
 /// tells their grounds apart by it.
 pub fn next_version() -> u64 {
@@ -17,8 +22,8 @@ pub fn next_version() -> u64 {
     NEXT.fetch_add(1, std::sync::atomic::Ordering::Relaxed)
 }
 
-/// `map` drawn on the zinc stage: one neutral material (the biome's rock, tinted so it
-/// averages zinc) without the forest around it.
+/// `map` drawn on the zinc stage: plain zinc with a faint grid (or, without the grid in
+/// the pack, the biome's rock tinted so it averages zinc), without the forest around it.
 pub fn zinc_ground(
     world: &canopy_sim::World,
     map: &UtcMap,
@@ -44,8 +49,8 @@ pub fn zinc_ground(
     Ok(scene)
 }
 
-/// Makes `desc` one material: the layer that covers the most ground becomes the base,
-/// tinted so its texture averages a dark neutral grey.
+/// Makes `desc` one material: the stage grid, or else the layer that covers the most
+/// ground, tinted so its texture averages a dark neutral grey.
 fn neutral(desc: &mut TerrainDesc, pack: &Pack) {
     let main = desc
         .layers
@@ -66,9 +71,21 @@ fn neutral(desc: &mut TerrainDesc, pack: &Pack) {
         }
     }
     let base = &mut desc.layers[0];
-    base.tint = average(pack, &base.albedo).map_or([0.35; 3], |mean| {
-        [0, 1, 2].map(|c| GROUND / mean[c].max(0.005))
-    });
+    let grid = canopy_scene::terrain::tile_entry(GRID, 1);
+    if pack.texture(&grid).is_ok() {
+        // Plain zinc with faint lines every metre and every block.
+        base.albedo = grid;
+        base.normal = canopy_scene::terrain::tile_entry(&format!("{GRID}-normal"), 1);
+        base.occlusion = None;
+        base.kind = LayerKind::Base {
+            tiling: GRID_TILING,
+        };
+        base.tint = [1.0; 3];
+    } else {
+        base.tint = average(pack, &base.albedo).map_or([0.35; 3], |mean| {
+            [0, 1, 2].map(|c| GROUND / mean[c].max(0.005))
+        });
+    }
     base.painted = true;
     desc.layers.truncate(1);
     desc.surroundings = None;

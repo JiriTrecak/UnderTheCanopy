@@ -18,6 +18,8 @@ use std::{sync::Arc, time::Instant};
 pub struct LiveScene {
     snapshots: Vec<Arc<Snapshot>>,
     instances: Vec<ActorInstance>,
+    /// Joint palettes of falling bodies (D114), which their instances point into.
+    posed: Vec<canopy_assets::Matrix3x4>,
     hidden_revision: Option<u32>,
     applied: Vec<u64>,
     /// Frames shown at the newest snapshot because the next one was late.
@@ -270,7 +272,21 @@ impl LiveScene {
         let evaluator = EffectEvaluator::new(table);
         renderer.load_effect_textures(gpu, pack, evaluator.textures());
         renderer.load_effect_curves(gpu, evaluator.curves());
+        renderer.load_effect_programs(&evaluator.graph_programs());
         self.effects = Some(evaluator);
+    }
+
+    /// Compiles the effect graph programs of `effects` (table indices) now, so a spell's
+    /// first cast does not stall the match.
+    pub fn prewarm_effects(
+        &self,
+        renderer: &mut Renderer,
+        gpu: &Gpu,
+        effects: &std::collections::BTreeSet<u16>,
+    ) {
+        if let Some(evaluator) = &self.effects {
+            renderer.prewarm_effect_programs(gpu, &evaluator.graph_programs_of(effects));
+        }
     }
 
     /// Feeds the frame's ground units to the water's ripples (every frame).
@@ -387,7 +403,7 @@ impl LiveScene {
             }
             self.hidden_revision = Some(b.hidden.revision);
         }
-        interpolate::interpolate(a, b, t, &mut self.instances);
+        interpolate::interpolate(a, b, t, &mut self.instances, &mut self.posed);
         let actors = self.instances.len();
         self.keys.clear();
         self.keys.extend(b.actors.iter().map(|a| a.key));
@@ -450,5 +466,6 @@ impl LiveScene {
             }
         }
         renderer.set_actors(&self.instances);
+        renderer.set_posed(&self.posed);
     }
 }

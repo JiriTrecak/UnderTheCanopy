@@ -67,6 +67,10 @@ use std::{
 
 /// Ticks a death stays on screen (old corpse `remaining: 2` seconds).
 pub const CORPSE_TICKS: u32 = 80;
+/// Ticks a body that fell as a ragdoll (D114) stays: it lies a while, then sinks into the
+/// ground over the last [`SINK_TICKS`].
+pub const FALLEN_TICKS: u32 = 240;
+pub const SINK_TICKS: u32 = 48;
 /// A flyer's corpse falls `15 t²` metres after `t` seconds (old corpse fall).
 pub const CORPSE_FALL: f32 = 15.0;
 /// Moving further than this in one tick is a jump, not a walk: no interpolation.
@@ -226,6 +230,8 @@ pub struct Presentation {
     pub pops: Vec<Pop>,
     /// What units and buildings sound like this tick (D97).
     pub sounds: Vec<crate::sounds::SoundCue>,
+    /// Bodies falling as ragdolls (D114), by actor key (sorted): their parts' poses.
+    pub ragdolls: Vec<(u64, crate::ragdoll::RagdollPose)>,
 }
 
 /// Ticks a delivery's floating text lives: it rises and fades over them.
@@ -572,6 +578,10 @@ struct Corpse {
     effects: Option<Arc<[StateEffect]>>,
     sockets: Option<Arc<[Socket]>>,
     cues: StateCues,
+    /// Physics took the body over (or it never will: no ragdoll, or too many falling).
+    handed: bool,
+    /// How the lethal blow throws it (D114), when known: world units per second.
+    push: Option<Vec3>,
 }
 
 /// A projectile effect layer as drawn.
@@ -613,6 +623,7 @@ struct Posed {
 /// What effects see of the scene this tick.
 struct EffectWorld<'a> {
     anchors: &'a BTreeMap<u32, Vec3>,
+    teams: &'a BTreeMap<u32, [f32; 3]>,
     posed: &'a BTreeMap<u32, Posed>,
     terrain: &'a Terrain,
     missiles: &'a BTreeMap<u32, (Vec3, Vec3)>,
@@ -643,6 +654,10 @@ impl EffectScene for EffectWorld<'_> {
     fn missile_pose(&self, cast: u32) -> Option<(Vec3, Vec3)> {
         self.missiles.get(&cast).copied()
     }
+
+    fn team(&self, entity: u32) -> Option<[f32; 3]> {
+        self.teams.get(&entity).copied()
+    }
 }
 
 /// Old dust randomness: a hash of the building and tick, never the simulation's stream.
@@ -666,6 +681,8 @@ pub struct Presenter {
     buildings: BTreeMap<EntityId, BuildingTrack>,
     items: BTreeMap<EntityId, ItemTrack>,
     corpses: BTreeMap<EntityId, Corpse>,
+    /// Bodies falling (D114).
+    ragdolls: crate::ragdoll::Ragdolls,
     origins: BTreeMap<(Part, u32), (u32, Vec3)>,
     /// Weapon flights whose launch effect played (with their launch tick).
     fired: BTreeMap<(Part, u32), u32>,
@@ -796,6 +813,18 @@ fn layer_model_path(content: &Content, asset: &str, index: u32) -> Option<String
 impl Presenter {
     /// A presenter for a match on `map` whose world starts as `world`.
     pub fn new(world: &World, map: &UtcMap, pack: Option<Arc<Pack>>, setup: Setup) -> Self {
+        Self::with_effects(world, map, pack, setup, None)
+    }
+
+    /// A presenter whose effects come from `effects` instead of the pack's table (the
+    /// editor's previews play effects as they are being edited).
+    pub fn with_effects(
+        world: &World,
+        map: &UtcMap,
+        pack: Option<Arc<Pack>>,
+        setup: Setup,
+        effects: Option<Arc<canopy_assets::EffectTable>>,
+    ) -> Self {
         let content = world.catalog().content.clone();
         // Map placements' appearance (asset and scale) by entity.
         let placements: BTreeMap<&str, &canopy_content::placement::Placement> = map
@@ -831,7 +860,7 @@ impl Presenter {
         }
         let words = setup.statics.div_ceil(64);
         let mut catalog = ModelCatalog::default();
-        let table = EffectDirector::table(pack.as_deref());
+        let table = effects.unwrap_or_else(|| EffectDirector::table(pack.as_deref()));
         let effects = EffectDirector::new(&content, table.clone(), |name| {
             let index = catalog.index(pack.as_deref(), name);
             let info = catalog.get(index);
@@ -868,6 +897,7 @@ impl Presenter {
             buildings: BTreeMap::new(),
             items: BTreeMap::new(),
             corpses: BTreeMap::new(),
+            ragdolls: crate::ragdoll::Ragdolls::default(),
             origins: BTreeMap::new(),
             fired: BTreeMap::new(),
             struck: BTreeMap::new(),
@@ -1007,6 +1037,7 @@ impl Presenter {
         self.buildings.clear();
         self.items.clear();
         self.corpses.clear();
+        self.ragdolls.clear();
         self.origins.clear();
         self.felling.clear();
         self.chunks = None;
@@ -1906,6 +1937,7 @@ impl Presenter {
             if let Some(a) = &mut animation {
                 a.die(self.catalog.get(tracked.model));
             }
+            let push = self.lethal_push(world, view, id, tracked.actor.position);
             let mut actor = tracked.actor;
             actor.key = key(Part::Corpse, 0, id.0);
             actor.walker = None;
@@ -1920,17 +1952,26 @@ impl Presenter {
                     effects: tracked.effects,
                     sockets: tracked.sockets,
                     cues: StateCues::default(),
+                    handed: false,
+                    push,
                 },
             );
         }
+        // Bodies fall (D114) by the ticks since the last presentation.
+        let elapsed = self.last_tick.map_or(0, |last| tick.saturating_sub(last));
+        self.ragdolls.step(elapsed);
         let effects = &mut self.effects;
-        self.corpses.retain(|_, c| {
-            let keep = tick < c.died + CORPSE_TICKS;
+        let ragdolls = &mut self.ragdolls;
+        self.corpses.retain(|id, c| {
+            let fell = ragdolls.contains(id.0);
+            let keep = tick < c.died + if fell { FALLEN_TICKS } else { CORPSE_TICKS };
             if !keep {
                 c.cues.stop(effects);
+                ragdolls.remove(id.0);
             }
             keep
         });
+        let mut ragdoll_poses = Vec::new();
         let corpse_ids: Vec<EntityId> = self.corpses.keys().copied().collect();
         for id in corpse_ids {
             let model_info = {
@@ -1987,13 +2028,54 @@ impl Presenter {
             if let Some(a) = &c.animation {
                 c.actor.poses = a.animator.poses(&model_info);
             }
-            if let Some((from, floor)) = c.fall {
+            // A moment into its death clip the body falls under physics (D114), pushed
+            // back from what it faced: what killed it.
+            if !c.handed && tick >= c.died + crate::ragdoll::HANDOVER_TICKS {
+                c.handed = true;
+                if let (Some(ragdoll), Some(a)) = (&model_info.ragdoll, &c.animation) {
+                    if !self.ragdolls.has_ground() {
+                        let field = self.terrain.field();
+                        self.ragdolls.set_ground(
+                            field.vertices() as usize,
+                            field.ground(),
+                            field.origin() as f32,
+                        );
+                    }
+                    let (_, time) = a.animator.current();
+                    // Without a known blow, back from what it faced: what killed it.
+                    let push = c.push.unwrap_or_else(|| {
+                        let facing = c.actor.rotation * Vec3::Z;
+                        -Vec3::new(facing.x, 0.0, facing.z).normalize_or_zero()
+                            * crate::ragdoll::PUSH
+                    });
+                    self.ragdolls.spawn(
+                        id.0,
+                        ragdoll,
+                        (c.actor.scale, c.actor.rotation, c.actor.position),
+                        time,
+                        push,
+                        id.0,
+                    );
+                }
+            }
+            let sink = (tick.saturating_sub(c.died + FALLEN_TICKS - SINK_TICKS) as f32
+                / SINK_TICKS as f32)
+                .min(1.0)
+                * model_info.height()
+                * c.actor.scale.y;
+            if let Some(pose) = self.ragdolls.pose(id.0, sink) {
+                c.actor.position = pose.position;
+                c.actor.rotation = pose.rotation;
+                ragdoll_poses.push((c.actor.key, pose));
+            } else if let Some((from, floor)) = c.fall {
                 let t = (tick - c.died) as f32 * TICK_SECONDS;
                 c.actor.position.y = (from - CORPSE_FALL * t * t).max(floor);
             }
             actors.push(c.actor);
             counts.corpses += 1;
         }
+        ragdoll_poses.sort_by_key(|(key, _)| *key);
+        let ragdolls = ragdoll_poses;
 
         if std::mem::take(&mut self.jumped) {
             // After a jump the trees felled since the start are hidden afresh: those gone
@@ -2054,11 +2136,17 @@ impl Presenter {
             .filter(|a| a.key >> 40 == Part::Entity as u64)
             .map(|a| (a.key as u32, a.position))
             .collect();
+        let teams: BTreeMap<u32, [f32; 3]> = actors
+            .iter()
+            .filter(|a| a.key >> 40 == Part::Entity as u64)
+            .filter_map(|a| a.color.map(|c| (a.key as u32, c)))
+            .collect();
         self.point_effects(view);
         let mut effects = self.effects.update(
             view,
             &EffectWorld {
                 anchors: &anchors,
+                teams: &teams,
                 posed: &posed,
                 terrain: &self.terrain,
                 missiles: &self.missile_poses,
@@ -2091,7 +2179,55 @@ impl Presenter {
             bodies,
             pops: self.pops.clone(),
             sounds: std::mem::take(&mut self.sound_cues),
+            ragdolls,
         }
+    }
+
+    /// How the lethal blow throws body `id` standing at `at` (D114), with the ability's or
+    /// the striker's push: a blast outward from its centre (a body at the centre, along
+    /// the flight), a spell's single blow along its flight from where it came to where it
+    /// landed, a weapon's away from its wielder. None when no blow is known.
+    fn lethal_push(&self, world: &World, view: &View, id: EntityId, at: Vec3) -> Option<Vec3> {
+        use canopy_sim::abilities::EventKind;
+        let death = world.events().deaths().filter(|f| f.entity == id).last()?;
+        let source = death.source?;
+        let across = |from: Vec3, to: Vec3| {
+            let d = Vec3::new(to.x - from.x, 0.0, to.z - from.z);
+            (d.length() > 0.05).then(|| d.normalize())
+        };
+        let milli = |x: i32, z: i32| Vec3::new(x as f32 / 1000.0, 0.0, z as f32 / 1000.0);
+        let force = |push: Option<f64>| push.map_or(crate::ragdoll::PUSH, |p| p as f32);
+        if let Some(e) = view.spells.events.iter().rev().find(|e| {
+            e.kind == EventKind::Damaged
+                && e.target == Some(id)
+                && e.caster == source
+                && e.tick + 4 >= death.tick
+        }) {
+            let push = force(
+                self.content
+                    .abilities
+                    .abilities
+                    .get(usize::from(e.ability.0))
+                    .and_then(|a| a.presentation.push),
+            );
+            let origin = milli(e.origin.x, e.origin.y);
+            let flight = across(origin, milli(e.point.x, e.point.y));
+            // A body right at a blast's centre has no outward: it goes along the flight.
+            let blast = e.centre.and_then(|c| across(milli(c.x, c.y), at));
+            return blast
+                .or(flight)
+                .or_else(|| across(origin, at))
+                .map(|d| d * push);
+        }
+        let striker = world.state().entities.get(source)?;
+        let (x, z) = cells(striker.position);
+        let push = force(
+            self.content
+                .definition(world.catalog().get(striker.definition).id.as_str())
+                .and_then(|d| d.presentation.as_ref())
+                .and_then(|p| p.push),
+        );
+        across(Vec3::new(x as f32, 0.0, z as f32), at).map(|d| d * push)
     }
 
     /// Plays the level-up effect (and sound) on a hero at `at`.

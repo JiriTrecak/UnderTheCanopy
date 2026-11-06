@@ -226,6 +226,7 @@ fn model_blob() -> Vec<u8> {
         lods: Vec::new(),
         materials: vec![material],
         skeleton: Some(Skeleton {
+            ragdoll: None,
             joints: vec![
                 Joint {
                     name: "base".into(),

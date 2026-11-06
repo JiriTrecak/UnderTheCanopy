@@ -439,6 +439,10 @@ pub struct EffectEvaluator {
     layer_curves: Vec<Vec<(u32, u32)>>,
     /// Textured strips of this frame by texture.
     strips: BTreeMap<Option<u32>, Vec<RibbonQuad>>,
+    /// Effect graph instances (D113).
+    graphs: super::graphs::GraphRuntime,
+    /// Each graph renderer's texture by effect, graph and renderer.
+    graph_textures: Vec<Vec<Vec<Option<u32>>>>,
 }
 
 /// Blends a cue's positions between two snapshots.
@@ -481,6 +485,31 @@ impl EffectEvaluator {
                     .collect()
             })
             .collect();
+        let graph_textures = table
+            .effects
+            .iter()
+            .map(|e| {
+                e.graphs
+                    .iter()
+                    .map(|g| {
+                        g.renderers
+                            .iter()
+                            .map(|r| {
+                                r.texture.as_ref().map(|name| {
+                                    match textures.iter().position(|t| t == name) {
+                                        Some(i) => i as u32,
+                                        None => {
+                                            textures.push(name.clone());
+                                            (textures.len() - 1) as u32
+                                        }
+                                    }
+                                })
+                            })
+                            .collect()
+                    })
+                    .collect()
+            })
+            .collect();
         let mut curves = Vec::new();
         let layer_curves = table
             .effects
@@ -500,7 +529,6 @@ impl EffectEvaluator {
             })
             .collect();
         Self {
-            table,
             textures,
             layer_textures,
             buckets: BTreeMap::new(),
@@ -513,7 +541,22 @@ impl EffectEvaluator {
             curves,
             layer_curves,
             strips: BTreeMap::new(),
+            graphs: super::graphs::GraphRuntime::new(&table),
+            graph_textures,
+            table,
         }
+    }
+
+    /// The compiled effect graph layers in the order the frame's steps refer to them
+    /// (`Renderer::load_effect_programs`).
+    pub fn graph_programs(&self) -> Vec<&str> {
+        self.graphs.programs(&self.table)
+    }
+
+    /// The graph programs of `effects` (table indices), to compile ahead of their first
+    /// run (`Renderer::prewarm_effect_programs`).
+    pub fn graph_programs_of(&self, effects: &std::collections::BTreeSet<u16>) -> Vec<u32> {
+        self.graphs.programs_of(effects)
     }
 
     /// The curve blocks emitters refer to (`Renderer::load_effect_curves`).
@@ -549,6 +592,7 @@ impl EffectEvaluator {
         out.clear();
         self.pushed = 0;
         self.flames.clear();
+        self.graphs.begin();
         for bucket in self.buckets.values_mut() {
             bucket.clear();
         }
@@ -632,6 +676,13 @@ impl EffectEvaluator {
             }
         }
         self.blade = visible;
+        let graph_textures = &self.graph_textures;
+        self.graphs.end(
+            &table,
+            tick,
+            |e, g, r| graph_textures[usize::from(e)][usize::from(g)][r],
+            &mut out.graph,
+        );
         self.damage(b, tick, eye, out);
         // Buckets become contiguous draws.
         for (&(geometry, blend, texture), parts) in &mut self.buckets {
@@ -873,6 +924,26 @@ impl EffectEvaluator {
         };
         let effect = &table.effects[usize::from(cue.effect)];
         let l = &effect.layers[usize::from(cue.layer)];
+        if let Some(graph) = l.graph {
+            self.graphs.cue(
+                table,
+                cue.id,
+                cue.effect,
+                graph as u16,
+                cue.seed,
+                f64::from(time.age),
+                cue.root,
+                cue.rotation,
+                super::graphs::CueEnds {
+                    source: cue.origin,
+                    target: cue.destination,
+                    team: cue.team.unwrap_or([1.0; 3]),
+                    carrier: cue.flight.map(|f| f.position),
+                },
+                &mut out.graph,
+            );
+            return;
+        }
         let texture = self.layer_textures[usize::from(cue.effect)][usize::from(cue.layer)];
         let mut motion = cue_motion(l.cue_motion.as_ref(), time.age);
         // Authored curves over the layer's life replace the envelope and the growth.
@@ -1012,6 +1083,7 @@ impl EffectEvaluator {
                     shadow_only: false,
                     activity: 0.0,
                     aim: None,
+                    posed: None,
                 });
             }
             Motion::Light => {
@@ -1447,6 +1519,7 @@ impl EffectEvaluator {
                     shadow_only: false,
                     activity: 1.0,
                     aim: None,
+                    posed: None,
                 });
             }
         } else {
@@ -1545,6 +1618,7 @@ impl EffectEvaluator {
                 shadow_only: false,
                 activity: 0.0,
                 aim: None,
+                posed: None,
             });
         } else {
             let mut e = base;

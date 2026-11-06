@@ -46,6 +46,21 @@ impl HeightField {
         }
     }
 
+    /// Vertices per side.
+    pub fn vertices(&self) -> u32 {
+        self.vertices
+    }
+
+    /// World position of vertex 0 on both axes.
+    pub fn origin(&self) -> f64 {
+        ORIGIN
+    }
+
+    /// Ground height of every vertex, row index z.
+    pub fn ground(&self) -> &[f32] {
+        &self.ground
+    }
+
     /// Ground height at a world position, bilinear between vertices. Outside the halo the
     /// ground is at 0, as the old `sampleHeight` answers.
     pub fn sample(&self, x: f64, z: f64) -> f64 {

@@ -65,6 +65,7 @@ fn the_shipped_data_cooks_cleanly() {
         force: false,
         allow_lfs_pointers: false,
         release: false,
+        effect_budget: None,
     }) {
         Err(error) if error.to_string().contains("Git LFS") => {
             eprintln!("skipped: {error}");

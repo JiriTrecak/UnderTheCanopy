@@ -94,6 +94,9 @@ pub struct ActorInstance {
     /// Turns the model's `turret` node (and everything on it) this many radians about its
     /// own vertical axis, counterclockwise seen from above: a tower aiming at its target.
     pub aim: Option<f32>,
+    /// Its joint palette given whole, from this matrix of the frame's posed palettes
+    /// ([`ActorsGpu::set_posed`]) instead of the baked clips: a ragdoll (D114).
+    pub posed: Option<u32>,
 }
 
 /// The tint of models drawn as they are.
@@ -113,6 +116,7 @@ impl ActorInstance {
             shadow_only: false,
             activity: 0.0,
             aim: None,
+            posed: None,
         }
     }
 
@@ -146,7 +150,8 @@ struct ActorGpu {
 #[repr(C)]
 #[derive(Debug, Clone, Copy, Pod, Zeroable)]
 struct SkinJob {
-    /// palette base, joints, poses, aimed (1)
+    /// palette base, joints, poses, flags (1 aimed, 2 posed: the palette is copied from
+    /// the posed matrices from the first pose's frame a)
     header: [u32; 4],
     poses: [[u32; 4]; MAX_POSES],
     /// Joints that turn with the aim (a bit each, 256 joints).
@@ -370,6 +375,9 @@ pub struct ActorsGpu {
     actors: Grow,
     jobs: Grow,
     palette: Grow,
+    /// The frame's posed palettes (ragdolls), and the caller's copy.
+    posed: Grow,
+    posed_matrices: Vec<[f32; 12]>,
     actor_group: Option<wgpu::BindGroup>,
     skin_group: Option<wgpu::BindGroup>,
     /// The caller's instances.
@@ -443,6 +451,7 @@ impl ActorsGpu {
                 storage(0, comp, true),
                 storage(1, comp, true),
                 storage(2, comp, false),
+                storage(3, comp, true),
             ],
         });
         let module = crate::shader::module(
@@ -622,6 +631,8 @@ impl ActorsGpu {
             actors: Grow::new(device, "actors", storage_usage, 1024),
             jobs: Grow::new(device, "skin jobs", storage_usage, 1024),
             palette: Grow::new(device, "joint palettes", wgpu::BufferUsages::STORAGE, 1024),
+            posed: Grow::new(device, "posed palettes", storage_usage, 1024),
+            posed_matrices: Vec::new(),
             actor_group: None,
             skin_group: None,
             instances: Vec::new(),
@@ -989,6 +1000,13 @@ impl ActorsGpu {
         self.instances.extend_from_slice(instances);
     }
 
+    /// The frame's posed palettes: model-space skinning matrices that instances with
+    /// [`ActorInstance::posed`] take whole, one per joint from their offset.
+    pub fn set_posed(&mut self, matrices: &[[f32; 12]]) {
+        self.posed_matrices.clear();
+        self.posed_matrices.extend_from_slice(matrices);
+    }
+
     /// Culls, sorts and uploads the frame's instances and skinning jobs.
     pub fn prepare(
         &mut self,
@@ -1082,6 +1100,7 @@ impl ActorsGpu {
                 &mut palette_len,
                 model,
                 instance,
+                self.posed_matrices.len(),
             );
         }
         // Shadow casters: one level per model, from the shadow map's texel (orthographic,
@@ -1107,6 +1126,7 @@ impl ActorsGpu {
                 &mut palette_len,
                 model,
                 instance,
+                self.posed_matrices.len(),
             );
         }
         self.job_count = self.staging_jobs.len() as u32;
@@ -1120,9 +1140,19 @@ impl ActorsGpu {
             (self.staging_jobs.len() * std::mem::size_of::<SkinJob>()) as u64,
         );
         rebind |= self.palette.reserve(device, u64::from(palette_len) * 48);
+        rebind |= self
+            .posed
+            .reserve(device, (self.posed_matrices.len() * 48) as u64);
         if rebind {
             self.actor_group = None;
             self.skin_group = None;
+        }
+        if !self.posed_matrices.is_empty() {
+            queue.write_buffer(
+                &self.posed.buffer,
+                0,
+                bytemuck::cast_slice(&self.posed_matrices),
+            );
         }
         if !self.staging_actors.is_empty() {
             queue.write_buffer(
@@ -1176,6 +1206,10 @@ impl ActorsGpu {
                     wgpu::BindGroupEntry {
                         binding: 2,
                         resource: self.palette.buffer.as_entire_binding(),
+                    },
+                    wgpu::BindGroupEntry {
+                        binding: 3,
+                        resource: self.posed.buffer.as_entire_binding(),
                     },
                 ],
             }));
@@ -1429,6 +1463,7 @@ fn stage(
     palette_len: &mut u32,
     model: &GpuModel,
     instance: &ActorInstance,
+    posed_len: usize,
 ) {
     let rows = instance.transform.transpose();
     actors.push(ActorGpu {
@@ -1455,7 +1490,14 @@ fn stage(
         job.mask = turret.mask;
         job.aim = [aim.cos(), aim.sin(), turret.pivot[0], turret.pivot[1]];
     }
-    if model.animated {
+    let posed = instance
+        .posed
+        .filter(|&first| model.animated && first as usize + model.joints as usize <= posed_len);
+    if let Some(first) = posed {
+        job.header[2] = 1;
+        job.header[3] |= 2;
+        job.poses[0] = [first, first, 0, 1.0f32.to_bits()];
+    } else if model.animated {
         let used = usize::from(instance.pose_count).min(MAX_POSES);
         let total: f32 = instance.poses[..used]
             .iter()
@@ -1526,6 +1568,7 @@ mod tests {
                 joint(TURRET_NODE, Some(0), [-0.1, 5.4, 0.2]),
                 joint("canister", Some(0), [2.8, 2.9, 0.0]),
             ],
+            ragdoll: None,
         };
         let turret = Turret::of(&skeleton).unwrap();
         assert!(turret.contains(1) && turret.contains(2));
@@ -1533,6 +1576,7 @@ mod tests {
         assert_eq!(turret.pivot, [-0.1, 0.2]);
         let plain = canopy_assets::Skeleton {
             joints: vec![joint("plinth", None, [0.0; 3])],
+            ragdoll: None,
         };
         assert!(Turret::of(&plain).is_none());
     }

@@ -360,6 +360,25 @@ pub fn cook(source: &ModelSource, glb: &[u8], diags: &mut Diagnostics) -> Option
 
     // Bounds: rest, every baked frame (per-joint boxes), and wind sway.
     let rest_bounds = bounds(stream.positions.iter().copied());
+    // Units and creatures fall as ragdolls (D114): parts fitted to the skin, held
+    // equipment (rigid nodes) loose.
+    let ragdoll = (skinned && matches!(source.profile, "unit" | "creature"))
+        .then(|| {
+            let mut rigid = vec![false; joints.len()];
+            for prim in prims.iter().filter(|p| p.skin.is_none()) {
+                if let Some(&i) = prim.palette_map.first() {
+                    rigid[i] = true;
+                }
+            }
+            crate::ragdoll::fit(
+                &joints,
+                &stream.positions,
+                &stream.skin,
+                &rigid,
+                rest_bounds.1[1] - rest_bounds.0[1],
+            )
+        })
+        .flatten();
     // A model that stands on its pivot must stand on it: its rest pose's lowest point is at
     // the ground, within a few centimetres. A floating model is an export mistake (a stray
     // object measured as the feet, a lifted root), never intended, so it fails the cook
@@ -538,7 +557,7 @@ pub fn cook(source: &ModelSource, glb: &[u8], diags: &mut Diagnostics) -> Option
         },
         lods,
         materials,
-        skeleton: animated.then_some(Skeleton { joints }),
+        skeleton: animated.then_some(Skeleton { joints, ragdoll }),
         clips,
         states,
         sockets: sockets

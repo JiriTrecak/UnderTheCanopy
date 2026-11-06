@@ -38,12 +38,196 @@ pub struct CookedEffect {
     /// Enabled layers in authored order (sound layers included: the audio crate plays
     /// them from content; the renderer skips them).
     pub layers: Vec<EffectLayer>,
+    /// Enabled graph layers (D113), compiled.
+    #[serde(default)]
+    pub graphs: Vec<CookedGraph>,
+}
+
+/// A layer drawn by an effect graph (D113, docs/effect-graph.md): its compiled WGSL
+/// kernels and what the runtime needs to run and draw them (`canopy_fx::compile`).
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+pub struct CookedGraph {
+    pub id: String,
+    /// Seconds after the event.
+    pub start: f32,
+    /// Anchored at the source (caster) rather than the binding's anchor.
+    pub at_source: bool,
+    /// Particles move with their anchored unit.
+    pub follow: bool,
+    pub offset: [f32; 3],
+    /// The `birth` and `update` kernels with their prelude.
+    pub wgsl: String,
+    /// Vec4s per particle record.
+    pub stride: u32,
+    /// Particles an instance holds at once.
+    pub capacity: u32,
+    pub spawners: Vec<CookedSpawner>,
+    pub renderers: Vec<CookedRenderer>,
+    /// Effect parameters in the order the layer uniform carries them.
+    pub parameters: Vec<String>,
+    /// Seconds the longest particle lives (an ended instance lingers this long).
+    pub max_life: f32,
+    /// The event channels it writes (its Emit event nodes), in channel order.
+    pub channels: Vec<CookedChannel>,
+    /// The layer and Emit event node it is born of, as authored.
+    pub listens: Option<(String, String)>,
+    /// Resolved by [`link_events`]: the graph it is born of, which of its channels, and
+    /// the child slots each parent particle owns. Such a graph has no cue of its own: its
+    /// parent's instance steps it.
+    pub parent: Option<CookedParent>,
+}
+
+#[derive(Debug, Clone, Copy, PartialEq, Serialize, Deserialize)]
+pub enum EventWhen {
+    Death,
+    Birth,
+    Interval,
+    Distance,
+    Step,
+}
+
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+pub struct CookedChannel {
+    pub node: String,
+    pub when: EventWhen,
+    /// Seconds or metres between interval and distance events.
+    pub interval: f32,
+    pub max_count: f32,
+}
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
+pub struct CookedParent {
+    pub graph: u32,
+    pub channel: u32,
+    pub per_parent: u32,
+}
+
+/// Vec4s of one event record in the particle pool.
+pub const EVENT_VEC4S: u32 = canopy_fx::compile::EVENT_VEC4S;
+
+/// The most particles an event-born layer instance may hold.
+pub const MAX_CHILD_CAPACITY: u32 = 16384;
+/// Speed assumed for distance events when sizing a child layer, metres a second.
+const DISTANCE_SPEED: f32 = 25.0;
+
+/// Resolves every event-born graph of one effect to its parent graph and channel, and
+/// sizes it: each parent particle owns enough slots for the children of the events it
+/// fires within one child lifetime. Returns a warning per graph that names no parent.
+pub fn link_events(graphs: &mut [CookedGraph]) -> Vec<String> {
+    let mut warnings = Vec::new();
+    // Parents before children (chains of events): settle in passes.
+    let mut done = vec![false; graphs.len()];
+    for _ in 0..graphs.len() + 1 {
+        for c in 0..graphs.len() {
+            if done[c] {
+                continue;
+            }
+            let Some((layer, event)) = graphs[c].listens.clone() else {
+                done[c] = true;
+                graphs[c].parent = None;
+                continue;
+            };
+            let Some(p) = graphs
+                .iter()
+                .position(|g| g.id == layer)
+                .filter(|&p| p != c)
+            else {
+                warnings.push(format!(
+                    "{}: no layer `{layer}` to be born of",
+                    graphs[c].id
+                ));
+                done[c] = true;
+                continue;
+            };
+            if !done[p] {
+                continue;
+            }
+            let Some(ch) = graphs[p].channels.iter().position(|ch| ch.node == event) else {
+                warnings.push(format!(
+                    "{}: layer `{layer}` has no Emit event node `{event}`",
+                    graphs[c].id
+                ));
+                done[c] = true;
+                continue;
+            };
+            let channel = &graphs[p].channels[ch];
+            let life = graphs[c].max_life.max(0.01);
+            let events = match channel.when {
+                EventWhen::Death | EventWhen::Birth => 1.0,
+                EventWhen::Interval => (life / channel.interval).ceil() + 1.0,
+                EventWhen::Distance => (life * DISTANCE_SPEED / channel.interval).ceil() + 1.0,
+                EventWhen::Step => (life * 60.0).ceil() + 1.0,
+            };
+            let per_event = channel.max_count.ceil().max(1.0);
+            let parent_capacity = graphs[p].capacity.max(1);
+            let per_parent = ((per_event * events).min(256.0) as u32)
+                .clamp(1, (MAX_CHILD_CAPACITY / parent_capacity).max(1));
+            graphs[c].capacity = parent_capacity * per_parent;
+            graphs[c].parent = Some(CookedParent {
+                graph: p as u32,
+                channel: ch as u32,
+                per_parent,
+            });
+            done[c] = true;
+        }
+    }
+    warnings
+}
+
+#[derive(Debug, Clone, Copy, PartialEq, Serialize, Deserialize)]
+pub enum CookedSpawner {
+    /// `count` particles `time` seconds into the layer.
+    Burst { count: f32, time: f32 },
+    /// `rate` a second from `start` for `duration` seconds (0: while the effect plays).
+    Rate {
+        rate: f32,
+        start: f32,
+        duration: f32,
+    },
+    /// As `Rate`, times a curve over the stream's span (even samples from its start to
+    /// its end): a spray that tapers off. Last, so packs cooked before it still read.
+    Curved {
+        rate: f32,
+        start: f32,
+        duration: f32,
+        curve: [f32; canopy_fx::compile::RATE_SAMPLES],
+    },
+}
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
+pub enum BillboardMode {
+    Camera,
+    Axis,
+    Spheroid,
+    Plane,
+    Velocity,
+    /// A strip through the particles in the order they were born.
+    Ribbon,
+}
+
+/// A renderer of a graph layer; each particle's position, size, colour, axis, rotation
+/// and frame come from the layer's part records.
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+pub struct CookedRenderer {
+    /// Pack entry of the texture (`None`: a soft white disc).
+    pub texture: Option<String>,
+    pub mode: BillboardMode,
+    pub additive: bool,
+    /// Bends the scene behind instead of drawing colour (heat haze).
+    pub distort: bool,
+    /// Soft-particle distance, metres.
+    pub soft: f32,
+    /// Flipbook columns and rows.
+    pub flipbook: [u32; 2],
 }
 
 /// The runtime primitive a layer draws with.
-#[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Hash, Serialize, Deserialize)]
+#[derive(
+    Debug, Clone, Copy, Default, PartialEq, Eq, PartialOrd, Ord, Hash, Serialize, Deserialize,
+)]
 pub enum Primitive {
     /// Camera-facing sprites or soft spheres (`count` of them).
+    #[default]
     Particle,
     /// Quads lying on the ground plane at the layer's height.
     Decal,
@@ -51,12 +235,17 @@ pub enum Primitive {
     Mesh,
     Light,
     Sound,
+    /// Particles simulated by an effect graph (`EffectLayer::graph`, D113).
+    Graph,
 }
 
 /// How a layer's parts move: the old effect player's shapes.
-#[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Hash, Serialize, Deserialize)]
+#[derive(
+    Debug, Clone, Copy, Default, PartialEq, Eq, PartialOrd, Ord, Hash, Serialize, Deserialize,
+)]
 pub enum Motion {
     /// One quad rising slightly over the layer's life.
+    #[default]
     Billboard,
     /// Sparks flung out on a golden-angle spiral.
     Burst,
@@ -86,6 +275,8 @@ pub enum Motion {
     /// A crackling line from the origin to the target: ribbon segments that jitter
     /// sideways by `spread` and redraw fifteen times a second.
     Beam,
+    /// An effect graph's particles (`EffectLayer::graph`).
+    Graph,
 }
 
 impl Motion {
@@ -95,9 +286,10 @@ impl Motion {
     }
 }
 
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
+#[derive(Debug, Clone, Copy, Default, PartialEq, Eq, Serialize, Deserialize)]
 pub enum EffectBlend {
     /// `src · α + dst`.
+    #[default]
     Additive,
     /// `src · α + dst · (1 − α)`.
     Normal,
@@ -316,10 +508,159 @@ pub struct CookedAttachment {
     pub inherit_rotation: bool,
 }
 
+/// Where and when a graph layer plays (an authored `GraphLayer` without its graph).
+#[derive(Debug, Clone, PartialEq)]
+pub struct GraphPlacement {
+    pub id: String,
+    /// Seconds after the event.
+    pub start: f32,
+    pub at_source: bool,
+    pub follow: bool,
+    pub offset: [f32; 3],
+}
+
+/// A graph layer compiled for the runtime (the cooker and the editor's live previews
+/// share it, so a preview is what the game plays). `texture` finds an asset's image
+/// entry in the pack; the asset ids it could not find come back beside the layer.
+pub fn cook_graph(
+    placement: GraphPlacement,
+    graph: &canopy_fx::Graph,
+    duration: f32,
+    texture: impl Fn(&str) -> Option<String>,
+) -> Result<(CookedGraph, Vec<String>), Vec<canopy_fx::Problem>> {
+    let program = canopy_fx::check(graph)?;
+    Ok(cook_program(placement, &program, &[], duration, texture))
+}
+
+/// [`cook_graph`] of a checked graph, with its renderer inputs re-routed by `overrides`
+/// (the node editor's previews).
+pub fn cook_program(
+    placement: GraphPlacement,
+    program: &canopy_fx::Program,
+    overrides: &[canopy_fx::compile::Override],
+    duration: f32,
+    texture: impl Fn(&str) -> Option<String>,
+) -> (CookedGraph, Vec<String>) {
+    use canopy_fx::compile::{self, Blend, Mode, Spawner};
+    let compiled = compile::compile(program, overrides);
+    let mut missing = Vec::new();
+    let renderers = compiled
+        .renderers
+        .iter()
+        .map(|r| {
+            let entry = texture(&r.texture);
+            if entry.is_none() {
+                missing.push(r.texture.clone());
+            }
+            CookedRenderer {
+                texture: entry,
+                mode: match r.mode {
+                    Mode::Camera => BillboardMode::Camera,
+                    Mode::Axis => BillboardMode::Axis,
+                    Mode::Spheroid => BillboardMode::Spheroid,
+                    Mode::Plane => BillboardMode::Plane,
+                    Mode::Velocity => BillboardMode::Velocity,
+                    Mode::Ribbon => BillboardMode::Ribbon,
+                },
+                additive: r.blend == Blend::Additive,
+                distort: r.blend == Blend::Distort,
+                soft: r.soft,
+                flipbook: r.flipbook,
+            }
+        })
+        .collect();
+    let cooked = CookedGraph {
+        id: placement.id,
+        start: placement.start,
+        at_source: placement.at_source,
+        follow: placement.follow,
+        offset: placement.offset,
+        capacity: compiled.capacity(duration),
+        stride: compiled.stride,
+        spawners: compiled
+            .spawners
+            .iter()
+            .map(|s| match *s {
+                Spawner::Burst { count, time } => CookedSpawner::Burst { count, time },
+                Spawner::Rate {
+                    rate,
+                    start,
+                    duration,
+                    curve: None,
+                } => CookedSpawner::Rate {
+                    rate,
+                    start,
+                    duration,
+                },
+                Spawner::Rate {
+                    rate,
+                    start,
+                    duration,
+                    curve: Some(curve),
+                } => CookedSpawner::Curved {
+                    rate,
+                    start,
+                    duration,
+                    curve,
+                },
+            })
+            .collect(),
+        renderers,
+        parameters: compiled.parameters,
+        max_life: compiled.max_life,
+        channels: compiled
+            .channels
+            .iter()
+            .map(|c| CookedChannel {
+                node: c.node.clone(),
+                when: match c.when {
+                    compile::When::Death => EventWhen::Death,
+                    compile::When::Birth => EventWhen::Birth,
+                    compile::When::Interval => EventWhen::Interval,
+                    compile::When::Distance => EventWhen::Distance,
+                    compile::When::Step => EventWhen::Step,
+                },
+                interval: c.interval,
+                max_count: c.max_count,
+            })
+            .collect(),
+        listens: compiled
+            .parent
+            .as_ref()
+            .map(|p| (p.layer.clone(), p.event.clone())),
+        parent: None,
+        wgsl: compiled.wgsl,
+    };
+    (cooked, missing)
+}
+
+impl EffectLayer {
+    /// The layer that times and anchors graph `index` of an effect `duration` seconds
+    /// long: cues treat it as any layer, and the scene hands it to the graph runtime.
+    pub fn for_graph(index: u32, graph: &CookedGraph, duration: f32) -> Self {
+        Self {
+            id: graph.id.clone(),
+            graph: Some(index),
+            primitive: Primitive::Graph,
+            motion: Motion::Graph,
+            start: graph.start,
+            duration,
+            at_source: graph.at_source,
+            follow: graph.follow,
+            offset: graph.offset,
+            ..Self::default()
+        }
+    }
+}
+
 /// One layer of an effect.
-#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+#[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize)]
 pub struct EffectLayer {
     pub id: String,
+    /// Graph layers: the index of their compiled graph in [`CookedEffect::graphs`]; the
+    /// layer itself only times and anchors it.
+    #[serde(default)]
+    pub graph: Option<u32>,
     pub primitive: Primitive,
     pub motion: Motion,
     /// Seconds after the event.
@@ -379,6 +720,76 @@ pub struct EffectLayer {
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    fn graph(id: &str, capacity: u32, max_life: f32) -> CookedGraph {
+        CookedGraph {
+            id: id.into(),
+            start: 0.0,
+            at_source: false,
+            follow: true,
+            offset: [0.0; 3],
+            wgsl: String::new(),
+            stride: 4,
+            capacity,
+            spawners: Vec::new(),
+            renderers: Vec::new(),
+            parameters: Vec::new(),
+            max_life,
+            channels: Vec::new(),
+            listens: None,
+            parent: None,
+        }
+    }
+
+    #[test]
+    fn event_born_layers_link_to_their_parents_and_are_sized_by_them() {
+        let mut rocket = graph("rocket", 10, 1.0);
+        rocket.channels = vec![
+            CookedChannel {
+                node: "pop".into(),
+                when: EventWhen::Death,
+                interval: 0.1,
+                max_count: 20.0,
+            },
+            CookedChannel {
+                node: "trail".into(),
+                when: EventWhen::Interval,
+                interval: 0.1,
+                max_count: 1.0,
+            },
+        ];
+        let mut sparks = graph("sparks", 0, 0.5);
+        sparks.listens = Some(("rocket".into(), "pop".into()));
+        let mut trail = graph("trail", 0, 0.45);
+        trail.listens = Some(("rocket".into(), "trail".into()));
+        // A grandchild: the trail's puffs pop when they die.
+        let mut puffs = graph("puffs", 0, 0.2);
+        puffs.listens = Some(("trail".into(), "nothing".into()));
+        let mut orphan = graph("orphan", 0, 0.2);
+        orphan.listens = Some(("nowhere".into(), "pop".into()));
+        // Children before their parent still link.
+        let mut graphs = vec![sparks, trail, rocket, puffs, orphan];
+        let warnings = link_events(&mut graphs);
+        let sparks = &graphs[0];
+        assert_eq!(
+            sparks.parent,
+            Some(CookedParent {
+                graph: 2,
+                channel: 0,
+                per_parent: 20
+            })
+        );
+        assert_eq!(sparks.capacity, 200);
+        // A puff every 0.1 s living 0.45 s: five alive per rocket, and one more.
+        let trail = &graphs[1];
+        assert_eq!(
+            trail.parent.map(|p| (p.channel, p.per_parent)),
+            Some((1, 6))
+        );
+        assert_eq!(trail.capacity, 60);
+        assert_eq!(warnings.len(), 2, "{warnings:?}");
+        assert!(graphs[3].parent.is_none() && graphs[4].parent.is_none());
+    }
 
     #[test]
     fn curves_hold_outside_their_keys_and_blend_between() {

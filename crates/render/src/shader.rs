@@ -113,6 +113,16 @@ pub fn all() -> Vec<(&'static str, &'static [Module], &'static str)> {
             &[Module::Frame],
             include_str!("../shaders/effects.wgsl"),
         ),
+        (
+            "graph_parts",
+            &[Module::Frame],
+            include_str!("../shaders/graph_parts.wgsl"),
+        ),
+        (
+            "graph_thumbs",
+            &[],
+            include_str!("../shaders/graph_thumbs.wgsl"),
+        ),
         ("minimap", &[], include_str!("../shaders/minimap.wgsl")),
         ("portrait", &[], include_str!("../shaders/portrait.wgsl")),
         (

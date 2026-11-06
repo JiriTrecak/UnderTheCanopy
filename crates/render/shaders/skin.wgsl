@@ -9,7 +9,8 @@ struct Pose {
 }
 
 struct Job {
-    // palette base, joints, poses, aimed (1)
+    // palette base, joints, poses, flags (1 aimed, 2 posed: copied from `posed` from the
+    // first pose's frame a)
     header: vec4u,
     poses: array<Pose, 3>,
     // joints the aim turns, a bit each
@@ -22,6 +23,8 @@ struct Job {
 // Baked clip matrices: three rows (3×4, row-major) per matrix.
 @group(0) @binding(1) var<storage, read> clips: array<vec4f>;
 @group(0) @binding(2) var<storage, read_write> palette: array<vec4f>;
+// Palettes given whole (ragdolls, D114): three rows per matrix.
+@group(0) @binding(3) var<storage, read> posed: array<vec4f>;
 
 @compute @workgroup_size(64)
 fn skin(@builtin(global_invocation_id) id: vec3u) {
@@ -39,7 +42,13 @@ fn skin(@builtin(global_invocation_id) id: vec3u) {
         r1 = vec4f(0.0, 1.0, 0.0, 0.0);
         r2 = vec4f(0.0, 0.0, 1.0, 0.0);
     }
-    for (var p = 0u; p < count; p++) {
+    if ((job.header.w & 2u) != 0u) {
+        let a = (job.poses[0].frames.x + joint) * 3u;
+        r0 = posed[a];
+        r1 = posed[a + 1u];
+        r2 = posed[a + 2u];
+    }
+    for (var p = 0u; p < count * u32((job.header.w & 2u) == 0u); p++) {
         let pose = job.poses[p];
         let a = (pose.frames.x + joint) * 3u;
         let b = (pose.frames.y + joint) * 3u;
@@ -50,7 +59,7 @@ fn skin(@builtin(global_invocation_id) id: vec3u) {
         r2 += mix(clips[a + 2u], clips[b + 2u], t) * w;
     }
     let word = job.mask[joint / 128u][(joint % 128u) / 32u];
-    if (job.header.w == 1u && (word & (1u << (joint % 32u))) != 0u) {
+    if ((job.header.w & 1u) != 0u && (word & (1u << (joint % 32u))) != 0u) {
         // A turret aims: turn about the vertical axis through its pivot.
         let c = job.aim.x;
         let s = job.aim.y;

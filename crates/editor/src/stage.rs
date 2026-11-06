@@ -87,6 +87,8 @@ struct Live {
     evaluator: Option<(Arc<canopy_assets::EffectTable>, EffectEvaluator)>,
     effects: canopy_render::effects::EffectFrame,
     instances: Vec<ActorInstance>,
+    /// Joint palettes of falling bodies (D114).
+    posed: Vec<canopy_assets::Matrix3x4>,
     /// The models the renderer has, in the presenter's order.
     models: Arc<Vec<String>>,
     world_ui: Option<canopy_scene::world_ui::WorldUi>,
@@ -355,10 +357,12 @@ impl Stage {
             self.renderer
                 .load_effect_textures(gpu, &self.pack, evaluator.textures());
             self.renderer.load_effect_curves(gpu, evaluator.curves());
+            self.renderer
+                .load_effect_programs(&evaluator.graph_programs());
             live.evaluator = Some((shot.effects.clone(), evaluator));
         }
         let a = shot.a.as_deref();
-        canopy_scene::interpolate::interpolate(a, b, shot.t, &mut live.instances);
+        canopy_scene::interpolate::interpolate(a, b, shot.t, &mut live.instances, &mut live.posed);
         let tick = match a {
             Some(a) => f64::from(a.tick) + f64::from(shot.t) * f64::from(b.tick - a.tick),
             None => f64::from(b.tick),
@@ -376,6 +380,7 @@ impl Stage {
             self.renderer.set_effects(&mut live.effects);
         }
         self.renderer.set_actors(&live.instances);
+        self.renderer.set_posed(&live.posed);
         let distance = shot.eye.distance(shot.target).max(1.0);
         let aspect = size[0] as f32 / size[1].max(1) as f32;
         let camera = CameraView::look_at(

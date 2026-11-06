@@ -83,6 +83,9 @@ pub struct AbilityEvent {
     pub radius: Option<f64>,
     pub until_death: bool,
     pub spawned: Vec<EntityId>,
+    /// The centre of the area that struck a recipient (blasts throw bodies away from it,
+    /// D114); none for single targets.
+    pub centre: Option<EventPoint>,
 }
 
 /// Recent events (old `observedEvents`: the last 400 ticks, at most 1,024).

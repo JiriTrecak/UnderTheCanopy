@@ -124,6 +124,13 @@ fn chains_bounce_with_falloff_and_skip_full_health() {
         .filter_map(|e| e.amount)
         .collect();
     assert!(zaps.len() >= 3, "{}", played.dump());
+    assert!(
+        played
+            .of(EventKind::Damaged)
+            .iter()
+            .all(|e| e.centre.is_none()),
+        "a chain strikes one body at a time, no area"
+    );
     assert_eq!(zaps[0], 80);
     assert_eq!(zaps[1], 60, "three quarters retained per bounce");
     let heals = played.of(EventKind::Healed);
@@ -315,6 +322,13 @@ fn persistent_zones_pulse_and_expire() {
     // Pulses at release and every 20 ticks within the 160-tick lifetime.
     let pulses = played.count(EventKind::Wave);
     assert!((7..=9).contains(&pulses), "{pulses} pulses");
+    // Each pulse's damage tells where the area is centred (bodies it kills fly outward).
+    let hits = played.at(EventKind::Damaged, "b");
+    assert!(!hits.is_empty());
+    for hit in hits {
+        let centre = hit.centre.expect("an area's damage has a centre");
+        assert_eq!((centre.x, centre.y), (110_000, 101_000));
+    }
     assert!(
         played.world.state().abilities.instances.is_empty(),
         "the zone expired"

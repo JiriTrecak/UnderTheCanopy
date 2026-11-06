@@ -69,16 +69,28 @@ pub fn blend_poses(a: &Poses, b: &Poses, t: f32) -> Poses {
     out
 }
 
+/// The pose of falling body `key` (D114) in `p`.
+fn ragdoll(p: &Presentation, key: u64) -> Option<&crate::ragdoll::RagdollPose> {
+    p.ragdolls
+        .binary_search_by_key(&key, |(k, _)| *k)
+        .ok()
+        .map(|i| &p.ragdolls[i].1)
+}
+
 /// The instances to draw at `t` (0 = `a`, 1 = `b`) between two presentations, `a` older.
-/// Without `a` the newer one is shown as is.
+/// Without `a` the newer one is shown as is. Falling bodies (D114) get their joint
+/// palettes in `posed` ([`ActorInstance::posed`]).
 pub fn interpolate(
     a: Option<&Presentation>,
     b: &Presentation,
     t: f32,
     out: &mut Vec<ActorInstance>,
+    posed: &mut Vec<canopy_assets::Matrix3x4>,
 ) {
     let _span = tracing::trace_span!("interpolate").entered();
     out.clear();
+    posed.clear();
+
     out.reserve(b.actors.len());
     let t = t.clamp(0.0, 1.0);
     let older = a.map_or(&[][..], |a| &a.actors[..]);
@@ -127,6 +139,14 @@ pub fn interpolate(
                 actor.poses,
             ),
         };
+        let falling = ragdoll(b, actor.key).map(|pose| {
+            let first = posed.len() as u32;
+            match previous.and(a).and_then(|a| ragdoll(a, actor.key)) {
+                Some(before) => pose.blend(before, t).palette(posed),
+                None => pose.palette(posed),
+            }
+            first
+        });
         out.push(ActorInstance {
             model: actor.model,
             transform: Mat4::from_scale_rotation_translation(scale, rotation, position),
@@ -138,6 +158,7 @@ pub fn interpolate(
             shadow_only: false,
             activity: actor.activity,
             aim,
+            posed: falling,
         });
     }
 }
@@ -200,7 +221,7 @@ mod tests {
         let a = presentation(1, vec![actor(1, 0.0, 3.0), actor(2, 5.0, 0.0)]);
         let b = presentation(2, vec![actor(1, 2.0, -3.0), actor(3, 9.0, 0.0)]);
         let mut out = Vec::new();
-        interpolate(Some(&a), &b, 0.25, &mut out);
+        interpolate(Some(&a), &b, 0.25, &mut out, &mut Vec::new());
         // Unit 2 vanished; unit 3 appears at its new place.
         assert_eq!(out.len(), 2);
         let p = out[0].transform.transform_point3(Vec3::ZERO);
@@ -223,13 +244,19 @@ mod tests {
         jumped.snap = true;
         let b = presentation(2, vec![jumped]);
         let mut out = Vec::new();
-        interpolate(Some(&a), &b, 0.5, &mut out);
+        interpolate(Some(&a), &b, 0.5, &mut out, &mut Vec::new());
         assert_eq!(out[0].transform.transform_point3(Vec3::ZERO).x, 50.0);
         let mut other = actor(1, 2.0, 0.0);
         other.model = 7;
-        interpolate(Some(&a), &presentation(2, vec![other]), 0.5, &mut out);
+        interpolate(
+            Some(&a),
+            &presentation(2, vec![other]),
+            0.5,
+            &mut out,
+            &mut Vec::new(),
+        );
         assert_eq!(out[0].transform.transform_point3(Vec3::ZERO).x, 2.0);
-        interpolate(None, &a, 0.5, &mut out);
+        interpolate(None, &a, 0.5, &mut out, &mut Vec::new());
         assert_eq!(out.len(), 1);
     }
 

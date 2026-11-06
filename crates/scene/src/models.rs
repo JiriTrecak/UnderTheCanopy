@@ -50,6 +50,9 @@ pub struct ModelInfo {
     /// A `turret` node an aim turns: its pivot (model x, z) and, by socket, whether the
     /// socket turns with it.
     pub turret: Option<([f32; 2], Vec<bool>)>,
+    /// How it falls when it dies (D114): units and creatures with a fitted ragdoll and a
+    /// death clip.
+    pub ragdoll: Option<Arc<crate::ragdoll::RagdollModel>>,
 }
 
 impl ModelInfo {
@@ -99,7 +102,25 @@ impl ModelInfo {
                 )
             })
             .collect();
+        let ragdoll = meta.skeleton.as_ref().and_then(|skeleton| {
+            let ragdoll = skeleton.ragdoll.clone()?;
+            let clip = meta.states.iter().find(|s| s.semantic == "death")?.clip as usize;
+            let frames = meta.clips.get(clip)?.frame_count;
+            let joints = skeleton.joints.len();
+            let matrices = model.clip_matrices(clip).to_vec();
+            (frames > 0 && matrices.len() == frames as usize * joints).then(|| {
+                Arc::new(crate::ragdoll::RagdollModel {
+                    ragdoll,
+                    origins: skeleton.joints.iter().map(|j| j.origin).collect(),
+                    joints,
+                    frames,
+                    matrices,
+                    height: meta.rest_bounds.max[1] - meta.rest_bounds.min[1],
+                })
+            })
+        });
         Self {
+            ragdoll,
             name: name.to_owned(),
             clips,
             states,

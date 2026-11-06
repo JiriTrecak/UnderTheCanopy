@@ -12,7 +12,7 @@ Read the skill **canopy-packages** first for files, ids and layering. The Rust t
 
 Cross-reference rules live in `crates/content/src/registry.rs`. When unsure of a field, read the type: unknown fields are errors.
 
-**Text:** names and descriptions are not in the definitions: they are in the package's text library (D96, skill **canopy-packages**), keyed `<id>.name` and `<id>.description` (`race.<id>.…` for races). Every new unit, building, item, research and race needs its name there.
+**Text:** names and descriptions are not in the definitions: they are in the package's text library (D96, skill **canopy-packages**), keyed `<id>.name` and `<id>.description` (`race.<id>.…` for races). Every new unit, building, item, research and race needs its name there. Descriptions follow D112: a unit or building gets its role in a few words ("Basic army production."), an ability, research or item its effect in one terse line with the numbers ("+2 armor."); no explanations, lore or development notes.
 
 **Units:** ticks are authored in 25 ms ticks (`*Ticks`, 40 per second). Distances are in cells. `*Permille` values are thousandths.
 
@@ -53,6 +53,7 @@ Cross-reference rules live in `crates/content/src/registry.rs`. When unsure of a
   - `launchEffect`: a full effect played as each missile or shell leaves, from the projectile socket to the target and lasting the flight: muzzle flash, steam, a `beam` to the target, and the shot's trail: a `missile` layer on the projectile's arc (a glowing head, or invisible with `intensity: 0`) that particle and ribbon layers `ride` in world space (D77; builders in `tools/content/vfx_layers.py`, shared flights `effect.weapons.*-flight`). A magical shot may drop `projectile` and let the launch effect's glowing head be the shot;
   - `impactEffect` (where its shells and missiles land, and where its melee blows strike);
   - `castContact` (share of the cast animation at which a spell lands);
+  - `push`: how hard a body its weapon kills is thrown along the blow (D114), in world units per second at the top of the body (the default is 2.6);
   - `cameraAnchor`;
   - and, when they differ from the model's own `display`, `healthHeight` and `character` (animation profile);
   - `effects`, `[{effect, state | event, socket}]` (D65): an effect looping from a model socket while the building or unit is in `state`, or played once whenever its clip crosses `event` (a clip event of the model's `capabilities.animations`). `socket` is a declared socket name or a model node named `socket*`. Looping effects follow their socket as the model moves.

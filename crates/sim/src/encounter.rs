@@ -106,8 +106,8 @@ impl Default for Settings {
             caster: String::new(),
             target: String::new(),
             targets: 1,
-            spacing: 3.0,
-            distance: 8.0,
+            spacing: 5.0,
+            distance: 12.0,
             relation: Relation::Enemy,
             rank: 1,
             caster_health: 100,
@@ -155,15 +155,15 @@ impl Preset {
         }
     }
 
-    /// `settings` with this scene: its relation, targets and corpses, the old studio's
-    /// distance and spacing, and wounded allies (so heals show).
+    /// `settings` with this scene: its relation, targets and corpses, the stage's
+    /// distance and spacing (a little wider than the old studio's 8 and 3 cells), and wounded allies (so heals show).
     pub fn apply(&self, settings: &Settings) -> Settings {
         Settings {
             relation: self.relation,
             targets: self.targets,
             fallen: self.fallen,
-            distance: 8.0,
-            spacing: 3.0,
+            distance: 12.0,
+            spacing: 5.0,
             target_health: if self.relation == Relation::Ally {
                 50
             } else {
@@ -253,7 +253,7 @@ pub fn suggest(content: &Content, ability: &str) -> Settings {
             "enemy-single"
         }
     } else if a.targeting.kind == TargetingKind::Caster {
-        "self"
+        self_scene(a)
     } else if a.targeting.relations.contains(&Side::Enemy) {
         if area { "enemy-group" } else { "enemy-single" }
     } else if area {
@@ -267,6 +267,24 @@ pub fn suggest(content: &Content, ability: &str) -> Settings {
     // Passive weapon abilities show only in a fight.
     settings.combat = a.activation == Activation::Passive && a.aura.is_none();
     settings
+}
+
+/// The scene a self-cast spell acts on: the corpses it raises, or the side its areas
+/// reach (a nova on enemies, a heal on wounded allies), else the caster alone.
+fn self_scene(a: &Ability) -> &'static str {
+    let effects = || a.on_release.iter().flat_map(|o| o.effects());
+    if effects().any(|e| matches!(e, Effect::Resurrect(_))) {
+        return "fallen-allies";
+    }
+    let reaches =
+        |side: Side| effects().any(|e| e.query().is_some_and(|q| q.relations.contains(&side)));
+    if reaches(Side::Enemy) {
+        "enemy-group"
+    } else if reaches(Side::Ally) {
+        "ally-group"
+    } else {
+        "self"
+    }
 }
 
 /// An ability's encounter: the content with the preview units, the sandbox map and the
@@ -1156,7 +1174,11 @@ mod tests {
         for preset in &PRESETS {
             let s = preset.apply(&base);
             assert_eq!(Preset::of(&s).map(|p| p.id), Some(preset.id));
-            assert_eq!((s.caster.as_str(), s.distance), ("unit.a", 8.0));
+            // A scene puts the targets back at the stage's own distance.
+            assert_eq!(
+                (s.caster.as_str(), s.distance),
+                ("unit.a", Settings::default().distance)
+            );
         }
         let fallen = Preset::find("fallen-allies").unwrap().apply(&base);
         assert!(fallen.fallen && fallen.relation == Relation::Ally);

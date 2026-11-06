@@ -489,7 +489,47 @@ pub struct VisualEffect {
     pub duration_ticks: u32,
     #[serde(default, rename = "loop")]
     pub looping: bool,
+    #[serde(default)]
     pub layers: Vec<VisualLayer>,
+    /// Layers drawn by effect graphs (D113, docs/effect-graph.md): particle systems built
+    /// from nodes, compiled for the GPU by the cooker.
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    pub graphs: Vec<GraphLayer>,
+}
+
+/// A layer drawn by an effect graph: where and when it plays, and its nodes.
+#[skip_serializing_none]
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize, schemars::JsonSchema)]
+#[serde(rename_all = "camelCase", deny_unknown_fields)]
+pub struct GraphLayer {
+    /// Unique among the effect's layers and graphs.
+    pub id: String,
+    pub name: Option<String>,
+    #[serde(default = "enabled")]
+    pub enabled: bool,
+    /// Ticks after the effect starts before this layer's clock starts.
+    #[serde(default)]
+    pub start_tick: u32,
+    #[serde(default)]
+    pub anchor: LayerAnchor,
+    /// Particles move with the bound actor (default) rather than stay where it was.
+    pub follow: Option<bool>,
+    /// Metres from the anchor (y up).
+    pub offset: Option<Vec3>,
+    pub graph: canopy_fx::Graph,
+}
+
+impl GraphLayer {
+    /// The asset ids its renderers draw with.
+    pub fn textures(&self) -> impl Iterator<Item = &str> {
+        self.graph
+            .nodes
+            .iter()
+            .filter_map(|n| match n.inputs.get("texture") {
+                Some(canopy_fx::Value::Text(asset)) => Some(asset.as_str()),
+                _ => None,
+            })
+    }
 }
 
 /// The ability event an effect plays on.

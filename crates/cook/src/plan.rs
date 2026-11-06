@@ -61,6 +61,8 @@ pub enum Job {
         table: canopy_assets::EffectTable,
         images: Vec<String>,
         warnings: Vec<String>,
+        /// The most bytes the images may keep resident.
+        budget: u64,
     },
 }
 
@@ -273,6 +275,7 @@ pub fn plan(inputs: &Inputs) -> Plan {
         table: effects.table,
         images: effects.images,
         warnings: effects.warnings,
+        budget: crate::effects::MAX_RESIDENT_BYTES,
     });
     Plan {
         jobs,

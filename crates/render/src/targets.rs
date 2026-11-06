@@ -106,6 +106,10 @@ pub struct Targets {
     pub size: [u32; 2],
     pub color: wgpu::TextureView,
     pub resolved: wgpu::TextureView,
+    /// The resolved colour's texture (copied for distortion) and its copy.
+    pub resolved_texture: wgpu::Texture,
+    pub scene_copy_texture: wgpu::Texture,
+    pub scene_copy: wgpu::TextureView,
     pub depth: wgpu::TextureView,
     /// Multisampled linear depth (transient) and its resolve.
     pub linear: wgpu::TextureView,
@@ -120,21 +124,35 @@ impl Targets {
             height: size[1].max(1),
             depth_or_array_layers: 1,
         };
+        let texture = |label, format, samples, usage| {
+            device.create_texture(&wgpu::TextureDescriptor {
+                label: Some(label),
+                size: extent,
+                mip_level_count: 1,
+                sample_count: samples,
+                dimension: wgpu::TextureDimension::D2,
+                format,
+                usage,
+                view_formats: &[],
+            })
+        };
         let make = |label, format, samples, usage| {
-            device
-                .create_texture(&wgpu::TextureDescriptor {
-                    label: Some(label),
-                    size: extent,
-                    mip_level_count: 1,
-                    sample_count: samples,
-                    dimension: wgpu::TextureDimension::D2,
-                    format,
-                    usage,
-                    view_formats: &[],
-                })
+            texture(label, format, samples, usage)
                 .create_view(&wgpu::TextureViewDescriptor::default())
         };
         let attachment = wgpu::TextureUsages::RENDER_ATTACHMENT;
+        let resolved_texture = texture(
+            "scene resolved",
+            HDR_FORMAT,
+            1,
+            attachment | wgpu::TextureUsages::TEXTURE_BINDING | wgpu::TextureUsages::COPY_SRC,
+        );
+        let scene_copy_texture = texture(
+            "scene copy",
+            HDR_FORMAT,
+            1,
+            wgpu::TextureUsages::TEXTURE_BINDING | wgpu::TextureUsages::COPY_DST,
+        );
         // Multisampled colour and depth live only inside the forward pass: transient
         // attachments stay in tile memory on Apple GPUs (memoryless).
         let transient = attachment | wgpu::TextureUsages::TRANSIENT_ATTACHMENT;
@@ -142,12 +160,10 @@ impl Targets {
         Self {
             size,
             color: make("scene colour", HDR_FORMAT, SAMPLES, transient),
-            resolved: make(
-                "scene resolved",
-                HDR_FORMAT,
-                1,
-                attachment | wgpu::TextureUsages::TEXTURE_BINDING,
-            ),
+            resolved: resolved_texture.create_view(&wgpu::TextureViewDescriptor::default()),
+            scene_copy: scene_copy_texture.create_view(&wgpu::TextureViewDescriptor::default()),
+            resolved_texture,
+            scene_copy_texture,
             depth: make("scene depth", DEPTH_FORMAT, SAMPLES, transient),
             linear: make("linear depth", LINEAR_DEPTH_FORMAT, SAMPLES, transient),
             linear_resolved: make(
@@ -157,7 +173,7 @@ impl Targets {
                 attachment | wgpu::TextureUsages::TEXTURE_BINDING,
             ),
             // Transient attachments take no memory where they are memoryless.
-            bytes: pixels * 12,
+            bytes: pixels * 20,
         }
     }
 

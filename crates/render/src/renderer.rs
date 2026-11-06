@@ -383,6 +383,9 @@ pub struct Renderer {
     lights_dirty: bool,
     effects: EffectsGpu,
     effect_frame: EffectFrame,
+    /// Whether `effect_frame` has been rendered: effect graph steps and clears of a frame
+    /// that was replaced before it was rendered carry over, so no step is lost (D113).
+    effect_frame_rendered: bool,
     fog: FogGpu,
     /// The scenery cutaway's mask, its texture and this frame's units.
     cutaway: crate::cutaway::CutawayMask,
@@ -544,7 +547,7 @@ impl Renderer {
             &environment.openings,
         );
         let mut effects = EffectsGpu::new(device, queue, gpu.features, &frame_layout);
-        effects.bind_depth(device, &targets.linear_resolved);
+        effects.bind_depth(device, &targets.linear_resolved, &targets.scene_copy);
         let world_ui = WorldUiGpu::new(device, queue, &frame_layout);
         let mut renderer = Self {
             graph,
@@ -561,6 +564,7 @@ impl Renderer {
             lights_dirty: false,
             effects,
             effect_frame: EffectFrame::default(),
+            effect_frame_rendered: true,
             fog,
             cutaway: Default::default(),
             cutaway_texture,
@@ -662,8 +666,11 @@ impl Renderer {
         let scene = quality.scene_size(self.output_size);
         if scene != self.targets.size {
             self.targets = Targets::new(&gpu.device, scene);
-            self.effects
-                .bind_depth(&gpu.device, &self.targets.linear_resolved);
+            self.effects.bind_depth(
+                &gpu.device,
+                &self.targets.linear_resolved,
+                &self.targets.scene_copy,
+            );
         }
         let resolution = quality.shadow_resolution(&self.environment.shadow);
         if resolution != self.shadow_resolution {
@@ -858,6 +865,18 @@ impl Renderer {
         self.world_bytes = self.world_bytes + self.effects.bytes - before.min(self.effects.bytes);
     }
 
+    /// Compiles the effect graph layers steps refer to by position (D113).
+    /// The effect graph programs; each compiles the first time an effect runs it.
+    pub fn load_effect_programs(&mut self, wgsl: &[&str]) {
+        self.effects.graphs.set_programs(wgsl);
+    }
+
+    /// Compiles effect graph programs `programs` now, in parallel, so their effects'
+    /// first runs do not stall (a match's spells, at load).
+    pub fn prewarm_effect_programs(&mut self, gpu: &Gpu, programs: &[u32]) {
+        self.effects.graphs.prewarm(&gpu.device, programs);
+    }
+
     /// Loads the effects' curve blocks (see [`EffectsGpu::load_curves`]).
     pub fn load_effect_curves(&mut self, gpu: &Gpu, curves: &[[f32; 4]]) {
         self.effects.load_curves(&gpu.device, &gpu.queue, curves);
@@ -869,6 +888,17 @@ impl Renderer {
         if !frame.lights.is_empty() || !self.effect_frame.lights.is_empty() {
             self.lights_dirty = true;
         }
+        if !self.effect_frame_rendered {
+            let old = &mut self.effect_frame.graph;
+            let new = &mut frame.graph;
+            old.clear_pool.append(&mut new.clear_pool);
+            old.clear_parts.append(&mut new.clear_parts);
+            old.steps.append(&mut new.steps);
+            std::mem::swap(&mut old.clear_pool, &mut new.clear_pool);
+            std::mem::swap(&mut old.clear_parts, &mut new.clear_parts);
+            std::mem::swap(&mut old.steps, &mut new.steps);
+        }
+        self.effect_frame_rendered = false;
         std::mem::swap(&mut self.effect_frame, frame);
     }
 
@@ -1091,6 +1121,13 @@ impl Renderer {
         }
     }
 
+    /// The joint palettes posed instances point into (ragdolls, D114).
+    pub fn set_posed(&mut self, matrices: &[canopy_assets::Matrix3x4]) {
+        if let Some(actors) = &mut self.actors {
+            actors.set_posed(matrices);
+        }
+    }
+
     /// The building foundations of the live scene (D44); only a changed list costs
     /// anything.
     pub fn set_foundations(&mut self, gpu: &Gpu, list: &[crate::terrain::foundations::Foundation]) {
@@ -1119,8 +1156,11 @@ impl Renderer {
         }
         self.output_size = size;
         self.targets = Targets::new(&gpu.device, self.quality.scene_size(size));
-        self.effects
-            .bind_depth(&gpu.device, &self.targets.linear_resolved);
+        self.effects.bind_depth(
+            &gpu.device,
+            &self.targets.linear_resolved,
+            &self.targets.scene_copy,
+        );
         self.rebuild(gpu);
     }
 
@@ -1377,7 +1417,13 @@ impl Renderer {
             report.triangles.actors = actors.stats.triangles;
             report.triangles.shadow += actors.stats.shadow_triangles;
         }
-        self.effects.prepare(queue, &self.effect_frame, camera);
+        self.effects
+            .prepare(device, queue, &self.effect_frame, camera);
+        // Steps simulate once; drawn again, the frame only draws.
+        self.effect_frame.graph.steps.clear();
+        self.effect_frame.graph.clear_pool.clear();
+        self.effect_frame.graph.clear_parts.clear();
+        self.effect_frame_rendered = true;
         if let Some(minimap) = &mut self.minimap {
             minimap.prepare(queue, &self.minimap_frame, self.fog.enabled());
         }
@@ -1625,6 +1671,16 @@ impl Renderer {
                     }
                 }
                 (passes::EFFECTS, PassKind::Render) => {
+                    // Effect graph particles step first (D113).
+                    self.effects.graphs.simulate(&mut encoder);
+                    // Distortion bends a copy of the scene taken before any effect draws.
+                    if self.effects.graphs.has_distortion() {
+                        encoder.copy_texture_to_texture(
+                            self.targets.resolved_texture.as_image_copy(),
+                            self.targets.scene_copy_texture.as_image_copy(),
+                            self.targets.resolved_texture.size(),
+                        );
+                    }
                     // Over the resolved scene, reading its depth (soft particles); nothing
                     // to load or store when no effect shows.
                     if self.effects.has_draws() || writes.is_some() {

@@ -16,6 +16,7 @@ fn options(data: &Path, out: &Path) -> Options {
         force: false,
         allow_lfs_pointers: false,
         release: false,
+        effect_budget: None,
     }
 }
 
