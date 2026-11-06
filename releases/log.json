@@ -18,7 +18,8 @@
       "Editor stages stand on plain dark ground with a fine grid.",
       "A building going up shows its progress on its health bar in the selection panel; health bars run from red to green.",
       "Effects editor: a whole effect on one screen, each layer a row of purpose-made nodes read left to right into one Effect node that plays it all.",
-      "Editor: the Effects stage plays the effect by itself on repeat, with a player colour picker and only the settings that change its look."
+      "Editor: the Effects stage plays the effect by itself on repeat, with a player colour picker and only the settings that change its look.",
+      "Units killed in melee are knocked back a step or two as they fall."
     ],
     "fixed": [],
     "knownIssues": []

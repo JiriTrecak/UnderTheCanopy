@@ -38,20 +38,24 @@ const LIGHTEST: f32 = 0.18;
 /// A loose weapon weighs between these shares of the heaviest part.
 const WEAPON_MASS: (f32, f32) = (0.08, 0.3);
 /// The push a killing blow gives by default, world units per second, at the top of the
-/// body (the feet get [`PUSH_FOOT`] of it): bodies topple back from what killed them.
-/// Weapons and abilities may set their own (`presentation.push`).
-pub const PUSH: f32 = 2.6;
-const PUSH_FOOT: f32 = 0.25;
+/// body (the feet get [`PUSH_FOOT`] of it): a body is knocked back a step or two from what
+/// killed it, hopping off its feet ([`HOP`]) and skidding as it falls (Jiri: "actually see
+/// units move a bit back when hit"). Weapons and abilities may set their own
+/// (`presentation.push`).
+pub const PUSH: f32 = 5.0;
+const PUSH_FOOT: f32 = 0.75;
+/// Every blow lifts the body at this share of its push: a short hop back.
+const HOP: f32 = 0.3;
 /// Harder blows launch the whole body: from [`LAUNCH`]`.0` world units per second the feet
-/// share the push more and more, and every part rises at [`LIFT`] of the push, fully from
-/// `LAUNCH.1` (a fireball's 9 throws a body off the ground in a short arc; the default
-/// only topples it).
-const LAUNCH: (f32, f32) = (3.0, 8.0);
+/// share the push more and more, and every part rises at up to [`LIFT`] of the push, fully
+/// from `LAUNCH.1` (a fireball's 9 throws a body off the ground in an arc; the default
+/// knocks it back a step).
+const LAUNCH: (f32, f32) = (5.5, 11.0);
 const LIFT: f32 = 0.5;
 /// A loose weapon flies off with up to this much extra sideways speed and spin.
 const WEAPON_TOSS: f32 = 1.4;
 const WEAPON_SPIN: f32 = 7.0;
-const FRICTION: f32 = 0.9;
+const FRICTION: f32 = 0.6;
 const RESTITUTION: f32 = 0.05;
 const LINEAR_DAMPING: f32 = 0.15;
 const ANGULAR_DAMPING: f32 = 1.2;
@@ -318,7 +322,8 @@ impl Ragdolls {
             let strength = push.length();
             let launch = ((strength - LAUNCH.0) / (LAUNCH.1 - LAUNCH.0)).clamp(0.0, 1.0);
             let foot = PUSH_FOOT + (1.0 - PUSH_FOOT) * launch;
-            velocity += push * (foot + (1.0 - foot) * rise) + Vec3::Y * strength * LIFT * launch;
+            let lift = HOP + (LIFT - HOP) * launch;
+            velocity += push * (foot + (1.0 - foot) * rise) + Vec3::Y * strength * lift;
             let mut angular = spin;
             if loose {
                 let h = hash(seed.wrapping_add(i as u32));
@@ -580,8 +585,9 @@ mod tests {
     }
 
     #[test]
-    fn a_hard_blow_launches_the_body_and_a_soft_one_only_topples_it() {
-        let peak = |push: f32| {
+    fn a_blow_knocks_the_body_back_and_a_hard_one_throws_it() {
+        // How high the feet rose and how far they ended up along the blow.
+        let fall = |push: f32| {
             let mut ragdolls = Ragdolls::default();
             let n = 41;
             ragdolls.set_ground(n, &vec![1.0; n * n], -20.0);
@@ -594,8 +600,8 @@ mod tests {
                 Vec3::X * push,
                 1,
             );
-            let mut lowest_foot: f32 = 0.0;
-            for _ in 0..12 {
+            let (mut peak, mut back): (f32, f32) = (0.0, 0.0);
+            for _ in 0..40 {
                 ragdolls.step(1);
                 let pose = ragdolls.pose(1, 0.0).unwrap();
                 let mut palette = Vec::new();
@@ -603,19 +609,20 @@ mod tests {
                 let instance = Mat4::from_rotation_translation(pose.rotation, pose.position);
                 let foot =
                     instance.transform_point3(mat4(&palette[0]).transform_point3(Vec3::ZERO));
-                lowest_foot = lowest_foot.max(foot.y - 1.0);
+                peak = peak.max(foot.y - 1.0);
+                back = foot.x - at.x;
             }
-            lowest_foot
+            (peak, back)
         };
+        let (sword_peak, sword_back) = fall(PUSH);
+        let (fire_peak, fire_back) = fall(9.0);
         assert!(
-            peak(PUSH) < 0.15,
-            "the default push keeps the feet down: {}",
-            peak(PUSH)
+            sword_back > 0.8,
+            "a sword's kill knocks the body back: {sword_back}"
         );
         assert!(
-            peak(9.0) > 0.3,
-            "a fireball throws the body off the ground: {}",
-            peak(9.0)
+            fire_peak > sword_peak && fire_back > sword_back,
+            "a fireball throws it higher and further: {fire_peak} {fire_back}, a sword {sword_peak} {sword_back}"
         );
     }
 

@@ -53,7 +53,7 @@ Cross-reference rules live in `crates/content/src/registry.rs`. When unsure of a
   - `launchEffect`: a full effect played as each missile or shell leaves, from the projectile socket to the target and lasting the flight: muzzle flash, steam, a `beam` to the target, and the shot's trail: a `missile` layer on the projectile's arc (a glowing head, or invisible with `intensity: 0`) that particle and ribbon layers `ride` in world space (D77; builders in `tools/content/vfx_layers.py`, shared flights `effect.weapons.*-flight`). A magical shot may drop `projectile` and let the launch effect's glowing head be the shot;
   - `impactEffect` (where its shells and missiles land, and where its melee blows strike);
   - `castContact` (share of the cast animation at which a spell lands);
-  - `push`: how hard a body its weapon kills is thrown along the blow (D114), in world units per second at the top of the body (the default is 2.6);
+  - `push`: how hard a body its weapon kills is thrown along the blow (D114), in world units per second at the top of the body (the default is 5: a step or two back);
   - `cameraAnchor`;
   - and, when they differ from the model's own `display`, `healthHeight` and `character` (animation profile);
   - `effects`, `[{effect, state | event, socket}]` (D65): an effect looping from a model socket while the building or unit is in `state`, or played once whenever its clip crosses `event` (a clip event of the model's `capabilities.animations`). `socket` is a declared socket name or a model node named `socket*`. Looping effects follow their socket as the model moves.
