@@ -495,28 +495,37 @@
                     ]
                   },
                   {
-                    "t": 0.08,
+                    "t": 0.06,
                     "v": [
-                      2.2,
-                      1.7,
-                      0.9,
+                      3.0,
+                      2.8,
+                      2.4,
                       1
                     ]
                   },
                   {
-                    "t": 0.35,
+                    "t": 0.3,
                     "v": [
-                      1.6,
-                      0.95,
-                      0.25,
-                      0.85
+                      2.4,
+                      1.8,
+                      0.9,
+                      0.9
+                    ]
+                  },
+                  {
+                    "t": 0.7,
+                    "v": [
+                      1.5,
+                      0.8,
+                      0.2,
+                      0.6
                     ]
                   },
                   {
                     "t": 1,
                     "v": [
                       0.6,
-                      0.15,
+                      0.2,
                       0.0,
                       0
                     ]
@@ -524,12 +533,12 @@
                 ]
               },
               "brightness": [
-                0.7,
-                0.7
+                0.6,
+                0.6
               ],
               "shift": [
                 0,
-                0.15,
+                0.0,
                 1.2
               ]
             }
@@ -1614,28 +1623,37 @@
                     ]
                   },
                   {
-                    "t": 0.08,
+                    "t": 0.06,
                     "v": [
-                      2.2,
-                      1.7,
-                      0.9,
+                      3.0,
+                      2.8,
+                      2.4,
                       1
                     ]
                   },
                   {
-                    "t": 0.35,
+                    "t": 0.3,
                     "v": [
-                      1.6,
-                      0.95,
-                      0.25,
-                      0.85
+                      2.4,
+                      1.8,
+                      0.9,
+                      0.9
+                    ]
+                  },
+                  {
+                    "t": 0.7,
+                    "v": [
+                      1.5,
+                      0.8,
+                      0.2,
+                      0.6
                     ]
                   },
                   {
                     "t": 1,
                     "v": [
                       0.6,
-                      0.15,
+                      0.2,
                       0.0,
                       0
                     ]
@@ -1643,13 +1661,224 @@
                 ]
               },
               "brightness": [
-                0.4,
-                1.8
+                0.5,
+                1.6
               ],
               "shift": [
                 0,
-                0.2,
-                3.0
+                0.0,
+                2.0
+              ]
+            }
+          },
+          {
+            "id": "billboard7",
+            "kind": "billboard",
+            "at": [
+              0.0,
+              1050.0
+            ],
+            "inputs": {
+              "texture": "asset.effects.fx.soft-beam-thin",
+              "facing": "velocity"
+            }
+          }
+        ],
+        "wires": [
+          {
+            "from": "spawner0.out",
+            "to": "shape2.in"
+          },
+          {
+            "from": "shape2.out",
+            "to": "launch3.in"
+          },
+          {
+            "from": "launch3.out",
+            "to": "physics4.in"
+          },
+          {
+            "from": "physics4.out",
+            "to": "sizeOverLife5.in"
+          },
+          {
+            "from": "sizeOverLife5.out",
+            "to": "colourOverLife6.in"
+          },
+          {
+            "from": "colourOverLife6.out",
+            "to": "billboard7.in"
+          }
+        ]
+      }
+    },
+    {
+      "id": "core",
+      "name": "White core",
+      "graph": {
+        "nodes": [
+          {
+            "id": "spawner0",
+            "kind": "spawner",
+            "at": [
+              0.0,
+              0.0
+            ],
+            "inputs": {
+              "mode": "stream",
+              "rate": 45,
+              "duration": 0.45,
+              "delay": 0.3,
+              "life": [
+                0.3,
+                0.45
+              ]
+            }
+          },
+          {
+            "id": "shape2",
+            "kind": "shape",
+            "at": [
+              0.0,
+              300.0
+            ],
+            "inputs": {
+              "shape": "cylinder",
+              "radius": 0.35,
+              "height": 0.3,
+              "offset": [
+                0,
+                0.3,
+                0
+              ]
+            }
+          },
+          {
+            "id": "launch3",
+            "kind": "launch",
+            "at": [
+              0.0,
+              450.0
+            ],
+            "inputs": {
+              "direction": "up",
+              "speed": [
+                45,
+                60
+              ]
+            }
+          },
+          {
+            "id": "physics4",
+            "kind": "physics",
+            "at": [
+              0.0,
+              600.0
+            ],
+            "inputs": {
+              "gravity": [
+                0,
+                20,
+                0
+              ]
+            }
+          },
+          {
+            "id": "sizeOverLife5",
+            "kind": "sizeOverLife",
+            "at": [
+              0.0,
+              750.0
+            ],
+            "inputs": {
+              "size": [
+                0.5,
+                0.9
+              ],
+              "curve": {
+                "keys": [
+                  {
+                    "t": 0,
+                    "v": [
+                      1.0
+                    ]
+                  },
+                  {
+                    "t": 1,
+                    "v": [
+                      0.6
+                    ]
+                  }
+                ]
+              },
+              "stretch": 0.12
+            }
+          },
+          {
+            "id": "colourOverLife6",
+            "kind": "colourOverLife",
+            "at": [
+              0.0,
+              900.0
+            ],
+            "inputs": {
+              "gradient": {
+                "keys": [
+                  {
+                    "t": 0,
+                    "v": [
+                      0,
+                      0,
+                      0,
+                      0
+                    ]
+                  },
+                  {
+                    "t": 0.06,
+                    "v": [
+                      3.0,
+                      2.8,
+                      2.4,
+                      1
+                    ]
+                  },
+                  {
+                    "t": 0.3,
+                    "v": [
+                      2.4,
+                      1.8,
+                      0.9,
+                      0.9
+                    ]
+                  },
+                  {
+                    "t": 0.7,
+                    "v": [
+                      1.5,
+                      0.8,
+                      0.2,
+                      0.6
+                    ]
+                  },
+                  {
+                    "t": 1,
+                    "v": [
+                      0.6,
+                      0.2,
+                      0.0,
+                      0
+                    ]
+                  }
+                ]
+              },
+              "brightness": [
+                1.5,
+                2.5
+              ],
+              "shift": [
+                0,
+                -0.1,
+                2.5
               ]
             }
           },

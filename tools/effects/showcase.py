@@ -343,6 +343,8 @@ RELEASE = 0.3
 GOLD_HOT = [(0, [0, 0, 0, 0]), (0.08, [2.2, 1.7, 0.9, 1]), (0.35, [1.6, 0.95, 0.25, 0.85]), (1, [0.6, 0.15, 0.0, 0])]
 GOLD_LATE = [(0, [0, 0, 0, 0]), (0.75, [1.5, 1.1, 0.45, 1]), (1, [2.0, 1.6, 0.8, 0])]
 GOLD_GLINT = [(0, [0, 0, 0, 0]), (0.12, [2.4, 1.75, 0.6, 1]), (0.5, [1.8, 0.9, 0.12, 0.85]), (0.82, [1.1, 0.25, 0.0, 0.6]), (1, [0.8, 0.05, 0.0, 0])]
+# White-hot at the peak (it burns to white through the bloom), cooling to gold and amber.
+WHITE_HOT = [(0, [0, 0, 0, 0]), (0.06, [3.0, 2.8, 2.4, 1]), (0.3, [2.4, 1.8, 0.9, 0.9]), (0.7, [1.5, 0.8, 0.2, 0.6]), (1, [0.6, 0.2, 0.0, 0])]
 GOLD_MIDPEAK = [(0, [0, 0, 0, 0]), (0.4, [1.5, 1.05, 0.4, 1]), (1, [0.5, 0.12, 0.0, 0])]
 
 
@@ -363,7 +365,7 @@ def level_up():
               size([(0, 0.5), (0.6, 1.0), (1, 0.6)], 0.6, 1.5, stretch=0.02), colour(GOLD_LATE, 1.5, 3.5, (0, 0.2, 2.5)),
               spin(), board('star-glint')),
         layer('flash', 'Flash', burst(1, r), life(0.25), at(3.0), size([(0, 0.4), (0.15, 1.0), (1, 0.6)], 15.0, 15.0),
-              colour(GOLD_HOT, 0.7, 0.7, (0, 0.15, 1.2)), board('soft-dot-wide')),
+              colour(WHITE_HOT, 0.6, 0.6, (0, 0.0, 1.2)), board('soft-dot-wide')),
         layer('rays', 'Rays', burst(1, r), life(0.3), at(3.0), size([(0, 0.3), (0.15, 1.0), (1, 0.7)], 20.0, 20.0),
               colour(GOLD_HOT, shift=(0, 0.1, 3.0)), spin(), board('burst-flash')),
         layer('shock', 'Shock wave', burst(1, r), life(0.45), at(0.4, **follow),
@@ -382,7 +384,12 @@ def level_up():
         layer('column', 'Column', after(110, 0.5), life(0.35, 0.55),
               ('shape', {'shape': 'cylinder', 'radius': 0.9, 'height': 0.3, 'offset': [0, 0.3, 0]}),
               ('launch', {'direction': 'up', 'speed': [35, 55]}), ('physics', {'gravity': [0, 20, 0]}),
-              size([(0, 1.0), (1, 0.5)], 0.8, 1.6, stretch=0.1), colour(GOLD_HOT, 0.4, 1.8, (0, 0.2, 3.0)),
+              size([(0, 1.0), (1, 0.5)], 0.8, 1.6, stretch=0.1), colour(WHITE_HOT, 0.5, 1.6, (0, 0.0, 2.0)),
+              board('soft-beam-thin', facing='velocity')),
+        layer('core', 'White core', after(45, 0.45), life(0.3, 0.45),
+              ('shape', {'shape': 'cylinder', 'radius': 0.35, 'height': 0.3, 'offset': [0, 0.3, 0]}),
+              ('launch', {'direction': 'up', 'speed': [45, 60]}), ('physics', {'gravity': [0, 20, 0]}),
+              size([(0, 1.0), (1, 0.6)], 0.5, 0.9, stretch=0.12), colour(WHITE_HOT, 1.5, 2.5, (0, -0.1, 2.5)),
               board('soft-beam-thin', facing='velocity')),
         layer('veil', 'Veil of light', after(60, 0.55), life(0.4, 0.6),
               ('shape', {'shape': 'cylinder', 'radius': 1.8, 'inner': 0.4, 'height': 8.0, 'offset': [0, 4.5, 0]}),
