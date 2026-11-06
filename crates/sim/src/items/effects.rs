@@ -168,13 +168,13 @@ pub fn tick(ctx: &mut Ctx, state: &mut State) {
     }
     for id in sources {
         let e = state.entities.get(id).expect("unit");
-        let stats = Stats::of(catalog, e, crate::stats::research(state, e.owner));
+        let pools = Stats::pools(catalog, e, crate::stats::research(state, e.owner));
         let e = state.entities.get_mut(id).expect("unit");
         if let Some(hp) = &mut e.hp {
-            *hp = (*hp).min(stats.max_hp);
+            *hp = (*hp).min(pools.max_hp);
         }
         if let Some(c) = &mut e.caster {
-            c.mana = c.mana.min(stats.max_mana);
+            c.mana = c.mana.min(pools.max_mana);
         }
     }
 }
@@ -594,7 +594,7 @@ pub fn rescue(ctx: &mut Ctx, state: &mut State, id: EntityId) -> bool {
             consume(state, id, slot);
         }
         let e = state.entities.get(id).expect("unit");
-        let max = Stats::of(catalog, e, crate::stats::research(state, e.owner)).max_hp;
+        let max = Stats::pools(catalog, e, crate::stats::research(state, e.owner)).max_hp;
         let hp =
             (f64::from(max) * f64::from(rescue.heal_max_permille) / 1000.0 + 0.5).floor() as u32;
         state.entities.get_mut(id).expect("unit").hp = Some(hp.max(1));

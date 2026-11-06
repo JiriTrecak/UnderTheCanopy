@@ -26,7 +26,7 @@ pub fn tick(ctx: &mut Ctx, state: &mut State) {
         forms::reconcile_flight(ctx, state, id);
         forms::reconcile_weapon(ctx.catalog(), state, id);
         let e = state.entities.get(id).expect("unit");
-        let stats = Stats::of(ctx.catalog(), e, crate::stats::research(state, e.owner));
+        let stats = Stats::pools(ctx.catalog(), e, crate::stats::research(state, e.owner));
         let e = state.entities.get_mut(id).expect("unit");
         if let Some(hp) = &mut e.hp {
             *hp = (*hp).min(stats.max_hp);

@@ -34,7 +34,7 @@ pub fn heal(ctx: &mut Ctx, state: &mut State, target: EntityId, amount: u32) -> 
     if !actor::alive(e) || e.hp.is_none() {
         return 0;
     }
-    let max = Stats::of(ctx.catalog(), e, crate::stats::research(state, e.owner)).max_hp;
+    let max = Stats::pools(ctx.catalog(), e, crate::stats::research(state, e.owner)).max_hp;
     let e = state.entities.get_mut(target).expect("target");
     let hp = e.hp.as_mut().expect("body");
     let before = *hp;
@@ -197,7 +197,7 @@ pub fn restore_mana(ctx: &Ctx, state: &mut State, target: EntityId, amount: u32)
     if e.caster.is_none() {
         return 0;
     }
-    let max = Stats::of(ctx.catalog(), e, crate::stats::research(state, e.owner)).max_mana;
+    let max = Stats::pools(ctx.catalog(), e, crate::stats::research(state, e.owner)).max_mana;
     let c = state
         .entities
         .get_mut(target)

@@ -651,8 +651,8 @@ pub fn tick_casters(ctx: &mut Ctx, state: &mut State) {
         // reach read straight from the entity.
         let Some(p) = &pending else {
             if actor::alive(e) && actor::targetable(e) {
-                let stats = Stats::of(ctx.catalog(), e, crate::stats::research(state, e.owner));
-                regenerate(state, id, true, &stats);
+                let pools = Stats::pools(ctx.catalog(), e, crate::stats::research(state, e.owner));
+                regenerate(state, id, true, pools.max_mana, pools.mana_regen);
             }
             continue;
         };
@@ -697,24 +697,25 @@ pub fn tick_casters(ctx: &mut Ctx, state: &mut State) {
             state,
             id,
             access.actor.alive && access.actor.targetable,
-            &access.stats,
+            access.stats.max_mana,
+            access.stats.mana_regen,
         );
     }
 }
 
 /// Mana regeneration of one caster pass. Reserved mana still occupies pool capacity:
 /// regeneration cannot top up a refund.
-fn regenerate(state: &mut State, id: EntityId, active: bool, stats: &Stats) {
+fn regenerate(state: &mut State, id: EntityId, active: bool, max_mana: u32, mana_regen: f64) {
     if !active {
         return;
     }
-    let regen = js_round(stats.mana_regen * 1000.0) as u32;
+    let regen = js_round(mana_regen * 1000.0) as u32;
     let c = state
         .entities
         .get_mut(id)
         .and_then(|e| e.caster.as_mut())
         .expect("caster");
-    let limit = stats.max_mana.saturating_sub(c.escrow());
+    let limit = max_mana.saturating_sub(c.escrow());
     c.regeneration += regen;
     let amount = c.regeneration / 40_000;
     c.regeneration %= 40_000;

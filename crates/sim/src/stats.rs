@@ -31,6 +31,16 @@ pub struct Stats {
     pub mana_regen: f64,
 }
 
+/// The pools of [`Stats`] ([`Stats::pools`]).
+#[derive(Debug, Clone, Copy, PartialEq)]
+pub struct Pools {
+    pub max_hp: u32,
+    pub max_mana: u32,
+    /// Points per second.
+    pub health_regen: f64,
+    pub mana_regen: f64,
+}
+
 /// An owner's completed research (sorted, as the old game kept it).
 pub fn research(state: &State, owner: Owner) -> &[Id] {
     state.economy.researched(owner)
@@ -162,6 +172,64 @@ impl Stats {
         }
     }
 
+    /// The pools of [`Stats::of`] alone (maximum health and mana and their regeneration),
+    /// equal to its fields: control immunities and the weapon's profile change none of
+    /// them, so neither is looked up.
+    pub fn pools(catalog: &Catalog, e: &Entity, research: &[Id]) -> Pools {
+        let d = catalog.get(e.definition);
+        let (_, row) = level_row(d, e);
+        let mut max_hp =
+            i64::from(row.map_or(d.body.as_ref().map_or(0, |b| b.max_hp), |l| l.max_hp));
+        let mut max_mana = i64::from(row.map_or(
+            d.behaviors.abilities.as_ref().map_or(0, |a| a.max_mana),
+            |l| l.max_mana,
+        ));
+        let mut health_regen = row.map_or(0.0, |l| l.health_regen_per_second);
+        let mut mana_regen = row.map_or(
+            d.behaviors
+                .abilities
+                .as_ref()
+                .map_or(0.0, |a| a.mana_regen_per_second),
+            |l| l.mana_regen_per_second,
+        );
+        let (bonus_hp, _, _, bonus_mana) = crate::items::flat_stats(catalog, e);
+        max_hp += bonus_hp;
+        max_mana += bonus_mana;
+        for id in research {
+            let Some(r) = catalog.content.rules.research.get(id) else {
+                continue;
+            };
+            for effect in r.effects.iter().filter(|e| e.units.contains(&d.id)) {
+                max_hp += i64::from(effect.max_hp.unwrap_or(0));
+            }
+        }
+        if !e.statuses.is_empty() || e.equipment.is_some() {
+            let mut add = |m: &crate::abilities::library::Modifiers| {
+                max_hp += m.max_hp;
+                max_mana += m.max_mana;
+                health_regen += m.health_regen;
+                mana_regen += m.mana_regen;
+            };
+            // Immunities only take slows and roots out of a modifier.
+            crate::abilities::statuses::spell_modifiers_with(catalog, e, 0, &mut add);
+            crate::items::non_spell_modifiers(catalog, e, &mut add);
+        }
+        let pools = Pools {
+            max_hp: max_hp.clamp(0, i64::from(u32::MAX)) as u32,
+            max_mana: max_mana.clamp(0, i64::from(u32::MAX)) as u32,
+            health_regen,
+            mana_regen,
+        };
+        debug_assert!({
+            let all = Self::of(catalog, e, research);
+            all.max_hp == pools.max_hp
+                && all.max_mana == pools.max_mana
+                && all.health_regen.to_bits() == pools.health_regen.to_bits()
+                && all.mana_regen.to_bits() == pools.mana_regen.to_bits()
+        });
+        pools
+    }
+
     /// Weapon damage rounded to whole points (old `Math.round`).
     pub fn damage_points(&self) -> u64 {
         (self.damage_milli + 500) / 1000
@@ -191,7 +259,7 @@ pub fn level(catalog: &Catalog, e: &Entity) -> u32 {
 
 /// Maximum health without research (definition, level, items and statuses).
 pub fn max_hp(catalog: &Catalog, e: &Entity) -> u32 {
-    Stats::of(catalog, e, &[]).max_hp
+    Stats::pools(catalog, e, &[]).max_hp
 }
 
 /// Movement speed research gives `e` (permille).

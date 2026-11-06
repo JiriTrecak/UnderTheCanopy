@@ -81,7 +81,7 @@ impl<'a> Ctx<'a> {
 pub fn equip_new(catalog: &Catalog, e: &mut Entity) {
     let d = catalog.get(e.definition);
     if let Some(policy) = catalog.spells.caster(e.definition) {
-        let max_mana = crate::stats::Stats::of(catalog, e, &[]).max_mana;
+        let max_mana = crate::stats::Stats::pools(catalog, e, &[]).max_mana;
         e.caster = Some(Box::new(Caster {
             mana: max_mana,
             ranks: policy.bindings.iter().map(|b| b.initial_rank).collect(),
