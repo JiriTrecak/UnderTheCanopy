@@ -5,7 +5,6 @@
 //! edge and invalidated around static changes. Live reservations are never cached.
 
 use super::cells::CellSet;
-use std::{cmp::Reverse, collections::BinaryHeap};
 
 pub const CARDINAL_COST: i64 = 1000;
 pub const DIAGONAL_COST: i64 = 1414;
@@ -72,11 +71,72 @@ pub struct Scratch {
     nodes: Vec<Node>,
     epoch: u32,
     /// Open cells by `(f, h priority, cell)`, packed by [`key`].
-    heap: BinaryHeap<Reverse<u128>>,
+    heap: MinHeap,
     reverse: Vec<u32>,
     queue: Vec<u32>,
     /// Nodes expanded by the latest search.
     pub expanded: u32,
+}
+
+/// A four-ary min-heap of search keys: shallower than a binary heap, so a search pops and
+/// pushes through fewer levels. Keys are distinct (a cell is pushed again only at a lower
+/// cost), so every min-heap pops them in the same order.
+#[derive(Debug, Default, Clone)]
+struct MinHeap {
+    items: Vec<u128>,
+}
+
+impl MinHeap {
+    fn clear(&mut self) {
+        self.items.clear();
+    }
+
+    fn push(&mut self, key: u128) {
+        let items = &mut self.items;
+        let mut i = items.len();
+        items.push(key);
+        while i > 0 {
+            let parent = (i - 1) / 4;
+            if items[parent] <= key {
+                break;
+            }
+            items[i] = items[parent];
+            i = parent;
+        }
+        items[i] = key;
+    }
+
+    fn pop(&mut self) -> Option<u128> {
+        let items = &mut self.items;
+        let last = items.pop()?;
+        if items.is_empty() {
+            return Some(last);
+        }
+        let top = items[0];
+        let n = items.len();
+        let mut i = 0;
+        loop {
+            let first = 4 * i + 1;
+            if first >= n {
+                break;
+            }
+            let mut child = first;
+            let mut least = items[first];
+            for (c, &item) in items[..n.min(first + 4)].iter().enumerate().skip(first + 1) {
+                if item < least {
+                    least = item;
+                    child = c;
+                }
+            }
+            if last <= least {
+                break;
+            }
+            items[i] = least;
+            i = child;
+        }
+        items[i] = last;
+        Some(top)
+    }
 }
 
 /// A cell's search state; the marks hold the epoch of the search that set them.
@@ -484,8 +544,8 @@ impl GridNavigation {
         s.nodes[start as usize].seen = epoch;
         s.nodes[start as usize].cost = 0;
         let p0 = priority(h0);
-        s.heap.push(Reverse(key(p0, p0, start)));
-        while let Some(Reverse(packed)) = s.heap.pop() {
+        s.heap.push(key(p0, p0, start));
+        while let Some(packed) = s.heap.pop() {
             let (f, ph, id) = unkey(packed);
             let g = f - ph;
             let i = id as usize;
@@ -560,7 +620,7 @@ impl GridNavigation {
                 s.nodes[j].cost = g2;
                 s.nodes[j].prev = id;
                 let ph = priority(h);
-                s.heap.push(Reverse(key(g2 + ph, ph, next)));
+                s.heap.push(key(g2 + ph, ph, next));
             }
         }
         // Only an exhaustive unrestricted search proves the whole reachable region.
@@ -691,6 +751,31 @@ mod tests {
     fn walls(size: u32, blocked: &[u32]) -> impl FnMut(u32, u32) -> bool + '_ {
         let _ = size;
         move |_, b| !blocked.contains(&b)
+    }
+
+    #[test]
+    fn the_heap_pops_keys_in_order() {
+        let mut heap = MinHeap::default();
+        let mut keys = Vec::new();
+        let mut x: u32 = 2_463_534_242;
+        for round in 0..2000u32 {
+            x ^= x << 13;
+            x ^= x >> 17;
+            x ^= x << 5;
+            let k = u128::from(x) << 40 | u128::from(round);
+            heap.push(k);
+            keys.push(k);
+            // Interleave pops with pushes, as a search does.
+            if round % 3 == 0 {
+                keys.sort_unstable();
+                assert_eq!(heap.pop(), Some(keys.remove(0)));
+            }
+        }
+        keys.sort_unstable();
+        for k in keys {
+            assert_eq!(heap.pop(), Some(k));
+        }
+        assert_eq!(heap.pop(), None);
     }
 
     #[test]
