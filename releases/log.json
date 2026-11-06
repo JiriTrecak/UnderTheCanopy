@@ -1,29 +1,38 @@
 {
   "schemaVersion": 1,
   "unreleased": {
-    "added": [
-      "Units fall as ragdolls when they die, knocked back by the killing blow and dropping their weapons",
-      "Heroes level up in a burst of golden light",
-      "The campaign ends early access with its own end card; new missions carry on from there",
-      "Campaign editor: outline whole campaigns with draft steps, a tabletop for sketching missions, story beats, shots and a read-through",
-      "The editor's assistant helps design missions: it reads the story's outlines, pitches ideas and paints concept pictures (with an OpenAI key)",
-      "Effects editor: whole effects as node graphs on one screen, read left to right with live previews, played on repeat on the Effects stage"
-    ],
-    "improved": [
-      "The campaign's maps are rebuilt roomier: wide ramps and passages, side paths with new optional objectives, and fewer, smaller neutral camps",
-      "Cutscenes frame whole units, centred, instead of close-ups",
-      "Clearer, shorter text everywhere: descriptions, tooltips, messages and objectives",
-      "At night in the forest, units and buildings take the night's light instead of seeming to glow",
-      "A building going up shows its progress on its health bar; health bars run from red to green",
-      "Editor stages stand on plain dark ground with a fine grid"
-    ],
-    "fixed": [
-      "Tab keeps a group's cards in place and lights the active subgroup; cards are grouped by type",
-      "Editor: the Effect node's preview plays every layer"
-    ],
+    "added": [],
+    "improved": [],
+    "fixed": [],
     "knownIssues": []
   },
   "releases": [
+    {
+      "added": [
+        "Units fall as ragdolls when they die, knocked back by the killing blow and dropping their weapons",
+        "Heroes level up in a burst of golden light",
+        "The campaign ends early access with its own end card; new missions carry on from there",
+        "Campaign editor: outline whole campaigns with draft steps, a tabletop for sketching missions, story beats, shots and a read-through",
+        "The editor's assistant helps design missions: it reads the story's outlines, pitches ideas and paints concept pictures (with an OpenAI key)",
+        "Effects editor: whole effects as node graphs on one screen, read left to right with live previews, played on repeat on the Effects stage"
+      ],
+      "improved": [
+        "The campaign's maps are rebuilt roomier: wide ramps and passages, side paths with new optional objectives, and fewer, smaller neutral camps",
+        "Cutscenes frame whole units, centred, instead of close-ups",
+        "Clearer, shorter text everywhere: descriptions, tooltips, messages and objectives",
+        "At night in the forest, units and buildings take the night's light instead of seeming to glow",
+        "A building going up shows its progress on its health bar; health bars run from red to green",
+        "Editor stages stand on plain dark ground with a fine grid"
+      ],
+      "fixed": [
+        "Tab keeps a group's cards in place and lights the active subgroup; cards are grouped by type",
+        "Editor: the Effect node's preview plays every layer"
+      ],
+      "knownIssues": [],
+      "version": "0.5.1",
+      "publishedAt": "2026-11-06T21:58:11.108Z",
+      "title": "Ragdolls and Golden Light"
+    },
     {
       "images": [
         {
