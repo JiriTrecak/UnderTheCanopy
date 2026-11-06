@@ -184,6 +184,8 @@ pub struct Game {
     boot: Option<mpsc::Receiver<BootMessage>>,
     boot_stage: (BootStage, f32),
     boot_error: Option<String>,
+    /// The effect table's graph programs went to the background compiler.
+    effects_precompiled: bool,
     dev: Option<DevStart>,
     skirmish: Skirmish,
     /// The match's draw list: the UI's with the match's decorations (kept between frames).
@@ -322,6 +324,7 @@ impl Game {
             data: None,
             boot: Some(rx),
             boot_stage: (BootStage::Pack, 0.0),
+            effects_precompiled: false,
             boot_error: None,
             dev,
             skirmish: Skirmish::default(),
@@ -1509,6 +1512,20 @@ impl Game {
             ctx.renderer.set_actors(&[]);
         }
         self.poll_boot();
+        // Every effect graph program compiles on background threads while the menus
+        // show, so a spell's first cast never waits for the shader compiler.
+        if !self.effects_precompiled
+            && let Some(data) = &self.data
+        {
+            self.effects_precompiled = true;
+            let wgsl: Vec<&str> = data
+                .effects
+                .effects
+                .iter()
+                .flat_map(|e| e.graphs.iter().map(|g| g.wgsl.as_str()))
+                .collect();
+            ctx.renderer.precompile_effect_programs(ctx.gpu, &wgsl);
+        }
         self.poll_network();
         self.poll_updates();
         self.poll_feedback(ctx.gpu);

@@ -11,8 +11,8 @@
 
 use crate::targets;
 use bytemuck::{Pod, Zeroable};
-use std::collections::BTreeMap;
-use std::sync::Arc;
+use std::collections::{BTreeMap, BTreeSet};
+use std::sync::{Arc, mpsc};
 
 /// Vec4s of the game's particle pool (16 MiB).
 pub const POOL_VEC4S: u32 = 1 << 20;
@@ -230,6 +230,9 @@ struct Program {
     update: wgpu::ComputePipeline,
 }
 
+/// A program compiled in the background, by the hash of its WGSL.
+type Arrival = (u64, Program);
+
 /// A layer's birth and update kernels from its WGSL.
 fn build(device: &wgpu::Device, layout: &wgpu::PipelineLayout, source: &str) -> Program {
     let module = device.create_shader_module(wgpu::ShaderModuleDescriptor {
@@ -275,6 +278,10 @@ pub struct GraphCompute {
     /// table of thousands of layers must not compile them all up front).
     sources: Vec<(u64, Arc<str>)>,
     programs: Vec<Option<Arc<Program>>>,
+    /// Programs compiling on background threads ([`GraphCompute::precompile`]) by hash,
+    /// and the channel they arrive on.
+    pending: BTreeSet<u64>,
+    arrivals: (mpsc::Sender<Arrival>, mpsc::Receiver<Arrival>),
     frame: GraphFrame,
 }
 
@@ -359,6 +366,8 @@ impl GraphCompute {
             cache: BTreeMap::new(),
             sources: Vec::new(),
             programs: Vec::new(),
+            pending: BTreeSet::new(),
+            arrivals: mpsc::channel(),
             frame: GraphFrame::default(),
         }
     }
@@ -371,6 +380,7 @@ impl GraphCompute {
     /// The compiled layers steps refer to by position. Programs seen before are reused.
     /// The programs steps refer to by index; each compiles when a step first runs it.
     pub fn set_programs(&mut self, wgsl: &[&str]) {
+        self.receive(None);
         self.sources = wgsl.iter().map(|w| (hash(w), Arc::from(*w))).collect();
         self.programs = self
             .sources
@@ -379,12 +389,101 @@ impl GraphCompute {
             .collect();
     }
 
+    /// Compiles the `wgsl` programs not compiled yet on background threads (the effect
+    /// table's, at boot), so no effect's first run waits for the shader compiler; a step
+    /// that runs one still compiling waits for it instead of compiling it again.
+    pub fn precompile(&mut self, device: &wgpu::Device, wgsl: &[&str]) {
+        self.receive(None);
+        let mut todo: Vec<(u64, Arc<str>)> = Vec::new();
+        for w in wgsl {
+            let key = hash(w);
+            if !self.cache.contains_key(&key) && self.pending.insert(key) {
+                todo.push((key, Arc::from(*w)));
+            }
+        }
+        if todo.is_empty() {
+            return;
+        }
+        // Half the cores: the boot and the menus run beside it.
+        let threads = std::thread::available_parallelism()
+            .map_or(2, |n| (n.get() / 2).max(1))
+            .min(todo.len());
+        let chunk = todo.len().div_ceil(threads);
+        let (tx, layout, device) = (
+            self.arrivals.0.clone(),
+            self.pipeline_layout.clone(),
+            device.clone(),
+        );
+        let spawned = std::thread::Builder::new()
+            .name("effect-programs".into())
+            .spawn(move || {
+                let _span =
+                    tracing::info_span!("graph_fx_precompile", programs = todo.len()).entered();
+                let started = std::time::Instant::now();
+                std::thread::scope(|scope| {
+                    for part in todo.chunks(chunk) {
+                        let (tx, device, layout) = (tx.clone(), &device, &layout);
+                        scope.spawn(move || {
+                            for (key, source) in part {
+                                let _ = tx.send((*key, build(device, layout, source)));
+                            }
+                        });
+                    }
+                });
+                tracing::info!(
+                    programs = todo.len(),
+                    threads,
+                    ms = started.elapsed().as_millis() as u64,
+                    "effect programs compiled in the background"
+                );
+            });
+        if spawned.is_err() {
+            // No thread: they compile on first use.
+            self.pending.clear();
+        }
+    }
+
+    /// Takes the background programs that arrived; with `wait`, first blocks until that
+    /// program (when pending) has.
+    fn receive(&mut self, wait: Option<u64>) {
+        if self.pending.is_empty() {
+            return;
+        }
+        if let Some(key) = wait.filter(|k| self.pending.contains(k)) {
+            let _span = tracing::info_span!("graph_fx_wait").entered();
+            while self.pending.contains(&key) {
+                // The sender half kept here never closes the channel, so a compiling
+                // thread that died would block this forever: bounded waits instead.
+                match self
+                    .arrivals
+                    .1
+                    .recv_timeout(std::time::Duration::from_secs(10))
+                {
+                    Ok((k, program)) => self.arrive(k, program),
+                    Err(_) => {
+                        self.pending.clear();
+                        break;
+                    }
+                }
+            }
+        }
+        while let Ok((k, program)) = self.arrivals.1.try_recv() {
+            self.arrive(k, program);
+        }
+    }
+
+    fn arrive(&mut self, key: u64, program: Program) {
+        self.pending.remove(&key);
+        self.cache.entry(key).or_insert_with(|| Arc::new(program));
+    }
+
     /// Compiles program `index` if no step has run it yet.
     fn compile(&mut self, device: &wgpu::Device, index: usize) {
         if self.programs[index].is_some() {
             return;
         }
         let (key, source) = self.sources[index].clone();
+        self.receive(Some(key));
         let _span = tracing::info_span!("graph_fx_compile").entered();
         let layout = &self.pipeline_layout;
         let program = self
@@ -401,12 +500,16 @@ impl GraphCompute {
     pub fn prewarm(&mut self, device: &wgpu::Device, indices: &[u32]) {
         let _span = tracing::info_span!("graph_fx_prewarm", programs = indices.len()).entered();
         let started = std::time::Instant::now();
+        self.receive(None);
         let mut todo: Vec<(u64, Arc<str>)> = Vec::new();
+        let mut waits = Vec::new();
         for &i in indices {
             let Some((key, source)) = self.sources.get(i as usize) else {
                 continue;
             };
-            if !self.cache.contains_key(key) && !todo.iter().any(|(k, _)| k == key) {
+            if self.pending.contains(key) {
+                waits.push(*key);
+            } else if !self.cache.contains_key(key) && !todo.iter().any(|(k, _)| k == key) {
                 todo.push((*key, source.clone()));
             }
         }
@@ -435,8 +538,12 @@ impl GraphCompute {
         for (key, program) in built {
             self.cache.insert(key, Arc::new(program));
         }
+        for key in &waits {
+            self.receive(Some(*key));
+        }
         tracing::info!(
             programs = compiled,
+            waited = waits.len(),
             threads,
             ms = started.elapsed().as_millis() as u64,
             "effect programs compiled ahead"
@@ -653,6 +760,11 @@ impl GraphFx {
     /// Compiles programs `indices` now (see [`GraphCompute::prewarm`]).
     pub fn prewarm(&mut self, device: &wgpu::Device, indices: &[u32]) {
         self.compute.prewarm(device, indices);
+    }
+
+    /// Compiles programs in the background (see [`GraphCompute::precompile`]).
+    pub fn precompile(&mut self, device: &wgpu::Device, wgsl: &[&str]) {
+        self.compute.precompile(device, wgsl);
     }
 
     /// Uploads the frame's step and draw uniforms (clipped to the budgets), compiling the

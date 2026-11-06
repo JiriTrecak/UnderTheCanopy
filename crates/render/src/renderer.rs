@@ -898,6 +898,12 @@ impl Renderer {
         self.effects.graphs.prewarm(&gpu.device, programs);
     }
 
+    /// Compiles effect graph programs (their WGSL) on background threads, so no effect's
+    /// first run waits for the shader compiler (the effect table's, at boot).
+    pub fn precompile_effect_programs(&mut self, gpu: &Gpu, wgsl: &[&str]) {
+        self.effects.graphs.precompile(&gpu.device, wgsl);
+    }
+
     /// Loads the effects' curve blocks (see [`EffectsGpu::load_curves`]).
     pub fn load_effect_curves(&mut self, gpu: &Gpu, curves: &[[f32; 4]]) {
         self.effects.load_curves(&gpu.device, &gpu.queue, curves);
