@@ -148,6 +148,9 @@ impl Mover {
 /// A reachability question: from (milli x, y, deck) to (milli x, y, deck).
 type Question = (i32, i32, Option<u16>, i32, i32, Option<u16>);
 
+/// A body's spot: milli x, y and deck.
+type Spot = (i32, i32, Option<u16>);
+
 /// Navigation for one body size.
 struct Profile {
     radius: i32,
@@ -160,6 +163,10 @@ struct Profile {
     mesh: Option<GroundMesh>,
     /// Reachability answers for the current knowledge, bounded.
     answers: BTreeMap<Question, bool>,
+    /// Where a route from a spot joins the grid ([`ObservedNavigation::join`]) for the
+    /// current knowledge, bounded: a pure answer, asked again for every point a search
+    /// tries from the same spot.
+    joins: BTreeMap<Spot, Option<(i64, i64)>>,
 }
 
 struct Ground<'a> {
@@ -289,6 +296,7 @@ impl ObservedNavigation {
                 mesh.invalidate(&changed);
             }
             p.answers.clear();
+            p.joins.clear();
         }
     }
 
@@ -314,6 +322,7 @@ impl ObservedNavigation {
                 grid: GridNavigation::new(self.size),
                 mesh: None,
                 answers: BTreeMap::new(),
+                joins: BTreeMap::new(),
             },
         ));
         self.profiles.len() - 1
@@ -463,7 +472,8 @@ impl ObservedNavigation {
             .is_some_and(|c| c.proves_clear(geo.terrain.steep_edges(), a, b, radius))
     }
 
-    /// Whether the mover can walk to `to` over known terrain.
+    /// Whether the mover can walk to `to` over known terrain. The mover must fit standing
+    /// at `to` ([`ObservedNavigation::fits`]): callers check that first.
     pub fn reachable(&mut self, geo: &Geography, from: &Mover, to: Pt) -> bool {
         let i = self.profile(geo, from);
         let (tx, ty) = to.milli();
@@ -496,7 +506,22 @@ impl ObservedNavigation {
             return true;
         }
         let i = self.profile(geo, m);
-        (geo.layered() || self.clear(geo, i, m.at, m.at)) && self.join(geo, i, m).is_some()
+        (geo.layered() || self.clear(geo, i, m.at, m.at)) && self.joined(geo, i, m).is_some()
+    }
+
+    /// [`ObservedNavigation::join`], remembered per spot until knowledge changes.
+    fn joined(&mut self, geo: &Geography, i: usize, m: &Mover) -> Option<(i64, i64)> {
+        let key = (m.at.x, m.at.y, m.at.deck.map(|d| d.0));
+        if let Some(&answer) = self.profiles[i].1.joins.get(&key) {
+            return answer;
+        }
+        let answer = self.join(geo, i, m);
+        let joins = &mut self.profiles[i].1.joins;
+        if joins.len() >= MAX_ANSWERS {
+            joins.clear();
+        }
+        joins.insert(key, answer);
+        answer
     }
 
     /// The cell the body's route over the grid starts from: its own cell's centre on
@@ -523,9 +548,7 @@ impl ObservedNavigation {
         self.searches += 1;
         let a = from.at;
         let b = fixed(to);
-        if !self.clear(geo, i, b, b) {
-            return false;
-        }
+        // The mover fits at `b` (the caller's check).
         if self.clear(geo, i, a, b) {
             return true;
         }
@@ -534,7 +557,7 @@ impl ObservedNavigation {
         }
         let origin = from.point().rounded();
         if let Some(s) = geo.terrain.surfaces() {
-            if self.join(geo, i, from).is_none() {
+            if self.joined(geo, i, from).is_none() {
                 return false;
             }
             let (Some(start), Some(goal)) = (geo.node(origin), geo.node(to)) else {
@@ -563,7 +586,7 @@ impl ObservedNavigation {
             return route.is_some();
         }
         let size = self.size as i64;
-        let Some((jx, jy)) = self.join(geo, i, from) else {
+        let Some((jx, jy)) = self.joined(geo, i, from) else {
             return false;
         };
         if jx < 0 || jy < 0 || jx >= size || jy >= size {
