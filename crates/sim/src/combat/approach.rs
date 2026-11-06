@@ -595,11 +595,8 @@ fn route_to_spot(
         .into_vec()
         .into_iter()
         .map(|Next(c)| c)
-        .filter(|c| {
-            !near.blocks(c.spot.fixed())
-                && usable(spatial, state, c.spot)
-                && straight(spatial, c.spot)
-        })
+        // Pure tests: the straight walk past the crowd fails most often, so it goes first.
+        .filter(|c| straight(spatial, c.spot) && usable(spatial, state, c.spot))
         .collect();
     direct.sort_unstable_by(Candidate::order);
     for c in &direct {

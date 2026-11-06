@@ -4,7 +4,7 @@ Design of `canopy-sim` (milestone M2). Behaviour comes from the old game ([surve
 
 ## Shape
 
-- `canopy-sim` is a library with no I/O, no clocks and no threads. The game runs it on its own thread; tests run it directly.
+- `canopy-sim` is a library with no I/O and no clocks. The game runs it on its own thread; tests run it directly. Its own threads only do independent pure work merged in input order (`canopy_sim::parallel`: navigation mesh tiles, an AI's body profiles), so every thread count gives bit-identical results; a test plays one match on one worker thread and on four.
 - `World::new(content, map, setup)` → `world.tick(commands)` → `world.view(owner)` / `world.hash()` / `world.save()`.
 - Input is the frozen protocol's `Action` (same JSON shape as the TypeScript `actionSchema`, so `canopy-net` sends it unchanged), stamped with `(tick, player, seq)`.
 - Output is a per-owner `View`: everything the renderer and HUD may know, already fog-filtered, plus the events of the tick. The renderer never reads simulation state directly.
