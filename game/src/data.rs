@@ -95,6 +95,10 @@ impl MapEntry {
 pub struct GameData {
     pub content: Arc<Content>,
     pub pack: Arc<Pack>,
+    /// The pack's effect table (`@effects`).
+    pub effects: Arc<canopy_assets::EffectTable>,
+    /// The pack's sounds, decoded at boot for the audio to take ([`GameData::take_sounds`]).
+    sounds: std::sync::Mutex<Option<canopy_audio::SoundLibrary>>,
     /// Sorted by name; campaign missions included.
     pub maps: Vec<MapEntry>,
     /// The campaigns (`.utcc` packages), sorted by id.
@@ -145,20 +149,54 @@ impl GameData {
         let started = std::time::Instant::now();
         progress(BootStage::Content, 0.2);
         let packaged = is_packaged(&paths.data);
-        let content = if packaged {
-            Content::load_packaged(&paths.data)
-        } else {
-            Content::load(&paths.data)
-        }
-        .map_err(|e| anyhow!("content: {e}"))?;
-        let (identity_parts, content_digest) = content_identity(paths)?;
+        // The content's identity, the maps, the effect table and the sounds read beside
+        // the content.
+        let (content, identity, maps, effects, sounds) = std::thread::scope(|scope| {
+            let spawn = |name: &str| std::thread::Builder::new().name(name.into());
+            let identity = spawn("boot-identity")
+                .spawn_scoped(scope, || content_identity(paths))
+                .expect("a boot thread starts");
+            let maps = spawn("boot-maps")
+                .spawn_scoped(scope, || load_maps(paths, &pack))
+                .expect("a boot thread starts");
+            let effects = spawn("boot-effects")
+                .spawn_scoped(scope, || {
+                    canopy_scene::effects::EffectDirector::table(Some(&pack))
+                })
+                .expect("a boot thread starts");
+            let sounds = spawn("boot-sounds")
+                .spawn_scoped(scope, || canopy_audio::SoundLibrary::from_pack(&pack))
+                .expect("a boot thread starts");
+            let content = {
+                let _span = tracing::info_span!("boot_content").entered();
+                if packaged {
+                    Content::load_packaged(&paths.data)
+                } else {
+                    Content::load(&paths.data)
+                }
+            };
+            let join = |name: &str| anyhow!("the boot's {name} thread panicked");
+            (
+                content,
+                identity.join().map_err(|_| join("identity")),
+                maps.join().map_err(|_| join("maps")),
+                effects.join().map_err(|_| join("effects")),
+                sounds.join().map_err(|_| join("sounds")),
+            )
+        });
+        let content = content.map_err(|e| anyhow!("content: {e}"))?;
+        let (identity_parts, content_digest) = identity??;
         progress(BootStage::Maps, 0.8);
         let campaigns = load_campaigns(paths, &content);
-        let mut maps = load_maps(paths, &pack)?;
+        let mut maps = maps??;
         add_missions(&mut maps, &campaigns, &pack);
         let campaign_images = campaign_images(&campaigns);
         install_text(&content, &campaigns, &maps);
         let campaigns = campaigns.into_iter().map(read_campaign).collect();
+        let effects = effects?;
+        // A pack whose sounds do not read leaves them to the audio's own load (which says
+        // why).
+        let sounds = sounds?.ok();
         progress(BootStage::Maps, 1.0);
         tracing::info!(
             packaged,
@@ -169,6 +207,8 @@ impl GameData {
         Ok(Self {
             content: Arc::new(content),
             pack,
+            effects,
+            sounds: std::sync::Mutex::new(sounds),
             maps,
             campaigns,
             campaign_images,
@@ -177,11 +217,22 @@ impl GameData {
         })
     }
 
+    /// The pack's sounds as the boot decoded them, once (`None` after, or when they did
+    /// not read).
+    pub fn take_sounds(&self) -> Option<canopy_audio::SoundLibrary> {
+        self.sounds
+            .lock()
+            .unwrap_or_else(std::sync::PoisonError::into_inner)
+            .take()
+    }
+
     /// This data with other content: the editor's documents for Test in game.
     pub fn testing(&self, content: Arc<Content>) -> Self {
         Self {
             content,
             pack: self.pack.clone(),
+            effects: self.effects.clone(),
+            sounds: std::sync::Mutex::new(None),
             maps: self.maps.clone(),
             campaigns: self.campaigns.clone(),
             campaign_images: self.campaign_images.clone(),
@@ -314,6 +365,7 @@ impl GameData {
 /// The parts of the content's identity (the base package's digest) and their SHA-256,
 /// the content digest saves and replays carry.
 fn content_identity(paths: &Paths) -> Result<(Vec<Vec<u8>>, String)> {
+    let _span = tracing::info_span!("content_identity").entered();
     let base = canopy_content::package::Package::open(&paths.data.join(canopy_content::BASE_DIR))
         .map_err(|e| anyhow!("content: {e}"))?;
     let base_digest = base
@@ -357,6 +409,7 @@ pub fn map_files(paths: &Paths) -> Result<Vec<MapFile>> {
 
 /// The shipped campaigns that pass every rule; a broken one is left out with a warning.
 fn load_campaigns(paths: &Paths, content: &Content) -> Vec<Arc<CampaignPackage>> {
+    let _span = tracing::info_span!("boot_campaigns").entered();
     let found = match canopy_content::campaign::library(&paths.data) {
         Ok(found) => found,
         Err(error) => {
@@ -437,6 +490,7 @@ fn campaign_images(
 }
 
 fn load_maps(paths: &Paths, pack: &Pack) -> Result<Vec<MapEntry>> {
+    let _span = tracing::info_span!("boot_maps").entered();
     let files = map_files(paths)?;
     let mut maps = Vec::new();
     for file in files {
@@ -452,6 +506,7 @@ fn load_maps(paths: &Paths, pack: &Pack) -> Result<Vec<MapEntry>> {
 /// Makes the game's text the base library with every campaign's and map's own on top
 /// (D96): titles, story pages, objectives and dialogue lines read from anywhere.
 fn install_text(content: &Content, campaigns: &[Arc<CampaignPackage>], maps: &[MapEntry]) {
+    let _span = tracing::info_span!("boot_text").entered();
     let mut text = content.text.clone();
     let mut packages: Vec<canopy_content::package::Package> = Vec::new();
     for campaign in campaigns {

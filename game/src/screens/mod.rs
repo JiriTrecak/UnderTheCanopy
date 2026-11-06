@@ -988,10 +988,15 @@ impl Game {
     /// The pack's sounds and the game's sound events, once: the base's, then every
     /// campaign's own (D97). A match binds its own content over them.
     fn bind_sounds(&mut self, data: &GameData) {
-        if self.audio.library().is_empty()
-            && let Err(error) = self.audio.load(&data.pack)
-        {
-            tracing::warn!(%error, "sounds not loaded");
+        if self.audio.library().is_empty() {
+            match data.take_sounds() {
+                Some(library) => *self.audio.library_mut() = library,
+                None => {
+                    if let Err(error) = self.audio.load(&data.pack) {
+                        tracing::warn!(%error, "sounds not loaded");
+                    }
+                }
+            }
         }
         if !self.sounds_bound {
             self.sounds_bound = true;
