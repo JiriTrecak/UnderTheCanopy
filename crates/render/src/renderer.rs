@@ -1841,10 +1841,12 @@ impl Renderer {
             extra(&mut encoder);
         }
         let sample = std::mem::take(&mut self.sample_gpu_time);
-        if sample {
+        let drained = sample.then(|| {
             // Drain earlier frames, so the wait below measures this frame alone.
+            let drain = Instant::now();
             let _ = device.poll(wgpu::PollType::wait_indefinitely());
-        }
+            drain.elapsed()
+        });
         let submitted = Instant::now();
         {
             let _span = tracing::trace_span!("submit").entered();
@@ -1870,7 +1872,9 @@ impl Renderer {
                 (latest, kept) => *kept = latest.map(<[f32]>::to_vec),
             }
         }
-        // Recording and submitting, without a sampled frame's waits.
+        // Recording and submitting, without a sampled frame's waits (the drain before its
+        // submit, the wait after it): they wait for the GPU, they do no work.
+        let recorded = recorded.saturating_sub(drained.unwrap_or_default());
         report.cpu_total_ms = recorded.as_secs_f32() * 1000.0;
     }
 }
