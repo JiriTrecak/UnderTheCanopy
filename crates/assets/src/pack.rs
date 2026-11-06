@@ -12,7 +12,6 @@ use std::{
     fs::File,
     io::{Read, Seek, SeekFrom},
     path::{Path, PathBuf},
-    sync::Mutex,
 };
 
 /// Bytes with 16-byte alignment, so arrays inside can be cast in place.
@@ -29,6 +28,18 @@ impl AlignedBytes {
         Ok(Self { words, len })
     }
 
+    /// Reads `len` bytes at `offset` without moving a shared cursor, so threads read
+    /// entries of one file at once.
+    fn read_at(file: &File, offset: u64, len: usize) -> std::io::Result<Self> {
+        let mut words = vec![0u128; len.div_ceil(16)];
+        read_exact_at(
+            file,
+            &mut bytemuck::cast_slice_mut::<u128, u8>(&mut words)[..len],
+            offset,
+        )?;
+        Ok(Self { words, len })
+    }
+
     fn bytes(&self) -> &[u8] {
         &bytemuck::cast_slice(&self.words)[..self.len]
     }
@@ -38,8 +49,31 @@ enum Source {
     Memory(AlignedBytes),
     /// The file opened, held for the pack's life: entries are read from this file even when
     /// a newer pack replaces the path (a cook while the game runs renames a new pack over
-    /// it), never from a different file through this one's index.
-    File(PathBuf, Mutex<File>),
+    /// it), never from a different file through this one's index. Reads are positioned,
+    /// so any number of threads read at once.
+    File(PathBuf, File),
+}
+
+#[cfg(unix)]
+fn read_exact_at(file: &File, buf: &mut [u8], offset: u64) -> std::io::Result<()> {
+    std::os::unix::fs::FileExt::read_exact_at(file, buf, offset)
+}
+
+#[cfg(windows)]
+fn read_exact_at(file: &File, mut buf: &mut [u8], mut offset: u64) -> std::io::Result<()> {
+    use std::os::windows::fs::FileExt;
+    while !buf.is_empty() {
+        match file.seek_read(buf, offset) {
+            Ok(0) => return Err(std::io::ErrorKind::UnexpectedEof.into()),
+            Ok(n) => {
+                buf = &mut buf[n..];
+                offset += n as u64;
+            }
+            Err(e) if e.kind() == std::io::ErrorKind::Interrupted => {}
+            Err(e) => return Err(e),
+        }
+    }
+    Ok(())
 }
 
 /// An opened pack: the index, and either every byte ([`Pack::load`]) or the file to read
@@ -95,7 +129,7 @@ impl Pack {
         file.read_exact(&mut index).map_err(io)?;
         let entries = parse_index(&index, len)?;
         Ok(Self::new(
-            Source::File(path.to_owned(), Mutex::new(file)),
+            Source::File(path.to_owned(), file),
             header,
             entries,
         ))
@@ -162,9 +196,9 @@ impl Pack {
                     path: path.clone(),
                     source,
                 };
-                let mut file = file.lock().unwrap_or_else(|poison| poison.into_inner());
-                file.seek(SeekFrom::Start(entry.offset)).map_err(io)?;
-                BlobBytes::Owned(AlignedBytes::read(&mut *file, entry.len as usize).map_err(io)?)
+                BlobBytes::Owned(
+                    AlignedBytes::read_at(file, entry.offset, entry.len as usize).map_err(io)?,
+                )
             }
         };
         Blob::new(&entry.name, entry.kind, bytes)
