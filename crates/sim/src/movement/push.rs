@@ -29,6 +29,7 @@ struct Member {
     y: i64,
     radius: i64,
     index: u32,
+    deck: Option<crate::terrain::DeckId>,
 }
 
 /// How a body takes a push.
@@ -234,6 +235,7 @@ impl Motion {
                     y: 0,
                     radius: 0,
                     index: 0,
+                    deck: None,
                 },
             );
             fill.clear();
@@ -246,6 +248,7 @@ impl Motion {
                     y,
                     radius: body.radius,
                     index: i as u32,
+                    deck: body.at.deck,
                 };
                 *at += 1;
             }
@@ -276,6 +279,7 @@ impl Motion {
                 let (ax, ay) = at(i, &moved);
                 let (bx, by) = cells[i];
                 let (air, own_reach) = (bodies[i].air, bodies[i].radius + tuning.push_room);
+                let deck = bodies[i].at.deck;
                 let (list, bounds) = if split && bodies[i].stance == Stance::Planted {
                     (&mobile, &mobile_starts)
                 } else {
@@ -293,10 +297,7 @@ impl Motion {
                             let (cx, cy) = (m.x, m.y);
                             let (mut dx, mut dy) = (ax - cx, ay - cy);
                             let reach = own_reach + m.radius;
-                            if dx.abs() >= reach
-                                || dy.abs() >= reach
-                                || bodies[i].at.deck != bodies[j].at.deck
-                            {
+                            if dx.abs() >= reach || dy.abs() >= reach || deck != m.deck {
                                 continue;
                             }
                             let mut d = length_ceil(dx, dy);

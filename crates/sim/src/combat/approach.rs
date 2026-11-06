@@ -532,8 +532,9 @@ fn route_to_spot(
     // spots of one cell). Every test before a route is a pure query of the terrain and
     // the other bodies (routing changes only the actor's own body, which no test sees), so
     // a spot another body claims is never generated, and the order of the tests is free.
-    let mut candidates = Vec::new();
     let surfaces = spatial.terrain().surfaces();
+    let cells = ((x1 - x0 + 1).max(0) * (y1 - y0 + 1).max(0)) as usize;
+    let mut candidates = Vec::with_capacity(if surfaces.is_some() { 0 } else { cells });
     let mut index = 0;
     for y in y0..=y1 {
         for x in x0..=x1 {
