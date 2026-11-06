@@ -1,13 +1,12 @@
 {
-  "id": "asset.models.buildings.ants-soldier-burrow",
-  "name": "Soldier Burrow",
+  "id": "asset.models.buildings.ants-baobab-nest",
+  "name": "Baobab Nest",
   "kind": "building",
   "tags": [
     "ants",
     "tripo",
     "team-mask",
-    "animated",
-    "barracks"
+    "nest-cast"
   ],
   "race": "ants",
   "resources": [
@@ -36,7 +35,7 @@
     "teamColor": {
       "mode": "mask",
       "slots": [
-        "TC_ants_soldier_burrow_body"
+        "TC_ants_baobab_nest_body"
       ]
     },
     "animations": [
@@ -52,19 +51,8 @@
         "loop": true,
         "events": [
           {
-            "name": "snap",
-            "time": 3.867
-          }
-        ]
-      },
-      {
-        "semantic": "spawn",
-        "clip": "spawn",
-        "loop": false,
-        "events": [
-          {
-            "name": "release",
-            "time": 0.667
+            "name": "bloom",
+            "time": 1.0
           }
         ]
       }
@@ -72,23 +60,23 @@
     "blocker": {
       "shape": "box",
       "size": [
-        12,
-        12
+        20.0,
+        20.0
       ],
       "offset": [
         0,
         0
       ]
     },
-    "vegetationClearance": 6,
+    "vegetationClearance": 10.0,
     "groundContact": {
       "mode": "pivot"
     }
   },
   "display": {
     "scale": 1,
-    "healthHeight": 7.0
+    "healthHeight": 17.6
   },
   "shading": "building",
-  "license": "Generated with Tripo (image to 3D, segmentation) from an ImageGen (gpt-image-2) concept for Under the Canopy; made game-ready and animated by tools/buildings/ant_building.py with tools/buildings/ants/soldier-burrow.json."
+  "license": "Generated with Tripo (image to 3D, retopology) from an ImageGen (gpt-image-2.5) concept for Under the Canopy; made game-ready by tools/buildings/nest_cast.py."
 }

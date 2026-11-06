@@ -1,6 +1,6 @@
 {
   "id": "building.ants.barracks",
-  "model": "asset.models.buildings.ants-soldier-burrow",
+  "model": "asset.models.buildings.ants-mandible-gate",
   "icon": "asset.portraits.buildings.ants-soldier-burrow",
   "body": {
     "maxHp": 1200,
@@ -9,12 +9,12 @@
   },
   "vision": 14,
   "footprint": {
-    "width": 12,
-    "depth": 12
+    "width": 16,
+    "depth": 16
   },
   "entrance": {
     "x": 0.5,
-    "y": 6.5
+    "y": 8.5
   },
   "creation": {
     "method": "construct",
@@ -42,11 +42,7 @@
       "mode": "queued",
       "outputs": [
         "unit.ants.warrior",
-        "unit.ants.archer",
-        "unit.ants.burster",
-        "unit.ants.queensguard",
-        "unit.ants.soldier",
-        "unit.ants.doorhead"
+        "unit.ants.spitter"
       ],
       "workerSlots": 0,
       "queueCapacity": 6
@@ -66,14 +62,14 @@
         "socket": "socket_gate"
       },
       {
-        "effect": "effect.buildings.ant-soldier-burrow-snap",
-        "event": "snap",
+        "effect": "effect.buildings.ant-mandible-gate-steam",
+        "state": "work",
         "socket": "socket_gate"
       },
       {
-        "effect": "effect.buildings.ant-soldier-burrow-release",
-        "event": "release",
-        "socket": "socket_gate"
+        "effect": "effect.buildings.ant-mandible-gate-steam",
+        "state": "work",
+        "socket": "socket_crown"
       }
     ]
   }

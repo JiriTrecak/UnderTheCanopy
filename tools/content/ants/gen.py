@@ -861,7 +861,7 @@ def write_buildings(research):
              description='Brood chambers around a tunnel shaft: provides 8 supply and is a tunnel mound. Researches Wider Tunnels.',
              behaviors={'research': {'outputs': research['tunnels'], 'queueCapacity': 2}} if research['tunnels'] else {},
              extra=mound)
-    building('buildings/ants/barracks.json', name='Soldier Burrow',
+    building('buildings/ants/barracks.json', name='War Nest',
              description='Hatches Raiders (two at a time), Needlers, Bursters and Majors.',
              behaviors={k: v for k, v in load('buildings/ants/barracks.json')['behaviors'].items() if k != 'research'}
              | bills(800) | {'production': queued([RAIDER, NEEDLER, BURSTER, MAJOR])})

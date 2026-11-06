@@ -1,5 +1,5 @@
 {
-  "play.click-to-build": "Click to order construction.",
+  "play.click-to-build": "Click to build.",
   "play.observer": "Observer",
   "play.place-hint": "{name}: {problem} {clockwise} / {counterclockwise}: rotate ({degrees}°). {cancel} cancels.",
   "play.target-hint": "{name}: choose a {wants}. {cancel} cancels.",

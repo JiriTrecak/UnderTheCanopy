@@ -18,8 +18,8 @@
     "shadowCeiling": 30,
     "nightUnits": {
       "rimTint": "#a9bcff",
-      "rim": 0.4,
-      "fill": 0.25
+      "rim": 0,
+      "fill": 0
     }
   },
   "canopy": {

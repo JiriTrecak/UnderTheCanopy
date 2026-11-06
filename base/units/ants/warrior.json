@@ -1,6 +1,6 @@
 {
   "id": "unit.ants.warrior",
-  "model": "asset.models.units.ants-raider",
+  "model": "asset.models.units.ants-soldier",
   "icon": "asset.portraits.units.ants-raider",
   "selectionClass": "army",
   "body": {
@@ -14,14 +14,14 @@
   ],
   "behaviors": {
     "combat": {
-      "damage": 8,
+      "damage": 14,
       "damageType": "melee",
-      "range": 0.6,
-      "cooldownTicks": 36,
+      "range": 0.8,
+      "cooldownTicks": 64,
       "aggroRange": 20,
       "attack": {
-        "windupTicks": 8,
-        "recoveryTicks": 8,
+        "windupTicks": 22,
+        "recoveryTicks": 16,
         "rangeBuffer": 0.6
       }
     },
@@ -54,19 +54,19 @@
     "items": [
       {
         "item": "item.amber",
-        "amount": 150
+        "amount": 1
       }
     ],
-    "workTicks": 960,
+    "workTicks": 40,
     "count": 2
   },
   "level": 1,
-  "supplyCost": 1,
+  "supplyCost": 0,
   "dimensions": {
-    "size": "small",
-    "height": 2.9
+    "size": "medium",
+    "height": 6.0
   },
-  "modelScale": 1.47,
+  "modelScale": 3.2,
   "presentation": {
     "impactEffect": "effect.ants.kit.hit-bite",
     "sounds": [

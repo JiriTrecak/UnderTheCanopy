@@ -1,0 +1,251 @@
+{
+  "id": "effect.ants.kit.spit-bile",
+  "name": "Bile spit",
+  "description": "A green splash at the sac mouth and a heavy glob of bile streaming a green tail and dripping as it arcs.",
+  "durationTicks": 40,
+  "loop": false,
+  "layers": [
+    {
+      "id": "flash",
+      "enabled": true,
+      "shape": "billboard",
+      "colour": "#9dff5a",
+      "accent": "#ffffff",
+      "durationTicks": 4,
+      "count": 1,
+      "size": 1.4,
+      "height": 0.0,
+      "startTick": 0,
+      "blend": "additive",
+      "intensity": 2.4,
+      "core": 0.9,
+      "texture": {
+        "asset": "asset.effects.beetles.glint",
+        "role": "image",
+        "index": 1
+      },
+      "anchor": "source"
+    },
+    {
+      "id": "spray",
+      "enabled": true,
+      "shape": "particles",
+      "colour": "#6fd630",
+      "accent": "#c8ff9a",
+      "durationTicks": 14,
+      "count": 14,
+      "size": 0.05,
+      "height": 0.0,
+      "startTick": 0,
+      "blend": "additive",
+      "intensity": 5.0,
+      "core": 0.35,
+      "texture": {
+        "asset": "asset.effects.beetles.spark",
+        "role": "image",
+        "index": 1
+      },
+      "emitter": {
+        "mode": "burst",
+        "lifetimeTicks": 12,
+        "rate": 14,
+        "speed": 6,
+        "speedVariation": 0.5,
+        "direction": {
+          "x": 0,
+          "y": 1,
+          "z": 0
+        },
+        "coneDegrees": 40,
+        "gravity": 6,
+        "drag": 0.7,
+        "spawnRadius": 0.15,
+        "startSize": 0.09,
+        "endSize": 0.04,
+        "spin": 0,
+        "fadeIn": 0.0,
+        "fadeOut": 0.55,
+        "stretch": 0.05
+      },
+      "anchor": "source"
+    },
+    {
+      "id": "path",
+      "enabled": true,
+      "shape": "missile",
+      "colour": "#c8ff9a",
+      "accent": "#ffffff",
+      "durationTicks": 40,
+      "count": 1,
+      "size": 1.1,
+      "height": 0,
+      "arcHeight": 0.65,
+      "blend": "additive",
+      "intensity": 2.0,
+      "core": 0.85,
+      "texture": {
+        "asset": "asset.effects.vfx.mote",
+        "role": "image",
+        "index": 1
+      }
+    },
+    {
+      "id": "tail",
+      "enabled": true,
+      "shape": "ribbon",
+      "colour": "#8be84a",
+      "accent": "#4f9a1e",
+      "durationTicks": 40,
+      "count": 1,
+      "size": 1.0,
+      "height": 0,
+      "rides": "path",
+      "blend": "normal",
+      "texture": {
+        "asset": "asset.effects.vfx.flame-strip",
+        "role": "image",
+        "index": 1
+      },
+      "intensity": 1.3,
+      "ribbon": {
+        "durationTicks": 9,
+        "width": 0.9,
+        "tile": 2.2,
+        "scroll": 4.0,
+        "opacityOverLife": [
+          {
+            "at": 0,
+            "value": 1
+          },
+          {
+            "at": 1,
+            "value": 0
+          }
+        ],
+        "widthOverLife": [
+          {
+            "at": 0,
+            "value": 0.6
+          },
+          {
+            "at": 0.15,
+            "value": 1
+          },
+          {
+            "at": 1,
+            "value": 0.35
+          }
+        ],
+        "additiveOverLife": [
+          {
+            "at": 0,
+            "value": 0.6
+          },
+          {
+            "at": 1,
+            "value": 0.8999999999999999
+          }
+        ]
+      }
+    },
+    {
+      "id": "glow",
+      "enabled": true,
+      "shape": "particles",
+      "colour": "#9dff5a",
+      "accent": "#4f9a1e",
+      "durationTicks": 40,
+      "count": 20,
+      "size": 0.4,
+      "height": 0,
+      "blend": "additive",
+      "intensity": 1.5,
+      "texture": {
+        "asset": "asset.effects.vfx.mote",
+        "role": "image",
+        "index": 1
+      },
+      "emitter": {
+        "mode": "continuous",
+        "lifetimeTicks": 16,
+        "rate": 45,
+        "speed": 0.6,
+        "speedVariation": 0.6,
+        "direction": {
+          "x": 0,
+          "y": 1,
+          "z": 0
+        },
+        "coneDegrees": 180,
+        "gravity": 0.0,
+        "drag": 1.5,
+        "spawnRadius": 0.12,
+        "startSize": 0.4,
+        "endSize": 0.1,
+        "spin": 0,
+        "fadeIn": 0.0,
+        "fadeOut": 0.6,
+        "space": "world",
+        "inheritVelocity": 0.1
+      },
+      "rides": "path",
+      "core": 0.5
+    },
+    {
+      "id": "drops",
+      "enabled": true,
+      "shape": "particles",
+      "colour": "#5aa823",
+      "accent": "#2f6a12",
+      "durationTicks": 40,
+      "count": 18,
+      "size": 0.2,
+      "height": 0,
+      "rides": "path",
+      "blend": "normal",
+      "intensity": 1.3,
+      "texture": {
+        "asset": "asset.effects.vfx.mote",
+        "role": "image",
+        "index": 1
+      },
+      "emitter": {
+        "mode": "continuous",
+        "lifetimeTicks": 26,
+        "rate": 22,
+        "speed": 0.6,
+        "speedVariation": 0.6,
+        "direction": {
+          "x": 0,
+          "y": 1,
+          "z": 0
+        },
+        "coneDegrees": 180,
+        "gravity": 14.0,
+        "drag": 0.4,
+        "spawnRadius": 0.08,
+        "startSize": 0.2,
+        "endSize": 0.12,
+        "spin": 0,
+        "fadeIn": 0.0,
+        "fadeOut": 0.3,
+        "space": "world",
+        "inheritVelocity": 0.35,
+        "collide": {
+          "friction": 0.9
+        },
+        "stretch": 0.02,
+        "additiveOverLife": [
+          {
+            "at": 0,
+            "value": 0.6
+          },
+          {
+            "at": 1,
+            "value": 0.3
+          }
+        ]
+      }
+    }
+  ]
+}

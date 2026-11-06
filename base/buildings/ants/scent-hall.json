@@ -66,15 +66,6 @@
         "item.amber",
         "item.root"
       ]
-    },
-    "production": {
-      "mode": "queued",
-      "outputs": [
-        "unit.ants.banneret",
-        "unit.ants.nectarist"
-      ],
-      "workerSlots": 0,
-      "queueCapacity": 6
     }
   },
   "requires": [

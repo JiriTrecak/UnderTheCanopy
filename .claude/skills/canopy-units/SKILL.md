@@ -34,6 +34,8 @@ A lineup is not a modelling reference. For each agreed unit, paint **one single-
 - the whole unit centred, seen straight from the front, orthographic-looking, on plain light grey, soft even light, no ground, shadow or floor, **no equipment** in the hands or on the back, no effects, no text;
 - **the sheet's proportions**: the same head size, bulk, stance width and limb thickness as the agreed unit. Lay the shot beside the sheet before Tripo; a T-pose painting tends to come out taller and thinner, and Tripo reproduces its input faithfully.
 
+- **the sheet's colour balance**: the image model drifts towards big, bright gold areas and saturated skin. Spell the balance out (for the ants: "the armour is MOSTLY large royal-blue plates; the gold is only THIN, toned-down antique-gold trim along their edges, never large gold areas, never bright yellow or orange; the body chitin is a NATURAL DARK BROWN like a real ant, not red, not copper"), and measure the shot against the sheet before Tripo (share, hue, saturation and value of gold, skin and blue; `tools/units/grade_unit.py` has the HSV helpers). Jiri, 2026-10-29: "Ours are tiny golden patches with lot of blue, the gold is toned down substantially, and their skin is nowhere near as red".
+
 Start the prompt with "ONE SINGLE FIGURE ONLY": without it the model often returns a whole character sheet. Keep the shots in `explore/units/images/turnarounds/` (`<unit>-front.webp`).
 
 **No side shots for Tripo.** Painted side views invent their own body (the ants' Soldier got a long neck and a thin torso from its side shot), and Tripo's multiview trusts them over the front. One front image at full detail keeps the design (2026-10-29).
@@ -54,6 +56,11 @@ Run Tripo with skill **canopy-tripo** (Claude in Chrome, no uploads by Jiri): **
 
 Never decimate in Blender, which wrecks the quads.
 
+A quick colour fix on a finished asset, to judge it in play before a new Tripo pass: `tools/units/grade_unit.py` re-grades the base colour outside the team plates by hue band (muting gold, browning red) and exports again.
+
+- **Many-legged creatures** (four, six or eight legs): don't use Tripo's rig (its "Other" type gave a four-legged spitter a biped skeleton). Export the retopologised model static and run `tools/units/legged_rig.py <static.glb> <out.glb> --legs 4 --attack spit|bite`: it finds the feet on the mesh (mandibles that hang above the ground are not feet), traces the legs, builds Root/Body/Head/Back and two bones per leg, skins them, places `socket_projectile` at the mouth, and keys walk, run, idle, attack, hit, cast and death. Its docstring has the options and the tripo_unit spec (`"trimAttack": false`, `"attackEvent": {"name": "release", "share": 0.45}`). Check the painted front for the leg count first: the image model likes to add a third pair.
+- **Heavier or special attacks:** Tripo's Animate page also does text to motion (the box above the presets, 20 credits): describe the motion ("a heavy two-handed greatsword attack: …"); it lands in the AI Animation tab, ticked, and exports with the presets under its description as the clip name (match it in the spec by a few of its words). `tripo_unit.py` trims it to the first strike.
+- **Heavy units** move slower in their clips too: the spec's `"stretch": {"walk": 1.7, "run": 1.4}`.
 - **Rig and animate in Tripo:** a biped as **humanoid** (Mixamo skeleton) with its preset clips; a creature as **Other** (`Root`, `Spine_n`, `Head_n`, limbs), whose clips are made in Blender (`tools/units/ant_creature.py`, `ant_centaur.py`). Export one GLB with the skeleton and every clip. Keep raw exports in the scratchpad, never in the repository.
 
 ### 5. Blender: game-ready
@@ -65,6 +72,12 @@ Never decimate in Blender, which wrecks the quads.
 Clips that step about in place (Tripo's `cast_a_spell`, some hits and attacks) make the cook refuse the model ("carries the model across the ground"): list them in the spec's `"pin"`, which takes all their horizontal root motion out. Spec for a unit: `"height": 1.0`, `"displayScale": 2`, `"race": "ants"`; the definition's `modelScale` sets the size (about 1.6 for infantry, 2.0 for a tank).
 
 **Trying a unit before it is designed into the race:** add it as a test unit of the race's barracks: 1 Amber, `workTicks` 40, `supplyCost` 0, a stand-in portrait, text saying it is a test, in the race's `roster` and the barracks' `outputs`. Remove it, or give it real numbers and an icon, once Jiri has played it.
+
+**See the motion, never guess it.** Before a unit goes in game, and after every change to its clips or equipment:
+- `Blender -b -P tools/units/clip_sheet.py -- <geometry.glb> <out> --clips attack,run --step 4 --views game,side` renders each clip every 4th frame into a contact sheet (one row per view, frame numbers stamped). Read the sheet: does the swing go through its whole arc, where does the weapon point in idle, walk and run, does anything dip into the ground.
+- Measure what a sheet can't settle: the weapon tip's height and reach per frame (the sheet's script shows how: the far vertex of the held mesh, `matrix_world`, per frame). The ants' Soldier taught it: Tripo's text-to-motion swing first drops the sword behind the back (the wind-up), then chops forward; the automatic trim took the wind-up for the chop, and the hit event landed at guard.
+- Trim long attacks by hand from those numbers: `"trimAttack": false, "trim": {"attack": [first, last, hit]}` in source frames; put the hit where the blade passes in front at chest height.
+- Hold a weapon where it belongs through the locomotion clips: Tripo's presets swing the arms at the sides, so a held sword trails or stabs the ground. `"amplify": {"idle": {"factor": 0.2, "toward": "attack", "bones": [both arms]}, "run": {"factor": 0.1, "toward": "idle", ...}}` keeps the arms near the attack's guard (or the idle's grip), and `"attack": {"factor": 2.0, ...}` widens the swing. Equipment is oriented by the hand (`attach()`: the top out of the thumb side, the edge along the knuckles), `tilt` [degrees about the knuckles, about the blade].
 
 ### 6. Check
 

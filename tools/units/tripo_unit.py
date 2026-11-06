@@ -19,6 +19,9 @@ spec.json: {"glb": path, "name": "beetles-bolter", "title": "Bolter", "height": 
   "tags": [...], "loops": ["idle", "walk", "run", ...],
   "keepViolet": true  (the ants' violet substance stays out of the team mask; royal blue only),
   "pin": ["cast"]  (clips that step about in place lose all horizontal root motion),
+  "stretch": {"walk": 1.6}  (plays a clip slower, for heavy units),
+  "amplify": {"attack": {"factor": 1.6, "bones": ["Arm", "ForeArm", "Hand"]},
+              "run": {"factor": 0.25, "toward": "idle", "bones": ["RightArm", ...]}}  (wider or held motions),
   "equipment": [{"glb": path, "name": "sword", "bone": "RightHand", "socket": "socket_hand_r",
                  "length": 0.8, "grip": 0.13, "tilt": [30, 0], "offset": [0, -0.05, 0]}]
     (rigid Tripo models held in a hand; see attach())}"""
@@ -74,9 +77,9 @@ print('height', round((hi.z - lo.z) * s, 2), 'scale', round(s, 4))
 # --- Equipment: rigid Tripo models held in a hand, each a mesh under its hand bone.
 def attach(item):
     """Imports `item['glb']` (an upright object facing -Y, as Tripo exports it), scales it to
-    `length` metres along its long axis and places it in the idle pose: its grip (`grip`, a
-    share of its height from the bottom) at the palm of `bone`, its up axis turned by `tilt`
-    degrees about X (forward) and Z (outward), then parented to the bone with a socket there."""
+    `length` metres along its long axis and puts its grip (`grip`, a share of its height from
+    the bottom) in the palm of `bone`, oriented by the hand (see below), then parents it to the
+    bone with a socket there."""
     before = set(scene.objects)
     bpy.ops.import_scene.gltf(filepath=item['glb'])
     new = [o for o in scene.objects if o not in before]
@@ -106,18 +109,31 @@ def attach(item):
     bones = [b.name for b in rig.pose.bones]
     bone = next(n for n in bones if n.lower().endswith(item['bone'].lower()))
     fingers = next((n for n in bones if n.lower().endswith(item['bone'].lower() + 'middle1')), None)
-    idle = next((a for a in bpy.data.actions if SPEC['clips'].get('idle', 'idle') in a.name), None)
-    rig.animation_data.action = idle
-    scene.frame_set(int(idle.frame_range[0]) if idle else 0)
+    thumb = next((n for n in bones if n.lower().endswith(item['bone'].lower() + 'thumb1')), None)
+    # Placed in the rest pose (a T-pose), in the hand's own frame, so it follows the wrist through
+    # every clip: gripped in the fist, the top points out of the thumb side, the edge runs along
+    # the knuckles (the finger direction), as a hand really holds a sword or a staff.
+    rig.animation_data.action = None
+    for pb in rig.pose.bones:
+        pb.matrix_basis = mathutils.Matrix()
     bpy.context.view_layer.update()
-    pb = rig.pose.bones[bone]
-    palm = rig.matrix_world @ pb.head
+    pos = lambda name: rig.matrix_world @ rig.pose.bones[name].head  # noqa: E731
+    palm = pos(bone)
     if fingers:
-        palm = (palm + rig.matrix_world @ rig.pose.bones[fingers].head) / 2
+        palm = (palm + pos(fingers)) / 2
     palm += mathutils.Vector(item.get('offset', (0, 0, 0)))
+    if fingers and thumb:
+        along = (pos(fingers) - pos(bone)).normalized()
+        up = pos(thumb) - pos(bone)
+        up = (up - along * up.dot(along)).normalized()
+        frame = mathutils.Matrix((along, up.cross(along), up)).transposed().to_4x4()  # model X, Y, Z
+    else:
+        frame = mathutils.Matrix()
+    # `tilt`: degrees about the knuckles (leaning the top towards the fingertips' side), then about
+    # the top's own axis (turning the edge).
     tilt = item.get('tilt', (0, 0))
-    turn = mathutils.Euler((math.radians(-tilt[0]), 0, math.radians(tilt[1])), 'XYZ').to_matrix().to_4x4()
-    obj.matrix_world = mathutils.Matrix.Translation(palm) @ turn
+    turn = mathutils.Euler((math.radians(tilt[0]), 0, math.radians(tilt[1])), 'XYZ').to_matrix().to_4x4()
+    obj.matrix_world = mathutils.Matrix.Translation(palm) @ frame @ turn
     world = obj.matrix_world.copy()
     obj.parent = rig
     obj.parent_type = 'BONE'
@@ -282,6 +298,56 @@ for semantic, act in keep.items():
         at = event_frames.get('cast', (end - start) * 0.5)
         events = [{'name': 'cast', 'time': round(at / kit.FPS, 3)}]
     animations.append({'semantic': semantic, 'clip': semantic, 'loop': semantic in LOOPS, 'events': events})
+
+# Bigger motions: {"attack": {"factor": 1.6, "bones": ["Arm", "ForeArm", "Hand", "Spine"]}} scales each
+# listed bone's turn away from its pose at the clip's first frame (a wider wind-up, a deeper chop).
+# With "toward": "idle" the turn is measured from that clip's first frame instead, and a factor
+# below 1 holds the bones near it: a sword arm kept at its guard while running.
+for semantic, amp in SPEC.get('amplify', {}).items():
+    act = keep.get(semantic)
+    if act is None:
+        continue
+    names = [pb.name for pb in rig.pose.bones if any(pb.name.split(':')[-1].endswith(b) for b in amp['bones'])]
+    curves = {}
+    for fc in kit._fcurves(act):
+        if fc.data_path.endswith('rotation_quaternion') and '"' in fc.data_path:
+            name = fc.data_path.split('"')[1]
+            if name in names:
+                curves.setdefault(name, [None] * 4)[fc.array_index] = fc
+    toward = keep.get(amp.get('toward', ''))
+    held = {}  # the other clip's first-frame turn per bone, when the motion is pulled towards it
+    if toward is not None:
+        for fc in kit._fcurves(toward):
+            if fc.data_path.endswith('rotation_quaternion') and '"' in fc.data_path:
+                held.setdefault(fc.data_path.split('"')[1], [1, 0, 0, 0])[fc.array_index] = fc.evaluate(toward.frame_range[0])
+    for name, fcs in curves.items():
+        if None in fcs:
+            continue
+        n = min(len(fc.keyframe_points) for fc in fcs)
+        q0 = mathutils.Quaternion(held[name] if name in held else [fc.keyframe_points[0].co.y for fc in fcs])
+        for i in range(n):
+            q = mathutils.Quaternion([fc.keyframe_points[i].co.y for fc in fcs])
+            delta = q0.inverted() @ q
+            axis, angle = delta.to_axis_angle()
+            out = q0 @ mathutils.Quaternion(axis, angle * amp['factor'])
+            for c, fc in enumerate(fcs):
+                k = fc.keyframe_points[i]
+                k.co.y = k.handle_left.y = k.handle_right.y = out[c]
+    print('amplified', semantic, amp['factor'], sorted(curves))
+
+# Slower clips for heavy units: {"walk": 1.6} plays the walk 1.6 times as long.
+for semantic, factor in SPEC.get('stretch', {}).items():
+    act = keep.get(semantic)
+    if act is None:
+        continue
+    start = act.frame_range[0]
+    for fc in kit._fcurves(act):
+        for k in fc.keyframe_points:
+            for point in (k.co, k.handle_left, k.handle_right):
+                point.x = start + (point.x - start) * factor
+    if act.use_frame_range:
+        act.frame_end = start + (act.frame_end - start) * factor
+    print('stretched', semantic, factor)
 
 # Tripo's presets carry root motion; the game moves the unit, so every clip plays in place.
 in_place(rig, pinned=SPEC.get('pin', ()))

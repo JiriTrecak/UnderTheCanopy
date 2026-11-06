@@ -212,7 +212,7 @@ entities = [
     {'definition': 'building.ants.fort', 'id': 'colony.hall', 'owner': 'player.1',
      'initialState': {'construction': 'complete'}, 'position': {'x': FORT[0], 'y': FORT[1]}, 'rotation': 0.0},
     {'definition': 'building.ants.barracks', 'id': 'colony.burrow', 'owner': 'player.1',
-     'initialState': {'construction': 'complete'}, 'position': {'x': 145.5, 'y': 113.5}, 'rotation': 0.0},
+     'initialState': {'construction': 'complete'}, 'position': {'x': 147.5, 'y': 111.5}, 'rotation': 0.0},
     {'definition': 'building.ants.house', 'id': 'colony.mound', 'owner': 'player.1',
      'initialState': {'construction': 'complete'}, 'position': {'x': 99.5, 'y': 143.5}, 'rotation': 0.0},
 ]

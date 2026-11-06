@@ -24,11 +24,11 @@
   "ui.map-preview-meta": "{cells} × {cells} C · {players} players · {camps} neutral camps",
   "ui.map-preview-testbed": "{cells} × {cells} C · Single-player testbed",
   "update.check-failed": "Could not check for updates. Check your connection and try again.",
-  "update.development-build": "This copy does not run from an installed app (a development build), so it cannot install updates.",
-  "update.download-failed": "Download or signature verification failed. Nothing was installed. Try downloading again.",
+  "update.development-build": "Development builds can't install updates.",
+  "update.download-failed": "Download failed. Try again.",
   "update.install-failed": "Installation failed. Close other copies of the game and try again.",
   "update.move-to-applications": "Move Under the Canopy to the Applications folder to install updates.",
-  "update.no-package": "There is no update package for this platform yet.",
-  "update.platform-unsupported": "Updates cannot be installed from the game on this platform yet.",
+  "update.no-package": "No update for this platform yet.",
+  "update.platform-unsupported": "In-game updates aren't supported on this platform yet.",
   "update.restart-failed": "The update is installed. Restart the app to finish."
 }

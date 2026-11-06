@@ -499,11 +499,11 @@ def script():
 
 OBJECTIVES = [
     {'id': 'speak', 'title': 'Speak with the beetles',
-     'description': 'Take the Glass Road to the beetle station and ask its keeper for the secret of the glass.'},
+     'description': 'Follow the Glass Road to the beetle station and speak with its keeper.'},
     {'id': 'condenser', 'title': 'Take the condenser',
-     'description': 'Break the beetle station (its Great Bastion) and bring Aurelith to the condenser.'},
+     'description': "Destroy the beetles' Great Bastion and bring Aurelith to the condenser."},
     {'id': 'caravans', 'title': 'Ambush the caravans', 'optional': True,
-     'description': 'Ambush three beetle supply caravans on the Glass Road: kill both carts of each.'},
+     'description': 'Destroy both carts of three beetle caravans on the Glass Road.'},
 ]
 
 

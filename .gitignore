@@ -16,3 +16,6 @@
 *.blend1
 __pycache__/
 .claude/worktrees/
+
+# Blender keeps the previous save beside each .blend
+*.blend1

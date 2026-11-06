@@ -1201,6 +1201,7 @@ window.EXPLORE = {
   ],
 
   log: [
+    {date: "2026-10-29", text: "Spitter redesigned (Jiri picked take 1): a slim four-legged body with a scorpion-like segmented tail curling over its back, ending in the toothed spitting mouth. images/ant-army-scorpion-spitter.webp. The in-game test Spitter is still the round-sac version."},
     {date: "2026-10-29", text: "First Tripo models: Soldier and Door-head. Multiview with the painted sides at 1,800 quads came out thin and generic; one front image at full detail, then Retopo to about 2,200 quads, keeps the concept. Workflow written into skill canopy-tripo."},
     {date: "2026-10-29", text: "Turnarounds painted for all five (front and side, no equipment); skill canopy-units written."},
     {date: "2026-10-29", text: "An in-game shot mock-up painted with the agreed five on our Underleaf ground and HUD."},

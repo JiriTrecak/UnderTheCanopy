@@ -19,7 +19,7 @@ SIDE = SPAN + 1
 # 12-cell footprints, 3.5 mod 4 for 8- and 16-cell ones.
 START = (29.5, 129.5)
 MOUND = (231.5, 127.5)
-BUILDINGS = [('building.ants.barracks', 'burrow', (29.5, 101.5)), ('building.ants.scent-hall', 'scent', (49.5, 101.5)),
+BUILDINGS = [('building.ants.barracks', 'burrow', (31.5, 99.5)), ('building.ants.scent-hall', 'scent', (49.5, 101.5)),
              ('building.ants.sanctuary', 'royal', (29.5, 157.5)), ('building.ants.house', 'mound', MOUND)]
 ARMY = ([('unit.ants.warrior', 6)] + [('unit.ants.archer', 3)] + [('unit.ants.queensguard', 1)]
         + [('unit.ants.banneret', 1), ('unit.ants.nectarist', 1), ('unit.ants.winglancer', 1), ('unit.ants.queen', 1),

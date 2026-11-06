@@ -42,7 +42,7 @@ The definitions keep their old ids (Building models below).
 | Queen's Chamber | 3 | Hall tier 3, tunnel mound | Worker |
 | Brood Mound | 1 | 8 supply; tunnel mound | Wider Tunnels I–II |
 | Substance Siphon | 1 | On a Substance deposit | |
-| Soldier Burrow | 1 | Barracks | Raider (two at a time), Needler, Burster (tier 2), Major (tier 2) |
+| War Nest | 1 | Barracks | Raider (two at a time), Spitter; for now the only ant units that can be trained |
 | Chitin Works | 1 | Levelled research | Mandibles, Needle Hardening, Carapace, I–III each |
 | Fungus Garden | 2 | One-off upgrades | See Research |
 | Scent Hall | 2 | Pheromone castes | Herald, Gardener |
@@ -116,7 +116,7 @@ Everything here is written by `tools/content/ants/gen.py`, which holds every num
 
 ## Building models
 
-Every ant building is a Tripo model of its approved concept, made game-ready and animated by `tools/buildings/ant_building.py` from one config each in `tools/buildings/ants/` (its docstring is the reference). Tripo's segmentation only says where the moving parts are; they are cut from the whole model so a building keeps one material and atlas. Each building animates while it works (D65): swaying banners, a breathing crown, opening mandibles, a dipping blade, beating wings, an opening flower. The definitions keep the old ids (`building.ants.fort` is the Nest, `great-mound` the Great Nest, `elder-hall` the Queen's Chamber, `house` the Brood Mound, `substance-well` the Siphon, `barracks` the Soldier Burrow, `ironroot-forge` the Chitin Works, `bombardier-workshop` the Deep Gallery, `tower` the Acid Spire, `sanctuary` the Royal Chamber); the Fungus Garden, Scent Hall, Queen's Cradle and Venom Spire are new.
+Every ant building is a Tripo model of its approved concept, made game-ready and animated by `tools/buildings/ant_building.py` from one config each in `tools/buildings/ants/` (its docstring is the reference). Tripo's segmentation only says where the moving parts are; they are cut from the whole model so a building keeps one material and atlas. Each building animates while it works (D65): swaying banners, a breathing crown, opening mandibles, a dipping blade, beating wings, an opening flower. The definitions keep the old ids (`building.ants.fort` is the Nest, `great-mound` the Great Nest, `elder-hall` the Queen's Chamber, `house` the Brood Mound, `substance-well` the Siphon, `barracks` the War Nest, `ironroot-forge` the Chitin Works, `bombardier-workshop` the Deep Gallery, `tower` the Acid Spire, `sanctuary` the Royal Chamber); the Fungus Garden, Scent Hall, Queen's Cradle and Venom Spire are new.
 
 Known gap: the Acid Spire plays its recoil as `attack`, once per shot.
 

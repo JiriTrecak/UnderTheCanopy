@@ -1,6 +1,6 @@
 {
   "id": "building.ants.house",
-  "model": "asset.models.buildings.ants-brood-mound",
+  "model": "asset.models.buildings.ants-brood-crater",
   "icon": "asset.portraits.buildings.ants-brood-mound",
   "body": {
     "maxHp": 600,
@@ -49,17 +49,17 @@
       {
         "effect": "effect.buildings.ant-brood-mound-motes",
         "state": "work",
-        "socket": "socket_shaft"
+        "socket": "socket_gate"
       },
       {
         "effect": "effect.buildings.ant-brood-mound-glow",
         "state": "work",
-        "socket": "socket_shaft"
+        "socket": "socket_gate"
       },
       {
         "effect": "effect.buildings.ant-brood-mound-puff",
         "event": "bloom",
-        "socket": "socket_shaft"
+        "socket": "socket_gate"
       }
     ]
   },

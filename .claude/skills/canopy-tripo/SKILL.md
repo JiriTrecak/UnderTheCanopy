@@ -28,8 +28,10 @@ Convert the reference to PNG first (`dwebp -quiet in.webp -o out.png`), into the
 Learned on the ants' Soldier and Door-head (2026-10-29), whose first takes Jiri called horrible:
 - **One front image, single-image mode.** Don't feed painted side or back views: a painted side invents its own body (a long neck, a thin torso), and Tripo trusts it over the front. Tripo infers the depth from the front well.
 - **Generate at full detail**, then reduce. Geometry & Texture: Topology **Quad**, Polycount at the top of the slider (drag it right; about 45,000), Texture on, 2K, Remove Lighting and PBR on, H3.1 Best Quality. Asking for a game budget at generation (1,800 quads) cuts the spikes, mandibles and armour volume away.
+- Click **Generate** through its ref (`find` "Generate button at bottom of left panel"): a coordinate click right after an upload, or while the settings panel is open, is often swallowed. Confirm a new "Generating…" tile appears top left of the asset list.
 - The settings are saved between generations; open Geometry & Texture and check Quad and the polycount before every Generate anyway.
 - Typing in the polycount box works (triple-click, type, Tab); the slider drag is the reliable way to the maximum.
+- **Porous or lattice shapes** (a nest cast, coral, bone with many holes): a Quad generation stalls for 15 minutes and fails (credits come back), with or without Ultra Mesh Quality. Generate with Topology **Triangle** instead (about 50,000, done in 2–3 minutes), then Retopo it to quads. Smart Mesh overshoots on such shapes: 4,800 asked gave 6,325 quads, so ask about three quarters of the target.
 
 ## Retopo to the budget
 

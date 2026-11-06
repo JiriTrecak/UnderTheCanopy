@@ -69,8 +69,7 @@
   },
   "roster": [
     "unit.ants.settler",
-    "unit.ants.soldier",
-    "unit.ants.doorhead",
+    "unit.ants.spitter",
     "unit.ants.warrior",
     "unit.ants.archer",
     "unit.ants.burster",

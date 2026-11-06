@@ -2,19 +2,28 @@
   "schemaVersion": 1,
   "unreleased": {
     "added": [
+      "The Glass Road: two new optional objectives that lead off the main road",
       "The campaign now ends early access with its own end card, and players carry on from there when new missions arrive",
       "The campaign editor can outline whole campaigns: draft steps, a tabletop for sketching missions, story beats, cinematic shots and a read-through of every step",
       "The editor's assistant helps design campaign missions: it knows the step you are on, reads the whole story's outlines, pitches ideas and paints concept pictures into an outline (with an OpenAI key)",
-      "Two test units in the ants' Soldier Burrow: the redesigned Soldier and Door-head, at 1 Amber each with no supply, to try the new look in play"
+      "The ants' army is cut down to the new look while it is redesigned: the barracks, now the War Nest, trains only the Raider, now a chitin knight with a spiked sword, and the new Spitter, each at 1 Amber, a second's training and no supply; the other ant units can't be trained for now",
+      "Units fall as ragdolls when they die: bodies topple from the killing blow and drop their weapons."
     ],
     "improved": [
       "Cutscenes frame whole units with room around them, centred, instead of close-ups",
       "The Hollow Brood: smaller neutral camps (three at most), fewer of them on the road",
       "The Glass Road is rebuilt: a larger, more open map with wide roads, ramps and gates, natural timber-and-stone beetle outposts, and fewer, smaller camps off the main road",
       "Founding: a roomier map that uses the whole forest, with wide ramps and passages, side paths with two new optional objectives, smaller neutral camps and cutscenes framed on whole units",
-      "A building going up shows its progress on its health bar in the selection panel; health bars run from red to green."
+      "At night in the forest, units and buildings no longer seem to glow: they take the night's light like the ground around them.",
+      "Clearer, shorter text everywhere: unit, building, ability, item and research descriptions, tooltips, messages and mission objectives now say what matters in a few words.",
+      "Editor stages stand on plain dark ground with a fine grid.",
+      "A building going up shows its progress on its health bar in the selection panel; health bars run from red to green.",
+      "Effects editor: a whole effect on one screen, each layer a row of purpose-made nodes read left to right into one Effect node that plays it all.",
+      "Editor: the Effects stage plays the effect by itself on repeat, with a player colour picker and only the settings that change its look."
     ],
-    "fixed": [],
+    "fixed": [
+      "Founding: the enemy's later waves arrive again, now Raiders and Spitters."
+    ],
     "knownIssues": []
   },
   "releases": [

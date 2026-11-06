@@ -36,8 +36,7 @@
     "teamColor": {
       "mode": "mask",
       "slots": [
-        "TC_ants-doorhead",
-        "TC_ants-doorhead.001"
+        "TC_ants-doorhead"
       ]
     },
     "animations": [
