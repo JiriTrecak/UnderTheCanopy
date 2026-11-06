@@ -34,6 +34,9 @@ fn find(ui: &Ui, path: &str) -> Option<NodeId> {
     id
 }
 
+/// The health bar of a building going up: light blue.
+const BUILDING_COLOR: Color = Color::rgba(110, 196, 240, 255);
+
 /// The health ramp: red through amber (half) to green (old `health.ts`).
 pub fn health_color(ratio: f32) -> Color {
     let lerp = |a: [f32; 3], b: [f32; 3], t: f32| {
@@ -842,12 +845,34 @@ impl Hud {
                 }),
             );
         }
-        // Vitals.
+        // Vitals. A building going up shows its progress on the health bar, light blue;
+        // otherwise the bar runs from red to green with the health left.
         let max = max_hp(e);
         let hp = e.public.hp.unwrap_or(0);
         ui.set_visible(n.health, e.public.hp.is_some());
-        ui.set_value(n.health, hp as f32 / max.max(1) as f32);
-        ui.set_text(n.health_value, &format!("{hp} / {max}"));
+        let built = e.public.construction.map(|c| {
+            let total = k.def(e).creation.as_ref().map_or(1, |c| match c {
+                canopy_content::game::Creation::Construct { work_ticks, .. } => *work_ticks,
+                _ => 1,
+            });
+            (c as f32 / total.max(1) as f32).clamp(0.0, 1.0)
+        });
+        match built {
+            Some(p) => {
+                ui.set_value(n.health, p);
+                ui.set_color(n.health, Some(BUILDING_COLOR));
+                ui.set_text(
+                    n.health_value,
+                    &tr!("hud.building-percent", percent = (p * 100.0).floor()),
+                );
+            }
+            None => {
+                let ratio = hp as f32 / max.max(1) as f32;
+                ui.set_value(n.health, ratio);
+                ui.set_color(n.health, Some(health_color(ratio)));
+                ui.set_text(n.health_value, &format!("{hp} / {max}"));
+            }
+        }
         let magic = e.magic.as_ref();
         let max_mana = magic.map_or(0, |m| m.max_mana);
         ui.set_visible(n.mana, max_mana > 0);
@@ -1055,10 +1080,12 @@ impl Hud {
             } else if !self.queue.is_empty() {
                 self.active = Some(self.queue.remove(0));
             }
+            // A building with nothing to do says nothing ("Idle" told nobody anything).
+            let idle = canopy_sim::economy::Status::Idle.label(None);
             status = w
                 .status
                 .as_deref()
-                .filter(|s| !s.is_empty())
+                .filter(|s| !s.is_empty() && *s != idle)
                 .map(crate::text::message);
         }
         // A building that makes goods by itself says what it makes (D62: a well).
@@ -1103,18 +1130,6 @@ impl Hud {
             status = Some(crate::text::message(
                 &canopy_sim::economy::Status::Unpowered.label(None),
             ));
-        }
-        if let Some(c) = e.public.construction {
-            let total = d.creation.as_ref().map_or(1, |c| match c {
-                canopy_content::game::Creation::Construct { work_ticks, .. } => *work_ticks,
-                _ => 1,
-            });
-            self.active = Some(QueueEntry {
-                icon: d.icon.to_string(),
-                name: tr!("hud.under-construction"),
-                progress: Some(c as f32 / total.max(1) as f32),
-                cancel: None,
-            });
         }
         match self.active.clone() {
             Some(a) => {

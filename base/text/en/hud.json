@@ -91,7 +91,7 @@
   "hud.total-units-tip": "{units} living units, including {workers} workers and {army} army units. Workers inside buildings are included; fallen heroes are excluded.",
   "hud.total-workers": "Total workers",
   "hud.total-workers-tip": "{available} available workers. {committed}/{capacity} supply ({used} used, {reserved} reserved).",
-  "hud.under-construction": "Under construction",
+  "hud.building-percent": "Building {percent}%",
   "hud.unit-card-tip": "{hp} / {max}\nClick to focus. Double-click to isolate. Shift-click to remove.",
   "hud.unknown": "unknown",
   "hud.upgrading-to": "Upgrading to {name}"
