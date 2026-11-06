@@ -224,6 +224,48 @@ impl Textures {
         Ok(view)
     }
 
+    /// Reads and uploads every texture of `materials` not loaded yet, across the CPU's
+    /// cores (a match's live models at load), so [`Textures::material`] finds them
+    /// loaded. One that fails is left for `material` to report.
+    pub fn preload<'m>(
+        &mut self,
+        device: &wgpu::Device,
+        queue: &wgpu::Queue,
+        pack: &Pack,
+        materials: impl IntoIterator<Item = &'m Material>,
+    ) {
+        let mut todo: Vec<&str> = materials
+            .into_iter()
+            .flat_map(|m| {
+                let t = &m.textures;
+                [
+                    &t.base_color,
+                    &t.team_mask,
+                    &t.normal,
+                    &t.metallic_roughness,
+                    &t.occlusion,
+                    &t.emissive,
+                ]
+            })
+            .filter_map(|name| name.as_deref())
+            .filter(|name| !self.cache.contains_key(*name))
+            .collect();
+        todo.sort_unstable();
+        todo.dedup();
+        if todo.is_empty() {
+            return;
+        }
+        let _span = tracing::info_span!("textures_preload", count = todo.len()).entered();
+        let loaded = texture::upload_all(device, queue, self.features, pack, &todo);
+        for (name, loaded) in todo.iter().zip(loaded) {
+            if let Ok((texture, bytes)) = loaded {
+                self.bytes += bytes;
+                self.cache
+                    .insert((*name).to_owned(), texture.create_view(&Default::default()));
+            }
+        }
+    }
+
     /// One material's uniform and bind group (`glow`: the model's colour-keyed glow).
     pub fn material(
         &mut self,

@@ -359,6 +359,8 @@ pub struct ActorsGpu {
     textures: Textures,
     slots: Vec<Slot>,
     names: Vec<String>,
+    /// Each slot's model uniform (zeroes for a missing model).
+    uniforms: Vec<ModelUniform>,
     glows: BTreeMap<String, Glow>,
     pipelines: HashMap<Variant, wgpu::RenderPipeline>,
     /// Opaque sections of unfaded instances, by double-sidedness: no discard.
@@ -610,6 +612,7 @@ impl ActorsGpu {
             textures,
             slots: Vec::new(),
             names: Vec::new(),
+            uniforms: Vec::new(),
             glows,
             pipelines,
             solid_pipelines,
@@ -751,18 +754,18 @@ impl ActorsGpu {
         let _span =
             tracing::info_span!("actor_models", count = names.len() - self.names.len()).entered();
         let fresh: Vec<String> = names[self.names.len()..].to_vec();
+        // Every new model read once, across the CPU's cores.
+        let models = read_models(pack, &fresh);
         // Room for every new clip first, so the clip buffer grows at most once.
         let mut needed = u64::from(self.clip_len);
-        for name in &fresh {
-            if let Ok(model) = pack.model(name) {
-                let joints = model.meta.skeleton.as_ref().map_or(0, |s| s.joints.len()) as u64;
-                needed += model
-                    .meta
-                    .clips
-                    .iter()
-                    .map(|c| u64::from(c.frame_count) * joints)
-                    .sum::<u64>();
-            }
+        for model in models.iter().flatten() {
+            let joints = model.meta.skeleton.as_ref().map_or(0, |s| s.joints.len()) as u64;
+            needed += model
+                .meta
+                .clips
+                .iter()
+                .map(|c| u64::from(c.frame_count) * joints)
+                .sum::<u64>();
         }
         let bytes = needed * 48;
         if bytes > self.clips.capacity {
@@ -782,11 +785,47 @@ impl ActorsGpu {
             queue.submit([encoder.finish()]);
             self.skin_group = None;
         }
-        for name in fresh {
-            let slot = match self.load(device, queue, pack, &name) {
-                Ok(model) => Slot::Ready(Box::new(model)),
+        // Their textures, read and uploaded across the cores too.
+        self.textures.preload(
+            device,
+            queue,
+            pack,
+            models.iter().flatten().flat_map(|m| &m.meta.materials),
+        );
+        for (name, model) in fresh.into_iter().zip(models) {
+            let loaded = model
+                .with_context(|| name.clone())
+                .and_then(|model| Ok((self.load(device, queue, pack, &name, &model)?, model)));
+            let slot = match loaded {
+                Ok((gpu, model)) => {
+                    let meta = &model.meta;
+                    let wind = meta.wind.as_ref();
+                    self.uniforms.push(ModelUniform {
+                        position_min: [
+                            meta.position_min[0],
+                            meta.position_min[1],
+                            meta.position_min[2],
+                            0.0,
+                        ],
+                        position_extent: [
+                            meta.position_extent[0],
+                            meta.position_extent[1],
+                            meta.position_extent[2],
+                            0.0,
+                        ],
+                        uv: [
+                            meta.uv_min[0],
+                            meta.uv_min[1],
+                            meta.uv_extent[0],
+                            meta.uv_extent[1],
+                        ],
+                        wind: [wind.map_or(0.0, |w| w.amplitude), 0.0, 0.0, 0.0],
+                    });
+                    Slot::Ready(Box::new(gpu))
+                }
                 Err(error) => {
                     tracing::warn!(model = %name, "live model not shown: {error:#}");
+                    self.uniforms.push(ModelUniform::zeroed());
                     Slot::Missing
                 }
             };
@@ -795,35 +834,10 @@ impl ActorsGpu {
         }
         // Model uniforms: rewrite them all into a buffer of the right size.
         let mut uniforms = vec![0u8; self.slots.len() * MODEL_STRIDE as usize];
-        for (i, (slot, name)) in self.slots.iter().zip(&self.names).enumerate() {
-            if let (Slot::Ready(_), Ok(model)) = (slot, pack.model(name)) {
-                let meta = &model.meta;
-                let wind = meta.wind.as_ref();
-                let uniform = ModelUniform {
-                    position_min: [
-                        meta.position_min[0],
-                        meta.position_min[1],
-                        meta.position_min[2],
-                        0.0,
-                    ],
-                    position_extent: [
-                        meta.position_extent[0],
-                        meta.position_extent[1],
-                        meta.position_extent[2],
-                        0.0,
-                    ],
-                    uv: [
-                        meta.uv_min[0],
-                        meta.uv_min[1],
-                        meta.uv_extent[0],
-                        meta.uv_extent[1],
-                    ],
-                    wind: [wind.map_or(0.0, |w| w.amplitude), 0.0, 0.0, 0.0],
-                };
-                let at = i * MODEL_STRIDE as usize;
-                uniforms[at..at + std::mem::size_of::<ModelUniform>()]
-                    .copy_from_slice(bytemuck::bytes_of(&uniform));
-            }
+        for (i, uniform) in self.uniforms.iter().enumerate() {
+            let at = i * MODEL_STRIDE as usize;
+            uniforms[at..at + std::mem::size_of::<ModelUniform>()]
+                .copy_from_slice(bytemuck::bytes_of(uniform));
         }
         self.models.reserve(device, uniforms.len() as u64);
         queue.write_buffer(&self.models.buffer, 0, &uniforms);
@@ -846,8 +860,8 @@ impl ActorsGpu {
         queue: &wgpu::Queue,
         pack: &Pack,
         name: &str,
+        model: &canopy_assets::Model<'_>,
     ) -> Result<GpuModel> {
-        let model = pack.model(name).with_context(|| name.to_owned())?;
         let meta = &model.meta;
         let buffer = |label: &str, contents: &[u8], usage| {
             device.create_buffer_init(&wgpu::util::BufferInitDescriptor {
@@ -1548,6 +1562,29 @@ pub fn clip_frames(frames: u32, duration: f32, time: f32) -> (u32, u32, f32) {
         (t - a as f32).clamp(0.0, 1.0)
     };
     (a, b, mix)
+}
+
+/// The models `names` of the pack, read across the CPU's cores, in order.
+fn read_models<'p>(
+    pack: &'p Pack,
+    names: &[String],
+) -> Vec<Result<canopy_assets::Model<'p>, canopy_assets::Error>> {
+    let _span = tracing::info_span!("actor_models_read", count = names.len()).entered();
+    let threads = std::thread::available_parallelism()
+        .map_or(4, |n| n.get())
+        .min(names.len())
+        .max(1);
+    let chunk = names.len().div_ceil(threads).max(1);
+    std::thread::scope(|scope| {
+        let workers: Vec<_> = names
+            .chunks(chunk)
+            .map(|part| scope.spawn(move || part.iter().map(|n| pack.model(n)).collect::<Vec<_>>()))
+            .collect();
+        workers
+            .into_iter()
+            .flat_map(|w| w.join().expect("a model reads"))
+            .collect()
+    })
 }
 
 #[cfg(test)]

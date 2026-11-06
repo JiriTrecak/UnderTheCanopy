@@ -17,7 +17,7 @@
 //! never the number of effects. Every buffer has a fixed budget.
 
 use crate::{device::GpuFeatures, frame::PointLight, targets, texture};
-use anyhow::{Context, Result};
+use anyhow::Context;
 use bytemuck::{Pod, Zeroable};
 
 /// Emitters (live effect layers) a frame may draw.
@@ -312,6 +312,8 @@ pub struct EffectsGpu {
     sampler: wgpu::Sampler,
     /// One bind group per loaded texture, then the white fallback.
     textures: Vec<wgpu::BindGroup>,
+    /// The pack (its inputs digest) and names `textures` were loaded from.
+    loaded: Option<([u8; 32], Vec<String>)>,
     white: wgpu::BindGroup,
     emitters: wgpu::Buffer,
     parts: wgpu::Buffer,
@@ -537,6 +539,7 @@ impl EffectsGpu {
             depth_layout,
             sampler,
             textures: Vec::new(),
+            loaded: None,
             white,
             emitters,
             parts,
@@ -616,17 +619,23 @@ impl EffectsGpu {
         pack: &canopy_assets::Pack,
         names: &[String],
     ) {
+        // The same textures of an identical pack (every match's): kept as they are.
+        let pack_id = pack.header().inputs_digest;
+        if self.loaded.as_ref() == Some(&(pack_id, names.to_vec())) {
+            return;
+        }
+        let _span = tracing::info_span!("effect_textures", count = names.len()).entered();
         self.textures.clear();
         self.bytes = 0;
-        for name in names {
-            let loaded: Result<wgpu::TextureView> =
-                pack.texture(name).with_context(|| name.clone()).map(|t| {
-                    self.bytes += t.meta.mips.iter().map(|m| u64::from(m.len)).sum::<u64>();
-                    texture::upload(device, queue, self.features, &t)
-                        .create_view(&Default::default())
-                });
-            let group = match loaded {
-                Ok(view) => texture_group(device, &self.texture_layout, &view, &self.sampler),
+        let list: Vec<&str> = names.iter().map(String::as_str).collect();
+        let uploads = texture::upload_all(device, queue, self.features, pack, &list);
+        for (name, loaded) in names.iter().zip(uploads) {
+            let group = match loaded.with_context(|| name.clone()) {
+                Ok((texture, bytes)) => {
+                    self.bytes += bytes;
+                    let view = texture.create_view(&Default::default());
+                    texture_group(device, &self.texture_layout, &view, &self.sampler)
+                }
                 Err(error) => {
                     tracing::warn!("effect texture not shown: {error:#}");
                     self.white.clone()
@@ -634,6 +643,7 @@ impl EffectsGpu {
             };
             self.textures.push(group);
         }
+        self.loaded = Some((pack_id, names.to_vec()));
     }
 
     /// Uploads a frame's emitters, parts, ribbons and paths (clipped to the budgets).
