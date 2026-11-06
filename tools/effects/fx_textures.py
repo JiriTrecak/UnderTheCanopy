@@ -223,6 +223,44 @@ def swirl(n, arms=3, blur=False):
     return band * smooth(0.08, 0.35, r) * (1 - smooth(0.6, 0.95, r))
 
 
+def petal(x, y, angle, r0, r1, width):
+    """Fill and outline of one pointed petal from radius r0 to r1 along `angle`."""
+    r = np.hypot(x, y)
+    a = np.angle(np.exp(1j * (np.arctan2(y, x) - angle)))
+    t = np.clip((r - r0) / (r1 - r0), 0.0, 1.0)
+    half = width * np.sin(np.pi * t) ** 0.7 * ((r > r0) & (r < r1))
+    d = half - np.abs(a) * r  # distance inside the petal's side, in image units
+    fill = smooth(-0.004, 0.006, d)
+    edge = np.exp(-(d / 0.012) ** 2) * (half > 0.002) * (d > -0.04)
+    return fill, edge
+
+
+def bloom_sigil(n, petals=8):
+    """A flower in bloom seen from above: two whorls of pointed petals drawn as glowing
+    outlines over a dim fill, a ring of seeds round a bright heart and a thin outer ring."""
+    x, y = grid(n)
+    r = np.hypot(x, y)
+    fill, edge = np.zeros_like(r), np.zeros_like(r)
+    for k in range(petals):
+        f, e = petal(x, y, TAU * k / petals, 0.14, 0.8, 0.15)
+        fill, edge = np.maximum(fill, f), np.maximum(edge, e)
+    inner_fill, inner_edge = np.zeros_like(r), np.zeros_like(r)
+    for k in range(petals):
+        f, e = petal(x, y, TAU * (k + 0.5) / petals, 0.12, 0.5, 0.13)
+        inner_fill, inner_edge = np.maximum(inner_fill, f), np.maximum(inner_edge, e)
+    # The inner whorl lies on top: it hides the outer petals' lines beneath it.
+    edge = np.maximum(edge * (1.0 - inner_fill), inner_edge)
+    fill = np.maximum(fill, inner_fill * 1.4)
+    seeds = np.zeros_like(r)
+    for k in range(petals * 2):
+        a = TAU * (k + 0.25) / (petals * 2)
+        seeds = np.maximum(seeds, np.exp(-((x - 0.2 * np.cos(a)) ** 2 + (y - 0.2 * np.sin(a)) ** 2) / 0.0006))
+    heart = np.exp(-(r / 0.09) ** 2) + 0.5 * np.exp(-(r / 0.22) ** 2)
+    outer = np.exp(-((r - 0.88) / 0.012) ** 2) + 0.35 * np.exp(-((r - 0.88) / 0.05) ** 2)
+    img = fill * 0.28 * (1.0 - 0.5 * r) + edge * 0.9 + seeds * 0.8 + heart + outer * 0.7
+    return img * (1 - smooth(0.93, 1.0, r))
+
+
 # --- Atlases and flipbooks --------------------------------------------------------------
 
 def atlas(frames, cols, rows):
@@ -384,6 +422,7 @@ def library():
         'ring-rays': ('Radial streak ring', lambda: ring_rays(512)),
         'ring-wispy': ('Wispy broken ring', lambda: ring_wispy(512, rng(9))),
         'swirl': ('Spiral swirl', lambda: swirl(512)),
+        'bloom-sigil': ('Bloom sigil', lambda: bloom_sigil(512)),
         'swirl-blur': ('Spiral swirl, blurred', lambda: swirl(512, 2, blur=True)),
         'embers': ('Embers 4×2', lambda: (atlas([ember(128, rng(20 + i)) for i in range(8)], 4, 2), None, (4, 2))),
         'crack-web': ('Ground crack web', lambda: crack_web(512, rng(11))),

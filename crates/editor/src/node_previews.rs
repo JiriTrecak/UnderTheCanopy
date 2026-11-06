@@ -436,6 +436,18 @@ impl NodePreviews {
 
     /// This frame's request: every variant stepped to the same moment of its loop.
     pub fn request(&mut self, pack: &Arc<canopy_assets::Pack>) -> Option<Request> {
+        let (frame, programs) = self.frame()?;
+        Some(Request {
+            pack: pack.clone(),
+            frame,
+            programs,
+            textures: self.textures.clone(),
+        })
+    }
+
+    /// Every variant stepped to the same moment of its loop, and the programs when they
+    /// changed.
+    fn frame(&mut self) -> Option<(ThumbFrame, Option<Vec<String>>)> {
         let runtime = self.runtime.as_mut()?;
         let elapsed = self
             .started
@@ -446,25 +458,33 @@ impl NodePreviews {
         let mut graph = GraphFrame::default();
         runtime.begin();
         let variants = self.table.effects.len() as u32;
+        let mut cells = BTreeMap::new();
         for v in 0..variants {
-            runtime.cue(
-                &self.table,
-                v,
-                v as u16,
-                0,
-                1,
-                age,
-                Vec3::ZERO,
-                Quat::IDENTITY,
-                // A stand-in target beside the emitter, so beams show on the nodes.
-                CueEnds {
-                    source: Vec3::ZERO,
-                    target: PREVIEW_TARGET,
-                    team: PREVIEW_TEAM,
-                    carrier: None,
-                },
-                &mut graph,
-            );
+            // Every root layer of the variant (the whole effect has many; a node's chain
+            // one, its event-born layers playing under it), each its own cue.
+            for layer in &self.table.effects[v as usize].layers {
+                let Some(g) = layer.graph else { continue };
+                let cue = (v << 16) | g;
+                cells.insert(cue, v);
+                runtime.cue(
+                    &self.table,
+                    cue,
+                    v as u16,
+                    g as u16,
+                    1 + g,
+                    age,
+                    Vec3::ZERO,
+                    Quat::IDENTITY,
+                    // A stand-in target beside the emitter, so beams show on the nodes.
+                    CueEnds {
+                        source: Vec3::ZERO,
+                        target: PREVIEW_TARGET,
+                        team: PREVIEW_TEAM,
+                        carrier: None,
+                    },
+                    &mut graph,
+                );
+            }
         }
         let texture_of = &self.texture_of;
         runtime.end(
@@ -482,7 +502,7 @@ impl NodePreviews {
         let camera = ThumbCamera::orbit(Vec3::new(0.0, c.focus, 0.0), c.distance, c.yaw, c.pitch);
         let frame = ThumbFrame {
             graph,
-            cells: (0..variants).map(|v| (v, v)).collect(),
+            cells,
             cameras: (0..variants).map(|v| (v, camera)).collect(),
         };
         let programs = std::mem::take(&mut self.programs_changed).then(|| {
@@ -492,11 +512,45 @@ impl NodePreviews {
                 .map(str::to_string)
                 .collect()
         });
-        Some(Request {
-            pack: pack.clone(),
-            frame,
-            programs,
-            textures: self.textures.clone(),
-        })
+        Some((frame, programs))
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    /// A layer of `count` dots born at once, drawn as camera-facing sprites.
+    fn dots(id: &str, count: u32) -> Value {
+        serde_json::json!({"id": id, "name": id, "graph": {"nodes": [
+            {"id": "spawner", "kind": "spawner", "inputs": {"mode": "burst", "count": count, "life": [1.0, 1.0]}},
+            {"id": "billboard", "kind": "billboard"}
+        ], "wires": [{"from": "spawner.out", "to": "billboard.in"}]}})
+    }
+
+    #[test]
+    fn the_effect_node_plays_every_layer() {
+        let data = std::path::Path::new(concat!(env!("CARGO_MANIFEST_DIR"), "/../.."));
+        let content = Content::load(data).unwrap_or_else(|e| panic!("{e}"));
+        let document = serde_json::json!({
+            "durationTicks": 40,
+            "graphs": [dots("a", 3), dots("b", 5), dots("c", 7)]
+        });
+        let mut previews = NodePreviews::default();
+        previews.update(&content, &document);
+        let whole = previews.effect_cell().expect("the whole effect has a cell");
+        let (frame, _) = previews.frame().expect("a frame");
+        let drawn: Vec<u32> = frame
+            .graph
+            .draws
+            .iter()
+            .filter(|d| frame.cells.get(&d.cue) == Some(&whole))
+            .map(|d| d.cue & 0xffff)
+            .collect();
+        assert_eq!(
+            drawn.len(),
+            3,
+            "every layer draws in the Effect node: {drawn:?}"
+        );
     }
 }

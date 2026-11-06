@@ -1,253 +1,2812 @@
 {
   "id": "effect.heroes.level-up",
   "name": "Hero level up",
-  "description": "A hero grows stronger: a warm gold flash, a golden sigil spreading under it, a column of light rising through it, sparks bursting at its chest and motes rising around it.",
-  "durationTicks": 66,
+  "durationTicks": 84,
   "loop": false,
   "layers": [
     {
-      "id": "flash",
+      "id": "light",
       "enabled": true,
-      "startTick": 0,
-      "anchor": "target",
+      "startTick": 12,
       "shape": "light",
-      "colour": "#ffc75a",
-      "accent": "#fff1c4",
-      "durationTicks": 22,
+      "colour": "#ffc35a",
+      "accent": "#fff0c8",
+      "durationTicks": 36,
       "count": 1,
-      "size": 16,
-      "height": 2.5,
-      "intensity": 34
-    },
+      "size": 18.0,
+      "height": 3.0,
+      "intensity": 30.0
+    }
+  ],
+  "description": "A hero gains a level.",
+  "graphs": [
     {
-      "id": "sigil",
-      "enabled": true,
-      "startTick": 0,
-      "anchor": "target",
-      "shape": "billboard",
-      "orientation": "ground",
-      "blend": "normal",
-      "colour": "#ffcf63",
-      "accent": "#fff4d6",
-      "durationTicks": 56,
-      "count": 1,
-      "size": 5.2,
-      "height": 0.06,
-      "intensity": 1.4,
-      "soft": 0,
-      "scaleOverLife": [
-        {
-          "at": 0,
-          "value": 0.35
-        },
-        {
-          "at": 0.18,
-          "value": 1.0
-        },
-        {
-          "at": 1,
-          "value": 1.15
-        }
-      ],
-      "opacityOverLife": [
-        {
-          "at": 0,
-          "value": 0
-        },
-        {
-          "at": 0.1,
-          "value": 1
-        },
-        {
-          "at": 0.6,
-          "value": 0.85
-        },
-        {
-          "at": 1,
-          "value": 0
-        }
-      ],
-      "texture": {
-        "asset": "asset.effects.holy-light-sigil",
-        "role": "image",
-        "index": 1
+      "id": "gather",
+      "name": "Gathering ring",
+      "graph": {
+        "nodes": [
+          {
+            "id": "spawner0",
+            "kind": "spawner",
+            "at": [
+              0.0,
+              0.0
+            ],
+            "inputs": {
+              "mode": "burst",
+              "count": 1,
+              "time": 0.0,
+              "life": [
+                0.32,
+                0.32
+              ]
+            }
+          },
+          {
+            "id": "shape2",
+            "kind": "shape",
+            "at": [
+              0.0,
+              300.0
+            ],
+            "inputs": {
+              "shape": "point",
+              "offset": [
+                0.0,
+                0.4,
+                0.0
+              ],
+              "follow": "emitter"
+            }
+          },
+          {
+            "id": "sizeOverLife3",
+            "kind": "sizeOverLife",
+            "at": [
+              0.0,
+              450.0
+            ],
+            "inputs": {
+              "size": [
+                11.0,
+                11.0
+              ],
+              "curve": {
+                "keys": [
+                  {
+                    "t": 0,
+                    "v": [
+                      1.0
+                    ]
+                  },
+                  {
+                    "t": 0.6,
+                    "v": [
+                      0.5
+                    ]
+                  },
+                  {
+                    "t": 1,
+                    "v": [
+                      0.15
+                    ]
+                  }
+                ]
+              }
+            }
+          },
+          {
+            "id": "colourOverLife4",
+            "kind": "colourOverLife",
+            "at": [
+              0.0,
+              600.0
+            ],
+            "inputs": {
+              "gradient": {
+                "keys": [
+                  {
+                    "t": 0,
+                    "v": [
+                      0,
+                      0,
+                      0,
+                      0
+                    ]
+                  },
+                  {
+                    "t": 0.75,
+                    "v": [
+                      1.5,
+                      1.1,
+                      0.45,
+                      1
+                    ]
+                  },
+                  {
+                    "t": 1,
+                    "v": [
+                      2.0,
+                      1.6,
+                      0.8,
+                      0
+                    ]
+                  }
+                ]
+              },
+              "brightness": [
+                1.3,
+                1.3
+              ],
+              "shift": [
+                0,
+                0.2,
+                2.5
+              ]
+            }
+          },
+          {
+            "id": "spin5",
+            "kind": "spin",
+            "at": [
+              0.0,
+              750.0
+            ],
+            "inputs": {
+              "angle": [
+                0.0,
+                360.0
+              ],
+              "speed": [
+                0.0,
+                0.0
+              ]
+            }
+          },
+          {
+            "id": "billboard6",
+            "kind": "billboard",
+            "at": [
+              0.0,
+              900.0
+            ],
+            "inputs": {
+              "texture": "asset.effects.fx.ring-thick",
+              "facing": "ground",
+              "soft": 0.4
+            }
+          }
+        ],
+        "wires": [
+          {
+            "from": "spawner0.out",
+            "to": "shape2.in"
+          },
+          {
+            "from": "shape2.out",
+            "to": "sizeOverLife3.in"
+          },
+          {
+            "from": "sizeOverLife3.out",
+            "to": "colourOverLife4.in"
+          },
+          {
+            "from": "colourOverLife4.out",
+            "to": "spin5.in"
+          },
+          {
+            "from": "spin5.out",
+            "to": "billboard6.in"
+          }
+        ]
       }
     },
     {
-      "id": "ring",
-      "enabled": true,
-      "startTick": 2,
-      "anchor": "target",
-      "shape": "ring",
-      "colour": "#f2b13e",
-      "accent": "#fff1c4",
-      "durationTicks": 30,
-      "count": 1,
-      "size": 7,
-      "height": 0.1,
-      "intensity": 1.6
+      "id": "drawn",
+      "name": "Drawn glints",
+      "graph": {
+        "nodes": [
+          {
+            "id": "spawner0",
+            "kind": "spawner",
+            "at": [
+              0.0,
+              0.0
+            ],
+            "inputs": {
+              "mode": "burst",
+              "count": 40,
+              "time": 0.0,
+              "life": [
+                0.26,
+                0.3
+              ]
+            }
+          },
+          {
+            "id": "shape2",
+            "kind": "shape",
+            "at": [
+              0.0,
+              300.0
+            ],
+            "inputs": {
+              "shape": "sphere",
+              "offset": [
+                0.0,
+                2.6,
+                0.0
+              ],
+              "radius": 5.0,
+              "inner": 0.6
+            }
+          },
+          {
+            "id": "launch3",
+            "kind": "launch",
+            "at": [
+              0.0,
+              450.0
+            ],
+            "inputs": {
+              "direction": "outward",
+              "speed": [
+                -16,
+                -12
+              ]
+            }
+          },
+          {
+            "id": "sizeOverLife4",
+            "kind": "sizeOverLife",
+            "at": [
+              0.0,
+              600.0
+            ],
+            "inputs": {
+              "size": [
+                0.6,
+                1.5
+              ],
+              "curve": {
+                "keys": [
+                  {
+                    "t": 0,
+                    "v": [
+                      0.5
+                    ]
+                  },
+                  {
+                    "t": 0.6,
+                    "v": [
+                      1.0
+                    ]
+                  },
+                  {
+                    "t": 1,
+                    "v": [
+                      0.6
+                    ]
+                  }
+                ]
+              },
+              "stretch": 0.02
+            }
+          },
+          {
+            "id": "colourOverLife5",
+            "kind": "colourOverLife",
+            "at": [
+              0.0,
+              750.0
+            ],
+            "inputs": {
+              "gradient": {
+                "keys": [
+                  {
+                    "t": 0,
+                    "v": [
+                      0,
+                      0,
+                      0,
+                      0
+                    ]
+                  },
+                  {
+                    "t": 0.75,
+                    "v": [
+                      1.5,
+                      1.1,
+                      0.45,
+                      1
+                    ]
+                  },
+                  {
+                    "t": 1,
+                    "v": [
+                      2.0,
+                      1.6,
+                      0.8,
+                      0
+                    ]
+                  }
+                ]
+              },
+              "brightness": [
+                1.5,
+                3.5
+              ],
+              "shift": [
+                0,
+                0.2,
+                2.5
+              ]
+            }
+          },
+          {
+            "id": "spin6",
+            "kind": "spin",
+            "at": [
+              0.0,
+              900.0
+            ],
+            "inputs": {
+              "angle": [
+                0.0,
+                360.0
+              ],
+              "speed": [
+                0.0,
+                0.0
+              ]
+            }
+          },
+          {
+            "id": "billboard7",
+            "kind": "billboard",
+            "at": [
+              0.0,
+              1050.0
+            ],
+            "inputs": {
+              "texture": "asset.effects.fx.star-glint"
+            }
+          }
+        ],
+        "wires": [
+          {
+            "from": "spawner0.out",
+            "to": "shape2.in"
+          },
+          {
+            "from": "shape2.out",
+            "to": "launch3.in"
+          },
+          {
+            "from": "launch3.out",
+            "to": "sizeOverLife4.in"
+          },
+          {
+            "from": "sizeOverLife4.out",
+            "to": "colourOverLife5.in"
+          },
+          {
+            "from": "colourOverLife5.out",
+            "to": "spin6.in"
+          },
+          {
+            "from": "spin6.out",
+            "to": "billboard7.in"
+          }
+        ]
+      }
+    },
+    {
+      "id": "flash",
+      "name": "Flash",
+      "graph": {
+        "nodes": [
+          {
+            "id": "spawner0",
+            "kind": "spawner",
+            "at": [
+              0.0,
+              0.0
+            ],
+            "inputs": {
+              "mode": "burst",
+              "count": 1,
+              "time": 0.3,
+              "life": [
+                0.25,
+                0.25
+              ]
+            }
+          },
+          {
+            "id": "shape2",
+            "kind": "shape",
+            "at": [
+              0.0,
+              300.0
+            ],
+            "inputs": {
+              "shape": "point",
+              "offset": [
+                0.0,
+                3.0,
+                0.0
+              ]
+            }
+          },
+          {
+            "id": "sizeOverLife3",
+            "kind": "sizeOverLife",
+            "at": [
+              0.0,
+              450.0
+            ],
+            "inputs": {
+              "size": [
+                15.0,
+                15.0
+              ],
+              "curve": {
+                "keys": [
+                  {
+                    "t": 0,
+                    "v": [
+                      0.4
+                    ]
+                  },
+                  {
+                    "t": 0.15,
+                    "v": [
+                      1.0
+                    ]
+                  },
+                  {
+                    "t": 1,
+                    "v": [
+                      0.6
+                    ]
+                  }
+                ]
+              }
+            }
+          },
+          {
+            "id": "colourOverLife4",
+            "kind": "colourOverLife",
+            "at": [
+              0.0,
+              600.0
+            ],
+            "inputs": {
+              "gradient": {
+                "keys": [
+                  {
+                    "t": 0,
+                    "v": [
+                      0,
+                      0,
+                      0,
+                      0
+                    ]
+                  },
+                  {
+                    "t": 0.08,
+                    "v": [
+                      2.2,
+                      1.7,
+                      0.9,
+                      1
+                    ]
+                  },
+                  {
+                    "t": 0.35,
+                    "v": [
+                      1.6,
+                      0.95,
+                      0.25,
+                      0.85
+                    ]
+                  },
+                  {
+                    "t": 1,
+                    "v": [
+                      0.6,
+                      0.15,
+                      0.0,
+                      0
+                    ]
+                  }
+                ]
+              },
+              "brightness": [
+                0.7,
+                0.7
+              ],
+              "shift": [
+                0,
+                0.15,
+                1.2
+              ]
+            }
+          },
+          {
+            "id": "billboard5",
+            "kind": "billboard",
+            "at": [
+              0.0,
+              750.0
+            ],
+            "inputs": {
+              "texture": "asset.effects.fx.soft-dot-wide"
+            }
+          }
+        ],
+        "wires": [
+          {
+            "from": "spawner0.out",
+            "to": "shape2.in"
+          },
+          {
+            "from": "shape2.out",
+            "to": "sizeOverLife3.in"
+          },
+          {
+            "from": "sizeOverLife3.out",
+            "to": "colourOverLife4.in"
+          },
+          {
+            "from": "colourOverLife4.out",
+            "to": "billboard5.in"
+          }
+        ]
+      }
+    },
+    {
+      "id": "rays",
+      "name": "Rays",
+      "graph": {
+        "nodes": [
+          {
+            "id": "spawner0",
+            "kind": "spawner",
+            "at": [
+              0.0,
+              0.0
+            ],
+            "inputs": {
+              "mode": "burst",
+              "count": 1,
+              "time": 0.3,
+              "life": [
+                0.3,
+                0.3
+              ]
+            }
+          },
+          {
+            "id": "shape2",
+            "kind": "shape",
+            "at": [
+              0.0,
+              300.0
+            ],
+            "inputs": {
+              "shape": "point",
+              "offset": [
+                0.0,
+                3.0,
+                0.0
+              ]
+            }
+          },
+          {
+            "id": "sizeOverLife3",
+            "kind": "sizeOverLife",
+            "at": [
+              0.0,
+              450.0
+            ],
+            "inputs": {
+              "size": [
+                20.0,
+                20.0
+              ],
+              "curve": {
+                "keys": [
+                  {
+                    "t": 0,
+                    "v": [
+                      0.3
+                    ]
+                  },
+                  {
+                    "t": 0.15,
+                    "v": [
+                      1.0
+                    ]
+                  },
+                  {
+                    "t": 1,
+                    "v": [
+                      0.7
+                    ]
+                  }
+                ]
+              }
+            }
+          },
+          {
+            "id": "colourOverLife4",
+            "kind": "colourOverLife",
+            "at": [
+              0.0,
+              600.0
+            ],
+            "inputs": {
+              "gradient": {
+                "keys": [
+                  {
+                    "t": 0,
+                    "v": [
+                      0,
+                      0,
+                      0,
+                      0
+                    ]
+                  },
+                  {
+                    "t": 0.08,
+                    "v": [
+                      2.2,
+                      1.7,
+                      0.9,
+                      1
+                    ]
+                  },
+                  {
+                    "t": 0.35,
+                    "v": [
+                      1.6,
+                      0.95,
+                      0.25,
+                      0.85
+                    ]
+                  },
+                  {
+                    "t": 1,
+                    "v": [
+                      0.6,
+                      0.15,
+                      0.0,
+                      0
+                    ]
+                  }
+                ]
+              },
+              "brightness": [
+                1.0,
+                1.0
+              ],
+              "shift": [
+                0,
+                0.1,
+                3.0
+              ]
+            }
+          },
+          {
+            "id": "spin5",
+            "kind": "spin",
+            "at": [
+              0.0,
+              750.0
+            ],
+            "inputs": {
+              "angle": [
+                0.0,
+                360.0
+              ],
+              "speed": [
+                0.0,
+                0.0
+              ]
+            }
+          },
+          {
+            "id": "billboard6",
+            "kind": "billboard",
+            "at": [
+              0.0,
+              900.0
+            ],
+            "inputs": {
+              "texture": "asset.effects.fx.burst-flash"
+            }
+          }
+        ],
+        "wires": [
+          {
+            "from": "spawner0.out",
+            "to": "shape2.in"
+          },
+          {
+            "from": "shape2.out",
+            "to": "sizeOverLife3.in"
+          },
+          {
+            "from": "sizeOverLife3.out",
+            "to": "colourOverLife4.in"
+          },
+          {
+            "from": "colourOverLife4.out",
+            "to": "spin5.in"
+          },
+          {
+            "from": "spin5.out",
+            "to": "billboard6.in"
+          }
+        ]
+      }
+    },
+    {
+      "id": "shock",
+      "name": "Shock wave",
+      "graph": {
+        "nodes": [
+          {
+            "id": "spawner0",
+            "kind": "spawner",
+            "at": [
+              0.0,
+              0.0
+            ],
+            "inputs": {
+              "mode": "burst",
+              "count": 1,
+              "time": 0.3,
+              "life": [
+                0.45,
+                0.45
+              ]
+            }
+          },
+          {
+            "id": "shape2",
+            "kind": "shape",
+            "at": [
+              0.0,
+              300.0
+            ],
+            "inputs": {
+              "shape": "point",
+              "offset": [
+                0.0,
+                0.4,
+                0.0
+              ],
+              "follow": "emitter"
+            }
+          },
+          {
+            "id": "sizeOverLife3",
+            "kind": "sizeOverLife",
+            "at": [
+              0.0,
+              450.0
+            ],
+            "inputs": {
+              "size": [
+                14.0,
+                14.0
+              ],
+              "curve": {
+                "keys": [
+                  {
+                    "t": 0,
+                    "v": [
+                      0.1
+                    ]
+                  },
+                  {
+                    "t": 0.3,
+                    "v": [
+                      0.75
+                    ]
+                  },
+                  {
+                    "t": 1,
+                    "v": [
+                      1.0
+                    ]
+                  }
+                ]
+              }
+            }
+          },
+          {
+            "id": "colourOverLife4",
+            "kind": "colourOverLife",
+            "at": [
+              0.0,
+              600.0
+            ],
+            "inputs": {
+              "gradient": {
+                "keys": [
+                  {
+                    "t": 0,
+                    "v": [
+                      0,
+                      0,
+                      0,
+                      0
+                    ]
+                  },
+                  {
+                    "t": 0.08,
+                    "v": [
+                      2.2,
+                      1.7,
+                      0.9,
+                      1
+                    ]
+                  },
+                  {
+                    "t": 0.35,
+                    "v": [
+                      1.6,
+                      0.95,
+                      0.25,
+                      0.85
+                    ]
+                  },
+                  {
+                    "t": 1,
+                    "v": [
+                      0.6,
+                      0.15,
+                      0.0,
+                      0
+                    ]
+                  }
+                ]
+              },
+              "brightness": [
+                1.0,
+                1.0
+              ],
+              "shift": [
+                0,
+                0.25,
+                3.5
+              ]
+            }
+          },
+          {
+            "id": "spin5",
+            "kind": "spin",
+            "at": [
+              0.0,
+              750.0
+            ],
+            "inputs": {
+              "angle": [
+                0.0,
+                360.0
+              ],
+              "speed": [
+                0.0,
+                0.0
+              ]
+            }
+          },
+          {
+            "id": "billboard6",
+            "kind": "billboard",
+            "at": [
+              0.0,
+              900.0
+            ],
+            "inputs": {
+              "texture": "asset.effects.fx.ring-clean",
+              "facing": "ground",
+              "soft": 0.4
+            }
+          }
+        ],
+        "wires": [
+          {
+            "from": "spawner0.out",
+            "to": "shape2.in"
+          },
+          {
+            "from": "shape2.out",
+            "to": "sizeOverLife3.in"
+          },
+          {
+            "from": "sizeOverLife3.out",
+            "to": "colourOverLife4.in"
+          },
+          {
+            "from": "colourOverLife4.out",
+            "to": "spin5.in"
+          },
+          {
+            "from": "spin5.out",
+            "to": "billboard6.in"
+          }
+        ]
+      }
+    },
+    {
+      "id": "wisps",
+      "name": "Shock wisps",
+      "graph": {
+        "nodes": [
+          {
+            "id": "spawner0",
+            "kind": "spawner",
+            "at": [
+              0.0,
+              0.0
+            ],
+            "inputs": {
+              "mode": "stream",
+              "rate": 8,
+              "duration": 0.25,
+              "delay": 0.3,
+              "life": [
+                0.4,
+                0.5
+              ]
+            }
+          },
+          {
+            "id": "shape2",
+            "kind": "shape",
+            "at": [
+              0.0,
+              300.0
+            ],
+            "inputs": {
+              "shape": "point",
+              "offset": [
+                0.0,
+                0.5,
+                0.0
+              ],
+              "follow": "emitter"
+            }
+          },
+          {
+            "id": "sizeOverLife3",
+            "kind": "sizeOverLife",
+            "at": [
+              0.0,
+              450.0
+            ],
+            "inputs": {
+              "size": [
+                11.0,
+                13.0
+              ],
+              "curve": {
+                "keys": [
+                  {
+                    "t": 0,
+                    "v": [
+                      0.15
+                    ]
+                  },
+                  {
+                    "t": 0.3,
+                    "v": [
+                      0.7
+                    ]
+                  },
+                  {
+                    "t": 1,
+                    "v": [
+                      0.95
+                    ]
+                  }
+                ]
+              }
+            }
+          },
+          {
+            "id": "colourOverLife4",
+            "kind": "colourOverLife",
+            "at": [
+              0.0,
+              600.0
+            ],
+            "inputs": {
+              "gradient": {
+                "keys": [
+                  {
+                    "t": 0,
+                    "v": [
+                      0,
+                      0,
+                      0,
+                      0
+                    ]
+                  },
+                  {
+                    "t": 0.08,
+                    "v": [
+                      2.2,
+                      1.7,
+                      0.9,
+                      1
+                    ]
+                  },
+                  {
+                    "t": 0.35,
+                    "v": [
+                      1.6,
+                      0.95,
+                      0.25,
+                      0.85
+                    ]
+                  },
+                  {
+                    "t": 1,
+                    "v": [
+                      0.6,
+                      0.15,
+                      0.0,
+                      0
+                    ]
+                  }
+                ]
+              },
+              "brightness": [
+                0.45,
+                0.7
+              ],
+              "shift": [
+                0,
+                0.25,
+                2.0
+              ]
+            }
+          },
+          {
+            "id": "spin5",
+            "kind": "spin",
+            "at": [
+              0.0,
+              750.0
+            ],
+            "inputs": {
+              "angle": [
+                0.0,
+                360.0
+              ],
+              "speed": [
+                0.0,
+                0.0
+              ]
+            }
+          },
+          {
+            "id": "billboard6",
+            "kind": "billboard",
+            "at": [
+              0.0,
+              900.0
+            ],
+            "inputs": {
+              "texture": "asset.effects.fx.ring-wispy",
+              "facing": "ground",
+              "soft": 0.4
+            }
+          }
+        ],
+        "wires": [
+          {
+            "from": "spawner0.out",
+            "to": "shape2.in"
+          },
+          {
+            "from": "shape2.out",
+            "to": "sizeOverLife3.in"
+          },
+          {
+            "from": "sizeOverLife3.out",
+            "to": "colourOverLife4.in"
+          },
+          {
+            "from": "colourOverLife4.out",
+            "to": "spin5.in"
+          },
+          {
+            "from": "spin5.out",
+            "to": "billboard6.in"
+          }
+        ]
+      }
+    },
+    {
+      "id": "pool",
+      "name": "Ground glow",
+      "graph": {
+        "nodes": [
+          {
+            "id": "spawner0",
+            "kind": "spawner",
+            "at": [
+              0.0,
+              0.0
+            ],
+            "inputs": {
+              "mode": "burst",
+              "count": 2,
+              "time": 0.3,
+              "life": [
+                1.0,
+                1.2
+              ]
+            }
+          },
+          {
+            "id": "shape2",
+            "kind": "shape",
+            "at": [
+              0.0,
+              300.0
+            ],
+            "inputs": {
+              "shape": "point",
+              "offset": [
+                0.0,
+                0.3,
+                0.0
+              ],
+              "follow": "emitter"
+            }
+          },
+          {
+            "id": "sizeOverLife3",
+            "kind": "sizeOverLife",
+            "at": [
+              0.0,
+              450.0
+            ],
+            "inputs": {
+              "size": [
+                12.0,
+                13.0
+              ],
+              "curve": {
+                "keys": [
+                  {
+                    "t": 0,
+                    "v": [
+                      0.3
+                    ]
+                  },
+                  {
+                    "t": 0.3,
+                    "v": [
+                      1.0
+                    ]
+                  },
+                  {
+                    "t": 1,
+                    "v": [
+                      1.1
+                    ]
+                  }
+                ]
+              }
+            }
+          },
+          {
+            "id": "colourOverLife4",
+            "kind": "colourOverLife",
+            "at": [
+              0.0,
+              600.0
+            ],
+            "inputs": {
+              "gradient": {
+                "keys": [
+                  {
+                    "t": 0,
+                    "v": [
+                      0,
+                      0,
+                      0,
+                      0
+                    ]
+                  },
+                  {
+                    "t": 0.08,
+                    "v": [
+                      2.2,
+                      1.7,
+                      0.9,
+                      1
+                    ]
+                  },
+                  {
+                    "t": 0.35,
+                    "v": [
+                      1.6,
+                      0.95,
+                      0.25,
+                      0.85
+                    ]
+                  },
+                  {
+                    "t": 1,
+                    "v": [
+                      0.6,
+                      0.15,
+                      0.0,
+                      0
+                    ]
+                  }
+                ]
+              },
+              "brightness": [
+                0.25,
+                0.35
+              ],
+              "shift": [
+                0,
+                0.1,
+                0.5
+              ]
+            }
+          },
+          {
+            "id": "billboard5",
+            "kind": "billboard",
+            "at": [
+              0.0,
+              750.0
+            ],
+            "inputs": {
+              "texture": "asset.effects.fx.soft-disc",
+              "facing": "ground",
+              "soft": 0.3
+            }
+          }
+        ],
+        "wires": [
+          {
+            "from": "spawner0.out",
+            "to": "shape2.in"
+          },
+          {
+            "from": "shape2.out",
+            "to": "sizeOverLife3.in"
+          },
+          {
+            "from": "sizeOverLife3.out",
+            "to": "colourOverLife4.in"
+          },
+          {
+            "from": "colourOverLife4.out",
+            "to": "billboard5.in"
+          }
+        ]
+      }
+    },
+    {
+      "id": "bloom",
+      "name": "Bloom",
+      "graph": {
+        "nodes": [
+          {
+            "id": "spawner0",
+            "kind": "spawner",
+            "at": [
+              0.0,
+              0.0
+            ],
+            "inputs": {
+              "mode": "burst",
+              "count": 1,
+              "time": 0.3,
+              "life": [
+                1.6,
+                1.6
+              ]
+            }
+          },
+          {
+            "id": "shape2",
+            "kind": "shape",
+            "at": [
+              0.0,
+              300.0
+            ],
+            "inputs": {
+              "shape": "point",
+              "offset": [
+                0.0,
+                0.12,
+                0.0
+              ],
+              "follow": "emitter"
+            }
+          },
+          {
+            "id": "sizeOverLife3",
+            "kind": "sizeOverLife",
+            "at": [
+              0.0,
+              450.0
+            ],
+            "inputs": {
+              "size": [
+                8.0,
+                8.0
+              ],
+              "curve": {
+                "keys": [
+                  {
+                    "t": 0,
+                    "v": [
+                      0.25
+                    ]
+                  },
+                  {
+                    "t": 0.15,
+                    "v": [
+                      1.0
+                    ]
+                  },
+                  {
+                    "t": 1,
+                    "v": [
+                      1.1
+                    ]
+                  }
+                ]
+              }
+            }
+          },
+          {
+            "id": "colourOverLife4",
+            "kind": "colourOverLife",
+            "at": [
+              0.0,
+              600.0
+            ],
+            "inputs": {
+              "gradient": {
+                "keys": [
+                  {
+                    "t": 0,
+                    "v": [
+                      0,
+                      0,
+                      0,
+                      0
+                    ]
+                  },
+                  {
+                    "t": 0.08,
+                    "v": [
+                      1.6,
+                      1.15,
+                      0.5,
+                      1
+                    ]
+                  },
+                  {
+                    "t": 0.55,
+                    "v": [
+                      1.1,
+                      0.65,
+                      0.15,
+                      0.8
+                    ]
+                  },
+                  {
+                    "t": 1,
+                    "v": [
+                      0.4,
+                      0.08,
+                      0.0,
+                      0
+                    ]
+                  }
+                ]
+              },
+              "brightness": [
+                1.0,
+                1.0
+              ],
+              "shift": [
+                0,
+                0.15,
+                1.6
+              ]
+            }
+          },
+          {
+            "id": "spin5",
+            "kind": "spin",
+            "at": [
+              0.0,
+              750.0
+            ],
+            "inputs": {
+              "angle": [
+                0,
+                360
+              ],
+              "speed": [
+                25,
+                25
+              ]
+            }
+          },
+          {
+            "id": "billboard6",
+            "kind": "billboard",
+            "at": [
+              0.0,
+              900.0
+            ],
+            "inputs": {
+              "texture": "asset.effects.fx.bloom-sigil",
+              "facing": "ground",
+              "soft": 0.3
+            }
+          }
+        ],
+        "wires": [
+          {
+            "from": "spawner0.out",
+            "to": "shape2.in"
+          },
+          {
+            "from": "shape2.out",
+            "to": "sizeOverLife3.in"
+          },
+          {
+            "from": "sizeOverLife3.out",
+            "to": "colourOverLife4.in"
+          },
+          {
+            "from": "colourOverLife4.out",
+            "to": "spin5.in"
+          },
+          {
+            "from": "spin5.out",
+            "to": "billboard6.in"
+          }
+        ]
+      }
     },
     {
       "id": "column",
-      "enabled": true,
-      "startTick": 0,
-      "anchor": "target",
-      "shape": "pillar",
-      "colour": "#ffbe4d",
-      "accent": "#fff4d6",
-      "durationTicks": 44,
-      "count": 1,
-      "size": 2.6,
-      "height": 15,
-      "intensity": 0.95,
-      "opacityOverLife": [
-        {
-          "at": 0,
-          "value": 0
-        },
-        {
-          "at": 0.08,
-          "value": 1
-        },
-        {
-          "at": 0.45,
-          "value": 0.8
-        },
-        {
-          "at": 1,
-          "value": 0
-        }
-      ],
-      "scaleOverLife": [
-        {
-          "at": 0,
-          "value": 0.4
-        },
-        {
-          "at": 0.12,
-          "value": 1.0
-        },
-        {
-          "at": 1,
-          "value": 0.7
-        }
-      ]
-    },
-    {
-      "id": "halo",
-      "enabled": true,
-      "startTick": 0,
-      "anchor": "target",
-      "shape": "glow",
-      "orientation": "camera",
-      "blend": "additive",
-      "colour": "#ffcf6b",
-      "accent": "#fff4d6",
-      "durationTicks": 40,
-      "count": 1,
-      "size": 3.4,
-      "height": 2.6,
-      "intensity": 1.3,
-      "opacityOverLife": [
-        {
-          "at": 0,
-          "value": 0
-        },
-        {
-          "at": 0.1,
-          "value": 1
-        },
-        {
-          "at": 1,
-          "value": 0
-        }
-      ]
-    },
-    {
-      "id": "sparks",
-      "sustain": false,
-      "enabled": true,
-      "startTick": 0,
-      "emitter": {
-        "mode": "burst",
-        "lifetimeTicks": 26,
-        "rate": 60,
-        "speed": 11,
-        "speedVariation": 0.5,
-        "direction": {
-          "x": 0,
-          "y": 1,
-          "z": 0
-        },
-        "coneDegrees": 80,
-        "gravity": 6,
-        "drag": 1.4,
-        "spawnRadius": 0.5,
-        "startSize": 0.8,
-        "endSize": 0.05,
-        "spin": 3,
-        "fadeIn": 0.0,
-        "fadeOut": 0.5,
-        "stretch": 0.05
-      },
-      "anchor": "target",
-      "shape": "particles",
-      "colour": "#fff1c4",
-      "accent": "#ffb43c",
-      "durationTicks": 28,
-      "count": 40,
-      "size": 0.3,
-      "height": 2.2,
-      "blend": "additive",
-      "intensity": 3.4,
-      "core": 0.8,
-      "texture": {
-        "asset": "asset.effects.vfx.mote",
-        "role": "image",
-        "index": 1
+      "name": "Column",
+      "graph": {
+        "nodes": [
+          {
+            "id": "spawner0",
+            "kind": "spawner",
+            "at": [
+              0.0,
+              0.0
+            ],
+            "inputs": {
+              "mode": "stream",
+              "rate": 110,
+              "duration": 0.5,
+              "delay": 0.3,
+              "life": [
+                0.35,
+                0.55
+              ]
+            }
+          },
+          {
+            "id": "shape2",
+            "kind": "shape",
+            "at": [
+              0.0,
+              300.0
+            ],
+            "inputs": {
+              "shape": "cylinder",
+              "radius": 0.9,
+              "height": 0.3,
+              "offset": [
+                0,
+                0.3,
+                0
+              ]
+            }
+          },
+          {
+            "id": "launch3",
+            "kind": "launch",
+            "at": [
+              0.0,
+              450.0
+            ],
+            "inputs": {
+              "direction": "up",
+              "speed": [
+                35,
+                55
+              ]
+            }
+          },
+          {
+            "id": "physics4",
+            "kind": "physics",
+            "at": [
+              0.0,
+              600.0
+            ],
+            "inputs": {
+              "gravity": [
+                0,
+                20,
+                0
+              ]
+            }
+          },
+          {
+            "id": "sizeOverLife5",
+            "kind": "sizeOverLife",
+            "at": [
+              0.0,
+              750.0
+            ],
+            "inputs": {
+              "size": [
+                0.8,
+                1.6
+              ],
+              "curve": {
+                "keys": [
+                  {
+                    "t": 0,
+                    "v": [
+                      1.0
+                    ]
+                  },
+                  {
+                    "t": 1,
+                    "v": [
+                      0.5
+                    ]
+                  }
+                ]
+              },
+              "stretch": 0.1
+            }
+          },
+          {
+            "id": "colourOverLife6",
+            "kind": "colourOverLife",
+            "at": [
+              0.0,
+              900.0
+            ],
+            "inputs": {
+              "gradient": {
+                "keys": [
+                  {
+                    "t": 0,
+                    "v": [
+                      0,
+                      0,
+                      0,
+                      0
+                    ]
+                  },
+                  {
+                    "t": 0.08,
+                    "v": [
+                      2.2,
+                      1.7,
+                      0.9,
+                      1
+                    ]
+                  },
+                  {
+                    "t": 0.35,
+                    "v": [
+                      1.6,
+                      0.95,
+                      0.25,
+                      0.85
+                    ]
+                  },
+                  {
+                    "t": 1,
+                    "v": [
+                      0.6,
+                      0.15,
+                      0.0,
+                      0
+                    ]
+                  }
+                ]
+              },
+              "brightness": [
+                0.4,
+                1.8
+              ],
+              "shift": [
+                0,
+                0.2,
+                3.0
+              ]
+            }
+          },
+          {
+            "id": "billboard7",
+            "kind": "billboard",
+            "at": [
+              0.0,
+              1050.0
+            ],
+            "inputs": {
+              "texture": "asset.effects.fx.soft-beam-thin",
+              "facing": "velocity"
+            }
+          }
+        ],
+        "wires": [
+          {
+            "from": "spawner0.out",
+            "to": "shape2.in"
+          },
+          {
+            "from": "shape2.out",
+            "to": "launch3.in"
+          },
+          {
+            "from": "launch3.out",
+            "to": "physics4.in"
+          },
+          {
+            "from": "physics4.out",
+            "to": "sizeOverLife5.in"
+          },
+          {
+            "from": "sizeOverLife5.out",
+            "to": "colourOverLife6.in"
+          },
+          {
+            "from": "colourOverLife6.out",
+            "to": "billboard7.in"
+          }
+        ]
       }
     },
     {
-      "id": "motes",
-      "sustain": false,
-      "enabled": true,
-      "startTick": 4,
-      "emitter": {
-        "mode": "burst",
-        "lifetimeTicks": 58,
-        "rate": 60,
-        "speed": 4.5,
-        "speedVariation": 0.5,
-        "direction": {
-          "x": 0,
-          "y": 1,
-          "z": 0
-        },
-        "coneDegrees": 18,
-        "gravity": -3,
-        "drag": 0.5,
-        "spawnRadius": 1.7,
-        "startSize": 0.95,
-        "endSize": 0.08,
-        "spin": 1.5,
-        "fadeIn": 0.1,
-        "fadeOut": 0.6
-      },
-      "anchor": "target",
-      "shape": "particles",
-      "colour": "#ffe3a0",
-      "accent": "#f2a93a",
-      "durationTicks": 62,
-      "count": 64,
-      "size": 0.3,
-      "height": 0.3,
-      "blend": "additive",
-      "intensity": 3.0,
-      "core": 0.7,
-      "texture": {
-        "asset": "asset.effects.vfx.mote",
-        "role": "image",
-        "index": 1
+      "id": "veil",
+      "name": "Veil of light",
+      "graph": {
+        "nodes": [
+          {
+            "id": "spawner0",
+            "kind": "spawner",
+            "at": [
+              0.0,
+              0.0
+            ],
+            "inputs": {
+              "mode": "stream",
+              "rate": 60,
+              "duration": 0.55,
+              "delay": 0.3,
+              "life": [
+                0.4,
+                0.6
+              ]
+            }
+          },
+          {
+            "id": "shape2",
+            "kind": "shape",
+            "at": [
+              0.0,
+              300.0
+            ],
+            "inputs": {
+              "shape": "cylinder",
+              "radius": 1.8,
+              "inner": 0.4,
+              "height": 8.0,
+              "offset": [
+                0,
+                4.5,
+                0
+              ]
+            }
+          },
+          {
+            "id": "launch3",
+            "kind": "launch",
+            "at": [
+              0.0,
+              450.0
+            ],
+            "inputs": {
+              "direction": "up",
+              "speed": [
+                3,
+                3.2
+              ]
+            }
+          },
+          {
+            "id": "sizeOverLife4",
+            "kind": "sizeOverLife",
+            "at": [
+              0.0,
+              600.0
+            ],
+            "inputs": {
+              "size": [
+                1.6,
+                4.5
+              ],
+              "curve": {
+                "keys": [
+                  {
+                    "t": 0,
+                    "v": [
+                      0.6
+                    ]
+                  },
+                  {
+                    "t": 0.4,
+                    "v": [
+                      1.0
+                    ]
+                  },
+                  {
+                    "t": 1,
+                    "v": [
+                      0.8
+                    ]
+                  }
+                ]
+              },
+              "stretch": 2.4
+            }
+          },
+          {
+            "id": "colourOverLife5",
+            "kind": "colourOverLife",
+            "at": [
+              0.0,
+              750.0
+            ],
+            "inputs": {
+              "gradient": {
+                "keys": [
+                  {
+                    "t": 0,
+                    "v": [
+                      0,
+                      0,
+                      0,
+                      0
+                    ]
+                  },
+                  {
+                    "t": 0.3,
+                    "v": [
+                      0.75,
+                      0.42,
+                      0.1,
+                      0.4
+                    ]
+                  },
+                  {
+                    "t": 0.45,
+                    "v": [
+                      0.8,
+                      0.45,
+                      0.1,
+                      0.45
+                    ]
+                  },
+                  {
+                    "t": 1,
+                    "v": [
+                      0.45,
+                      0.1,
+                      0.0,
+                      0
+                    ]
+                  }
+                ]
+              },
+              "brightness": [
+                0.6,
+                1.4
+              ],
+              "shift": [
+                0.0,
+                0.0,
+                0.0
+              ]
+            }
+          },
+          {
+            "id": "billboard6",
+            "kind": "billboard",
+            "at": [
+              0.0,
+              900.0
+            ],
+            "inputs": {
+              "texture": "asset.effects.fx.soft-beam",
+              "facing": "velocity",
+              "soft": 3.0
+            }
+          }
+        ],
+        "wires": [
+          {
+            "from": "spawner0.out",
+            "to": "shape2.in"
+          },
+          {
+            "from": "shape2.out",
+            "to": "launch3.in"
+          },
+          {
+            "from": "launch3.out",
+            "to": "sizeOverLife4.in"
+          },
+          {
+            "from": "sizeOverLife4.out",
+            "to": "colourOverLife5.in"
+          },
+          {
+            "from": "colourOverLife5.out",
+            "to": "billboard6.in"
+          }
+        ]
+      }
+    },
+    {
+      "id": "streaks",
+      "name": "Outer streaks",
+      "graph": {
+        "nodes": [
+          {
+            "id": "spawner0",
+            "kind": "spawner",
+            "at": [
+              0.0,
+              0.0
+            ],
+            "inputs": {
+              "mode": "stream",
+              "rate": 55,
+              "duration": 0.6,
+              "delay": 0.3,
+              "life": [
+                0.4,
+                0.65
+              ]
+            }
+          },
+          {
+            "id": "shape2",
+            "kind": "shape",
+            "at": [
+              0.0,
+              300.0
+            ],
+            "inputs": {
+              "shape": "cylinder",
+              "radius": 2.3,
+              "inner": 0.6,
+              "height": 1.2,
+              "offset": [
+                0,
+                0.4,
+                0
+              ]
+            }
+          },
+          {
+            "id": "launch3",
+            "kind": "launch",
+            "at": [
+              0.0,
+              450.0
+            ],
+            "inputs": {
+              "direction": "up",
+              "speed": [
+                9,
+                18
+              ]
+            }
+          },
+          {
+            "id": "physics4",
+            "kind": "physics",
+            "at": [
+              0.0,
+              600.0
+            ],
+            "inputs": {
+              "gravity": [
+                0,
+                8,
+                0
+              ]
+            }
+          },
+          {
+            "id": "sizeOverLife5",
+            "kind": "sizeOverLife",
+            "at": [
+              0.0,
+              750.0
+            ],
+            "inputs": {
+              "size": [
+                0.7,
+                1.5
+              ],
+              "curve": {
+                "keys": [
+                  {
+                    "t": 0,
+                    "v": [
+                      0.6
+                    ]
+                  },
+                  {
+                    "t": 0.4,
+                    "v": [
+                      1.0
+                    ]
+                  },
+                  {
+                    "t": 1,
+                    "v": [
+                      0.4
+                    ]
+                  }
+                ]
+              },
+              "stretch": 0.12
+            }
+          },
+          {
+            "id": "colourOverLife6",
+            "kind": "colourOverLife",
+            "at": [
+              0.0,
+              900.0
+            ],
+            "inputs": {
+              "gradient": {
+                "keys": [
+                  {
+                    "t": 0,
+                    "v": [
+                      0,
+                      0,
+                      0,
+                      0
+                    ]
+                  },
+                  {
+                    "t": 0.4,
+                    "v": [
+                      1.5,
+                      1.05,
+                      0.4,
+                      1
+                    ]
+                  },
+                  {
+                    "t": 1,
+                    "v": [
+                      0.5,
+                      0.12,
+                      0.0,
+                      0
+                    ]
+                  }
+                ]
+              },
+              "brightness": [
+                0.5,
+                1.5
+              ],
+              "shift": [
+                0,
+                0.2,
+                2.0
+              ]
+            }
+          },
+          {
+            "id": "billboard7",
+            "kind": "billboard",
+            "at": [
+              0.0,
+              1050.0
+            ],
+            "inputs": {
+              "texture": "asset.effects.fx.soft-beam",
+              "facing": "velocity"
+            }
+          }
+        ],
+        "wires": [
+          {
+            "from": "spawner0.out",
+            "to": "shape2.in"
+          },
+          {
+            "from": "shape2.out",
+            "to": "launch3.in"
+          },
+          {
+            "from": "launch3.out",
+            "to": "physics4.in"
+          },
+          {
+            "from": "physics4.out",
+            "to": "sizeOverLife5.in"
+          },
+          {
+            "from": "sizeOverLife5.out",
+            "to": "colourOverLife6.in"
+          },
+          {
+            "from": "colourOverLife6.out",
+            "to": "billboard7.in"
+          }
+        ]
+      }
+    },
+    {
+      "id": "glints",
+      "name": "Spiral glints",
+      "graph": {
+        "nodes": [
+          {
+            "id": "spawner0",
+            "kind": "spawner",
+            "at": [
+              0.0,
+              0.0
+            ],
+            "inputs": {
+              "mode": "stream",
+              "rate": 110,
+              "duration": 0.7,
+              "delay": 0.25,
+              "life": [
+                0.5,
+                1.0
+              ]
+            }
+          },
+          {
+            "id": "shape2",
+            "kind": "shape",
+            "at": [
+              0.0,
+              300.0
+            ],
+            "inputs": {
+              "shape": "cylinder",
+              "radius": 2.5,
+              "inner": 0.3,
+              "height": 3.0,
+              "offset": [
+                0,
+                0.8,
+                0
+              ]
+            }
+          },
+          {
+            "id": "launch3",
+            "kind": "launch",
+            "at": [
+              0.0,
+              450.0
+            ],
+            "inputs": {
+              "direction": "cone",
+              "angle": 40,
+              "speed": [
+                4,
+                18
+              ]
+            }
+          },
+          {
+            "id": "orbit4",
+            "kind": "orbit",
+            "at": [
+              0.0,
+              600.0
+            ],
+            "inputs": {
+              "speed": [
+                60,
+                280
+              ]
+            }
+          },
+          {
+            "id": "physics5",
+            "kind": "physics",
+            "at": [
+              0.0,
+              750.0
+            ],
+            "inputs": {
+              "gravity": [
+                0,
+                6,
+                0
+              ],
+              "drag": 0.5
+            }
+          },
+          {
+            "id": "sizeOverLife6",
+            "kind": "sizeOverLife",
+            "at": [
+              0.0,
+              900.0
+            ],
+            "inputs": {
+              "size": [
+                0.3,
+                1.4
+              ],
+              "curve": {
+                "keys": [
+                  {
+                    "t": 0,
+                    "v": [
+                      0.6
+                    ]
+                  },
+                  {
+                    "t": 0.15,
+                    "v": [
+                      0.85
+                    ]
+                  },
+                  {
+                    "t": 0.3,
+                    "v": [
+                      1.0
+                    ]
+                  },
+                  {
+                    "t": 0.6,
+                    "v": [
+                      0.7
+                    ]
+                  },
+                  {
+                    "t": 1,
+                    "v": [
+                      0.0
+                    ]
+                  }
+                ]
+              }
+            }
+          },
+          {
+            "id": "colourOverLife7",
+            "kind": "colourOverLife",
+            "at": [
+              0.0,
+              1050.0
+            ],
+            "inputs": {
+              "gradient": {
+                "keys": [
+                  {
+                    "t": 0,
+                    "v": [
+                      0,
+                      0,
+                      0,
+                      0
+                    ]
+                  },
+                  {
+                    "t": 0.12,
+                    "v": [
+                      2.4,
+                      1.75,
+                      0.6,
+                      1
+                    ]
+                  },
+                  {
+                    "t": 0.5,
+                    "v": [
+                      1.8,
+                      0.9,
+                      0.12,
+                      0.85
+                    ]
+                  },
+                  {
+                    "t": 0.82,
+                    "v": [
+                      1.1,
+                      0.25,
+                      0.0,
+                      0.6
+                    ]
+                  },
+                  {
+                    "t": 1,
+                    "v": [
+                      0.8,
+                      0.05,
+                      0.0,
+                      0
+                    ]
+                  }
+                ]
+              },
+              "brightness": [
+                1.0,
+                3.0
+              ],
+              "shift": [
+                0,
+                0.2,
+                2.0
+              ]
+            }
+          },
+          {
+            "id": "spin8",
+            "kind": "spin",
+            "at": [
+              0.0,
+              1200.0
+            ],
+            "inputs": {
+              "angle": [
+                0.0,
+                360.0
+              ],
+              "speed": [
+                0.0,
+                0.0
+              ]
+            }
+          },
+          {
+            "id": "billboard9",
+            "kind": "billboard",
+            "at": [
+              0.0,
+              1350.0
+            ],
+            "inputs": {
+              "texture": "asset.effects.fx.star-glint"
+            }
+          }
+        ],
+        "wires": [
+          {
+            "from": "spawner0.out",
+            "to": "shape2.in"
+          },
+          {
+            "from": "shape2.out",
+            "to": "launch3.in"
+          },
+          {
+            "from": "launch3.out",
+            "to": "orbit4.in"
+          },
+          {
+            "from": "orbit4.out",
+            "to": "physics5.in"
+          },
+          {
+            "from": "physics5.out",
+            "to": "sizeOverLife6.in"
+          },
+          {
+            "from": "sizeOverLife6.out",
+            "to": "colourOverLife7.in"
+          },
+          {
+            "from": "colourOverLife7.out",
+            "to": "spin8.in"
+          },
+          {
+            "from": "spin8.out",
+            "to": "billboard9.in"
+          }
+        ]
+      }
+    },
+    {
+      "id": "rings",
+      "name": "Climbing rings",
+      "graph": {
+        "nodes": [
+          {
+            "id": "spawner0",
+            "kind": "spawner",
+            "at": [
+              0.0,
+              0.0
+            ],
+            "inputs": {
+              "mode": "stream",
+              "rate": 20,
+              "duration": 0.55,
+              "delay": 0.3,
+              "life": [
+                0.6,
+                0.8
+              ]
+            }
+          },
+          {
+            "id": "shape2",
+            "kind": "shape",
+            "at": [
+              0.0,
+              300.0
+            ],
+            "inputs": {
+              "shape": "point",
+              "offset": [
+                0.0,
+                0.5,
+                0.0
+              ]
+            }
+          },
+          {
+            "id": "launch3",
+            "kind": "launch",
+            "at": [
+              0.0,
+              450.0
+            ],
+            "inputs": {
+              "direction": "up",
+              "speed": [
+                6,
+                16
+              ]
+            }
+          },
+          {
+            "id": "physics4",
+            "kind": "physics",
+            "at": [
+              0.0,
+              600.0
+            ],
+            "inputs": {
+              "drag": 1.2
+            }
+          },
+          {
+            "id": "sizeOverLife5",
+            "kind": "sizeOverLife",
+            "at": [
+              0.0,
+              750.0
+            ],
+            "inputs": {
+              "size": [
+                4.4,
+                5.6
+              ],
+              "curve": {
+                "keys": [
+                  {
+                    "t": 0,
+                    "v": [
+                      1.0
+                    ]
+                  },
+                  {
+                    "t": 1,
+                    "v": [
+                      0.55
+                    ]
+                  }
+                ]
+              }
+            }
+          },
+          {
+            "id": "colourOverLife6",
+            "kind": "colourOverLife",
+            "at": [
+              0.0,
+              900.0
+            ],
+            "inputs": {
+              "gradient": {
+                "keys": [
+                  {
+                    "t": 0,
+                    "v": [
+                      0,
+                      0,
+                      0,
+                      0
+                    ]
+                  },
+                  {
+                    "t": 0.12,
+                    "v": [
+                      1.8,
+                      1.3,
+                      0.5,
+                      1
+                    ]
+                  },
+                  {
+                    "t": 0.5,
+                    "v": [
+                      1.3,
+                      0.7,
+                      0.15,
+                      0.7
+                    ]
+                  },
+                  {
+                    "t": 1,
+                    "v": [
+                      0.5,
+                      0.1,
+                      0.0,
+                      0
+                    ]
+                  }
+                ]
+              },
+              "brightness": [
+                0.8,
+                1.2
+              ],
+              "shift": [
+                0,
+                0.25,
+                2.5
+              ]
+            }
+          },
+          {
+            "id": "spin7",
+            "kind": "spin",
+            "at": [
+              0.0,
+              1050.0
+            ],
+            "inputs": {
+              "angle": [
+                0.0,
+                360.0
+              ],
+              "speed": [
+                0.0,
+                0.0
+              ]
+            }
+          },
+          {
+            "id": "billboard8",
+            "kind": "billboard",
+            "at": [
+              0.0,
+              1200.0
+            ],
+            "inputs": {
+              "texture": "asset.effects.fx.ring-thick",
+              "facing": "ground",
+              "soft": 0.3
+            }
+          }
+        ],
+        "wires": [
+          {
+            "from": "spawner0.out",
+            "to": "shape2.in"
+          },
+          {
+            "from": "shape2.out",
+            "to": "launch3.in"
+          },
+          {
+            "from": "launch3.out",
+            "to": "physics4.in"
+          },
+          {
+            "from": "physics4.out",
+            "to": "sizeOverLife5.in"
+          },
+          {
+            "from": "sizeOverLife5.out",
+            "to": "colourOverLife6.in"
+          },
+          {
+            "from": "colourOverLife6.out",
+            "to": "spin7.in"
+          },
+          {
+            "from": "spin7.out",
+            "to": "billboard8.in"
+          }
+        ]
+      }
+    },
+    {
+      "id": "pollen",
+      "name": "Pollen",
+      "graph": {
+        "nodes": [
+          {
+            "id": "spawner0",
+            "kind": "spawner",
+            "at": [
+              0.0,
+              0.0
+            ],
+            "inputs": {
+              "mode": "stream",
+              "rate": 40,
+              "duration": 0.6,
+              "delay": 0.35,
+              "life": [
+                1.2,
+                2.0
+              ]
+            }
+          },
+          {
+            "id": "shape2",
+            "kind": "shape",
+            "at": [
+              0.0,
+              300.0
+            ],
+            "inputs": {
+              "shape": "sphere",
+              "offset": [
+                0.0,
+                2.6,
+                0.0
+              ],
+              "radius": 2.5,
+              "inner": 0.3
+            }
+          },
+          {
+            "id": "launch3",
+            "kind": "launch",
+            "at": [
+              0.0,
+              450.0
+            ],
+            "inputs": {
+              "direction": "outward",
+              "speed": [
+                1,
+                4
+              ]
+            }
+          },
+          {
+            "id": "physics4",
+            "kind": "physics",
+            "at": [
+              0.0,
+              600.0
+            ],
+            "inputs": {
+              "gravity": [
+                0,
+                2.5,
+                0
+              ],
+              "drag": 1.2
+            }
+          },
+          {
+            "id": "turbulence5",
+            "kind": "turbulence",
+            "at": [
+              0.0,
+              750.0
+            ],
+            "inputs": {
+              "strength": 3,
+              "scale": 2,
+              "speed": 1
+            }
+          },
+          {
+            "id": "sizeOverLife6",
+            "kind": "sizeOverLife",
+            "at": [
+              0.0,
+              900.0
+            ],
+            "inputs": {
+              "size": [
+                0.2,
+                0.6
+              ],
+              "curve": {
+                "keys": [
+                  {
+                    "t": 0,
+                    "v": [
+                      0.0
+                    ]
+                  },
+                  {
+                    "t": 0.2,
+                    "v": [
+                      1.0
+                    ]
+                  },
+                  {
+                    "t": 0.45,
+                    "v": [
+                      0.4
+                    ]
+                  },
+                  {
+                    "t": 0.7,
+                    "v": [
+                      1.0
+                    ]
+                  },
+                  {
+                    "t": 1,
+                    "v": [
+                      0.0
+                    ]
+                  }
+                ]
+              }
+            }
+          },
+          {
+            "id": "colourOverLife7",
+            "kind": "colourOverLife",
+            "at": [
+              0.0,
+              1050.0
+            ],
+            "inputs": {
+              "gradient": {
+                "keys": [
+                  {
+                    "t": 0,
+                    "v": [
+                      0,
+                      0,
+                      0,
+                      0
+                    ]
+                  },
+                  {
+                    "t": 0.2,
+                    "v": [
+                      1.4,
+                      1.05,
+                      0.45,
+                      1
+                    ]
+                  },
+                  {
+                    "t": 0.55,
+                    "v": [
+                      1.0,
+                      0.55,
+                      0.12,
+                      0.8
+                    ]
+                  },
+                  {
+                    "t": 1,
+                    "v": [
+                      0.4,
+                      0.1,
+                      0.0,
+                      0
+                    ]
+                  }
+                ]
+              },
+              "brightness": [
+                1.5,
+                5.0
+              ],
+              "shift": [
+                0,
+                0.15,
+                2.2
+              ]
+            }
+          },
+          {
+            "id": "billboard8",
+            "kind": "billboard",
+            "at": [
+              0.0,
+              1200.0
+            ],
+            "inputs": {
+              "texture": "asset.effects.fx.pin-dot"
+            }
+          }
+        ],
+        "wires": [
+          {
+            "from": "spawner0.out",
+            "to": "shape2.in"
+          },
+          {
+            "from": "shape2.out",
+            "to": "launch3.in"
+          },
+          {
+            "from": "launch3.out",
+            "to": "physics4.in"
+          },
+          {
+            "from": "physics4.out",
+            "to": "turbulence5.in"
+          },
+          {
+            "from": "turbulence5.out",
+            "to": "sizeOverLife6.in"
+          },
+          {
+            "from": "sizeOverLife6.out",
+            "to": "colourOverLife7.in"
+          },
+          {
+            "from": "colourOverLife7.out",
+            "to": "billboard8.in"
+          }
+        ]
       }
     }
   ]

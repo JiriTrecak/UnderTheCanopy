@@ -1,10 +1,12 @@
 """Our showcase effects, written in the authoring nodes (D115, docs/effect-graph.md):
-Pillar of Flame, Substance Nova, Violet Gate, Golden Mending, Firework. Each layer is a
-chain from its Spawner to its renderer; the recipes of skill canopy-effect-design. Writes
-`<package>/effects/ours/*.json` (the lab while the look is agreed; textures are
-`asset.effects.fx.*` from tools/effects/fx_textures.py).
+Pillar of Flame, Substance Nova, Violet Gate, Golden Mending, Firework, the fires and the
+hero level-up. Each layer is a chain from its Spawner to its renderer; the recipes of skill
+canopy-effect-design. Writes `<package>/effects/ours/*.json` (the lab while a look is
+agreed; textures are `asset.effects.fx.*` from tools/effects/fx_textures.py); `--ship`
+writes the agreed ones the game plays into the base package instead (SHIPPED).
 
     python3 -I tools/effects/showcase.py <package dir>
+    python3 -I tools/effects/showcase.py base --ship
 """
 import json
 import os
@@ -333,16 +335,107 @@ def ground_fire():
     ]
 
 
+# Level up: warm gold, rising. A breath in (a ground ring and glints drawn to the hero),
+# then the release at RELEASE seconds: a flash, shock rings, a flower of light blooming
+# under the hero, a column of streaks, glints spiralling up, rings climbing the body and
+# pollen motes that linger. Ground layers follow the hero as it walks.
+RELEASE = 0.3
+GOLD_HOT = [(0, [0, 0, 0, 0]), (0.08, [2.2, 1.7, 0.9, 1]), (0.35, [1.6, 0.95, 0.25, 0.85]), (1, [0.6, 0.15, 0.0, 0])]
+GOLD_LATE = [(0, [0, 0, 0, 0]), (0.75, [1.5, 1.1, 0.45, 1]), (1, [2.0, 1.6, 0.8, 0])]
+GOLD_GLINT = [(0, [0, 0, 0, 0]), (0.12, [2.4, 1.75, 0.6, 1]), (0.5, [1.8, 0.9, 0.12, 0.85]), (0.82, [1.1, 0.25, 0.0, 0.6]), (1, [0.8, 0.05, 0.0, 0])]
+GOLD_MIDPEAK = [(0, [0, 0, 0, 0]), (0.4, [1.5, 1.05, 0.4, 1]), (1, [0.5, 0.12, 0.0, 0])]
+
+
+def level_up():
+    """A hero gains a level (~2 s)."""
+    r = RELEASE
+    after = lambda rate, duration: stream(rate, duration, r)  # noqa: E731
+    flash = {'id': 'light', 'enabled': True, 'startTick': int(r * 40), 'shape': 'light', 'colour': '#ffc35a',
+             'accent': '#fff0c8', 'durationTicks': 36, 'count': 1, 'size': 18.0, 'height': 3.0, 'intensity': 30.0}
+    follow = {'follow': 'emitter'}
+    return {'id': 'effect.ours.level-up', 'name': 'Level up', 'durationTicks': 84, 'loop': False,
+            'layers': [flash]}, [
+        layer('gather', 'Gathering ring', burst(1), life(r + 0.02), at(0.4, **follow),
+              size([(0, 1.0), (0.6, 0.5), (1, 0.15)], 11.0, 11.0), colour(GOLD_LATE, 1.3, 1.3, (0, 0.2, 2.5)),
+              spin(), ground('ring-thick', 0.4)),
+        layer('drawn', 'Drawn glints', burst(40), life(r - 0.04, r), at(2.6, 'sphere', radius=5.0, inner=0.6),
+              ('launch', {'direction': 'outward', 'speed': [-16, -12]}),
+              size([(0, 0.5), (0.6, 1.0), (1, 0.6)], 0.6, 1.5, stretch=0.02), colour(GOLD_LATE, 1.5, 3.5, (0, 0.2, 2.5)),
+              spin(), board('star-glint')),
+        layer('flash', 'Flash', burst(1, r), life(0.25), at(3.0), size([(0, 0.4), (0.15, 1.0), (1, 0.6)], 15.0, 15.0),
+              colour(GOLD_HOT, 0.7, 0.7, (0, 0.15, 1.2)), board('soft-dot-wide')),
+        layer('rays', 'Rays', burst(1, r), life(0.3), at(3.0), size([(0, 0.3), (0.15, 1.0), (1, 0.7)], 20.0, 20.0),
+              colour(GOLD_HOT, shift=(0, 0.1, 3.0)), spin(), board('burst-flash')),
+        layer('shock', 'Shock wave', burst(1, r), life(0.45), at(0.4, **follow),
+              size([(0, 0.1), (0.3, 0.75), (1, 1.0)], 14.0, 14.0), colour(GOLD_HOT, 1.0, 1.0, (0, 0.25, 3.5)),
+              spin(), ground('ring-clean', 0.4)),
+        layer('wisps', 'Shock wisps', after(8, 0.25), life(0.4, 0.5), at(0.5, **follow),
+              size([(0, 0.15), (0.3, 0.7), (1, 0.95)], 11.0, 13.0), colour(GOLD_HOT, 0.45, 0.7, (0, 0.25, 2.0)),
+              spin(), ground('ring-wispy', 0.4)),
+        layer('pool', 'Ground glow', burst(2, r), life(1.0, 1.2), at(0.3, **follow),
+              size([(0, 0.3), (0.3, 1.0), (1, 1.1)], 12.0, 13.0), colour(GOLD_HOT, 0.25, 0.35, (0, 0.1, 0.5)),
+              ground('soft-disc', 0.3)),
+        layer('bloom', 'Bloom', burst(1, r), life(1.6), at(0.12, **follow),
+              size([(0, 0.25), (0.15, 1.0), (1, 1.1)], 8.0, 8.0),
+              colour([(0, [0, 0, 0, 0]), (0.08, [1.6, 1.15, 0.5, 1]), (0.55, [1.1, 0.65, 0.15, 0.8]), (1, [0.4, 0.08, 0.0, 0])], shift=(0, 0.15, 1.6)),
+              spin(0, 360, 25, 25), ground('bloom-sigil', 0.3)),
+        layer('column', 'Column', after(110, 0.5), life(0.35, 0.55),
+              ('shape', {'shape': 'cylinder', 'radius': 0.9, 'height': 0.3, 'offset': [0, 0.3, 0]}),
+              ('launch', {'direction': 'up', 'speed': [35, 55]}), ('physics', {'gravity': [0, 20, 0]}),
+              size([(0, 1.0), (1, 0.5)], 0.8, 1.6, stretch=0.1), colour(GOLD_HOT, 0.4, 1.8, (0, 0.2, 3.0)),
+              board('soft-beam-thin', facing='velocity')),
+        layer('veil', 'Veil of light', after(60, 0.55), life(0.4, 0.6),
+              ('shape', {'shape': 'cylinder', 'radius': 1.8, 'inner': 0.4, 'height': 8.0, 'offset': [0, 4.5, 0]}),
+              ('launch', {'direction': 'up', 'speed': [3, 3.2]}),
+              size([(0, 0.6), (0.4, 1.0), (1, 0.8)], 1.6, 4.5, stretch=2.4),
+              colour([(0, [0, 0, 0, 0]), (0.3, [0.75, 0.42, 0.1, 0.4]), (0.45, [0.8, 0.45, 0.1, 0.45]), (1, [0.45, 0.1, 0.0, 0])], 0.6, 1.4),
+              board('soft-beam', facing='velocity', soft=3.0)),
+        layer('streaks', 'Outer streaks', after(55, 0.6), life(0.4, 0.65),
+              ('shape', {'shape': 'cylinder', 'radius': 2.3, 'inner': 0.6, 'height': 1.2, 'offset': [0, 0.4, 0]}),
+              ('launch', {'direction': 'up', 'speed': [9, 18]}), ('physics', {'gravity': [0, 8, 0]}),
+              size([(0, 0.6), (0.4, 1.0), (1, 0.4)], 0.7, 1.5, stretch=0.12), colour(GOLD_MIDPEAK, 0.5, 1.5, (0, 0.2, 2.0)),
+              board('soft-beam', facing='velocity')),
+        layer('glints', 'Spiral glints', stream(110, 0.7, r - 0.05), life(0.5, 1.0),
+              ('shape', {'shape': 'cylinder', 'radius': 2.5, 'inner': 0.3, 'height': 3.0, 'offset': [0, 0.8, 0]}),
+              ('launch', {'direction': 'cone', 'angle': 40, 'speed': [4, 18]}), ('orbit', {'speed': [60, 280]}),
+              ('physics', {'gravity': [0, 6, 0], 'drag': 0.5}),
+              size([(0, 0.6), (0.15, 0.85), (0.3, 1.0), (0.6, 0.7), (1, 0.0)], 0.3, 1.4),
+              colour(GOLD_GLINT, 1.0, 3.0, (0, 0.2, 2.0)), spin(), board('star-glint')),
+        layer('rings', 'Climbing rings', after(20, 0.55), life(0.6, 0.8), at(0.5),
+              ('launch', {'direction': 'up', 'speed': [6, 16]}), ('physics', {'drag': 1.2}),
+              size([(0, 1.0), (1, 0.55)], 4.4, 5.6),
+              colour([(0, [0, 0, 0, 0]), (0.12, [1.8, 1.3, 0.5, 1]), (0.5, [1.3, 0.7, 0.15, 0.7]), (1, [0.5, 0.1, 0.0, 0])], 0.8, 1.2, (0, 0.25, 2.5)),
+              spin(), ground('ring-thick', 0.3)),
+        layer('pollen', 'Pollen', stream(40, 0.6, r + 0.05), life(1.2, 2.0), at(2.6, 'sphere', radius=2.5, inner=0.3),
+              ('launch', {'direction': 'outward', 'speed': [1, 4]}), ('physics', {'gravity': [0, 2.5, 0], 'drag': 1.2}),
+              ('turbulence', {'strength': 3, 'scale': 2, 'speed': 1}),
+              size(TWINKLE, 0.2, 0.6), colour(GOLD, 1.5, 5.0, (0, 0.15, 2.2)), board('pin-dot')),
+    ]
+
+
+# Agreed effects the game plays: builder → (id, file under effects/, name, description).
+SHIPPED = {
+    'level_up': ('effect.heroes.level-up', 'heroes/level-up.json', 'Hero level up', 'A hero gains a level.'),
+}
+
+
 def main():
     package = sys.argv[1]
-    folder = os.path.join(package, 'effects', 'ours')
-    os.makedirs(folder, exist_ok=True)
-    for make in (pillar_of_flame, substance_nova, violet_gate, golden_mending, firework, torch, ground_fire):
+    ship = '--ship' in sys.argv[2:]
+    makers = (pillar_of_flame, substance_nova, violet_gate, golden_mending, firework, torch, ground_fire, level_up)
+    for make in makers:
+        if ship and make.__name__ not in SHIPPED:
+            continue
         head, layers = make()
         doc = dict(head, description='', graphs=layers)
         doc.setdefault('layers', [])
         name = head['id'].split('.')[-1]
-        with open(os.path.join(folder, name + '.json'), 'w') as f:
+        path = os.path.join(package, 'effects', 'ours', name + '.json')
+        if ship:
+            doc['id'], file, doc['name'], doc['description'] = SHIPPED[make.__name__]
+            path = os.path.join(package, 'effects', file)
+        os.makedirs(os.path.dirname(path), exist_ok=True)
+        with open(path, 'w') as f:
             json.dump(doc, f, indent=2)
             f.write('\n')
         print('wrote', name, len(layers), 'layers',

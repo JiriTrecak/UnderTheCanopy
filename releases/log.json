@@ -19,10 +19,12 @@
       "A building going up shows its progress on its health bar in the selection panel; health bars run from red to green.",
       "Effects editor: a whole effect on one screen, each layer a row of purpose-made nodes read left to right into one Effect node that plays it all.",
       "Editor: the Effects stage plays the effect by itself on repeat, with a player colour picker and only the settings that change its look.",
-      "Units killed in melee are knocked back a step or two as they fall."
+      "Units killed in melee are knocked back a step or two as they fall.",
+      "Heroes level up in a burst of golden light: a flash, a rising column, rings climbing the hero and a flower of light blooming beneath."
     ],
     "fixed": [
-      "Tab keeps a group's unit cards in place and lights the active subgroup, as cards are now grouped by type."
+      "Tab keeps a group's unit cards in place and lights the active subgroup, as cards are now grouped by type.",
+      "Editor: the Effect node's preview plays the whole effect, not only its first layer."
     ],
     "knownIssues": []
   },
