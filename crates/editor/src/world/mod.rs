@@ -453,6 +453,7 @@ fn commit(
     mut blocks: Blocks,
     change: impl FnOnce(&mut Blocks),
 ) -> Option<crate::tabs::Edit> {
+    let _span = tracing::info_span!("block_commit").entered();
     let root = session.root.clone();
     let map = session.map.as_mut()?;
     let terrain = &mut map.authoring.terrain;
@@ -891,6 +892,7 @@ fn live_preview(session: &mut Session, op: &BlockOp) {
     {
         return;
     }
+    let _span = tracing::info_span!("block_preview").entered();
     restore(session);
     let symmetry = session.blocks.symmetry;
     let Some(map) = session.map.as_mut() else {
@@ -1916,6 +1918,7 @@ pub fn show(
                             .color(Color32::from_rgb(240, 120, 110)),
                     );
                 }
+                let _span = tracing::info_span!("map_panel").entered();
                 edits = settings::show(ui, session, content, docs, package);
             });
         out.edits.extend(edits);
@@ -1924,7 +1927,10 @@ pub fn show(
     // Place and Select check what they put down as the game would.
     session.overlay = Default::default();
     let terrain = match (content, session.blocks.tool) {
-        (Some(content), BlockTool::Place | BlockTool::Select) => sim_terrain(session, content),
+        (Some(content), BlockTool::Place | BlockTool::Select) => {
+            let _span = tracing::info_span!("map_sim_terrain").entered();
+            sim_terrain(session, content)
+        }
         _ => None,
     };
     let full = ui.available_rect_before_wrap();

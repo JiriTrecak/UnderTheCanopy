@@ -133,9 +133,27 @@ pub struct Stage {
     shown: wgpu::TextureView,
     size: [u32; 2],
     loaded: Option<Loaded>,
+    /// The map scene last loaded (`Loaded::Scene`): a new version that differs in its
+    /// blockout alone swaps just that.
+    scene: Option<Arc<crate::map::Scene>>,
     texture: Option<egui::TextureId>,
     started: std::time::Instant,
     live: Live,
+}
+
+/// Whether `next` differs from `last` in its blockout alone (a map's block view while its
+/// blocks are edited): neither has terrain, water, forest or dressing, and their statics,
+/// glows, lights and models are the same.
+fn blockout_only(last: &World, next: &World) -> bool {
+    let bare = |w: &World| {
+        w.terrain.is_none() && w.water.is_none() && w.forest.is_none() && w.dressing.is_none()
+    };
+    bare(last)
+        && bare(next)
+        && last.statics == next.statics
+        && last.glows == next.glows
+        && last.point_lights == next.point_lights
+        && last.actor_models == next.actor_models
 }
 
 fn target(gpu: &Gpu, size: [u32; 2]) -> (wgpu::Texture, wgpu::TextureView, wgpu::TextureView) {
@@ -186,6 +204,7 @@ impl Stage {
             shown,
             size,
             loaded: None,
+            scene: None,
             texture: None,
             started: std::time::Instant::now(),
             live: Live::default(),
@@ -231,10 +250,19 @@ impl Stage {
         self.light(gpu, Some(&scene.biome), scene.hour, scene.weather);
         let loaded = Loaded::Scene(shot.root.clone(), shot.version);
         if self.loaded.as_ref() != Some(&loaded) {
-            if let Err(error) = self.renderer.load_world(gpu, &self.pack, &scene.world) {
+            let same_map =
+                matches!(&self.loaded, Some(Loaded::Scene(root, _)) if *root == shot.root);
+            if same_map
+                && let Some(last) = &self.scene
+                && blockout_only(&last.world, &scene.world)
+            {
+                self.renderer
+                    .set_blockout(gpu, scene.world.blockout.as_ref());
+            } else if let Err(error) = self.renderer.load_world(gpu, &self.pack, &scene.world) {
                 tracing::warn!(%error, map = %shot.root, "editor: map scene");
             }
             self.loaded = Some(loaded);
+            self.scene = Some(scene.clone());
         }
         if shot.overlay.moved.is_empty() && shot.overlay.ghost.is_none() {
             self.renderer.set_actors(&scene.actors);

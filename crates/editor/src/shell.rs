@@ -761,6 +761,7 @@ impl Shell {
     /// paints. The split view's generated world follows [`crate::map::GENERATE_AFTER`]
     /// after the last change.
     fn prepare_map(&mut self, root: &str) {
+        let _span = tracing::info_span!("prepare_map").entered();
         self.load_map(root);
         let Some(session) = self.maps.get_mut(root) else {
             return;
@@ -957,6 +958,7 @@ impl Shell {
             if untouched || (std::mem::take(&mut session.own) && session.map.is_some()) {
                 session.loaded_at = Some(generation);
             } else {
+                let _span = tracing::info_span!("load_map").entered();
                 let overlay = Arc::new(store.overlay().below(root));
                 let loaded = Package::open_overlaid(&package.root.join(root), Some(overlay))
                     .map_err(|e| e.to_string())
@@ -1118,6 +1120,7 @@ impl Shell {
             return;
         }
         self.structure = structure;
+        let _span = tracing::info_span!("refresh_libraries").entered();
         let overlaid = self.overlaid(package);
         let data = self.data.clone();
         for kind in KINDS {

@@ -915,9 +915,11 @@ impl Store {
         let path = command.document().to_string();
         // What libraries list changes with the documents that exist and with an element's
         // id (a rename, a whole document set as JSON). Names follow at the next save, so
-        // typing one stays cheap.
+        // typing one stays cheap. A grid counts only when it comes into being
+        // (`apply_grid`): a brush rewrites existing grids at every stroke.
         let listed = match command {
-            Command::Create { .. } | Command::Delete { .. } | Command::Grid { .. } => true,
+            Command::Create { .. } | Command::Delete { .. } => true,
+            Command::Grid { .. } => false,
             Command::Set { pointer, .. }
             | Command::Insert { pointer, .. }
             | Command::Remove { pointer, .. } => matches!(pointer.as_str(), "" | "/id"),
@@ -1015,6 +1017,7 @@ impl Store {
         path: &str,
         revision: u64,
     ) -> Result<Command, Error> {
+        let mut created = false;
         let grid = self.load_grid(path)?;
         let back = match command {
             Command::Grid {
@@ -1045,9 +1048,12 @@ impl Store {
                         height: old.height,
                         bytes: old.bytes,
                     },
-                    None => Command::Delete {
-                        document: path.into(),
-                    },
+                    None => {
+                        created = true;
+                        Command::Delete {
+                            document: path.into(),
+                        }
+                    }
                 }
             }
             Command::Delete { .. } => {
@@ -1103,6 +1109,9 @@ impl Store {
             }
         };
         grid.revision = revision;
+        if created {
+            self.structure += 1;
+        }
         Ok(back)
     }
 }

@@ -18,10 +18,21 @@ const SIDE: f32 = 208.0;
 /// Its picture's pixels per side at most (a map is sampled at its cells up to this).
 const RESOLUTION: u32 = 512;
 
-/// The minimap's picture and what it was drawn from (the map's load and scene).
+/// What a minimap picture is drawn from: the blocks and their paint, the map's size and
+/// its playable area.
+type Source = (
+    Option<canopy_content::map::grid::Grid>,
+    Option<canopy_content::map::grid::Grid>,
+    u32,
+    Playable,
+);
+
+/// The minimap's picture, when it was looked at last (the map's load and scene) and what
+/// it was drawn from: a new scene of the same blocks keeps it.
 #[derive(Clone)]
 pub struct Cache {
     key: (Option<u64>, u64, bool),
+    source: std::sync::Arc<Source>,
     texture: egui::TextureHandle,
 }
 
@@ -139,6 +150,19 @@ pub(super) fn show(
         return;
     };
     let key = (session.loaded_at, session.version, session.stale);
+    if let Some(cache) = &mut session.blocks.minimap
+        && cache.key != key
+    {
+        let terrain = &map.authoring.terrain;
+        let (blocks, paint, size, area) = &*cache.source;
+        if *blocks == terrain.blocks
+            && *paint == terrain.block_paint
+            && *size == map.size
+            && *area == map.playable_area()
+        {
+            cache.key = key;
+        }
+    }
     if session.blocks.minimap.as_ref().is_none_or(|c| c.key != key)
         && let Some(Ok(blocks)) = Blocks::of(&map.authoring.terrain)
     {
@@ -148,7 +172,18 @@ pub(super) fn show(
             picture(map.size, map.playable_area(), &blocks),
             egui::TextureOptions::LINEAR,
         );
-        session.blocks.minimap = Some(Cache { key, texture });
+        let terrain = &map.authoring.terrain;
+        let source = std::sync::Arc::new((
+            terrain.blocks.clone(),
+            terrain.block_paint.clone(),
+            map.size,
+            map.playable_area(),
+        ));
+        session.blocks.minimap = Some(Cache {
+            key,
+            source,
+            texture,
+        });
     }
     let Some(cache) = session.blocks.minimap.clone() else {
         return;

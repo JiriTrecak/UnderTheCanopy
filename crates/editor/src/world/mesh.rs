@@ -68,9 +68,9 @@ impl Builder {
     /// A quad a–b–c–d (counter-clockwise from outside) with face coordinates.
     fn quad(&mut self, p: [Vec3; 4], n: Vec3, color: [f32; 3]) {
         let uv = [[0.0, 0.0], [1.0, 0.0], [1.0, 1.0], [0.0, 1.0]];
-        let i: Vec<u32> = (0..4)
-            .map(|k| self.vertex(p[k], n, color, [uv[k][0], uv[k][1], NO_DIAGONAL]))
-            .collect();
+        // In order, without a heap list: this runs for every face of a large map.
+        let i =
+            [0, 1, 2, 3].map(|k| self.vertex(p[k], n, color, [uv[k][0], uv[k][1], NO_DIAGONAL]));
         self.triangle(i[0], i[1], i[2]);
         self.triangle(i[0], i[2], i[3]);
     }
@@ -170,15 +170,8 @@ pub fn mesh(blocks: &Blocks) -> BlockoutMesh {
             let corners = [(0.0, 0.0), (1.0, 0.0), (1.0, 1.0), (0.0, 1.0)];
             // The top.
             if block.kind == BlockKind::Ramp {
-                let h: Vec<f32> = corners
-                    .iter()
-                    .map(|&(u, v)| edge_height(blocks, &planes, x, z, (0, 0), u, v).0)
-                    .collect();
-                let p: Vec<Vec3> = corners
-                    .iter()
-                    .zip(&h)
-                    .map(|(&(u, v), &y)| at(u, v, y))
-                    .collect();
+                let h = corners.map(|(u, v)| edge_height(blocks, &planes, x, z, (0, 0), u, v).0);
+                let p: [Vec3; 4] = std::array::from_fn(|k| at(corners[k].0, corners[k].1, h[k]));
                 let n = (p[2] - p[0]).cross(p[1] - p[3]).normalize_or(up);
                 let n = if n.y < 0.0 { -n } else { n };
                 b.quad([p[0], p[3], p[2], p[1]], n, color(block));
@@ -202,13 +195,10 @@ pub fn mesh(blocks: &Blocks) -> BlockoutMesh {
                 };
                 for (half, idx) in [(own, [a, o, c]), (fill, [corner, a, c])] {
                     let y = top(half);
-                    let ids: Vec<u32> = idx
-                        .iter()
-                        .map(|&k| {
-                            let (u, v) = corners[k];
-                            b.vertex(at(u, v, y), up, color(half), [u, v, diag(u, v)])
-                        })
-                        .collect();
+                    let ids = idx.map(|k| {
+                        let (u, v) = corners[k];
+                        b.vertex(at(u, v, y), up, color(half), [u, v, diag(u, v)])
+                    });
                     b.triangle(ids[0], ids[2], ids[1]);
                 }
                 // The diagonal wall between the halves.
@@ -233,7 +223,7 @@ pub fn mesh(blocks: &Blocks) -> BlockoutMesh {
                 }
             } else {
                 let y = top(block);
-                let p: Vec<Vec3> = corners.iter().map(|&(u, v)| at(u, v, y)).collect();
+                let p = corners.map(|(u, v)| at(u, v, y));
                 b.quad([p[0], p[3], p[2], p[1]], up, color(block));
             }
             // Walls where this column stands above its neighbour.

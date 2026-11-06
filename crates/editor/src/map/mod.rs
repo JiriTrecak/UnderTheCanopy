@@ -67,6 +67,8 @@ pub fn build(
     ghost: Option<(String, f64)>,
 ) -> Result<Scene, String> {
     use crate::world::View;
+    let _span = tracing::info_span!("map_build").entered();
+    let blocks_span = tracing::info_span!("map_build_blocks").entered();
     let blockout = match view {
         View::Blocks | View::Split | View::Tech => {
             canopy_content::map::blocks::Blocks::of(&map.authoring.terrain)
@@ -80,6 +82,7 @@ pub fn build(
             Some(crate::world::mesh::pathing(&terrain))
         }
     };
+    drop(blocks_span);
     // Otherwise the world generated from the blocks, as the game builds it (D80).
     let generated = blockout
         .is_none()
@@ -103,6 +106,7 @@ pub fn build(
     };
     let field = HeightField::decode(&map.authoring.terrain).map_err(|e| format!("{e:?}"))?;
     let ground = |x: f64, z: f64| field.sample(x, z);
+    let scenery_span = tracing::info_span!("map_build_scenery").entered();
     let scenery: BTreeMap<String, canopy_assets::SceneryPrototype> = pack
         .scenery()
         .map_err(|e| e.to_string())?
@@ -110,6 +114,7 @@ pub fn build(
         .into_iter()
         .map(|p| (p.id.clone(), p))
         .collect();
+    drop(scenery_span);
     // Scenery is named by its id or its model asset's (the catalogue keys both).
     let by_model: BTreeMap<String, String> = content
         .landscape

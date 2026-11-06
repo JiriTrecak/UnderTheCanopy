@@ -852,6 +852,18 @@ impl Renderer {
         Ok(())
     }
 
+    /// Replaces the blockout alone, the rest of the world staying as loaded: the editor's
+    /// block view while its blocks are edited (a whole [`Renderer::load_world`] costs
+    /// tens of milliseconds a stroke on a large map).
+    pub fn set_blockout(&mut self, gpu: &Gpu, mesh: Option<&crate::blockout::BlockoutMesh>) {
+        let before = self.blockout.as_ref().map_or(0, |b| b.bytes);
+        self.blockout = mesh.and_then(|mesh| {
+            crate::blockout::BlockoutGpu::new(&gpu.device, mesh, &self.frame_layout)
+        });
+        let after = self.blockout.as_ref().map_or(0, |b| b.bytes);
+        self.world_bytes = self.world_bytes - before.min(self.world_bytes) + after;
+    }
+
     /// Loads the textures effect draws refer to by position (pack entry names).
     pub fn load_effect_textures(
         &mut self,
