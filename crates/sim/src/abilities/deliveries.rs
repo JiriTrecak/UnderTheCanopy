@@ -183,11 +183,23 @@ pub struct Standing {
     /// The entity id counter and count it was taken at, while it holds.
     taken: Option<(u32, usize)>,
     at: Vec<(EntityId, Milli)>,
+    /// `at` by square buckets of [`Standing::BUCKET`] milli-cells, row-major from
+    /// `origin`, each bucket's entries in id order (indices into `at`).
+    origin: (i32, i32),
+    width: usize,
+    height: usize,
+    starts: Vec<u32>,
+    members: Vec<u32>,
+    /// Indices a search found, before they are put in id order.
+    found: Vec<u32>,
 }
 
 impl Standing {
+    /// Side of a bucket, milli-cells.
+    const BUCKET: i32 = 16_000;
+
     /// The positions, taken again when stale or `forget`-ed.
-    pub fn of(&mut self, state: &State) -> &[(EntityId, Milli)] {
+    pub fn of(&mut self, state: &State) -> &mut Self {
         let now = (state.counters.entity, state.entities.len());
         if self.taken != Some(now) {
             self.at.clear();
@@ -198,9 +210,97 @@ impl Standing {
                     .filter(|e| e.hp.is_some())
                     .map(|e| (e.id, e.position)),
             );
+            self.index();
             self.taken = Some(now);
         }
-        &self.at
+        self
+    }
+
+    /// Sorts `at` into its buckets.
+    fn index(&mut self) {
+        let bucket = |p: Milli| (p.x.div_euclid(Self::BUCKET), p.y.div_euclid(Self::BUCKET));
+        let (mut lo, mut hi) = ((i32::MAX, i32::MAX), (i32::MIN, i32::MIN));
+        for &(_, p) in &self.at {
+            let (bx, by) = bucket(p);
+            lo = (lo.0.min(bx), lo.1.min(by));
+            hi = (hi.0.max(bx), hi.1.max(by));
+        }
+        if self.at.is_empty() {
+            (lo, hi) = ((0, 0), (0, 0));
+        }
+        self.origin = lo;
+        self.width = (i64::from(hi.0) - i64::from(lo.0) + 1) as usize;
+        self.height = (i64::from(hi.1) - i64::from(lo.1) + 1) as usize;
+        let slot = |p: Milli| {
+            let (bx, by) = bucket(p);
+            (by - lo.1) as usize * self.width + (bx - lo.0) as usize
+        };
+        self.starts.clear();
+        self.starts.resize(self.width * self.height + 1, 0);
+        for &(_, p) in &self.at {
+            self.starts[slot(p) + 1] += 1;
+        }
+        for b in 1..self.starts.len() {
+            self.starts[b] += self.starts[b - 1];
+        }
+        let mut fill = self.starts.clone();
+        self.members.clear();
+        self.members.resize(self.at.len(), 0);
+        for (i, &(_, p)) in self.at.iter().enumerate() {
+            let at = &mut fill[slot(p)];
+            self.members[*at as usize] = i as u32;
+            *at += 1;
+        }
+    }
+
+    /// The entities standing within `radius` cells of `point`, in id order: those whose
+    /// `(x/1000 − px)² + (y/1000 − py)² ≤ radius²`, the test of a scan over all of them.
+    fn within(&mut self, point: (f64, f64), radius: f64) -> impl Iterator<Item = EntityId> + '_ {
+        let r2 = radius * radius;
+        let near = move |p: Milli| {
+            let (dx, dy) = (
+                f64::from(p.x) / 1000.0 - point.0,
+                f64::from(p.y) / 1000.0 - point.1,
+            );
+            dx * dx + dy * dy <= r2
+        };
+        self.found.clear();
+        // A box a milli-cell wider than the circle holds every entity that passes.
+        let reach = radius.abs();
+        let range = |c: f64, lo: i32, n: usize| {
+            let a = ((c - reach) * 1000.0).floor() - 1.0;
+            let b = ((c + reach) * 1000.0).ceil() + 1.0;
+            let bucket = |v: f64| (v / f64::from(Self::BUCKET)).floor() - f64::from(lo);
+            let (a, b) = (bucket(a).max(0.0), bucket(b).min(n as f64 - 1.0));
+            (a <= b).then_some((a as usize, b as usize))
+        };
+        let boxed = r2.is_finite() && point.0.is_finite() && point.1.is_finite();
+        match (
+            boxed.then(|| range(point.0, self.origin.0, self.width)),
+            boxed.then(|| range(point.1, self.origin.1, self.height)),
+        ) {
+            (Some(Some((x0, x1))), Some(Some((y0, y1)))) => {
+                for by in y0..=y1 {
+                    let row = by * self.width;
+                    let (a, b) = (
+                        self.starts[row + x0] as usize,
+                        self.starts[row + x1 + 1] as usize,
+                    );
+                    self.found.extend(
+                        self.members[a..b]
+                            .iter()
+                            .copied()
+                            .filter(|&i| near(self.at[i as usize].1)),
+                    );
+                }
+                self.found.sort_unstable();
+            }
+            (Some(None), _) | (_, Some(None)) => {}
+            _ => self
+                .found
+                .extend((0..self.at.len() as u32).filter(|&i| near(self.at[i as usize].1))),
+        }
+        self.found.iter().map(|&i| self.at[i as usize].0)
     }
 
     /// After something that may have moved an entity.
@@ -240,21 +340,13 @@ pub fn candidates_among(
     spell: &Ability,
     point: (f64, f64),
     radius: f64,
-    standing: &[(EntityId, Milli)],
+    standing: &mut Standing,
     leave: impl Fn(EntityId) -> bool,
 ) -> Vec<Actor> {
-    let r2 = radius * radius;
     let near = standing
-        .iter()
-        .filter(|(_, p)| {
-            let (dx, dy) = (
-                f64::from(p.x) / 1000.0 - point.0,
-                f64::from(p.y) / 1000.0 - point.1,
-            );
-            dx * dx + dy * dy <= r2
-        })
-        .filter(|&&(id, _)| !leave(id))
-        .filter_map(|&(id, _)| state.entities.get(id));
+        .within(point, radius)
+        .filter(|&id| !leave(id))
+        .filter_map(|id| state.entities.get(id));
     candidates_of(ctx, state, caster, spell, point, radius, near)
 }
 
