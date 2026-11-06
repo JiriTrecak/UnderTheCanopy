@@ -621,21 +621,22 @@ struct Posed {
 }
 
 /// What effects see of the scene this tick.
+/// The tick's entities for its effects, each list in id order.
 struct EffectWorld<'a> {
-    anchors: &'a BTreeMap<u32, Vec3>,
-    teams: &'a BTreeMap<u32, [f32; 3]>,
-    posed: &'a BTreeMap<u32, Posed>,
+    anchors: &'a [(u32, Vec3)],
+    teams: &'a [(u32, [f32; 3])],
+    posed: &'a [(u32, Posed)],
     terrain: &'a Terrain,
     missiles: &'a BTreeMap<u32, (Vec3, Vec3)>,
 }
 
 impl EffectScene for EffectWorld<'_> {
     fn anchor(&self, entity: u32) -> Option<Vec3> {
-        self.anchors.get(&entity).copied()
+        found(self.anchors, entity).copied()
     }
 
     fn socket(&self, entity: u32, socket: &str) -> Option<(Vec3, Quat)> {
-        let p = self.posed.get(&entity)?;
+        let p = found(self.posed, entity)?;
         let (clip, time) = p.clip.unwrap_or((0, 0.0));
         let m = p.info.socket(socket, clip, time)?;
         Some((
@@ -656,8 +657,26 @@ impl EffectScene for EffectWorld<'_> {
     }
 
     fn team(&self, entity: u32) -> Option<[f32; 3]> {
-        self.teams.get(&entity).copied()
+        found(self.teams, entity).copied()
     }
+}
+
+/// The value of `key` in `list` (in key order, each key once).
+fn found<K: Ord, V>(list: &[(K, V)], key: K) -> Option<&V> {
+    list.binary_search_by(|(k, _)| k.cmp(&key))
+        .ok()
+        .map(|i| &list[i].1)
+}
+
+/// Lists [`Presenter::update`] fills each tick, kept with their room between ticks.
+#[derive(Default)]
+struct Scratch {
+    previous: Vec<(u64, Vec3)>,
+    health: Vec<(EntityId, u32)>,
+    seen: Vec<EntityId>,
+    posed: Vec<(u32, Posed)>,
+    anchors: Vec<(u32, Vec3)>,
+    teams: Vec<(u32, [f32; 3])>,
 }
 
 /// Old dust randomness: a hash of the building and tick, never the simulation's stream.
@@ -704,10 +723,13 @@ pub struct Presenter {
     hidden: HiddenStatics,
     felling: BTreeMap<EntityId, Sighting>,
     chunks: Option<Arc<[Arc<[Sighting]>]>>,
-    previous: BTreeMap<u64, Vec3>,
+    /// Where each actor stood as last presented, by key (in key order).
+    previous: Vec<(u64, Vec3)>,
     pub effects: EffectDirector,
-    /// Health as last presented, for hit sparks.
-    health: BTreeMap<EntityId, u32>,
+    /// Health as last presented, for hit sparks (in id order).
+    health: Vec<(EntityId, u32)>,
+    /// The lists a presentation fills, kept for the next one (no allocations a tick).
+    scratch: Scratch,
     dust: BTreeMap<EntityId, Dust>,
     /// Construction dust effect and interval by building definition.
     dust_effects: BTreeMap<String, (usize, u32)>,
@@ -915,9 +937,10 @@ impl Presenter {
             },
             felling: BTreeMap::new(),
             chunks: None,
-            previous: BTreeMap::new(),
+            previous: Vec::new(),
             effects,
-            health: BTreeMap::new(),
+            health: Vec::new(),
+            scratch: Scratch::default(),
             dust: BTreeMap::new(),
             dust_effects,
             missile_poses: BTreeMap::new(),
@@ -1164,10 +1187,12 @@ impl Presenter {
         let mut actors: Vec<Actor> = Vec::with_capacity(view.entities.len() + 64);
         let mut counts = Counts::default();
         let fallen: BTreeSet<EntityId> = view.battle.fallen.iter().copied().collect();
-        let mut seen: BTreeSet<EntityId> = BTreeSet::new();
+        // Units shown this tick, in id order.
+        let mut seen = std::mem::take(&mut self.scratch.seen);
+        seen.clear();
         let mut fighting: Vec<[f32; 2]> = Vec::new();
-        let by_id: BTreeMap<EntityId, &EntityView> =
-            view.entities.iter().map(|e| (e.id(), e)).collect();
+        // The view's entities are in id order: found there, not in a map made each tick.
+        let by_id = |id: EntityId| view.entity(id);
         // Animations a mission scene asked for.
         let scripted: BTreeMap<EntityId, &canopy_sim::mission::cinema::Animation> = view
             .mission
@@ -1187,7 +1212,7 @@ impl Presenter {
             };
             let target = attack
                 .target
-                .and_then(|t| by_id.get(&t))
+                .and_then(by_id)
                 .map(|t| cells(t.public.position));
             let tower = towers.entry(host).or_default();
             tower.fired |= attack.impact == tick;
@@ -1239,7 +1264,7 @@ impl Presenter {
                         .content
                         .look(d.id.as_str())
                         .and_then(|l| l.sounds.as_deref())
-                        && let Some(t) = by_id.get(&target)
+                        && let Some(t) = by_id(target)
                     {
                         let (x, z) = cells(t.public.position);
                         crate::sounds::of_moment(
@@ -1262,9 +1287,13 @@ impl Presenter {
         let mut moves: BTreeMap<u32, Vec3> = BTreeMap::new();
         let mut leveled: Vec<(EntityId, Vec3)> = Vec::new();
         let mut damaged: Vec<Damaged> = Vec::new();
-        let mut posed: BTreeMap<u32, Posed> = BTreeMap::new();
+        // Posed models by entity, in id order (the view's).
+        let mut posed = std::mem::take(&mut self.scratch.posed);
+        posed.clear();
         let mut bodies: Vec<Body> = Vec::new();
-        let mut health: BTreeMap<EntityId, u32> = BTreeMap::new();
+        // Health shown this tick, in id order.
+        let mut health = std::mem::take(&mut self.scratch.health);
+        health.clear();
         let mut building: BTreeSet<EntityId> = BTreeSet::new();
         // A deposit under a building placed on it is drawn as that building (D62), once the
         // building shows: under its scaffold the deposit stays until the building is revealed.
@@ -1340,7 +1369,7 @@ impl Presenter {
             let mut hide = false;
             // A confirmed loss of health throws sparks (old `ImpactEffects`).
             if let Some(hp) = e.public.hp.filter(|_| !e.remembered) {
-                if self.health.get(&id).is_some_and(|&before| hp < before)
+                if found(&self.health, id).is_some_and(|&before| hp < before)
                     && matches!(d.kind, Kind::Unit | Kind::Building)
                 {
                     let (x, z) = cells(e.public.position);
@@ -1398,12 +1427,12 @@ impl Presenter {
                         }
                     }
                 }
-                health.insert(id, hp);
+                health.push((id, hp));
             }
             match d.kind {
                 Kind::Unit => {
                     counts.units += 1;
-                    seen.insert(id);
+                    seen.push(id);
                     let combat = e.combat.as_ref();
                     let magic = e.magic.as_ref();
                     if combat.is_some_and(|c| c.attack.is_some()) {
@@ -1415,7 +1444,7 @@ impl Presenter {
                         position.y += f;
                     }
                     let garrison = combat.and_then(|c| c.garrison);
-                    if let Some(host) = garrison.and_then(|g| by_id.get(&g)) {
+                    if let Some(host) = garrison.and_then(by_id) {
                         let host_def = catalog.get(host.definition());
                         if let Some(g) = &host_def.garrison {
                             let host_scale = self.appearance.get(&host.id()).map_or(1.0, |a| a.1);
@@ -1546,7 +1575,7 @@ impl Presenter {
                     }
                     actor.position = position;
                     if let Some(animation) = &tracked.animation {
-                        posed.insert(
+                        posed.push((
                             id.0,
                             Posed {
                                 info: self.catalog.shared(model),
@@ -1555,7 +1584,7 @@ impl Presenter {
                                 rotation: actor.rotation,
                                 scale: actor.scale,
                             },
-                        );
+                        ));
                         // Melee blade ribbons through the middle of the swing.
                         if let (Some(attack), Some(state)) = (
                             combat.and_then(|c| c.attack.as_ref()),
@@ -1936,7 +1965,7 @@ impl Presenter {
             .units
             .keys()
             .copied()
-            .filter(|id| !seen.contains(id))
+            .filter(|id| seen.binary_search(id).is_err())
             .collect();
         for id in gone {
             let mut tracked = self.units.remove(&id).expect("listed");
@@ -2108,12 +2137,12 @@ impl Presenter {
         drop(section);
         let section = tracing::trace_span!("present_flights").entered();
         self.trees(catalog, view, &mut actors, &mut counts);
-        self.flights(catalog, view, &by_id, &mut actors, &mut counts);
-        self.weapon_effects(catalog, view, &by_id);
+        self.flights(catalog, view, &mut actors, &mut counts);
+        self.weapon_effects(catalog, view);
         drop(section);
         let _section = tracing::trace_span!("present_tail").entered();
 
-        self.health = health;
+        self.scratch.health = std::mem::replace(&mut self.health, health);
         self.last_tick = Some(tick);
         let fires = {
             let (catalog, pack, hulls) = (&self.catalog, self.pack.as_deref(), &mut self.hulls);
@@ -2147,16 +2176,23 @@ impl Presenter {
         }
         self.effects.relocate(&moves);
         self.rising.retain(|(_, _, until)| *until > tick);
-        let anchors: BTreeMap<u32, Vec3> = actors
-            .iter()
-            .filter(|a| a.key >> 40 == Part::Entity as u64)
-            .map(|a| (a.key as u32, a.position))
-            .collect();
-        let teams: BTreeMap<u32, [f32; 3]> = actors
-            .iter()
-            .filter(|a| a.key >> 40 == Part::Entity as u64)
-            .filter_map(|a| a.color.map(|c| (a.key as u32, c)))
-            .collect();
+        actors.sort_by_key(|a| a.key);
+        // The entities' actors lead the sorted list (part 0, layer 0), in id order.
+        let entities = actors.partition_point(|a| a.key >> 40 == Part::Entity as u64);
+        let mut anchors = std::mem::take(&mut self.scratch.anchors);
+        anchors.clear();
+        anchors.extend(
+            actors[..entities]
+                .iter()
+                .map(|a| (a.key as u32, a.position)),
+        );
+        let mut teams = std::mem::take(&mut self.scratch.teams);
+        teams.clear();
+        teams.extend(
+            actors[..entities]
+                .iter()
+                .filter_map(|a| a.color.map(|c| (a.key as u32, c))),
+        );
         self.point_effects(view);
         let mut effects = self.effects.update(
             view,
@@ -2170,17 +2206,30 @@ impl Presenter {
             catalog,
         );
         effects.lights = self.point_lights(view);
+        self.scratch.anchors = anchors;
+        self.scratch.teams = teams;
+        posed.clear();
+        self.scratch.posed = posed;
+        self.scratch.seen = seen;
 
-        actors.sort_by_key(|a| a.key);
         // Jumps further than a walk do not interpolate.
         for a in &mut actors {
-            if let Some(previous) = self.previous.get(&a.key)
+            if let Some(previous) = found(&self.previous, a.key)
                 && previous.distance(a.position) > TELEPORT_DISTANCE
             {
                 a.snap = true;
             }
         }
-        self.previous = actors.iter().map(|a| (a.key, a.position)).collect();
+        let mut previous = std::mem::take(&mut self.scratch.previous);
+        previous.clear();
+        for a in &actors {
+            // A key twice (never, but as a map would): the later one's position.
+            match previous.last_mut() {
+                Some(last) if last.0 == a.key => last.1 = a.position,
+                _ => previous.push((a.key, a.position)),
+            }
+        }
+        self.scratch.previous = std::mem::replace(&mut self.previous, previous);
         self.deliveries(view, &bodies, tick);
         self.life_sounds(view, catalog);
         Presentation {
@@ -2582,7 +2631,7 @@ impl Presenter {
         model: u32,
         info: &Arc<ModelInfo>,
         actor: &mut Actor,
-        (posed, moves): (&mut BTreeMap<u32, Posed>, &mut BTreeMap<u32, Vec3>),
+        (posed, moves): (&mut Vec<(u32, Posed)>, &mut BTreeMap<u32, Vec3>),
         tick: u32,
     ) {
         use crate::animation::building_states::{IDLE, WORK};
@@ -2639,7 +2688,7 @@ impl Presenter {
         track.activity = ease_activity(track.activity, state != IDLE);
         actor.activity = track.activity;
         if let Some(clip) = clip {
-            posed.insert(
+            posed.push((
                 id.0,
                 Posed {
                     info: info.clone(),
@@ -2648,7 +2697,7 @@ impl Presenter {
                     rotation: actor.rotation,
                     scale: actor.scale,
                 },
-            );
+            ));
         }
         let in_state = |s: &str| s == "always" || s == state;
         if let Some(sounds) = asset.sounds.as_deref() {
@@ -2938,7 +2987,6 @@ impl Presenter {
         &mut self,
         catalog: &Catalog,
         view: &View,
-        by_id: &BTreeMap<EntityId, &EntityView>,
         actors: &mut Vec<Actor>,
         counts: &mut Counts,
     ) {
@@ -3008,7 +3056,7 @@ impl Presenter {
                     // recorded origin.
                     let socket = (tick <= f.launched + 1)
                         .then(|| {
-                            self.launch_socket(f.source, asset.projectile_socket.as_deref(), by_id)
+                            self.launch_socket(f.source, asset.projectile_socket.as_deref(), view)
                         })
                         .flatten();
                     let p = socket.unwrap_or_else(|| {
@@ -3069,12 +3117,7 @@ impl Presenter {
     /// Launch and impact effects of weapons (`presentation.launchEffect`, `impactEffect`):
     /// each missile or shell plays its shooter's launch effect once as it leaves, and each
     /// missile its impact effect once where it lands (shell impacts play with the shells).
-    fn weapon_effects(
-        &mut self,
-        catalog: &Catalog,
-        view: &View,
-        by_id: &BTreeMap<EntityId, &EntityView>,
-    ) {
+    fn weapon_effects(&mut self, catalog: &Catalog, view: &View) {
         let tick = view.tick;
         let content = self.content.clone();
         let flights = view
@@ -3144,9 +3187,7 @@ impl Presenter {
                     .get(&(part, id))
                     .filter(|(l, _)| *l == launched)
                     .map(|o| o.1)
-                    .or_else(|| {
-                        self.launch_socket(source, look.projectile_socket.as_deref(), by_id)
-                    })
+                    .or_else(|| self.launch_socket(source, look.projectile_socket.as_deref(), view))
                     .unwrap_or_else(|| {
                         let (x, z) = cells(origin.position);
                         Vec3::new(
@@ -3214,14 +3255,9 @@ impl Presenter {
     }
 
     /// World position of a shooter's projectile socket in its current pose.
-    fn launch_socket(
-        &self,
-        source: EntityId,
-        socket: Option<&str>,
-        by_id: &BTreeMap<EntityId, &EntityView>,
-    ) -> Option<Vec3> {
+    fn launch_socket(&self, source: EntityId, socket: Option<&str>, view: &View) -> Option<Vec3> {
         let socket = socket?;
-        by_id.get(&source)?;
+        view.entity(source)?;
         let tracked = self.units.get(&source)?;
         let info = self.catalog.get(tracked.model);
         let (clip, time) = tracked.animation.as_ref()?.animator.current();
