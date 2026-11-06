@@ -104,8 +104,13 @@ pub struct Editor {
     jobs: Vec<egui::ClippedPrimitive>,
     screen: egui_wgpu::ScreenDescriptor,
     shell: shell::Shell,
-    /// The viewport's renderer, made when a viewport first shows (or why it could not be).
+    /// The viewports' renderers, made when one first shows (or why it could not be): one
+    /// for the open element's model, one for a map's scene and one for the stages (an
+    /// ability's or effect's, the Combat Lab's), so moving between them never loads a
+    /// world again.
     stage: Option<Result<stage::Stage, String>>,
+    stage_scene: Option<Result<stage::Stage, String>>,
+    stage_encounter: Option<Result<stage::Stage, String>>,
     /// A second viewport, opened for the map editor's split view: its generated world.
     stage_generated: Option<Result<stage::Stage, String>>,
     /// The effect graph's node previews (D113), made when a graph first shows, and the
@@ -176,6 +181,8 @@ impl Editor {
             },
             shell: shell::Shell::new(package, setup.user, Some(setup.data.clone())),
             stage: None,
+            stage_scene: None,
+            stage_encounter: None,
             stage_generated: None,
             thumbs: None,
             data: setup.data,
@@ -571,18 +578,20 @@ impl Editor {
     ) -> (Output, egui::PlatformOutput) {
         let (device, queue) = (&gpu.device, &gpu.queue);
         // The viewport shows last frame's picture; this frame's is drawn below.
-        self.shell.viewport_texture = match &self.stage {
+        let texture = |stage: &Option<Result<stage::Stage, String>>| match stage {
             Some(Ok(stage)) => stage.texture(),
             _ => None,
         };
-        self.shell.viewport_texture_generated = match &self.stage_generated {
-            Some(Ok(stage)) => stage.texture(),
-            _ => None,
-        };
-        self.shell.viewport_error = match &self.stage {
-            Some(Err(error)) => Some(error.clone()),
-            _ => None,
-        };
+        self.shell.viewport_texture = texture(&self.stage);
+        self.shell.viewport_texture_scene = texture(&self.stage_scene);
+        self.shell.viewport_texture_encounter = texture(&self.stage_encounter);
+        self.shell.viewport_texture_generated = texture(&self.stage_generated);
+        self.shell.viewport_error = [&self.stage, &self.stage_scene, &self.stage_encounter]
+            .into_iter()
+            .find_map(|stage| match stage {
+                Some(Err(error)) => Some(error.clone()),
+                _ => None,
+            });
         self.shell.thumbs_texture = self.thumbs.as_ref().map(|(_, id)| *id);
         let shell = &mut self.shell;
         let output = self.ctx.run_ui(input, |ui| shell.ui(ui));
@@ -609,7 +618,12 @@ impl Editor {
         }
         // A cook finished: the stage opens the new pack.
         if std::mem::take(&mut self.shell.reload_pack) {
-            for stage in [self.stage.take(), self.stage_generated.take()] {
+            for stage in [
+                self.stage.take(),
+                self.stage_scene.take(),
+                self.stage_encounter.take(),
+                self.stage_generated.take(),
+            ] {
                 if let Some(Ok(stage)) = stage
                     && let Some(texture) = stage.texture()
                 {
@@ -630,19 +644,26 @@ impl Editor {
             self.shell.scene.take(),
             self.shell.encounter.take(),
         );
-        if shot.is_some() || scene.is_some() || encounter.is_some() {
-            let stage = self
+        if let Some(scene) = scene
+            && let Ok(stage) = self
+                .stage_scene
+                .get_or_insert_with(|| stage::Stage::new(gpu, &self.data))
+        {
+            stage.draw_scene(gpu, &mut self.renderer, &scene);
+        }
+        if let Some(encounter) = encounter
+            && let Ok(stage) = self
+                .stage_encounter
+                .get_or_insert_with(|| stage::Stage::new(gpu, &self.data))
+        {
+            stage.draw_encounter(gpu, &mut self.renderer, &encounter);
+        }
+        if let Some(shot) = shot
+            && let Ok(stage) = self
                 .stage
-                .get_or_insert_with(|| stage::Stage::new(gpu, &self.data));
-            if let Ok(stage) = stage {
-                if let Some(scene) = scene {
-                    stage.draw_scene(gpu, &mut self.renderer, &scene);
-                } else if let Some(encounter) = encounter {
-                    stage.draw_encounter(gpu, &mut self.renderer, &encounter);
-                } else if let Some(shot) = shot {
-                    stage.draw(gpu, &mut self.renderer, &shot);
-                }
-            }
+                .get_or_insert_with(|| stage::Stage::new(gpu, &self.data))
+        {
+            stage.draw(gpu, &mut self.renderer, &shot);
         }
         let egui::FullOutput {
             platform_output,

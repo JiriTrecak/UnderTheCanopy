@@ -134,6 +134,9 @@ pub struct Session {
     colour: usize,
     /// The player colours (linear) and their names.
     palette: Vec<([f32; 3], String)>,
+    /// The fixture an effect's stage last replayed and the first aim in it: each loop
+    /// casts there again without a world built only to find it.
+    first_aim: Option<(Arc<Fixture>, Option<Aim>)>,
 }
 
 /// What can be asked of the stage from outside its panel.
@@ -181,6 +184,7 @@ impl Session {
             showcase: None,
             colour: 0,
             palette: Vec::new(),
+            first_aim: None,
         }
     }
 
@@ -330,8 +334,22 @@ impl Session {
         let Some(fixture) = self.fixture.clone() else {
             return;
         };
-        match Take::new(fixture, None) {
-            Ok(idle) => self.fire(idle.first_aim()),
+        if let Some((at, aim)) = &self.first_aim
+            && Arc::ptr_eq(at, &fixture)
+        {
+            let aim = *aim;
+            return self.fire(aim);
+        }
+        let idle = {
+            let _span = tracing::info_span!("encounter_take").entered();
+            Take::new(fixture.clone(), None)
+        };
+        match idle {
+            Ok(idle) => {
+                let aim = idle.first_aim();
+                self.first_aim = Some((fixture, aim));
+                self.fire(aim)
+            }
             Err(error) => self.fail(error),
         }
     }
@@ -389,6 +407,7 @@ impl Session {
         {
             *slot = *colour;
         }
+        let _span = tracing::info_span!("encounter_presenter").entered();
         self.presenter = Some(Presenter::with_effects(
             take.world(),
             &fixture.map,
@@ -463,7 +482,11 @@ impl Session {
         };
         self.targeting = false;
         self.hover = None;
-        match Take::new(fixture, aim) {
+        let take = {
+            let _span = tracing::info_span!("encounter_take").entered();
+            Take::new(fixture, aim)
+        };
+        match take {
             Ok(take) => {
                 self.begin(take);
                 self.playing = true;

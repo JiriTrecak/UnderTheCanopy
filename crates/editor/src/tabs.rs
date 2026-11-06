@@ -181,7 +181,9 @@ pub struct Viewer<'a> {
     /// the map view's size this frame (the stage draws the scene at it).
     pub maps: &'a mut std::collections::HashMap<String, crate::map::Session>,
     pub content: Option<std::sync::Arc<canopy_content::Content>>,
+    /// A map's scene's last picture, and the stages' (an ability's or effect's, the lab's).
     pub scene_texture: Option<egui::TextureId>,
+    pub encounter_texture: Option<egui::TextureId>,
     pub map_size: &'a mut Option<(String, [u32; 2])>,
     /// The split view's generated world: its last picture and its pane's size.
     pub generated_texture: Option<egui::TextureId>,
@@ -373,7 +375,7 @@ impl TabViewer for Viewer<'_> {
                     ui,
                     session,
                     Some(&content),
-                    self.scene_texture,
+                    self.encounter_texture,
                     self.stale,
                 );
                 if let Some(show) = session.showcase
@@ -405,7 +407,7 @@ impl TabViewer for Viewer<'_> {
                     ui,
                     session,
                     self.content.as_deref(),
-                    self.scene_texture,
+                    self.encounter_texture,
                     self.stale,
                 );
                 if let Some(size) = out.size {
@@ -461,7 +463,7 @@ impl TabViewer for Viewer<'_> {
                     self.content.as_ref(),
                     self.pack,
                     look,
-                    self.scene_texture,
+                    self.encounter_texture,
                 );
                 if let Some(size) = out.size {
                     *self.lab_size = Some((tab.document.clone(), size));

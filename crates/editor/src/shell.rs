@@ -246,6 +246,9 @@ pub struct Shell {
     /// The viewport: last frame's picture, why it cannot draw, this frame's request and
     /// its camera.
     pub viewport_texture: Option<egui::TextureId>,
+    /// A map's scene's last picture, and the stages' (an ability's or effect's, the lab's).
+    pub viewport_texture_scene: Option<egui::TextureId>,
+    pub viewport_texture_encounter: Option<egui::TextureId>,
     /// The second viewport's last picture: the split view's generated world.
     pub viewport_texture_generated: Option<egui::TextureId>,
     /// Set when a cook finished: the viewports open the pack again.
@@ -336,6 +339,8 @@ impl Shell {
             encounter_waiting: Vec::new(),
             test: None,
             viewport_texture: None,
+            viewport_texture_scene: None,
+            viewport_texture_encounter: None,
             viewport_texture_generated: None,
             viewport_error: None,
             shot: None,
@@ -579,7 +584,8 @@ impl Shell {
                 try_with: &mut try_with,
                 maps: &mut self.maps,
                 content,
-                scene_texture: self.viewport_texture,
+                scene_texture: self.viewport_texture_scene,
+                encounter_texture: self.viewport_texture_encounter,
                 map_size: &mut map_size,
                 generated_texture: self.viewport_texture_generated,
                 generated_size: &mut generated_size,

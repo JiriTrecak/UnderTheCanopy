@@ -50,11 +50,14 @@ impl Default for Orbit {
     }
 }
 
-/// What the stage has loaded: one model, a map's scene (its map and version), or an
-/// encounter's ground (its version).
+/// Models a model viewport keeps loaded: those shown before load again for nothing.
+const MODELS_KEPT: usize = 24;
+
+/// What the stage has loaded: models (each with its height), a map's scene (its map and
+/// version), or an encounter's ground (its version).
 #[derive(Debug, Clone, PartialEq)]
 enum Loaded {
-    Model(String, f32),
+    Models(Vec<(String, f32)>),
     Scene(String, u64),
     Encounter(u64),
 }
@@ -362,9 +365,11 @@ impl Stage {
         );
         let b = &shot.b;
         let live = &mut self.live;
-        // A new presenter may list its models in another order: the world loads again.
+        // A new presenter may list its models in another order: the world loads again. One
+        // that lists fewer in the same order (a take starting again) finds them loaded.
         let loaded = Loaded::Encounter(shot.version);
-        if self.loaded.as_ref() != Some(&loaded) || !b.models.starts_with(&live.models) {
+        let fits = b.models.starts_with(&live.models) || live.models.starts_with(&b.models);
+        if self.loaded.as_ref() != Some(&loaded) || !fits {
             let mut world = shot.scene.world.clone();
             world.actor_models = b.models.to_vec();
             if let Err(error) = self.renderer.load_world(gpu, &self.pack, &world) {
@@ -465,7 +470,23 @@ impl Stage {
         let size = self.fit(gpu, egui, shot.size);
         self.leave_encounter();
         self.light(gpu, None, 12.0, canopy_render::environment::Weather::Clear);
-        if !matches!(&self.loaded, Some(Loaded::Model(m, _)) if *m == shot.model) {
+        let kept = match &self.loaded {
+            Some(Loaded::Models(models)) => models.iter().position(|(m, _)| *m == shot.model),
+            _ => None,
+        };
+        // A model not shown yet joins those loaded (its world stays), up to a few.
+        let joins = match &mut self.loaded {
+            Some(Loaded::Models(models)) if kept.is_none() && models.len() < MODELS_KEPT => {
+                let height =
+                    canopy_scene::models::ModelInfo::read(&self.pack, &shot.model).height();
+                models.push((shot.model.clone(), height.max(0.1)));
+                let names: Vec<String> = models.iter().map(|(m, _)| m.clone()).collect();
+                self.renderer.sync_actor_models(gpu, &self.pack, &names);
+                true
+            }
+            _ => false,
+        };
+        if kept.is_none() && !joins {
             let world = World {
                 terrain: None,
                 statics: Vec::new(),
@@ -482,13 +503,18 @@ impl Stage {
                 tracing::warn!(%error, model = %shot.model, "editor: viewport model");
             }
             let height = canopy_scene::models::ModelInfo::read(&self.pack, &shot.model).height();
-            self.loaded = Some(Loaded::Model(shot.model.clone(), height.max(0.1)));
+            self.loaded = Some(Loaded::Models(vec![(shot.model.clone(), height.max(0.1))]));
         }
-        let height = match &self.loaded {
-            Some(Loaded::Model(_, h)) => *h,
-            _ => 1.0,
-        } * shot.scale;
-        let mut actor = ActorInstance::rest(0, Mat4::from_scale(Vec3::splat(shot.scale)));
+        let (index, height) = match &self.loaded {
+            Some(Loaded::Models(models)) => models
+                .iter()
+                .position(|(m, _)| *m == shot.model)
+                .map_or((0, 1.0), |i| (i, models[i].1)),
+            _ => (0, 1.0),
+        };
+        let height = height * shot.scale;
+        let mut actor =
+            ActorInstance::rest(index as u32, Mat4::from_scale(Vec3::splat(shot.scale)));
         if let Some((clip, duration)) = shot.clip {
             actor.poses[0] = canopy_render::actors::Pose {
                 clip,
