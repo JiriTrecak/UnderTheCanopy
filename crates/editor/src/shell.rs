@@ -326,6 +326,7 @@ impl Shell {
         user: Option<std::path::PathBuf>,
         data: Option<std::path::PathBuf>,
     ) -> Self {
+        let _span = tracing::info_span!("editor_shell").entered();
         let mut store = package.as_ref().ok().map(|p| Store::new(&p.root));
         let checker = package.as_ref().ok().cloned().map(Checker::new);
         let watch = package.as_ref().ok().and_then(|p| Watch::new(&p.root));

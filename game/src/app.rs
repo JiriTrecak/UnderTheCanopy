@@ -221,6 +221,7 @@ impl App {
         if session.editor.is_some() {
             return;
         }
+        let _span = tracing::info_span!("editor_open").entered();
         let setup = editor_setup(&self.paths);
         let format = session.display.format().remove_srgb_suffix();
         session.editor = Some(canopy_editor::Editor::new(

@@ -182,10 +182,16 @@ impl Editor {
 
     /// An editor without a window, for offscreen captures ([`Editor::run_headless`]).
     pub fn headless(gpu: &canopy_render::Gpu, format: wgpu::TextureFormat, setup: Setup) -> Self {
+        let _span = tracing::info_span!("editor_new").entered();
         let ctx = egui::Context::default();
-        theme::apply(&ctx, &setup.fonts);
-        let renderer =
-            egui_wgpu::Renderer::new(&gpu.device, format, egui_wgpu::RendererOptions::default());
+        {
+            let _span = tracing::info_span!("editor_theme").entered();
+            theme::apply(&ctx, &setup.fonts);
+        }
+        let renderer = {
+            let _span = tracing::info_span!("editor_renderer").entered();
+            egui_wgpu::Renderer::new(&gpu.device, format, egui_wgpu::RendererOptions::default())
+        };
         let package =
             canopy_content::package::Package::open(&setup.base).map_err(|e| e.to_string());
         if let Err(error) = &package {
