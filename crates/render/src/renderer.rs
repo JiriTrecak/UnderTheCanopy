@@ -260,6 +260,8 @@ pub struct Triangles {
     pub statics: u64,
     pub actors: u64,
     pub water: u64,
+    /// The map's cliffs, rocks and stones (dressing).
+    pub dressing: u64,
     /// Particles and ribbons (two per quad).
     pub effects: u64,
     /// Everything drawn into the sun's shadow map.
@@ -269,7 +271,7 @@ pub struct Triangles {
 impl Triangles {
     /// Triangles of the camera view (the forward pass).
     pub fn forward(&self) -> u64 {
-        self.terrain + self.statics + self.actors + self.water + self.effects
+        self.terrain + self.statics + self.actors + self.water + self.dressing + self.effects
     }
 }
 
@@ -1332,6 +1334,11 @@ impl Renderer {
             crate::frame::NORMAL_OFFSET,
             self.terrain.as_ref().map_or(f32::MIN, TerrainGpu::lowest),
         );
+        if let Some(dressing) = &mut self.dressing {
+            dressing.prepare(self.shadows.then_some((&shadow_planes, &casters)));
+            report.triangles.dressing = dressing.triangles;
+            report.triangles.shadow += dressing.shadow_triangles;
+        }
         if let Some(statics) = &mut self.statics {
             statics.prepare(
                 queue,

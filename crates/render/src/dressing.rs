@@ -3,12 +3,27 @@
 //! flat cut-outs pressed onto the ground in one instanced draw per atlas. The scene
 //! (`canopy_scene::generate`) builds both from the blocks; the renderer only draws them.
 //! Render only.
+//!
+//! A map's cliff meshes hold every cliff, rock and stone of the map (about 900,000
+//! triangles on frozen-dream). Their index lists are cut into runs of consecutive,
+//! neighbouring triangles when they load, and the sun's map draws only the runs whose
+//! shadow can reach the camera's view ([`CasterCull`]): a depth map keeps the nearest
+//! depth whatever the order or grouping of its triangles, so it comes out the same. The
+//! camera's view still draws each mesh whole in one call: Apple GPUs resolve some pixels
+//! where its rocks meet differently once a mesh's triangles are left out or split.
 
-use crate::{device::GpuFeatures, targets, texture};
+use crate::{device::GpuFeatures, shadow::CasterCull, targets, texture};
 use anyhow::{Context, Result};
 use bytemuck::{Pod, Zeroable};
 use canopy_assets::Pack;
+use glam::{Vec3, Vec4};
+use std::ops::Range;
 use wgpu::util::DeviceExt;
+
+/// Widest a cliff run may spread over the ground, metres.
+const RUN_SPAN: f32 = 16.0;
+/// Most triangles in a cliff run.
+const RUN_TRIANGLES: usize = 1024;
 
 /// One vertex of the cliff mesh.
 #[repr(C)]
@@ -87,6 +102,68 @@ struct GpuCliff {
     indices: wgpu::Buffer,
     count: u32,
     group: wgpu::BindGroup,
+    /// The index list's runs, in order.
+    runs: Vec<CliffRun>,
+    /// The index ranges the frame draws into the sun's map (adjacent runs merged).
+    shadow: Vec<Range<u32>>,
+}
+
+/// Consecutive triangles of a cliff mesh: their bounds and indices.
+#[derive(Debug, Clone, PartialEq)]
+struct CliffRun {
+    lo: Vec3,
+    hi: Vec3,
+    indices: Range<u32>,
+}
+
+/// The index list cut into runs of consecutive triangles (the generator emits them along
+/// each contour and rock by rock): a run ends before a triangle that would spread it wider
+/// than [`RUN_SPAN`] over the ground, or at [`RUN_TRIANGLES`].
+fn runs(vertices: &[CliffVertex], indices: &[u32]) -> Vec<CliffRun> {
+    let mut out = Vec::new();
+    let empty = (Vec3::splat(f32::MAX), Vec3::splat(f32::MIN));
+    let (mut lo, mut hi) = empty;
+    let mut first = 0;
+    for (t, triangle) in indices.chunks_exact(3).enumerate() {
+        let (mut tlo, mut thi) = empty;
+        for &i in triangle {
+            let p = Vec3::from(vertices[i as usize].position);
+            tlo = tlo.min(p);
+            thi = thi.max(p);
+        }
+        let (grown_lo, grown_hi) = (lo.min(tlo), hi.max(thi));
+        let wide = grown_hi.x - grown_lo.x > RUN_SPAN || grown_hi.z - grown_lo.z > RUN_SPAN;
+        if t > first && (wide || t - first >= RUN_TRIANGLES) {
+            out.push(CliffRun {
+                lo,
+                hi,
+                indices: (first * 3) as u32..(t * 3) as u32,
+            });
+            first = t;
+            (lo, hi) = (tlo, thi);
+        } else {
+            (lo, hi) = (grown_lo, grown_hi);
+        }
+    }
+    let end = indices.len() / 3;
+    if end > first {
+        out.push(CliffRun {
+            lo,
+            hi,
+            indices: (first * 3) as u32..(end * 3) as u32,
+        });
+    }
+    out
+}
+
+/// Whether a box touches every plane's inner side (n·p + d ≥ 0): it is outside a plane
+/// only when its corner farthest along the normal is.
+fn box_visible(planes: &[Vec4], lo: Vec3, hi: Vec3) -> bool {
+    planes.iter().all(|p| {
+        let n = p.truncate();
+        let corner = Vec3::select(n.cmpge(Vec3::ZERO), hi, lo);
+        n.dot(corner) + p.w >= -0.01
+    })
 }
 
 struct GpuDecals {
@@ -96,6 +173,9 @@ struct GpuDecals {
 
 pub struct DressingGpu {
     cliffs: Vec<GpuCliff>,
+    /// Cliff triangles the latest frame draws for the camera and into the sun's map.
+    pub triangles: u64,
+    pub shadow_triangles: u64,
     decals: Vec<GpuDecals>,
     cliff_pipeline: wgpu::RenderPipeline,
     cliff_shadow: wgpu::RenderPipeline,
@@ -283,6 +363,8 @@ impl DressingGpu {
                     indices,
                     count: mesh.indices.len() as u32,
                     group,
+                    runs: runs(&mesh.vertices, &mesh.indices),
+                    shadow: Vec::new(),
                 });
             }
         }
@@ -438,12 +520,46 @@ impl DressingGpu {
         });
         Ok(Self {
             cliffs,
+            triangles: 0,
+            shadow_triangles: 0,
             decals,
             cliff_pipeline,
             cliff_shadow,
             decal_pipeline,
             bytes,
         })
+    }
+
+    /// Chooses the cliff runs the frame draws into the sun's map: with `sun` (the map's
+    /// frustum planes and its caster cull) those whose shadow can fall into the camera's
+    /// view, none without.
+    pub fn prepare(&mut self, sun: Option<(&[Vec4; 6], &CasterCull)>) {
+        let _span = tracing::trace_span!("dressing_prepare").entered();
+        self.triangles = self.cliffs.iter().map(|c| u64::from(c.count / 3)).sum();
+        self.shadow_triangles = 0;
+        for c in &mut self.cliffs {
+            c.shadow.clear();
+            let Some((planes, casters)) = sun else {
+                continue;
+            };
+            for run in &c.runs {
+                let centre = (run.lo + run.hi) * 0.5;
+                if !box_visible(planes, run.lo, run.hi)
+                    || !casters.casts_into_view(centre.extend((run.hi - centre).length()))
+                {
+                    continue;
+                }
+                match c.shadow.last_mut() {
+                    Some(last) if last.end == run.indices.start => last.end = run.indices.end,
+                    _ => c.shadow.push(run.indices.clone()),
+                }
+            }
+            self.shadow_triangles += c
+                .shadow
+                .iter()
+                .map(|r| u64::from(r.len() as u32 / 3))
+                .sum::<u64>();
+        }
     }
 
     /// The cliffs (opaque); returns the draw count.
@@ -466,24 +582,27 @@ impl DressingGpu {
         self.cliffs.len() as u32
     }
 
-    /// The cliffs into the shadow map.
+    /// The cliffs whose shadow can reach the view ([`Self::prepare`]), into the shadow map.
     pub fn draw_shadow<'a>(
         &'a self,
         pass: &mut wgpu::RenderPass<'a>,
         frame: &'a wgpu::BindGroup,
     ) -> u32 {
-        if self.cliffs.is_empty() {
-            return 0;
-        }
-        pass.set_pipeline(&self.cliff_shadow);
-        pass.set_bind_group(0, frame, &[]);
-        for c in &self.cliffs {
+        let mut draws = 0;
+        for c in self.cliffs.iter().filter(|c| !c.shadow.is_empty()) {
+            if draws == 0 {
+                pass.set_pipeline(&self.cliff_shadow);
+                pass.set_bind_group(0, frame, &[]);
+            }
             pass.set_bind_group(1, &c.group, &[]);
             pass.set_vertex_buffer(0, c.vertices.slice(..));
             pass.set_index_buffer(c.indices.slice(..), wgpu::IndexFormat::Uint32);
-            pass.draw_indexed(0..c.count, 0, 0..1);
+            for run in &c.shadow {
+                pass.draw_indexed(run.clone(), 0, 0..1);
+                draws += 1;
+            }
         }
-        self.cliffs.len() as u32
+        draws
     }
 
     /// The decals (blended over the ground, after the opaque ground); the draw count.
@@ -502,5 +621,54 @@ impl DressingGpu {
             pass.draw(0..6, 0..d.count);
         }
         self.decals.len() as u32
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn runs_cover_the_mesh_in_order_and_stay_compact() {
+        // A wall 100 m long (two triangles a metre), then a rock back at its start.
+        let vertex = |x: f32, y: f32, z: f32| CliffVertex {
+            position: [x, y, z],
+            normal: [0.0, 0.0, 1.0],
+            occlusion: 1.0,
+        };
+        let mut vertices = Vec::new();
+        let mut indices = Vec::new();
+        for i in 0..=100 {
+            vertices.push(vertex(i as f32, 0.0, 0.0));
+            vertices.push(vertex(i as f32, 4.0, 0.0));
+        }
+        for i in 0..100u32 {
+            let (a, b) = (2 * i, 2 * i + 2);
+            indices.extend_from_slice(&[a, b, a + 1, a + 1, b, b + 1]);
+        }
+        let rock = vertices.len() as u32;
+        vertices.extend([
+            vertex(0.0, 0.0, 1.0),
+            vertex(1.0, 0.0, 1.0),
+            vertex(0.5, 1.0, 1.5),
+        ]);
+        indices.extend_from_slice(&[rock, rock + 1, rock + 2]);
+
+        let runs = runs(&vertices, &indices);
+        let mut next = 0;
+        for run in &runs {
+            assert_eq!(run.indices.start, next, "runs follow each other");
+            next = run.indices.end;
+            assert!(run.hi.x - run.lo.x <= RUN_SPAN && run.hi.z - run.lo.z <= RUN_SPAN);
+            for &i in &indices[run.indices.start as usize..run.indices.end as usize] {
+                let p = Vec3::from(vertices[i as usize].position);
+                assert!(
+                    p.cmpge(run.lo).all() && p.cmple(run.hi).all(),
+                    "bounds hold {p}"
+                );
+            }
+        }
+        assert_eq!(next as usize, indices.len(), "every index in a run");
+        assert!(runs.len() > 100 / RUN_SPAN as usize);
     }
 }
