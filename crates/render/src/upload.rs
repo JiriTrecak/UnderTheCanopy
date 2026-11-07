@@ -2,9 +2,8 @@
 //!
 //! `Queue::write_buffer` makes and frees a staging buffer for every call; a frame makes
 //! dozens (uniforms, instances, emitters). [`Uploads`] copies them into the chunks of a
-//! [`wgpu::util::StagingBelt`] the renderer keeps, records the copies into a command
-//! buffer submitted just before the frame's, and recalls the chunks once the frame is
-//! submitted. What the GPU reads is the same: every copy lands before the frame's passes.
+//! [`wgpu::util::StagingBelt`] the renderer keeps, records the copies at the start of
+//! the frame's first encoder, and recalls the chunks once the frame is submitted. What the GPU reads is the same: every copy lands before the frame's passes.
 
 use std::cell::RefCell;
 
@@ -71,6 +70,15 @@ impl<'a> Uploads<'a> {
         let encoder = inner.1.take()?;
         inner.0.finish();
         Some(encoder.finish())
+    }
+
+    /// The encoder of the copies recorded so far, unfinished, once: finish and submit it
+    /// before anything that reads them.
+    pub fn take_encoder(&self) -> Option<wgpu::CommandEncoder> {
+        let mut inner = self.inner.borrow_mut();
+        let encoder = inner.1.take()?;
+        inner.0.finish();
+        Some(encoder)
     }
 
     /// Returns the belt's chunks for reuse once their copies are submitted.

@@ -14,6 +14,7 @@ canopy-assets = { path = "../assets" }
 canopy-ui = { path = "../ui", features = ["wgpu"] }
 glam.workspace = true
 pollster.workspace = true
+rayon.workspace = true
 serde.workspace = true
 serde_json.workspace = true
 thiserror.workspace = true

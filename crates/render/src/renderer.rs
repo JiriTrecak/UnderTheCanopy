@@ -594,6 +594,11 @@ pub struct Renderer {
     timer: Option<GpuTimer>,
     /// The staging belt the frame's buffer writes go through ([`crate::upload`]).
     belt: Option<wgpu::util::StagingBelt>,
+    /// A frame's encoders, recorded in order and finished together ([`crate::encode`]),
+    /// and room for their command buffers, kept between frames.
+    frame_encoders: Vec<wgpu::CommandEncoder>,
+    finish_slots: Vec<Option<wgpu::CommandBuffer>>,
+    command_buffers: Vec<wgpu::CommandBuffer>,
     /// The device has timestamp queries: sampled frames are measured with them, and
     /// every frame while passes are timed ([`Self::set_pass_timing`]).
     timestamps: bool,
@@ -610,6 +615,14 @@ pub struct Renderer {
     /// Bytes of GPU memory the world uses.
     pub world_bytes: u64,
 }
+
+/// The passes a frame's encoders begin with after the first ([`crate::encode`]).
+const FRAME_SPLITS: [&str; 4] = [
+    passes::SHADOW,
+    passes::FORWARD,
+    passes::EFFECTS,
+    passes::POST,
+];
 
 impl Renderer {
     /// A renderer drawing into `output_format` at `size`.
@@ -770,6 +783,9 @@ impl Renderer {
             ui: None,
             timer: None,
             belt: None,
+            frame_encoders: Vec::new(),
+            finish_slots: Vec::new(),
+            command_buffers: Vec::new(),
             timestamps: gpu.features.timestamps,
             pass_timing: false,
             isolate_passes: false,
@@ -1616,9 +1632,18 @@ impl Renderer {
             sun,
         );
 
-        let mut encoder = device.create_command_encoder(&wgpu::CommandEncoderDescriptor {
-            label: Some("frame"),
-        });
+        // Outside benchmarks the frame records on after the uploads' copies, in their
+        // encoder: writes from here on go to the queue, which submits them first too.
+        let mut encoder = (!self.isolate_passes)
+            .then(|| uploads.take_encoder())
+            .flatten()
+            .unwrap_or_else(|| {
+                device.create_command_encoder(&wgpu::CommandEncoderDescriptor {
+                    label: Some("frame"),
+                })
+            });
+        // The encoder the render thread finishes itself: the forward pass's.
+        let mut forward_encoder = 0;
         let background = self.forest.as_ref().map_or(lighting.background, |f| {
             f.background(lighting.background, sun.1)
         });
@@ -1628,6 +1653,22 @@ impl Renderer {
         // and stored again).
         let mut overlaid = false;
         for (index, pass) in self.graph.passes().iter().enumerate() {
+            // The frame is recorded into five encoders of similar cost, finished in
+            // parallel ([`crate::encode`]): the uploads' copies and the culling, the
+            // shadows and water fields, the forward pass, the effects and post effects,
+            // and the final pass with what follows it.
+            if !self.isolate_passes && FRAME_SPLITS.contains(&pass.name) {
+                if pass.name == passes::FORWARD {
+                    forward_encoder = self.frame_encoders.len() + 1;
+                }
+                let recorded = std::mem::replace(
+                    &mut encoder,
+                    device.create_command_encoder(&wgpu::CommandEncoderDescriptor {
+                        label: Some("frame"),
+                    }),
+                );
+                self.frame_encoders.push(recorded);
+            }
             let pass_start = Instant::now();
             let _span = tracing::trace_span!("pass", name = pass.name).entered();
             // `stamps` time this pass when the frame is measured; `writes` only while
@@ -1970,8 +2011,20 @@ impl Renderer {
         let submitted = Instant::now();
         {
             let _span = tracing::trace_span!("submit").entered();
-            gpu.queue
-                .submit(uploads.take().into_iter().chain([encoder.finish()]));
+            // The uploads' copies first, then the frame's encoders in recording order.
+            if let Some(copies) = uploads.take_encoder() {
+                self.frame_encoders.insert(0, copies);
+                forward_encoder += 1;
+            }
+            self.frame_encoders.push(encoder);
+            crate::encode::finish(
+                &mut self.frame_encoders,
+                forward_encoder,
+                &mut self.finish_slots,
+                &mut self.command_buffers,
+            );
+            let _span = tracing::trace_span!("queue_submit").entered();
+            gpu.queue.submit(self.command_buffers.drain(..));
         }
         uploads.recall();
         self.belt = Some(belt);

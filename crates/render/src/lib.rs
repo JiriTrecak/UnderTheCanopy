@@ -10,6 +10,7 @@ pub mod cutaway;
 pub mod device;
 pub mod dressing;
 pub mod effects;
+pub mod encode;
 pub mod environment;
 pub mod fog;
 pub mod frame;
