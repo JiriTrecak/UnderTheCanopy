@@ -392,6 +392,9 @@ pub(crate) struct Placed {
 }
 
 /// One piece of shaped text.
+/// Most widths a block keeps measured sizes for.
+const MEASURED: usize = 4;
+
 pub(crate) struct TextBlock {
     markup: String,
     pub style: TextStyle,
@@ -406,6 +409,10 @@ pub(crate) struct TextBlock {
     pub glyphs: Vec<Placed>,
     /// Physical size of the laid-out text.
     pub size: (f32, f32),
+    /// Sizes measured at other widths since the text was last set (width, size): a
+    /// layout measures a block at its narrowest, widest and final widths every pass, and
+    /// shaping it anew for each was most of the HUD's layout.
+    measured: Vec<(Option<f32>, (f32, f32))>,
 }
 
 impl TextBlock {
@@ -422,6 +429,7 @@ impl TextBlock {
             glyph_key: (0, u64::MAX),
             glyphs: Vec::new(),
             size: (0.0, 0.0),
+            measured: Vec::new(),
         }
     }
 
@@ -547,6 +555,7 @@ impl TextBlock {
         self.needs_text = false;
         self.width = None;
         self.layout_gen += 1;
+        self.measured.clear();
         self.relayout(text, None, true);
     }
 
@@ -576,8 +585,25 @@ impl TextBlock {
     ) -> (f32, f32) {
         self.ensure(text, scale);
         let width = max_width.map(|w| (w * scale).max(1.0).ceil());
-        self.relayout(text, width, false);
-        (self.size.0 / scale, self.size.1 / scale)
+        // Shaping is the same at the same width: a size measured before is that size. A
+        // text field's caret reads the buffer as measured, so fields shape each time.
+        let known = (!self.plain && self.width != width)
+            .then(|| self.measured.iter().find(|m| m.0 == width))
+            .flatten();
+        let size = match known {
+            Some(&(_, size)) => size,
+            None => {
+                self.relayout(text, width, false);
+                if !self.plain && !self.measured.iter().any(|m| m.0 == width) {
+                    if self.measured.len() >= MEASURED {
+                        self.measured.remove(0);
+                    }
+                    self.measured.push((width, self.size));
+                }
+                self.size
+            }
+        };
+        (size.0 / scale, size.1 / scale)
     }
 
     /// Lays the text out at its final width (physical pixels) and refreshes the glyph list.
