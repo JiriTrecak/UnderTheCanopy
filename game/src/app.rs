@@ -499,6 +499,8 @@ impl App {
                     "simulation"
                 );
             }
+            // The span times of these two seconds (`CANOPY_SPANS`).
+            crate::telemetry::print_span_times();
             *st = Stats::default();
             self.stats_since = now;
         }

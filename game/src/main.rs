@@ -34,7 +34,9 @@ use winit::event_loop::EventLoop;
 fn main() -> Result<()> {
     telemetry::init();
     if std::env::args().nth(1).as_deref() == Some("bench-render") {
-        return bench::run(std::env::args().skip(2));
+        let result = bench::run(std::env::args().skip(2));
+        telemetry::print_span_times();
+        return result;
     }
     let options = options::Options::parse(std::env::args().skip(1))?;
     let paths = paths::Paths::resolve(options.data.clone())?;
@@ -45,7 +47,7 @@ fn main() -> Result<()> {
             paths.data.display()
         );
     }
-    match &options.command {
+    let result = match &options.command {
         Command::Shot { out, size } => shot::run(&options, &paths, out, *size),
         Command::CaptureScreens {
             out,
@@ -70,5 +72,7 @@ fn main() -> Result<()> {
             event_loop.run_app(&mut app)?;
             app.finish()
         }
-    }
+    };
+    telemetry::print_span_times();
+    result
 }

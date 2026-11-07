@@ -428,6 +428,8 @@ fn match_frames(paths: &Paths, size: [u32; 2], frames: u32) -> Result<Value> {
         frame(&mut game, &mut renderer);
         std::thread::sleep(Duration::from_millis(12));
     }
+    // Span times (`CANOPY_SPANS`) cover the measured frames only.
+    crate::telemetry::span_times();
     let (mut update, mut cpu, mut allocations, mut bytes) =
         (Vec::new(), Vec::new(), Vec::new(), Vec::new());
     if let Some(n) = std::env::var("CANOPY_ALLOC_TRACE")

@@ -1,6 +1,8 @@
 //! Logging and profiling. `RUST_LOG` filters logs; the `profile` feature streams spans
 //! and frame marks to Tracy. [`span_times`] sums the time spent in each span by name while
-//! [`time_spans`] has it on (the editor's frame log and benchmark).
+//! [`time_spans`] has it on (the editor's frame log and benchmark). `CANOPY_SPANS=1` has
+//! it on from the start, trace-level spans too whatever `RUST_LOG` says, and prints the
+//! table ([`print_span_times`]): a headless profile of a shot, a benchmark or a match.
 
 use std::collections::BTreeMap;
 use std::sync::Mutex;
@@ -8,20 +10,57 @@ use std::sync::atomic::{AtomicBool, Ordering};
 use std::time::{Duration, Instant};
 use tracing::span::{Attributes, Id};
 use tracing_subscriber::{
-    EnvFilter, Layer, fmt, layer::Context, layer::SubscriberExt, registry::LookupSpan,
-    util::SubscriberInitExt,
+    EnvFilter, Layer, filter::Targets, fmt, layer::Context, layer::SubscriberExt,
+    registry::LookupSpan, util::SubscriberInitExt,
 };
 
+fn filter() -> EnvFilter {
+    EnvFilter::try_from_default_env()
+        .unwrap_or_else(|_| EnvFilter::new("info,wgpu_core=warn,wgpu_hal=warn,naga=warn"))
+}
+
 pub fn init() {
-    let filter = EnvFilter::try_from_default_env()
-        .unwrap_or_else(|_| EnvFilter::new("info,wgpu_core=warn,wgpu_hal=warn,naga=warn"));
+    let every_span = std::env::var_os("CANOPY_SPANS").is_some();
     let registry = tracing_subscriber::registry()
-        .with(filter)
-        .with(fmt::layer())
-        .with(SpanTimes);
+        .with(fmt::layer().with_filter(filter()))
+        .with((!every_span).then(|| SpanTimes.with_filter(filter())))
+        .with(every_span.then(|| {
+            SpanTimes.with_filter(
+                Targets::new()
+                    .with_default(tracing::Level::WARN)
+                    .with_target("canopy", tracing::Level::TRACE),
+            )
+        }));
     #[cfg(feature = "profile")]
-    let registry = registry.with(tracing_tracy::TracyLayer::default());
+    let registry = registry.with(tracing_tracy::TracyLayer::default().with_filter(filter()));
     registry.init();
+    if every_span {
+        time_spans(true);
+    }
+}
+
+/// Prints the spans' times since the last [`span_times`] (with `CANOPY_SPANS`), the most
+/// expensive first, and starts again.
+pub fn print_span_times() {
+    if std::env::var_os("CANOPY_SPANS").is_none() {
+        return;
+    }
+    let times = span_times();
+    let mut rows: Vec<_> = times.iter().collect();
+    rows.sort_by_key(|row| std::cmp::Reverse(row.1.total));
+    eprintln!(
+        "{:<32} {:>9} {:>11} {:>10} {:>10}",
+        "span", "count", "total ms", "mean µs", "max µs"
+    );
+    for (name, t) in rows {
+        eprintln!(
+            "{name:<32} {:>9} {:>11.2} {:>10.2} {:>10.0}",
+            t.count,
+            t.total.as_secs_f64() * 1000.0,
+            t.total.as_secs_f64() * 1e6 / f64::from(t.count.max(1)),
+            t.max.as_secs_f64() * 1e6
+        );
+    }
 }
 
 /// Marks the end of a presented frame.
