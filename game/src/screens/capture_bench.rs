@@ -325,6 +325,10 @@ pub(super) fn editor_bench(rig: &mut Rig, paths: &Paths) -> Result<()> {
         b.ui.frames(20);
         b.ui.editor.stage_cast();
         b.idle("ability stage casting", 90);
+        // The cast over, the stage stands still.
+        b.ui.frames(200);
+        b.idle("ability stage paused", 60);
+        b.again("ability stage paused viewports again", 60);
     }
 
     // The Combat Lab running its largest scenario.
@@ -337,6 +341,7 @@ pub(super) fn editor_bench(rig: &mut Rig, paths: &Paths) -> Result<()> {
         b.ui.settle();
         b.ui.frames(10);
         b.idle("lab paused", 60);
+        b.again("lab paused viewports again", 60);
         if b.ui.find("Play").is_some() {
             b.ui.click("Play");
             b.idle("lab running", 120);

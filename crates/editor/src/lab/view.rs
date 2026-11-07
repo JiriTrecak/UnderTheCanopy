@@ -1052,6 +1052,10 @@ fn overlays(
     }
     // Where hand orders went.
     let now = painter.ctx().input(|i| i.time);
+    // A mark fades frame by frame: the interface draws until it is gone.
+    if session.marks.iter().any(|m| m.until > now) {
+        painter.ctx().request_repaint();
+    }
     for m in session.marks.iter().filter(|m| m.until > now) {
         let fade = ((m.until - now) / 0.9) as f32;
         if let Some(p) = at(m.at[0], m.at[1]) {

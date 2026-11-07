@@ -552,6 +552,12 @@ impl Session {
         }
     }
 
+    /// Whether the take plays (its frames step it); paused, its picture only moves with
+    /// time. An effect's stage always plays.
+    pub fn playing(&self) -> bool {
+        self.playing || self.showcase.is_some()
+    }
+
     /// Plays `dt` seconds of the take.
     fn advance(&mut self, dt: f32) {
         if !self.playing {

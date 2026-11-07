@@ -69,8 +69,8 @@ pub struct Output {
     /// a notice going), or `None` until input or [`Editor::wants_frame`] says so. The
     /// window draws the interface only on change.
     pub repaint: Option<std::time::Duration>,
-    /// A model or map viewport shows: its picture moves with time (water, wind, a clip),
-    /// so every frame between the interface's draws it again
+    /// A model or map viewport or a paused stage shows: its picture moves with time
+    /// (water, wind, a clip), so every frame between the interface's draws it again
     /// ([`Editor::redraw_viewports`]).
     pub viewports: bool,
 }
@@ -133,12 +133,13 @@ pub struct Editor {
     widgets: Vec<Widget>,
 }
 
-/// The model and map viewports' last requests.
+/// The model and map viewports' last requests, and a paused stage's.
 #[derive(Default)]
 struct Again {
     shot: Option<stage::Shot>,
     scene: Option<stage::SceneShot>,
     generated: Option<stage::SceneShot>,
+    encounter: Option<stage::EncounterShot>,
 }
 
 /// A widget as the last headless frame laid it out (its accessibility node): what the UI
@@ -235,8 +236,8 @@ impl Editor {
         self.shell.wants_frame()
     }
 
-    /// Draws the model and map viewports again as they were last asked for, the interface
-    /// standing still: their pictures move with time as in a whole frame, and
+    /// Draws the model and map viewports and a paused stage again as they were last asked
+    /// for, the interface standing still: their pictures move with time as in a whole frame, and
     /// [`Editor::paint`] shows them with the last frame's interface. Whether one drew.
     pub fn redraw_viewports(&mut self, gpu: &canopy_render::Gpu) -> bool {
         let _span = tracing::info_span!("editor_viewports_again").entered();
@@ -245,7 +246,12 @@ impl Editor {
             shot,
             scene,
             generated,
+            encounter,
         } = &self.again;
+        if let (Some(Ok(stage)), Some(encounter)) = (&mut self.stage_encounter, encounter) {
+            stage.draw_encounter(gpu, &mut self.renderer, encounter);
+            drew = true;
+        }
         for (stage, scene) in [
             (&mut self.stage_scene, scene),
             (&mut self.stage_generated, generated),
@@ -694,10 +700,18 @@ impl Editor {
         }
         let stages = tracing::info_span!("editor_viewports").entered();
         let generated = self.shell.scene_generated.take();
+        // A paused stage is drawn again between the interface's frames too; a playing one
+        // steps in them.
+        let paused = self
+            .shell
+            .encounter
+            .as_ref()
+            .filter(|_| !self.shell.encounter_playing);
         self.again = Again {
             shot: self.shell.shot.clone(),
             scene: self.shell.scene.clone(),
             generated: generated.clone(),
+            encounter: paused.cloned(),
         };
         if let Some(scene) = generated {
             let stage = self
@@ -713,9 +727,12 @@ impl Editor {
             self.shell.encounter.take(),
         );
         // A stage plays in the interface's frames (its take steps there); model and map
-        // viewports are drawn again between them.
-        let playing = encounter.is_some();
-        let viewports = shot.is_some() || scene.is_some() || self.again.generated.is_some();
+        // viewports and a paused stage are drawn again between them.
+        let playing = encounter.is_some() && self.again.encounter.is_none();
+        let viewports = shot.is_some()
+            || scene.is_some()
+            || self.again.generated.is_some()
+            || self.again.encounter.is_some();
         if let Some(scene) = scene
             && let Ok(stage) = self
                 .stage_scene

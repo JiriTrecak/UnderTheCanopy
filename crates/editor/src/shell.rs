@@ -296,6 +296,8 @@ pub struct Shell {
     labs: HashMap<String, crate::lab::Session>,
     wanted_looks: Vec<String>,
     pub encounter: Option<crate::stage::EncounterShot>,
+    /// The stage drawn this frame plays (its take or run steps in the interface's frames).
+    pub encounter_playing: bool,
     /// Test in game, asked for this frame.
     pub test: Option<crate::Test>,
     /// `problems` calls waiting for the current check.
@@ -373,6 +375,7 @@ impl Shell {
             labs: HashMap::new(),
             wanted_looks: Vec::new(),
             encounter: None,
+            encounter_playing: false,
             user,
             watch,
             lab_watch,
@@ -638,11 +641,13 @@ impl Shell {
             && let Some(session) = self.encounters.get(&document)
         {
             self.encounter = session.shot(size);
+            self.encounter_playing = session.playing();
         }
         if let Some((document, size)) = lab_size
             && let Some(session) = self.labs.get(&document)
         {
             self.encounter = session.shot(size);
+            self.encounter_playing = session.playing();
         }
         if let Some(root) = preview {
             match self.write_preview(&root) {

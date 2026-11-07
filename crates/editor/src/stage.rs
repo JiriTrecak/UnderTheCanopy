@@ -63,6 +63,7 @@ enum Loaded {
 }
 
 /// An ability encounter to draw this frame (`crate::encounter`).
+#[derive(Clone)]
 pub struct EncounterShot {
     /// The ground and the version it was built at.
     pub scene: Arc<canopy_scene::MapScene>,

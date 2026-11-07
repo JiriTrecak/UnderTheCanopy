@@ -480,6 +480,11 @@ impl Session {
         self.present();
     }
 
+    /// Whether the run plays (its frames step it); paused, its picture only moves with time.
+    pub fn playing(&self) -> bool {
+        self.playing
+    }
+
     /// Plays `dt` seconds.
     fn advance(&mut self, dt: f32) {
         if !self.playing {
