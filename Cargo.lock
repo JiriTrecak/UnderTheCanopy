@@ -452,6 +452,7 @@ dependencies = [
  "flate2",
  "glam 0.30.10",
  "image",
+ "rayon",
  "reqwest",
  "rfd",
  "serde",

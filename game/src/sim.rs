@@ -970,6 +970,8 @@ impl SimThread {
                 .name("simulation".into())
                 .spawn(move || {
                     let _span = tracing::info_span!("simulation_thread").entered();
+                    // Every frame waits on ticks: keep this off the efficiency cores.
+                    canopy_render::priority::raise_current_thread();
                     if let Some(ready) = ready {
                         session.ready(ready.content, &ready.build, world.tick());
                     }

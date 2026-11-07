@@ -23,6 +23,7 @@ pub mod minimap;
 pub mod motes;
 pub mod portrait;
 pub mod post;
+pub mod priority;
 pub mod quality;
 pub mod renderer;
 pub mod shade;

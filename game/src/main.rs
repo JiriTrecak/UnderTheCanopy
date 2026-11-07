@@ -33,6 +33,15 @@ use winit::event_loop::EventLoop;
 
 fn main() -> Result<()> {
     telemetry::init();
+    // The simulation's worker threads (`canopy_sim::parallel`) work inside ticks.
+    if let Err(error) = rayon::ThreadPoolBuilder::new()
+        .start_handler(|_| {
+            canopy_render::priority::raise_current_thread();
+        })
+        .build_global()
+    {
+        tracing::debug!(%error, "worker threads left at their priority");
+    }
     if std::env::args().nth(1).as_deref() == Some("bench-render") {
         let result = bench::run(std::env::args().skip(2));
         telemetry::print_span_times();

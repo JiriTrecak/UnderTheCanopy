@@ -240,6 +240,8 @@ impl Stepper {
         std::thread::Builder::new()
             .name("ragdolls".into())
             .spawn(move || {
+                // The next update waits for this step.
+                canopy_render::priority::raise_current_thread();
                 for mut world in inbox {
                     {
                         let _span = tracing::trace_span!("ragdoll_step_ahead").entered();

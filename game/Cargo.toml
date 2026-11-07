@@ -39,6 +39,7 @@ egui-winit.workspace = true
 flate2.workspace = true
 glam.workspace = true
 image.workspace = true
+rayon.workspace = true
 reqwest.workspace = true
 rfd.workspace = true
 serde.workspace = true

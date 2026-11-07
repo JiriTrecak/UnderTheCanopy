@@ -30,6 +30,10 @@ fn pool() -> Option<&'static rayon::ThreadPool> {
                 rayon::ThreadPoolBuilder::new()
                     .num_threads(workers)
                     .thread_name(|i| format!("canopy-encode-{i}"))
+                    // The render thread waits for what they finish.
+                    .start_handler(|_| {
+                        crate::priority::raise_current_thread();
+                    })
                     .build()
                     .ok()
             })
