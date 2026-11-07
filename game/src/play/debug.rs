@@ -127,7 +127,7 @@ impl Debug {
                 .show(&ctx, |ui| {
                     ui.heading(format!("{:.0} fps", stats.fps));
                     ui.label(match stats.gpu_frame_ms {
-                        Some(ms) => format!("GPU {ms:.2} ms a frame (submit to idle, sampled)"),
+                        Some(ms) => format!("GPU {ms:.2} ms a frame (sampled)"),
                         None => "GPU –".to_owned(),
                     });
                     ui.label(format!(

@@ -1281,8 +1281,8 @@ impl InMatch {
         // Passes are timed only for the debug overlay.
         host.renderer
             .set_pass_timing(gpu, self.debug.as_ref().is_some_and(|d| d.open));
-        // While the overlay shows, sample the frame's GPU time (submit to idle) twice a
-        // second; pass timestamps are only hints on Apple GPUs (D34).
+        // While the overlay shows, sample the frame's GPU time twice a second (whole-frame
+        // timestamps; per-pass ones are only hints on Apple GPUs, D34).
         if self.debug.as_ref().is_some_and(|d| d.open)
             && self.gpu_sampled.elapsed() >= Duration::from_millis(500)
         {

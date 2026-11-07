@@ -1,7 +1,8 @@
-//! GPU time per frame-graph pass, from timestamp queries when the device has them
-//! (`timestamp-query`, an optional WebGPU feature; D2). Results arrive a few frames late
-//! through a small ring of read-back buffers; a frame that finds no free buffer is simply
-//! not measured. Nothing is allocated after creation.
+//! GPU time per frame-graph pass and per frame, from timestamp queries when the device
+//! has them (`timestamp-query`, an optional WebGPU feature; D2). Only frames asked for
+//! are measured. Results arrive a few frames late through a small ring of read-back
+//! buffers mapped asynchronously, so measuring never waits for the GPU; a frame that
+//! finds no free buffer is simply not measured. Nothing is allocated after creation.
 
 use std::sync::{
     Arc,
@@ -30,6 +31,8 @@ pub struct GpuTimer {
     current: Option<usize>,
     latest: Vec<f32>,
     valid: bool,
+    /// The GPU time of the latest measured frame not yet taken ([`Self::take_frame_ms`]).
+    frame_ms: Option<f32>,
 }
 
 impl GpuTimer {
@@ -67,11 +70,13 @@ impl GpuTimer {
             current: None,
             latest: vec![0.0; passes],
             valid: false,
+            frame_ms: None,
         }
     }
 
-    /// Collects finished results and picks a buffer for this frame.
-    pub fn begin_frame(&mut self) {
+    /// Collects finished results and, when this frame is to be `measured`, picks a
+    /// buffer for it.
+    pub fn begin_frame(&mut self, measured: bool) {
         for slot in &self.ring {
             if slot.state.load(Ordering::Acquire) == MAPPED {
                 if let Ok(view) = slot.buffer.get_mapped_range(..) {
@@ -81,15 +86,19 @@ impl GpuTimer {
                         *ms = end.saturating_sub(start) as f32 * self.period / 1.0e6;
                     }
                     self.valid = true;
+                    self.frame_ms = frame_ticks(ticks).map(|t| t as f32 * self.period / 1.0e6);
                 }
                 slot.buffer.unmap();
                 slot.state.store(FREE, Ordering::Release);
             }
         }
-        self.current = self
-            .ring
-            .iter()
-            .position(|s| s.state.load(Ordering::Acquire) == FREE);
+        self.current = measured
+            .then(|| {
+                self.ring
+                    .iter()
+                    .position(|s| s.state.load(Ordering::Acquire) == FREE)
+            })
+            .flatten();
     }
 
     /// Timestamp writes for render pass `pass`, when this frame is measured.
@@ -144,5 +153,44 @@ impl GpuTimer {
     /// GPU milliseconds per pass from the latest measured frame.
     pub fn latest(&self) -> Option<&[f32]> {
         self.valid.then_some(self.latest.as_slice())
+    }
+
+    /// GPU milliseconds of the latest measured frame, from the start of its first pass to
+    /// the end of its last, once: `None` until another measured frame's result arrives.
+    pub fn take_frame_ms(&mut self) -> Option<f32> {
+        self.frame_ms.take()
+    }
+}
+
+/// Ticks from the start of the first pass (always recorded) to the end of the last one
+/// recorded. Passes a frame did not record keep an earlier frame's timestamps (or none:
+/// zero, or the all-ones value Metal reports for a sample never taken), so the end is
+/// the latest end at or after the start.
+fn frame_ticks(ticks: &[u64]) -> Option<u64> {
+    let start = *ticks.first()?;
+    let end = ticks
+        .iter()
+        .skip(1)
+        .step_by(2)
+        .copied()
+        .filter(|&t| t != u64::MAX && t >= start)
+        .max()?;
+    (start != 0 && start != u64::MAX).then(|| end - start)
+}
+
+#[cfg(test)]
+mod tests {
+    use super::frame_ticks;
+
+    #[test]
+    fn frame_span_skips_passes_not_recorded() {
+        // Three passes: the second was not recorded this frame (stale), the third ends last.
+        assert_eq!(frame_ticks(&[1000, 1100, 10, 20, 1150, 1400]), Some(400));
+        // The last pass was not recorded: never sampled on Metal.
+        assert_eq!(
+            frame_ticks(&[1000, 1100, 1120, 1300, 0, u64::MAX]),
+            Some(300)
+        );
+        assert_eq!(frame_ticks(&[u64::MAX, u64::MAX]), None);
     }
 }

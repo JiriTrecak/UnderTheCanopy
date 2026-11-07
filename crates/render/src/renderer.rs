@@ -377,9 +377,11 @@ pub struct FrameReport {
     /// Pass timestamps attribute work to neighbouring passes on Apple GPUs (D34): use
     /// these for relative hints only, and [`FrameReport::gpu_frame_ms`] for budgets.
     pub gpu_ms: Option<Vec<f32>>,
-    /// The frame's GPU time from submit to idle, ms, when this frame was sampled
-    /// ([`Renderer::sample_gpu_time`]): the queue is drained first, then the frame is
-    /// submitted and waited for. Trustworthy on every GPU; costs one stall.
+    /// The GPU time of a sampled frame ([`Renderer::sample_gpu_time`]), ms, on the frame
+    /// its result arrives: with timestamp queries from the start of the frame's first
+    /// pass to the end of its last, a few frames late and never waited for; without them
+    /// from submit to idle on the sampled frame itself (the queue drained first, then the
+    /// frame waited for: one stall).
     pub gpu_frame_ms: Option<f32>,
     /// CPU time of the whole `render` call, ms.
     pub cpu_total_ms: f32,
@@ -592,16 +594,16 @@ pub struct Renderer {
     timer: Option<GpuTimer>,
     /// The staging belt the frame's buffer writes go through ([`crate::upload`]).
     belt: Option<wgpu::util::StagingBelt>,
-    /// The device has timestamp queries, and passes are timed with them
-    /// ([`Self::set_pass_timing`]).
+    /// The device has timestamp queries: sampled frames are measured with them, and
+    /// every frame while passes are timed ([`Self::set_pass_timing`]).
     timestamps: bool,
     pass_timing: bool,
     /// Submit every pass alone and wait for it (benchmarks: per-pass submit-to-idle
     /// times where Apple GPUs' timestamps attribute work to neighbouring passes).
     pub isolate_passes: bool,
-    /// Measure the next frame's GPU time from submit to idle
-    /// ([`FrameReport::gpu_frame_ms`]); cleared by `render`. The frame stalls the CPU
-    /// until the GPU is done, so sample rarely (the game: once per stats interval).
+    /// Measure the next frame's GPU time ([`FrameReport::gpu_frame_ms`]); cleared by
+    /// `render`. Without timestamp queries the frame stalls the CPU until the GPU is
+    /// done, so sample rarely (the game: once per stats interval).
     pub sample_gpu_time: bool,
     /// Shadows on (a setting).
     pub shadows: bool,
@@ -808,21 +810,19 @@ impl Renderer {
         features.minimap = self.minimap.is_some() && !self.baking;
         features.portrait = self.portrait.is_some() && !self.baking;
         self.graph = graph::world_frame(features);
-        self.timer = (self.timestamps && self.pass_timing)
+        self.timer = self
+            .timestamps
             .then(|| GpuTimer::new(&gpu.device, &gpu.queue, self.graph.passes().len()));
         self.post
             .configure(&gpu.device, &self.targets, features, self.quality.haze);
     }
 
     /// Times every pass with timestamp queries (`FrameReport::gpu_ms`, a few frames
-    /// late) while on: tools and the debug overlay. Off by default, so a frame records no
-    /// queries, resolves nothing and opens no pass that has nothing to draw.
-    pub fn set_pass_timing(&mut self, gpu: &Gpu, on: bool) {
-        if self.pass_timing != on {
-            self.pass_timing = on;
-            self.timer = (self.timestamps && on)
-                .then(|| GpuTimer::new(&gpu.device, &gpu.queue, self.graph.passes().len()));
-        }
+    /// late) while on: tools and the debug overlay. Off by default, so a frame that is not
+    /// sampled records no queries and resolves nothing, and no frame opens a pass that
+    /// has nothing to draw.
+    pub fn set_pass_timing(&mut self, _gpu: &Gpu, on: bool) {
+        self.pass_timing = on;
     }
 
     pub fn quality(&self) -> Quality {
@@ -1335,8 +1335,11 @@ impl Renderer {
             .unwrap_or_else(|| wgpu::util::StagingBelt::new(device.clone(), crate::upload::CHUNK));
         let uploads = crate::upload::Uploads::new(device, &gpu.queue, &mut belt);
         let queue = &uploads;
+        // A sampled frame is measured by timestamps when the device has them (results a
+        // few frames late, never waited for), else from submit to idle.
+        let sample = std::mem::take(&mut self.sample_gpu_time);
         if let Some(timer) = &mut self.timer {
-            timer.begin_frame();
+            timer.begin_frame(self.pass_timing || sample);
         }
         let lighting = &self.environment.lighting;
         let ShadowView {
@@ -1627,8 +1630,12 @@ impl Renderer {
         for (index, pass) in self.graph.passes().iter().enumerate() {
             let pass_start = Instant::now();
             let _span = tracing::trace_span!("pass", name = pass.name).entered();
+            // `stamps` time this pass when the frame is measured; `writes` only while
+            // passes are timed, when each pass is recorded alone (and empty ones too).
             let timestamps = self.timer.as_ref();
-            let writes = timestamps.and_then(|t| t.render_writes(index));
+            let stamps = timestamps.and_then(|t| t.render_writes(index));
+            let compute_stamps = || timestamps.and_then(|t| t.compute_writes(index));
+            let writes = stamps.clone().filter(|_| self.pass_timing);
             match (pass.name, pass.kind) {
                 (passes::CULL, PassKind::Compute) => {
                     if let Some(statics) = &self.statics {
@@ -1636,7 +1643,7 @@ impl Renderer {
                     }
                     let mut compute = encoder.begin_compute_pass(&wgpu::ComputePassDescriptor {
                         label: Some(passes::CULL),
-                        timestamp_writes: timestamps.and_then(|t| t.compute_writes(index)),
+                        timestamp_writes: compute_stamps(),
                     });
                     if let Some(statics) = &self.statics {
                         statics.cull(&mut compute);
@@ -1655,7 +1662,7 @@ impl Renderer {
                 (passes::SKIN, PassKind::Compute) => {
                     let mut compute = encoder.begin_compute_pass(&wgpu::ComputePassDescriptor {
                         label: Some(passes::SKIN),
-                        timestamp_writes: timestamps.and_then(|t| t.compute_writes(index)),
+                        timestamp_writes: compute_stamps(),
                     });
                     if let Some(actors) = &self.actors {
                         actors.skin(&mut compute);
@@ -1673,7 +1680,7 @@ impl Renderer {
                             }),
                             stencil_ops: None,
                         }),
-                        timestamp_writes: writes,
+                        timestamp_writes: stamps,
                         occlusion_query_set: None,
                         multiview_mask: None,
                     });
@@ -1699,19 +1706,19 @@ impl Renderer {
                 (passes::RIPPLES, PassKind::Render) => {
                     if let Some(water) = &mut self.water {
                         if water.ripples_pending() {
-                            report.draws += water.encode_ripples(&mut encoder, writes);
+                            report.draws += water.encode_ripples(&mut encoder, stamps);
                         } else if writes.is_some() {
                             // Nothing to draw or clear: a timed frame keeps the pass.
                             drop(encoder.begin_compute_pass(&wgpu::ComputePassDescriptor {
                                 label: Some(passes::RIPPLES),
-                                timestamp_writes: timestamps.and_then(|t| t.compute_writes(index)),
+                                timestamp_writes: compute_stamps(),
                             }));
                         }
                     }
                 }
                 (passes::CAUSTICS, PassKind::Render) => {
                     if let Some(water) = &self.water {
-                        report.draws += water.encode_caustics(&mut encoder, writes);
+                        report.draws += water.encode_caustics(&mut encoder, stamps);
                     }
                 }
                 (passes::FORWARD, PassKind::Render) => {
@@ -1757,7 +1764,7 @@ impl Renderer {
                             }),
                             stencil_ops: None,
                         }),
-                        timestamp_writes: writes,
+                        timestamp_writes: stamps,
                         occlusion_query_set: None,
                         multiview_mask: None,
                     });
@@ -1829,7 +1836,7 @@ impl Renderer {
                                 },
                             })],
                             depth_stencil_attachment: None,
-                            timestamp_writes: writes,
+                            timestamp_writes: stamps,
                             occlusion_query_set: None,
                             multiview_mask: None,
                         });
@@ -1839,17 +1846,17 @@ impl Renderer {
                 (passes::CONTACT, PassKind::Render) => {
                     report.draws +=
                         self.post
-                            .encode_contact(&mut encoder, &self.frame_group, writes);
+                            .encode_contact(&mut encoder, &self.frame_group, stamps);
                 }
                 (passes::BLOOM, PassKind::Render) => {
                     report.draws += self
                         .post
-                        .encode_bloom(&mut encoder, &self.frame_group, writes);
+                        .encode_bloom(&mut encoder, &self.frame_group, stamps);
                 }
                 (passes::HAZE, PassKind::Render) => {
                     report.draws += self
                         .post
-                        .encode_haze(&mut encoder, &self.frame_group, writes);
+                        .encode_haze(&mut encoder, &self.frame_group, stamps);
                 }
                 (passes::POST, PassKind::Render) => {
                     // Unless the passes are timed apart, the world UI overlay follows in the
@@ -1866,7 +1873,7 @@ impl Renderer {
                         &mut encoder,
                         &self.frame_group,
                         output,
-                        writes,
+                        stamps,
                         |rp| {
                             if overlay {
                                 world_ui.draw_overlay(rp)
@@ -1879,7 +1886,7 @@ impl Renderer {
                 (passes::WORLD_UI, PassKind::Render) if overlaid => {}
                 (passes::MINIMAP, PassKind::Render) => {
                     if let Some(minimap) = &self.minimap {
-                        report.draws += minimap.encode(&mut encoder, writes);
+                        report.draws += minimap.encode(&mut encoder, stamps);
                     }
                 }
                 (passes::PORTRAIT, PassKind::Render) => {
@@ -1887,7 +1894,7 @@ impl Renderer {
                         && actors.has_portrait()
                     {
                         report.draws += portrait
-                            .encode(&mut encoder, writes, |rp| actors.draw_portrait(rp, group));
+                            .encode(&mut encoder, stamps, |rp| actors.draw_portrait(rp, group));
                     }
                 }
                 (passes::WORLD_UI, PassKind::Render) => {
@@ -1898,13 +1905,13 @@ impl Renderer {
                             &mut encoder,
                             output,
                             self.output_format,
-                            writes,
+                            stamps,
                         );
                     }
                 }
                 // The minimap bake leaves the UI's list and target for the next frame.
                 (passes::UI, PassKind::Render) => match self.ui.as_mut().filter(|_| !self.baking) {
-                    Some(ui) => report.draws += ui.encode(&mut encoder, output, writes),
+                    Some(ui) => report.draws += ui.encode(&mut encoder, output, stamps),
                     // Without a UI only a timed frame records the (empty) pass.
                     None if writes.is_none() => {}
                     None => drop(encoder.begin_render_pass(&wgpu::RenderPassDescriptor {
@@ -1919,7 +1926,7 @@ impl Renderer {
                             },
                         })],
                         depth_stencil_attachment: None,
-                        timestamp_writes: writes,
+                        timestamp_writes: stamps,
                         occlusion_query_set: None,
                         multiview_mask: None,
                     })),
@@ -1951,8 +1958,10 @@ impl Renderer {
         if let Some(extra) = before_submit {
             extra(&mut encoder);
         }
-        let sample = std::mem::take(&mut self.sample_gpu_time);
-        let drained = sample.then(|| {
+        // Without timestamps a sampled frame waits: the queue drained before it, the frame
+        // after its submit.
+        let wait = sample && self.timer.is_none();
+        let drained = wait.then(|| {
             // Drain earlier frames, so the wait below measures this frame alone.
             let drain = Instant::now();
             let _ = device.poll(wgpu::PollType::wait_indefinitely());
@@ -1969,13 +1978,17 @@ impl Renderer {
         // Lets the recalled chunks' mapping finish without waiting.
         let _ = device.poll(wgpu::PollType::Poll);
         let recorded = start.elapsed();
-        if sample {
+        if wait {
             let _ = device.poll(wgpu::PollType::wait_indefinitely());
             report.gpu_frame_ms = Some(submitted.elapsed().as_secs_f32() * 1000.0);
         }
         if let Some(timer) = &mut self.timer {
             timer.end_frame();
-            match (timer.latest(), &mut report.gpu_ms) {
+            report.gpu_frame_ms = timer.take_frame_ms();
+            match (
+                timer.latest().filter(|_| self.pass_timing),
+                &mut report.gpu_ms,
+            ) {
                 (Some(ms), Some(kept)) => {
                     kept.clear();
                     kept.extend_from_slice(ms);

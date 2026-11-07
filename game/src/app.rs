@@ -61,6 +61,8 @@ struct Stats {
     cpu_max: f32,
     dt_ms: f32,
     dt_max: f32,
+    /// The GPU time of the frame sampled in these two seconds, once it arrived.
+    gpu_ms: Option<f32>,
 }
 
 pub struct App {
@@ -435,10 +437,10 @@ impl App {
             .texture
             .create_view(&wgpu::TextureViewDescriptor::default());
         let ui_view = session.display.ui_view(&frame);
-        // The frame logged below measures its GPU time from submit to idle (pass
-        // timestamps are not trustworthy on Apple GPUs, D34).
-        let log_due = (now - self.stats_since).as_secs_f32() >= 2.0;
-        session.renderer.sample_gpu_time |= log_due;
+        // The first frame of each log line's two seconds is sampled for its GPU time
+        // (timestamps from its first pass to its last, read a few frames later; without
+        // timestamp queries from submit to idle, which waits for the GPU).
+        session.renderer.sample_gpu_time |= self.stats.frames == 0;
         let report = session.game.render(
             &mut Ctx {
                 gpu: &session.display.gpu,
@@ -457,14 +459,15 @@ impl App {
         st.dt_ms += dt_ms;
         st.dt_max = st.dt_max.max(dt_ms);
         if let Some(report) = &report {
+            st.gpu_ms = report.gpu_frame_ms.or(st.gpu_ms);
             st.cpu_ms += report.cpu_total_ms;
             st.cpu_max = st.cpu_max.max(report.cpu_total_ms);
         }
         if (now - self.stats_since).as_secs_f32() >= 2.0 {
             let frames = st.frames.max(1) as f32;
             if let Some(report) = report {
-                // Submit to idle of this (sampled) frame; `None` outside a match.
-                let gpu = report.gpu_frame_ms;
+                // The sampled frame's GPU time; `None` outside a match.
+                let gpu = st.gpu_ms;
                 let a = report.actors;
                 tracing::info!(
                     fps = (1000.0 * frames / st.dt_ms.max(1.0)).round(),
