@@ -4,12 +4,15 @@
 //! wgpu records a pass as a list of commands and encodes it into the backend (Metal,
 //! Vulkan, D3D12) only when its encoder is finished: that is most of a frame's CPU cost
 //! on the render thread (renderer §9). The renderer records a frame into a few encoders,
-//! in order, and [`finish`] encodes them at once: the render thread takes the largest (it
-//! starts at once, while the workers wake), a small pool of worker threads the others.
-//! The command buffers come back in recording order and are submitted together, so the
-//! GPU runs the same commands in the same order.
+//! in order, and a [`Finisher`] encodes them: a small pool of worker threads takes each
+//! as soon as it is recorded, while the frame records on, and the render thread finishes
+//! the largest itself at the end, then any a worker has not taken yet. The command
+//! buffers come back in recording order and are submitted together, so the GPU runs the
+//! same commands in the same order.
 
-use std::sync::OnceLock;
+use std::collections::VecDeque;
+use std::panic::AssertUnwindSafe;
+use std::sync::{Arc, Condvar, Mutex, OnceLock, PoisonError};
 
 /// Worker threads at most: a frame has five encoders, and the render thread finishes one
 /// itself.
@@ -36,58 +39,140 @@ fn pool() -> Option<&'static rayon::ThreadPool> {
 }
 
 /// Runs `work` on a worker thread while `here` runs on this one, and returns what `work`
-/// made: for a frame's independent CPU work. Without workers, one after the other.
+/// made: for a frame's independent CPU work. When no worker has started it by the time
+/// `here` is done, this thread does it; without workers, one after the other.
 pub fn alongside<R: Send>(work: impl FnOnce() -> R + Send, here: impl FnOnce()) -> R {
-    match pool() {
-        Some(pool) => {
-            let mut made = None;
-            pool.in_place_scope(|scope| {
-                scope.spawn(|_| made = Some(work()));
-                here();
-            });
-            made.expect("the scope waits for its work")
+    let Some(pool) = pool() else {
+        here();
+        return work();
+    };
+    let work = Mutex::new(Some(work));
+    let made = Mutex::new(None);
+    let run = || {
+        let work = work.lock().unwrap_or_else(PoisonError::into_inner).take();
+        if let Some(work) = work {
+            let result = work();
+            *made.lock().unwrap_or_else(PoisonError::into_inner) = Some(result);
         }
-        None => {
-            here();
-            work()
-        }
+    };
+    pool.in_place_scope(|scope| {
+        scope.spawn(|_| run());
+        here();
+        run();
+    });
+    made.into_inner()
+        .unwrap_or_else(PoisonError::into_inner)
+        .expect("the scope waits for its work")
+}
+
+type Finished = (usize, std::thread::Result<wgpu::CommandBuffer>);
+
+/// What the render thread and the workers share: encoders waiting to be finished, and
+/// the command buffers finished.
+#[derive(Default)]
+struct Shared {
+    waiting: Mutex<VecDeque<(usize, wgpu::CommandEncoder)>>,
+    finished: Mutex<Vec<Finished>>,
+    arrived: Condvar,
+}
+
+impl Shared {
+    /// Finishes the next waiting encoder, if any is left; false when none was.
+    fn finish_next(&self) -> bool {
+        let next = self
+            .waiting
+            .lock()
+            .unwrap_or_else(PoisonError::into_inner)
+            .pop_front();
+        let Some((index, encoder)) = next else {
+            return false;
+        };
+        let finished = std::panic::catch_unwind(AssertUnwindSafe(|| encoder.finish()));
+        self.finished
+            .lock()
+            .unwrap_or_else(PoisonError::into_inner)
+            .push((index, finished));
+        self.arrived.notify_one();
+        true
     }
 }
 
-/// Finishes `encoders` (emptying the list), the one at `main` on this thread, and appends
-/// their command buffers to `out` in the same order. `slots` is scratch room kept between
-/// frames.
-pub fn finish(
-    encoders: &mut Vec<wgpu::CommandEncoder>,
-    main: usize,
-    slots: &mut Vec<Option<wgpu::CommandBuffer>>,
-    out: &mut Vec<wgpu::CommandBuffer>,
-) {
-    let _span = tracing::trace_span!("finish").entered();
-    slots.clear();
-    slots.resize_with(encoders.len(), || None);
-    match pool().filter(|_| encoders.len() > 1) {
-        Some(pool) => pool.in_place_scope(|scope| {
-            let mut own = None;
-            for (i, (encoder, slot)) in encoders.drain(..).zip(slots.iter_mut()).enumerate() {
-                if i == main {
-                    own = Some((encoder, slot));
-                } else {
-                    scope.spawn(move |_| {
-                        let _span = tracing::trace_span!("finish_encoder").entered();
-                        *slot = Some(encoder.finish());
-                    });
-                }
-            }
-            if let Some((encoder, slot)) = own {
-                *slot = Some(encoder.finish());
-            }
-        }),
-        None => {
-            for (encoder, slot) in encoders.drain(..).zip(slots.iter_mut()) {
-                *slot = Some(encoder.finish());
-            }
+/// A frame's encoders in recording order. Those sent wait in a queue a worker takes from
+/// as soon as each is sent, while the frame records on; those kept are finished on this
+/// thread at the end ([`Self::finish`]), which then also takes whatever is still waiting,
+/// so a slow or busy worker never holds the frame up longer than the work itself.
+#[derive(Default)]
+pub struct Finisher {
+    shared: Arc<Shared>,
+    /// Encoders kept for this thread, with their place in the frame.
+    kept: Vec<(usize, wgpu::CommandEncoder)>,
+    /// Encoders handed out (sent and kept) and sent this frame.
+    count: usize,
+    sent: usize,
+    slots: Vec<Option<wgpu::CommandBuffer>>,
+}
+
+impl Finisher {
+    /// Queues `encoder` for a worker (for this thread at the end without workers).
+    pub fn send(&mut self, encoder: wgpu::CommandEncoder) {
+        let index = self.count;
+        self.count += 1;
+        self.sent += 1;
+        self.shared
+            .waiting
+            .lock()
+            .unwrap_or_else(PoisonError::into_inner)
+            .push_back((index, encoder));
+        if let Some(pool) = pool() {
+            let shared = self.shared.clone();
+            pool.spawn(move || {
+                let _span = tracing::trace_span!("finish_encoder").entered();
+                shared.finish_next();
+            });
         }
     }
-    out.extend(slots.drain(..).flatten());
+
+    /// Finishes `encoder` on this thread at the end.
+    pub fn keep(&mut self, encoder: wgpu::CommandEncoder) {
+        self.kept.push((self.count, encoder));
+        self.count += 1;
+    }
+
+    /// Finishes the kept encoders and any still waiting, waits for those the workers took,
+    /// and appends every command buffer to `out` in recording order. A panic while
+    /// finishing on a worker carries on here.
+    pub fn finish(&mut self, out: &mut Vec<wgpu::CommandBuffer>) {
+        let _span = tracing::trace_span!("finish").entered();
+        self.slots.clear();
+        self.slots.resize_with(self.count, || None);
+        for (index, encoder) in self.kept.drain(..) {
+            self.slots[index] = Some(encoder.finish());
+        }
+        while self.shared.finish_next() {}
+        let mut finished = self
+            .shared
+            .finished
+            .lock()
+            .unwrap_or_else(PoisonError::into_inner);
+        let mut received = 0;
+        while received < self.sent {
+            for (index, buffer) in finished.drain(..) {
+                received += 1;
+                match buffer {
+                    Ok(buffer) => self.slots[index] = Some(buffer),
+                    Err(panic) => std::panic::resume_unwind(panic),
+                }
+            }
+            if received < self.sent {
+                finished = self
+                    .shared
+                    .arrived
+                    .wait(finished)
+                    .unwrap_or_else(PoisonError::into_inner);
+            }
+        }
+        drop(finished);
+        (self.count, self.sent) = (0, 0);
+        out.extend(self.slots.drain(..).flatten());
+    }
 }

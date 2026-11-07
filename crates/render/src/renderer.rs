@@ -596,8 +596,7 @@ pub struct Renderer {
     belt: Option<wgpu::util::StagingBelt>,
     /// A frame's encoders, recorded in order and finished together ([`crate::encode`]),
     /// and room for their command buffers, kept between frames.
-    frame_encoders: Vec<wgpu::CommandEncoder>,
-    finish_slots: Vec<Option<wgpu::CommandBuffer>>,
+    finisher: crate::encode::Finisher,
     command_buffers: Vec<wgpu::CommandBuffer>,
     /// The device has timestamp queries: sampled frames are measured with them, and
     /// every frame while passes are timed ([`Self::set_pass_timing`]).
@@ -783,8 +782,7 @@ impl Renderer {
             ui: None,
             timer: None,
             belt: None,
-            frame_encoders: Vec::new(),
-            finish_slots: Vec::new(),
+            finisher: Default::default(),
             command_buffers: Vec::new(),
             timestamps: gpu.features.timestamps,
             pass_timing: false,
@@ -1652,8 +1650,6 @@ impl Renderer {
                     label: Some("frame"),
                 })
             });
-        // The encoder the render thread finishes itself: the forward pass's.
-        let mut forward_encoder = 0;
         let background = self.forest.as_ref().map_or(lighting.background, |f| {
             f.background(lighting.background, sun.1)
         });
@@ -1667,17 +1663,20 @@ impl Renderer {
             // parallel ([`crate::encode`]): the uploads' copies and the culling, the
             // shadows and water fields, the forward pass, the effects and post effects,
             // and the final pass with what follows it.
+            // Each goes to a worker as soon as it is recorded, but the forward pass's: the
+            // render thread finishes that one at the end.
             if !self.isolate_passes && FRAME_SPLITS.contains(&pass.name) {
-                if pass.name == passes::FORWARD {
-                    forward_encoder = self.frame_encoders.len() + 1;
-                }
                 let recorded = std::mem::replace(
                     &mut encoder,
                     device.create_command_encoder(&wgpu::CommandEncoderDescriptor {
                         label: Some("frame"),
                     }),
                 );
-                self.frame_encoders.push(recorded);
+                if self.graph.passes()[index - 1].name == passes::FORWARD {
+                    self.finisher.keep(recorded);
+                } else {
+                    self.finisher.send(recorded);
+                }
             }
             let pass_start = Instant::now();
             let _span = tracing::trace_span!("pass", name = pass.name).entered();
@@ -2021,18 +2020,13 @@ impl Renderer {
         let submitted = Instant::now();
         {
             let _span = tracing::trace_span!("submit").entered();
-            // The uploads' copies first, then the frame's encoders in recording order.
+            // The uploads' copies first (apart only while passes are timed alone), then the
+            // frame's encoders in recording order.
             if let Some(copies) = uploads.take_encoder() {
-                self.frame_encoders.insert(0, copies);
-                forward_encoder += 1;
+                self.command_buffers.push(copies.finish());
             }
-            self.frame_encoders.push(encoder);
-            crate::encode::finish(
-                &mut self.frame_encoders,
-                forward_encoder,
-                &mut self.finish_slots,
-                &mut self.command_buffers,
-            );
+            self.finisher.send(encoder);
+            self.finisher.finish(&mut self.command_buffers);
             let _span = tracing::trace_span!("queue_submit").entered();
             gpu.queue.submit(self.command_buffers.drain(..));
         }
