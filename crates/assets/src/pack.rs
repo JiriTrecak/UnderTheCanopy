@@ -49,6 +49,8 @@ pub struct Pack {
     header: Header,
     entries: Vec<IndexEntry>,
     by_name: HashMap<String, usize>,
+    /// Unique among the packs this process opened ([`Pack::id`]).
+    id: u64,
 }
 
 impl Pack {
@@ -113,12 +115,20 @@ impl Pack {
             .enumerate()
             .map(|(i, e)| (e.name.clone(), i))
             .collect();
+        static OPENED: std::sync::atomic::AtomicU64 = std::sync::atomic::AtomicU64::new(1);
         Self {
             source,
             header,
             entries,
             by_name,
+            id: OPENED.fetch_add(1, std::sync::atomic::Ordering::Relaxed),
         }
+    }
+
+    /// This pack among the packs the process opened: what is read from one pack may be
+    /// kept by its id (a pack's bytes never change once open).
+    pub fn id(&self) -> u64 {
+        self.id
     }
 
     pub fn header(&self) -> &Header {

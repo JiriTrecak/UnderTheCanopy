@@ -848,6 +848,7 @@ impl Presenter {
         setup: Setup,
         effects: Option<Arc<canopy_assets::EffectTable>>,
     ) -> Self {
+        let _span = tracing::trace_span!("presenter_new").entered();
         let content = world.catalog().content.clone();
         // Map placements' appearance (asset and scale) by entity.
         let placements: BTreeMap<&str, &canopy_content::placement::Placement> = map
@@ -884,6 +885,7 @@ impl Presenter {
         let words = setup.statics.div_ceil(64);
         let mut catalog = ModelCatalog::default();
         let table = effects.unwrap_or_else(|| EffectDirector::table(pack.as_deref()));
+        let directing = tracing::trace_span!("presenter_effects").entered();
         let effects = EffectDirector::new(&content, table.clone(), |name| {
             let index = catalog.index(pack.as_deref(), name);
             let info = catalog.get(index);
@@ -898,6 +900,7 @@ impl Presenter {
                     .collect(),
             })
         });
+        drop(directing);
         let mut dust_effects = BTreeMap::new();
         for race in content.rules.races.values() {
             if let Some(style) = &race.construction
@@ -985,6 +988,7 @@ impl Presenter {
     /// rosters of the races playing (with their scaffolds and projectiles), every item
     /// and deposit stage. Anything else (summons) loads when first seen.
     fn preload(&mut self, world: &World) {
+        let _span = tracing::trace_span!("presenter_preload").entered();
         let content = self.content.clone();
         let mut definitions: BTreeSet<&str> = BTreeSet::new();
         let catalog = world.catalog();

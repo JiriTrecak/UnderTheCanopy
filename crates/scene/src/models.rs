@@ -218,6 +218,32 @@ impl ModelInfo {
     }
 }
 
+/// Model `name` of `pack`, read once for every presenter of the process: each match, shot
+/// and editor stage makes a presenter of its own, and reading the models a match preloads
+/// took milliseconds each time. Kept for the pack read last (a new pack starts afresh).
+fn read_kept(pack: &Pack, name: &str) -> Arc<ModelInfo> {
+    type Kept = (u64, BTreeMap<String, Arc<ModelInfo>>);
+    static KEPT: std::sync::Mutex<Option<Kept>> = std::sync::Mutex::new(None);
+    let kept_info = |kept: &mut Option<Kept>| {
+        let (id, infos) = kept.get_or_insert_with(|| (pack.id(), BTreeMap::new()));
+        if *id != pack.id() {
+            *id = pack.id();
+            infos.clear();
+        }
+        infos.get(name).cloned()
+    };
+    if let Some(info) = kept_info(&mut KEPT.lock().unwrap_or_else(|e| e.into_inner())) {
+        return info;
+    }
+    let info = Arc::new(ModelInfo::read(pack, name));
+    let mut kept = KEPT.lock().unwrap_or_else(|e| e.into_inner());
+    kept_info(&mut kept);
+    if let Some((_, infos)) = kept.as_mut() {
+        infos.insert(name.to_owned(), info.clone());
+    }
+    info
+}
+
 /// Every model the live scene has asked for, numbered.
 #[derive(Debug, Clone, Default)]
 pub struct ModelCatalog {
@@ -233,25 +259,29 @@ impl ModelCatalog {
             return i;
         }
         let info = match pack {
-            Some(pack) => ModelInfo::read(pack, name),
-            None => ModelInfo {
+            Some(pack) => read_kept(pack, name),
+            None => Arc::new(ModelInfo {
                 name: name.to_owned(),
                 missing: true,
                 ..ModelInfo::default()
-            },
+            }),
         };
         if info.missing {
             tracing::warn!(model = name, "live model missing from the pack");
         }
-        self.insert(info)
+        self.insert_shared(info)
     }
 
     /// Adds a model described directly (tests).
     pub fn insert(&mut self, info: ModelInfo) -> u32 {
+        self.insert_shared(Arc::new(info))
+    }
+
+    fn insert_shared(&mut self, info: Arc<ModelInfo>) -> u32 {
         let i = self.infos.len() as u32;
         self.by_name.insert(info.name.clone(), i);
         Arc::make_mut(&mut self.names).push(info.name.clone());
-        self.infos.push(Arc::new(info));
+        self.infos.push(info);
         i
     }
 
