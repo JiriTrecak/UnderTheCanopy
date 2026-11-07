@@ -17,6 +17,9 @@
 //! may take the next tick's step ahead, on a thread of its own, while it simulates that
 //! tick ([`Ragdolls::step_ahead`]): the bodies fall exactly as they would have, off the
 //! presentation's critical path.
+//!
+//! A body that has come to rest sleeps ([`REST`]): the physics skips it and its pose is
+//! worked out once, until something wakes it.
 
 use crate::animation::{SPEED, TICK_SECONDS};
 use canopy_assets::{CLIP_FRAME_RATE, Matrix3x4, Ragdoll, RagdollShape};
@@ -67,6 +70,12 @@ const FRICTION: f32 = 0.6;
 const RESTITUTION: f32 = 0.05;
 const LINEAR_DAMPING: f32 = 0.15;
 const ANGULAR_DAMPING: f32 = 1.2;
+/// A body sleeps once it has settled: for [`SETTLE_TICKS`] steps no point of any part
+/// strayed more than [`REST`] of the body's height from where it lay. Asleep it costs the
+/// physics nothing and its pose is worked out once. Where the parts are counts, not their
+/// velocities, so a body trembling in place on its joints sleeps too.
+const REST: f32 = 0.02;
+const SETTLE_TICKS: u32 = 20;
 
 const GROUND: Group = Group::GROUP_1;
 const PARTS: Group = Group::GROUP_2;
@@ -145,6 +154,75 @@ struct Fallen {
     base: Arc<[Mat4]>,
     /// The root part: the instance follows it.
     root: usize,
+    /// The body's pose while it sleeps (unsunk): what lies still is worked out once.
+    asleep: Option<RagdollPose>,
+}
+
+/// Whether a body has settled ([`REST`]), watched after every step.
+struct Rest {
+    parts: Vec<RigidBodyHandle>,
+    /// Two far points of each part's shape (in its frame): how far they moved is how far
+    /// the part moved.
+    ends: Vec<[Vec3; 2]>,
+    /// How far a point may stray and still count as lying still (world units).
+    tolerance: f32,
+    /// Where each part lay (world translation and rotation) when the body last moved, and
+    /// the steps since.
+    lay: Vec<(Vec3, Quat)>,
+    still: u32,
+}
+
+/// The physics and what watches its bodies settle: all a step takes, in place or on the
+/// stepper's thread, so both fall alike.
+struct Physics {
+    world: PhysicsWorld,
+    /// By body id, as [`Ragdolls`]' bodies.
+    rest: BTreeMap<u32, Rest>,
+}
+
+impl Physics {
+    /// One tick: the bodies fall, and those that have settled go to sleep.
+    fn step(&mut self) {
+        self.world.step();
+        let _span = tracing::trace_span!("ragdoll_settle").entered();
+        let bodies = &mut self.world.bodies;
+        for rest in self.rest.values_mut() {
+            if rest.parts.iter().all(|&h| bodies[h].is_sleeping()) {
+                continue;
+            }
+            let at =
+                |h: RigidBodyHandle| (ours(bodies[h].translation()), quat(*bodies[h].rotation()));
+            let moved = rest
+                .parts
+                .iter()
+                .zip(&rest.lay)
+                .zip(&rest.ends)
+                .any(|((&h, &lay), ends)| strayed(at(h), lay, ends) > rest.tolerance);
+            if moved {
+                // Awake again (something woke it) or still moving: watched from here.
+                for (&h, lay) in rest.parts.iter().zip(&mut rest.lay) {
+                    *lay = at(h);
+                }
+                rest.still = 0;
+                continue;
+            }
+            rest.still += 1;
+            if rest.still >= SETTLE_TICKS {
+                for &h in &rest.parts {
+                    if let Some(body) = bodies.get_mut(h) {
+                        body.sleep();
+                    }
+                }
+            }
+        }
+    }
+}
+
+/// How far the farther of a part's `ends` strayed between two of its poses.
+fn strayed(now: (Vec3, Quat), then: (Vec3, Quat), ends: &[Vec3; 2]) -> f32 {
+    ends.iter()
+        .map(|&e| ((now.0 + now.1 * e) - (then.0 + then.1 * e)).length())
+        .fold(0.0, f32::max)
 }
 
 /// A falling body's pose: where its instance stands and each part's motion since the
@@ -197,7 +275,7 @@ impl RagdollPose {
 /// The scene's falling bodies and the ground they land on.
 pub struct Ragdolls {
     /// None while the stepper holds it ([`Ragdolls::step_ahead`]).
-    world: Option<Box<PhysicsWorld>>,
+    physics: Option<Box<Physics>>,
     ground: bool,
     fallen: BTreeMap<u32, Fallen>,
     /// The thread that takes steps ahead, once one was asked for.
@@ -206,19 +284,22 @@ pub struct Ragdolls {
     ahead: bool,
 }
 
-fn new_world() -> Box<PhysicsWorld> {
+fn new_physics() -> Box<Physics> {
     let mut world = PhysicsWorld {
         gravity: rapier3d::math::Vector::new(0.0, -GRAVITY, 0.0),
         ..Default::default()
     };
     world.integration_parameters.dt = TICK_SECONDS;
-    Box::new(world)
+    Box::new(Physics {
+        world,
+        rest: BTreeMap::new(),
+    })
 }
 
 impl Default for Ragdolls {
     fn default() -> Self {
         Self {
-            world: Some(new_world()),
+            physics: Some(new_physics()),
             ground: false,
             fallen: BTreeMap::new(),
             stepper: None,
@@ -227,27 +308,27 @@ impl Default for Ragdolls {
     }
 }
 
-/// A thread stepping a world it is handed and handing it back.
+/// A thread stepping the physics it is handed and handing it back.
 struct Stepper {
-    jobs: mpsc::Sender<Box<PhysicsWorld>>,
-    done: mpsc::Receiver<Box<PhysicsWorld>>,
+    jobs: mpsc::Sender<Box<Physics>>,
+    done: mpsc::Receiver<Box<Physics>>,
 }
 
 impl Stepper {
     fn start() -> Option<Self> {
-        let (jobs, inbox) = mpsc::channel::<Box<PhysicsWorld>>();
+        let (jobs, inbox) = mpsc::channel::<Box<Physics>>();
         let (outbox, done) = mpsc::channel();
         std::thread::Builder::new()
             .name("ragdolls".into())
             .spawn(move || {
                 // The next update waits for this step.
                 canopy_render::priority::raise_current_thread();
-                for mut world in inbox {
+                for mut physics in inbox {
                     {
                         let _span = tracing::trace_span!("ragdoll_step_ahead").entered();
-                        world.step();
+                        physics.step();
                     }
-                    if outbox.send(world).is_err() {
+                    if outbox.send(physics).is_err() {
                         break;
                     }
                 }
@@ -258,11 +339,10 @@ impl Stepper {
 }
 
 impl Ragdolls {
-    /// The world, back from the stepper first if it is away. A stepper that died (a panic
-    /// in the physics) took the world with it: its bodies are gone, the ground goes in
-    /// again.
-    fn world(&mut self) -> &mut PhysicsWorld {
-        if self.world.is_none() {
+    /// The physics, back from the stepper first if it is away. A stepper that died (a
+    /// panic in the physics) took it along: its bodies are gone, the ground goes in again.
+    fn physics(&mut self) -> &mut Physics {
+        if self.physics.is_none() {
             let back = self.stepper.as_ref().and_then(|s| s.done.recv().ok());
             if back.is_none() {
                 self.fallen.clear();
@@ -270,9 +350,9 @@ impl Ragdolls {
                 self.stepper = None;
                 self.ahead = false;
             }
-            self.world = Some(back.unwrap_or_else(new_world));
+            self.physics = Some(back.unwrap_or_else(new_physics));
         }
-        self.world.as_mut().expect("the world is back")
+        self.physics.as_mut().expect("the physics is back")
     }
 
     /// Whether the ground is in (bodies fall forever without it).
@@ -306,7 +386,7 @@ impl Ragdolls {
                     PARTS,
                     InteractionTestMode::And,
                 ));
-        self.world().colliders.insert(collider);
+        self.physics().world.colliders.insert(collider);
         self.ground = true;
     }
 
@@ -340,7 +420,7 @@ impl Ragdolls {
             return false;
         }
         let (scale, turn, at) = instance;
-        let physics = self.world();
+        let physics = &mut self.physics().world;
         let s = scale.x.abs().max(1e-3);
         let transform = Mat4::from_scale_rotation_translation(scale, turn, at);
         let now = model.frame(time);
@@ -359,6 +439,8 @@ impl Ragdolls {
         let root = root_of(ragdoll);
         let mut parts = Vec::with_capacity(ragdoll.parts.len());
         let mut start = Vec::with_capacity(ragdoll.parts.len());
+        let mut lay = Vec::with_capacity(ragdoll.parts.len());
+        let mut ends = Vec::with_capacity(ragdoll.parts.len());
         for (i, part) in ragdoll.parts.iter().enumerate() {
             let j = part.joint as usize;
             let centre = Vec3::from(match part.shape {
@@ -441,6 +523,20 @@ impl Ragdolls {
                 .insert_with_parent(collider, handle, &mut physics.bodies);
             parts.push(handle);
             start.push(Mat4::from_rotation_translation(r, p));
+            lay.push((p, r));
+            ends.push(match part.shape {
+                RagdollShape::Capsule { a, b, .. } => [Vec3::from(a) * s, Vec3::from(b) * s],
+                RagdollShape::Box {
+                    centre,
+                    rotation: q,
+                    half,
+                } => {
+                    let corner =
+                        Quat::from_xyzw(q[0], q[1], q[2], q[3]).normalize() * Vec3::from(half);
+                    let centre = Vec3::from(centre);
+                    [(centre - corner) * s, (centre + corner) * s]
+                }
+            });
         }
         // Ball joints at each part's pivot, measured from where the clip left them.
         for (i, part) in ragdoll.parts.iter().enumerate() {
@@ -461,6 +557,16 @@ impl Ragdolls {
             physics.insert_impulse_joint(parts[parent], parts[i], joint);
         }
         let base: Arc<[Mat4]> = now.iter().map(mat4).collect();
+        self.physics().rest.insert(
+            id,
+            Rest {
+                parts: parts.clone(),
+                ends,
+                tolerance: REST * height * s,
+                lay,
+                still: 0,
+            },
+        );
         self.fallen.insert(
             id,
             Fallen {
@@ -470,6 +576,7 @@ impl Ragdolls {
                 start,
                 instance: transform,
                 base,
+                asleep: None,
             },
         );
         true
@@ -482,9 +589,9 @@ impl Ragdolls {
             return;
         }
         let _span = tracing::trace_span!("ragdoll_step", bodies = self.fallen.len()).entered();
-        let world = self.world();
+        let physics = self.physics();
         for _ in u32::from(ahead)..ticks.min(4) {
-            world.step();
+            physics.step();
         }
     }
 
@@ -498,69 +605,85 @@ impl Ragdolls {
         if self.stepper.is_none() {
             self.stepper = Stepper::start();
         }
-        let (Some(stepper), Some(world)) = (&self.stepper, self.world.take()) else {
+        let (Some(stepper), Some(physics)) = (&self.stepper, self.physics.take()) else {
             return;
         };
-        match stepper.jobs.send(world) {
+        match stepper.jobs.send(physics) {
             Ok(()) => self.ahead = true,
-            Err(unsent) => self.world = Some(unsent.0),
+            Err(unsent) => self.physics = Some(unsent.0),
         }
     }
 
     /// Body `id`'s pose now, sunk `sink` world units into the ground.
     pub fn pose(&mut self, id: u32, sink: f32) -> Option<RagdollPose> {
         self.fallen.get(&id)?;
-        self.world();
-        let world = self.world.as_deref().expect("the world is back");
-        let f = &self.fallen[&id];
-        let now: Vec<Mat4> = f
-            .parts
-            .iter()
-            .map(|&h| {
-                let b = &world.bodies[h];
-                Mat4::from_rotation_translation(quat(*b.rotation()), ours(b.translation()))
-            })
-            .collect();
-        // The instance follows the root part; its scale stays.
-        let follow = now[f.root] * f.start[f.root].inverse() * f.instance;
-        let (_, rotation, mut position) = follow.to_scale_rotation_translation();
-        position.y -= sink;
-        let parts = now
-            .iter()
-            .zip(&f.start)
-            .map(|(n, s)| {
-                let motion = follow.inverse() * *n * s.inverse() * f.instance;
-                let (_, r, t) = motion.to_scale_rotation_translation();
-                (t, r)
-            })
-            .collect();
-        Some(RagdollPose {
-            model: f.model.clone(),
-            base: f.base.clone(),
-            position,
-            rotation,
-            parts,
-        })
+        self.physics();
+        let world = &self.physics.as_deref().expect("the physics is back").world;
+        let f = self.fallen.get_mut(&id).expect("falling");
+        let asleep = f.parts.iter().all(|&h| world.bodies[h].is_sleeping());
+        if !asleep {
+            f.asleep = None;
+        } else if f.asleep.is_none() {
+            f.asleep = Some(posed(world, f));
+        }
+        let mut pose = match &f.asleep {
+            Some(pose) => pose.clone(),
+            None => posed(world, f),
+        };
+        pose.position.y -= sink;
+        Some(pose)
     }
 
     /// Takes body `id` out of the world.
     pub fn remove(&mut self, id: u32) {
         if let Some(f) = self.fallen.remove(&id) {
-            let world = self.world();
+            let physics = self.physics();
+            physics.rest.remove(&id);
             for h in f.parts {
-                world.remove_body(h);
+                physics.world.remove_body(h);
             }
         }
     }
 
     /// Takes every body out (a replay seek); the ground stays.
     pub fn clear(&mut self) {
-        self.world();
+        self.physics();
         self.ahead = false;
         let ids: Vec<u32> = self.fallen.keys().copied().collect();
         for id in ids {
             self.remove(id);
         }
+    }
+}
+
+/// Body `f`'s pose in `world`, unsunk.
+fn posed(world: &PhysicsWorld, f: &Fallen) -> RagdollPose {
+    let now: Vec<Mat4> = f
+        .parts
+        .iter()
+        .map(|&h| {
+            let b = &world.bodies[h];
+            Mat4::from_rotation_translation(quat(*b.rotation()), ours(b.translation()))
+        })
+        .collect();
+    // The instance follows the root part; its scale stays.
+    let follow = now[f.root] * f.start[f.root].inverse() * f.instance;
+    let (_, rotation, position) = follow.to_scale_rotation_translation();
+    let parts = now
+        .iter()
+        .zip(&f.start)
+        .map(|(n, s)| {
+            let motion = follow.inverse() * *n * s.inverse() * f.instance;
+            let (_, r, t) = motion.to_scale_rotation_translation();
+            (t, r)
+        })
+        .collect();
+    RagdollPose {
+        model: f.model.clone(),
+        base: f.base.clone(),
+        position,
+        rotation,
+        parts,
     }
 }
 
@@ -637,6 +760,60 @@ mod tests {
         })
     }
 
+    /// Whether every part of body `id` sleeps.
+    fn asleep(ragdolls: &mut Ragdolls, id: u32) -> bool {
+        let physics = ragdolls.physics();
+        physics.rest[&id]
+            .parts
+            .iter()
+            .all(|&h| physics.world.bodies[h].is_sleeping())
+    }
+
+    /// A body that has come to rest sleeps, and from then on its pose is the same to the
+    /// bit: nothing pops, and nothing is left to compute.
+    #[test]
+    fn a_body_that_has_settled_sleeps_where_it_lies() {
+        let mut ragdolls = Ragdolls::default();
+        let n = 41;
+        ragdolls.set_ground(n, &vec![1.0; n * n], -20.0);
+        let model = model();
+        let pushes = [0.0, PUSH, 9.0];
+        for (k, push) in pushes.iter().enumerate() {
+            let at = Vec3::new(k as f32 * 5.0 - 5.0, 1.0, 0.0);
+            let turn = Quat::from_rotation_y(k as f32);
+            ragdolls.spawn(
+                k as u32,
+                &model,
+                (Vec3::ONE, turn, at),
+                0.0,
+                Vec3::X * *push,
+                k as u32,
+            );
+        }
+        let mut slept: BTreeMap<u32, RagdollPose> = BTreeMap::new();
+        for tick in 0..240 {
+            ragdolls.step(1);
+            for id in 0..pushes.len() as u32 {
+                let pose = ragdolls.pose(id, 0.0).expect("falling");
+                if let Some(then) = slept.get(&id) {
+                    assert!(asleep(&mut ragdolls, id), "body {id} woke at {tick}");
+                    assert_eq!(
+                        (then.position, then.rotation, &then.parts),
+                        (pose.position, pose.rotation, &pose.parts)
+                    );
+                } else if asleep(&mut ragdolls, id) {
+                    slept.insert(id, pose);
+                }
+            }
+        }
+        assert_eq!(
+            slept.len(),
+            pushes.len(),
+            "every body settled: {:?}",
+            slept.keys()
+        );
+    }
+
     #[test]
     fn a_body_topples_away_from_the_blow_and_comes_to_rest_on_the_ground() {
         let mut ragdolls = Ragdolls::default();
@@ -677,7 +854,7 @@ mod tests {
     }
 
     /// Steps taken ahead on the stepper's thread are the steps taken in place: the same
-    /// poses to the bit, with bodies arriving and leaving between them.
+    /// poses to the bit, with bodies arriving, leaving and falling asleep between them.
     #[test]
     fn steps_taken_ahead_fall_exactly_as_steps_taken_in_place() {
         let run = |ahead: bool| {
@@ -686,7 +863,8 @@ mod tests {
             ragdolls.set_ground(n, &vec![1.0; n * n], -20.0);
             let model = model();
             let mut poses = Vec::new();
-            for tick in 0..60u32 {
+            let mut slept = 0;
+            for tick in 0..120u32 {
                 ragdolls.step(if tick % 7 == 3 { 2 } else { 1 });
                 if tick % 10 == 0 {
                     let at = Vec3::new(tick as f32 * 0.1, 1.0, 0.0);
@@ -702,8 +880,9 @@ mod tests {
                 if tick == 35 {
                     ragdolls.remove(10);
                 }
-                for id in [0, 10, 20, 30, 40, 50] {
+                for id in (0..120).step_by(10) {
                     if let Some(pose) = ragdolls.pose(id, 0.0) {
+                        slept += usize::from(asleep(&mut ragdolls, id));
                         poses.push((tick, id, pose.position, pose.rotation, pose.parts));
                     }
                 }
@@ -711,6 +890,7 @@ mod tests {
                     ragdolls.step_ahead();
                 }
             }
+            assert!(slept > 0, "bodies fell asleep");
             poses
         };
         let (in_place, ahead) = (run(false), run(true));
