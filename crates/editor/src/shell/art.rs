@@ -13,6 +13,7 @@ impl Shell {
         let document = crate::assets::import(&root, request)?;
         // The folder appeared on disk: read the libraries again.
         self.structure = None;
+        self.reread = None;
         if let Ok(package) = self.package.clone() {
             self.refresh_libraries(&package);
         }
@@ -43,6 +44,7 @@ impl Shell {
             &content,
         )?;
         self.structure = None;
+        self.reread = None;
         if let Ok(package) = self.package.clone() {
             self.refresh_libraries(&package);
         }

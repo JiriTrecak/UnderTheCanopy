@@ -226,6 +226,13 @@ pub struct Shell {
     /// (structure, the latest change of a campaign's own documents): the Maps library
     /// lists missions in their campaign's step order.
     structure: Option<(u64, u64)>,
+    /// The structure the libraries were last read at, and which of them to read again
+    /// when only files on disk changed (a save writes the documents it lists anew, so
+    /// their names show): `None` reads them all.
+    read_at: Option<(u64, u64)>,
+    reread: Option<Vec<Kind>>,
+    /// The libraries holding unsaved documents when they were last read (`None`: all).
+    dirty_at_read: Option<Vec<Kind>>,
     /// Uses of an id: (document, the latest change of a JSON document, uses). Grids hold
     /// no ids, so a brush stroke keeps them.
     uses: Option<(String, u64, Vec<Use>)>,
@@ -384,6 +391,9 @@ impl Shell {
             back: Vec::new(),
             forward: Vec::new(),
             structure: None,
+            read_at: None,
+            reread: None,
+            dirty_at_read: None,
             uses: None,
             dialog: None,
             checker,
@@ -1178,11 +1188,40 @@ impl Shell {
         if self.structure == structure && self.workspaces.len() == KINDS.len() {
             return;
         }
+        // Only files on disk changed (a save): the libraries they belong to are read again,
+        // and those with unsaved documents (they show through the overlay), now or at the
+        // last read.
+        let dirty = |store: &Option<Store>| {
+            let mut kinds = Vec::new();
+            let all = store
+                .as_ref()
+                .is_some_and(|s| libraries_of(s.dirty().into_iter(), &mut kinds));
+            (!all).then_some(kinds)
+        };
+        let only = self
+            .reread
+            .take()
+            .filter(|_| self.read_at == structure && self.workspaces.len() == KINDS.len())
+            .and_then(|mut kinds| {
+                for more in [dirty(&self.store), self.dirty_at_read.clone()] {
+                    for kind in more? {
+                        if !kinds.contains(&kind) {
+                            kinds.push(kind);
+                        }
+                    }
+                }
+                Some(kinds)
+            });
+        self.dirty_at_read = dirty(&self.store);
         self.structure = structure;
+        self.read_at = structure;
         let _span = tracing::info_span!("refresh_libraries").entered();
         let overlaid = self.overlaid(package);
         let data = self.data.clone();
         for kind in KINDS {
+            if only.as_ref().is_some_and(|kinds| !kinds.contains(&kind)) {
+                continue;
+            }
             match self.workspaces.get_mut(&kind) {
                 Some(workspace) => {
                     workspace.library = Library::read(&overlaid, kind, self.data.as_deref())
@@ -1356,6 +1395,7 @@ impl Shell {
         match canopy_content::lab::write(&path, &lab) {
             Ok(()) => {
                 self.structure = None;
+                self.reread = None;
                 if let Ok(package) = self.package.clone() {
                     self.refresh_libraries(&package);
                 }
@@ -2031,7 +2071,13 @@ impl Shell {
                 }
             }
         }
-        // Files may have come or gone: read the libraries again.
+        // Files may have come or gone: read their libraries again. The text library names
+        // elements of every editor, and campaigns order the Maps library's missions.
+        // (A pending read of them all stays one.)
+        let pending_all = self.structure.is_none() && self.reread.is_none();
+        let mut kinds = self.reread.take().unwrap_or_default();
+        let all = libraries_of(changed.iter().map(String::as_str), &mut kinds) || pending_all;
+        self.reread = (!all).then_some(kinds);
         self.structure = None;
         let _ = package;
         if let Some(message) = unreadable {
@@ -3220,6 +3266,25 @@ impl Shell {
         });
         lines.join("\n")
     }
+}
+
+/// Adds to `kinds` the libraries that list `documents`; `true` when every library must
+/// be read (the text library names elements of every editor, and a file no editor
+/// lists may be anything). A campaign also orders the Maps library's missions.
+fn libraries_of<'a>(documents: impl Iterator<Item = &'a str>, kinds: &mut Vec<Kind>) -> bool {
+    for document in documents {
+        let text = document.starts_with("text/") || document.contains("/text/");
+        let Some(kind) = Kind::of_document(document).filter(|_| !text) else {
+            return true;
+        };
+        let campaign = document.starts_with("campaigns/");
+        for kind in std::iter::once(kind).chain(campaign.then_some(Kind::Maps)) {
+            if !kinds.contains(&kind) {
+                kinds.push(kind);
+            }
+        }
+    }
+    false
 }
 
 fn library_panel(
