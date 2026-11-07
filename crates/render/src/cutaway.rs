@@ -65,8 +65,11 @@ impl CutawayMask {
         } else {
             self.made_from = Some((matrices, subjects.to_vec()));
         }
+        let _span = tracing::trace_span!("cutaway").entered();
         let previous = self.written;
-        self.next[previous.0 * WIDTH..previous.1 * WIDTH].fill([0.0; 2]);
+        // Cleared as bytes: zero bits are 0.0, and a byte fill is a memset.
+        bytemuck::cast_slice_mut::<_, u8>(&mut self.next[previous.0 * WIDTH..previous.1 * WIDTH])
+            .fill(0);
         let (mut lo, mut hi, mut count) = (HEIGHT, 0, 0);
         // Horizontal stretch of a screen-space circle (old projection elements 5 / 0).
         let aspect = camera.projection.y_axis.y / camera.projection.x_axis.x;
@@ -131,7 +134,10 @@ impl CutawayMask {
             (false, false) => return None,
         };
         let span = from * WIDTH..to * WIDTH;
-        if self.data[span.clone()] == self.next[span.clone()] {
+        // Compared as bytes (the texels are never NaN or −0, so bits equal means equal).
+        if bytemuck::cast_slice::<_, u8>(&self.data[span.clone()])
+            == bytemuck::cast_slice::<_, u8>(&self.next[span.clone()])
+        {
             return None;
         }
         self.data[span.clone()].copy_from_slice(&self.next[span]);

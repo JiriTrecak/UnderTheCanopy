@@ -1401,13 +1401,55 @@ impl Renderer {
             self.lights_dirty = false;
             self.gathered_lights = self.uploaded_lights.replace(lights).unwrap_or_default();
         }
+        report.reset();
+        report
+            .passes
+            .extend(self.graph.passes().iter().map(|p| p.name));
+        let shadow_planes = frustum_planes(shadow_matrix);
+        if let Some(terrain) = &mut self.terrain {
+            let stats = terrain.prepare(
+                queue,
+                camera,
+                self.targets.size[1] as f32,
+                self.shadows.then_some(&shadow_planes),
+            );
+            report.terrain_triangles = stats.triangles;
+            report.terrain_chunks = stats.chunks;
+            report.foundations = stats.foundations;
+            report.triangles.terrain = stats.triangles;
+            report.triangles.shadow += stats.shadow_triangles;
+        }
+        let casters = crate::shadow::CasterCull::new(
+            camera.view_projection,
+            shadow_matrix,
+            lighting.sun_direction,
+            shadow_texel,
+            lighting.shadow_softness,
+            crate::frame::NORMAL_OFFSET,
+            self.terrain.as_ref().map_or(f32::MIN, TerrainGpu::lowest),
+        );
         // The scenery cutaway follows this frame's units (none while baking the minimap).
+        // Its mask is drawn on a worker thread while the cliffs' shadow runs are culled
+        // here: two computations on data of their own.
         let subjects: &[_] = if self.baking {
             &[]
         } else {
             &self.cutaway_subjects
         };
-        let cutaway_changed = self.cutaway.update(camera, subjects);
+        let (cutaway, dressing) = (&mut self.cutaway, &mut self.dressing);
+        let shadows = self.shadows;
+        let cutaway_changed = crate::encode::alongside(
+            || cutaway.update(camera, subjects),
+            || {
+                if let Some(dressing) = dressing {
+                    dressing.prepare(shadows.then_some((&shadow_planes, &casters)));
+                }
+            },
+        );
+        if let Some(dressing) = &self.dressing {
+            report.triangles.dressing = dressing.triangles;
+            report.triangles.shadow += dressing.shadow_triangles;
+        }
         if let Some(rows) = cutaway_changed {
             crate::cutaway::upload(queue, &self.cutaway_texture, &self.cutaway, rows);
         }
@@ -1437,38 +1479,6 @@ impl Renderer {
             0,
             bytemuck::bytes_of(&uniform.for_shadow(shadow_matrix)),
         );
-        let shadow_planes = frustum_planes(shadow_matrix);
-        report.reset();
-        report
-            .passes
-            .extend(self.graph.passes().iter().map(|p| p.name));
-        if let Some(terrain) = &mut self.terrain {
-            let stats = terrain.prepare(
-                queue,
-                camera,
-                self.targets.size[1] as f32,
-                self.shadows.then_some(&shadow_planes),
-            );
-            report.terrain_triangles = stats.triangles;
-            report.terrain_chunks = stats.chunks;
-            report.foundations = stats.foundations;
-            report.triangles.terrain = stats.triangles;
-            report.triangles.shadow += stats.shadow_triangles;
-        }
-        let casters = crate::shadow::CasterCull::new(
-            camera.view_projection,
-            shadow_matrix,
-            lighting.sun_direction,
-            shadow_texel,
-            lighting.shadow_softness,
-            crate::frame::NORMAL_OFFSET,
-            self.terrain.as_ref().map_or(f32::MIN, TerrainGpu::lowest),
-        );
-        if let Some(dressing) = &mut self.dressing {
-            dressing.prepare(self.shadows.then_some((&shadow_planes, &casters)));
-            report.triangles.dressing = dressing.triangles;
-            report.triangles.shadow += dressing.shadow_triangles;
-        }
         if let Some(statics) = &mut self.statics {
             statics.prepare(
                 queue,

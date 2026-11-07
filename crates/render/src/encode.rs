@@ -1,4 +1,5 @@
-//! Finishing a frame's command encoders in parallel.
+//! Finishing a frame's command encoders in parallel, and other independent work of a
+//! frame on the same few worker threads.
 //!
 //! wgpu records a pass as a list of commands and encodes it into the backend (Metal,
 //! Vulkan, D3D12) only when its encoder is finished: that is most of a frame's CPU cost
@@ -32,6 +33,25 @@ fn pool() -> Option<&'static rayon::ThreadPool> {
             .flatten()
     })
     .as_ref()
+}
+
+/// Runs `work` on a worker thread while `here` runs on this one, and returns what `work`
+/// made: for a frame's independent CPU work. Without workers, one after the other.
+pub fn alongside<R: Send>(work: impl FnOnce() -> R + Send, here: impl FnOnce()) -> R {
+    match pool() {
+        Some(pool) => {
+            let mut made = None;
+            pool.in_place_scope(|scope| {
+                scope.spawn(|_| made = Some(work()));
+                here();
+            });
+            made.expect("the scope waits for its work")
+        }
+        None => {
+            here();
+            work()
+        }
+    }
 }
 
 /// Finishes `encoders` (emptying the list), the one at `main` on this thread, and appends
