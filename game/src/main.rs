@@ -76,6 +76,8 @@ fn main() -> Result<()> {
             canopy_editor::serve_headless(app::editor_setup(&paths)).map_err(anyhow::Error::msg)
         }
         Command::Play | Command::Edit | Command::Replay { .. } => {
+            // The interface's system fonts scan while the window and the GPU start.
+            canopy_ui::text::preload_system_fonts();
             let event_loop = EventLoop::new()?;
             let mut app = app::App::new(options, paths);
             event_loop.run_app(&mut app)?;

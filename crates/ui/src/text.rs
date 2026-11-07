@@ -103,6 +103,30 @@ pub(crate) struct TextSystem {
     weights: HashMap<String, Option<Vec<u16>>>,
 }
 
+/// The operating system's fonts, scanned once a process ([`preload_system_fonts`]).
+static SYSTEM_FONTS: std::sync::OnceLock<fontdb::Database> = std::sync::OnceLock::new();
+
+/// The operating system's fonts, scanned on first use (or waited for while
+/// [`preload_system_fonts`] scans them).
+fn system_fonts() -> &'static fontdb::Database {
+    SYSTEM_FONTS.get_or_init(|| {
+        let _span = tracing::info_span!("ui system fonts").entered();
+        let mut db = fontdb::Database::new();
+        db.load_system_fonts();
+        db
+    })
+}
+
+/// Scans the operating system's fonts on a thread of its own, so a UI built later (the
+/// game's, after its window and GPU) finds them scanned instead of scanning them itself.
+pub fn preload_system_fonts() {
+    let _ = std::thread::Builder::new()
+        .name("system-fonts".into())
+        .spawn(|| {
+            system_fonts();
+        });
+}
+
 /// Generic CSS families → platform candidates, in order.
 fn generic(name: &str) -> Option<&'static [&'static str]> {
     Some(match name {
@@ -133,7 +157,10 @@ impl TextSystem {
             db.load_font_data(data.clone());
         }
         if sources.system {
-            db.load_system_fonts();
+            // The same faces in the same order as scanning them here would add.
+            for face in system_fonts().faces() {
+                db.push_face_info(face.clone());
+            }
         }
         let present: HashSet<String> = db
             .faces()
