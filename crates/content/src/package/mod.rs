@@ -306,9 +306,34 @@ impl Package {
         let mut files = Vec::new();
         walk(&self.root, &self.root, &mut files)?;
         files.sort();
+        // Thousands of small files: read across the cores, hashed in order.
+        let threads = std::thread::available_parallelism()
+            .map_or(4, |n| n.get())
+            .min(files.len())
+            .max(1);
+        let chunk = files.len().div_ceil(threads).max(1);
+        let read: Vec<std::io::Result<Vec<u8>>> = std::thread::scope(|scope| {
+            let workers: Vec<_> = files
+                .chunks(chunk)
+                .map(|part| {
+                    scope.spawn(move || {
+                        part.iter()
+                            .map(|(_, path)| std::fs::read(path))
+                            .collect::<Vec<_>>()
+                    })
+                })
+                .collect();
+            workers
+                .into_iter()
+                .flat_map(|w| {
+                    w.join()
+                        .unwrap_or_else(|panic| std::panic::resume_unwind(panic))
+                })
+                .collect()
+        });
         let mut hash = Sha256::new();
-        for (relative, path) in files {
-            let bytes = std::fs::read(&path)?;
+        for ((relative, _), bytes) in files.iter().zip(read) {
+            let bytes = bytes?;
             hash.update((relative.len() as u64).to_le_bytes());
             hash.update(relative.as_bytes());
             hash.update((bytes.len() as u64).to_le_bytes());

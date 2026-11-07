@@ -468,6 +468,7 @@ impl Content {
         let content = Self::read(packages, asset_files, &mut errors);
         match content {
             Some(content) if errors.is_empty() => {
+                let _span = tracing::info_span!("content_validate").entered();
                 registry::validate(&content, &mut errors);
                 if errors.is_empty() {
                     Ok(content)
@@ -485,8 +486,28 @@ impl Content {
         errors: &mut Vec<Error>,
     ) -> Option<Self> {
         let mut files = BTreeMap::new();
-        let text = Text::read(packages, SOURCE_LANGUAGE, errors);
-        let source = read_source(packages, &text, &mut files, errors);
+        let text = {
+            let _span = tracing::info_span!("content_text").entered();
+            Text::read(packages, SOURCE_LANGUAGE, errors)
+        };
+        // The asset index reads its own files beside the documents; its problems join
+        // the others where it was read before.
+        let (source, assets_index) = std::thread::scope(|scope| {
+            let index = scope.spawn(|| {
+                let _span = tracing::info_span!("content_assets").entered();
+                let mut errors = Vec::new();
+                let index = assets::package::index(packages, asset_files, &mut errors);
+                (index, errors)
+            });
+            let source = {
+                let _span = tracing::info_span!("content_source").entered();
+                read_source(packages, &text, &mut files, errors)
+            };
+            let index = index
+                .join()
+                .unwrap_or_else(|panic| std::panic::resume_unwind(panic));
+            (source, index)
+        });
         let file = |name: &str| {
             files
                 .get(name)
@@ -499,16 +520,19 @@ impl Content {
         let actions: Option<Actions> = parse(source.actions, &file("rules/commands"), "")
             .map_err(|e| errors.push(e))
             .ok();
+        let resolve = tracing::info_span!("content_resolve").entered();
         let definitions =
             registry::resolve_definitions(&source.behavior_sets, source.definitions, errors);
         let abilities = abilities::read(source.abilities, &files, errors);
         let effects = effects::read(source.effects, errors);
+        drop(resolve);
         let sounds: Vec<crate::sounds::SoundEvent> = source
             .sounds
             .into_iter()
             .filter_map(|e| e.parse(errors))
             .collect();
-        let index = assets::package::index(packages, asset_files, errors);
+        let (index, index_errors) = assets_index;
+        errors.extend(index_errors);
         let manifest = index.manifest;
         let mut render_assets: Vec<RenderAsset> = assets::render_assets(&manifest);
         render_assets.sort_by(|a, b| a.id.cmp(&b.id));
