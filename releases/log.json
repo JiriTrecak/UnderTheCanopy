@@ -2,7 +2,13 @@
   "schemaVersion": 1,
   "unreleased": {
     "added": [],
-    "improved": [],
+    "improved": [
+      "Matches and missions start faster, and the loading screen no longer freezes.",
+      "No stutter when a match begins or the first time an effect appears.",
+      "Large battles run smoother: falling bodies and busy battlefields cost a fraction of what they did.",
+      "Faster start-up, and quicker matches against computer players.",
+      "The editor rests when nothing changes; switching workbenches, opening units, painting large maps and saving no longer stall."
+    ],
     "fixed": [],
     "knownIssues": []
   },
