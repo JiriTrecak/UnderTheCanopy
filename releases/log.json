@@ -2,19 +2,28 @@
   "schemaVersion": 1,
   "unreleased": {
     "added": [],
-    "improved": [
-      "A performance pass: smoother frames and about half the CPU work per frame, with the game looking and playing exactly as before",
-      "Matches and missions start faster, without the loading screen freezing or a stutter when play begins or an effect first appears",
-      "Large battles run smoother: falling bodies and busy battlefields cost a fraction of what they did",
-      "Faster start-up, and computer players take less time to think",
-      "Editor: rests when nothing changes; switching workbenches, opening units, painting large maps and saving no longer stall"
-    ],
-    "fixed": [
-      "A brief hitch every two seconds in matches"
-    ],
+    "improved": [],
+    "fixed": [],
     "knownIssues": []
   },
   "releases": [
+    {
+      "added": [],
+      "improved": [
+        "A performance pass: smoother frames and about half the CPU work per frame, with the game looking and playing exactly as before",
+        "Matches and missions start faster, without the loading screen freezing or a stutter when play begins or an effect first appears",
+        "Large battles run smoother: falling bodies and busy battlefields cost a fraction of what they did",
+        "Faster start-up, and computer players take less time to think",
+        "Editor: rests when nothing changes; switching workbenches, opening units, painting large maps and saving no longer stall"
+      ],
+      "fixed": [
+        "A brief hitch every two seconds in matches"
+      ],
+      "knownIssues": [],
+      "version": "0.5.2",
+      "publishedAt": "2026-11-07T06:02:55.384Z",
+      "title": "Performance Pass"
+    },
     {
       "added": [
         "Units fall as ragdolls when they die, knocked back by the killing blow and dropping their weapons",
