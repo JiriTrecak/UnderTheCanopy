@@ -24,6 +24,10 @@ use wgpu::util::DeviceExt;
 const RUN_SPAN: f32 = 16.0;
 /// Most triangles in a cliff run.
 const RUN_TRIANGLES: usize = 1024;
+/// Culled triangles the sun's map draws anyway to join two kept runs into one draw: a
+/// few more triangles cost less than a draw each (a superset of the kept casters, so the
+/// depth map is the same).
+const BRIDGE_INDICES: u32 = 4096 * 3;
 
 /// One vertex of the cliff mesh.
 #[repr(C)]
@@ -550,7 +554,9 @@ impl DressingGpu {
                     continue;
                 }
                 match c.shadow.last_mut() {
-                    Some(last) if last.end == run.indices.start => last.end = run.indices.end,
+                    Some(last) if run.indices.start - last.end <= BRIDGE_INDICES => {
+                        last.end = run.indices.end
+                    }
                     _ => c.shadow.push(run.indices.clone()),
                 }
             }
