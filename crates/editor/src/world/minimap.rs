@@ -28,11 +28,14 @@ type Source = (
 );
 
 /// The minimap's picture, when it was looked at last (the map's load and scene) and what
-/// it was drawn from: a new scene of the same blocks keeps it.
+/// it was drawn from: a new scene of the same blocks keeps it, and an edit draws again
+/// only the pixels over what it changed.
 #[derive(Clone)]
 pub struct Cache {
     key: (Option<u64>, u64, bool),
     source: std::sync::Arc<Source>,
+    blocks: std::sync::Arc<Blocks>,
+    image: std::sync::Arc<egui::ColorImage>,
     texture: egui::TextureHandle,
 }
 
@@ -46,16 +49,35 @@ impl std::fmt::Debug for Cache {
 /// level, darker where it falls to a lower neighbour, dimmed outside the playable `area`.
 fn picture(size: u32, area: Playable, blocks: &Blocks) -> egui::ColorImage {
     let n = RESOLUTION.min(size).max(1) as usize;
+    let mut image = egui::ColorImage::new([n, n], vec![Color32::BLACK; n * n]);
+    paint(size, area, blocks, &mut image, (0, 0, n - 1, n - 1));
+    image
+}
+
+/// The picture's pixels in columns `i0..=i1` and rows `j0..=j1` drawn again.
+fn paint(
+    size: u32,
+    area: Playable,
+    blocks: &Blocks,
+    image: &mut egui::ColorImage,
+    (i0, j0, i1, j1): (usize, usize, usize, usize),
+) {
+    let n = image.size[0];
     let cells = size as f32 / n as f32;
     let (halo, block) = (MAP_HALO as f32, BLOCK as f32);
-    let samples: Vec<_> = (0..n * n)
-        .map(|k| {
-            let (i, j) = (k % n, k / n);
+    // The samples under these pixels and their neighbours.
+    let (si0, sj0) = (i0.saturating_sub(1), j0.saturating_sub(1));
+    let (si1, sj1) = ((i1 + 1).min(n - 1), (j1 + 1).min(n - 1));
+    let w = si1 - si0 + 1;
+    let samples: Vec<_> = (sj0..=sj1)
+        .flat_map(|j| (si0..=si1).map(move |i| (i, j)))
+        .map(|(i, j)| {
             let cx = ((i as f32 + 0.5) * cells + halo) / block;
             let cz = ((j as f32 + 0.5) * cells + halo) / block;
             blocks.sample(cx.floor() as i32, cz.floor() as i32, cx.fract(), cz.fract())
         })
         .collect();
+    let sample = |i: usize, j: usize| samples[(j - sj0) * w + (i - si0)];
     let inside = |i: usize, j: usize| {
         let (x, z) = ((i as f32 + 0.5) * cells, (j as f32 + 0.5) * cells);
         x >= area.x as f32
@@ -72,10 +94,9 @@ fn picture(size: u32, area: Playable, blocks: &Blocks) -> egui::ColorImage {
         };
         (s * 255.0).round() as u8
     };
-    let pixels = (0..n * n)
-        .map(|k| {
-            let (i, j) = (k % n, k / n);
-            let here = samples[k];
+    for j in j0..=j1 {
+        for i in i0..=i1 {
+            let here = sample(i, j);
             let mut color = mesh::color(here);
             // An edge where the ground falls to a neighbour (not along a ramp's slope).
             let falls = here.kind != BlockKind::Ramp
@@ -84,7 +105,7 @@ fn picture(size: u32, area: Playable, blocks: &Blocks) -> egui::ColorImage {
                     if ni < 0 || nj < 0 || ni >= n as i32 || nj >= n as i32 {
                         return false;
                     }
-                    let there = samples[nj as usize * n + ni as usize];
+                    let there = sample(ni as usize, nj as usize);
                     there.kind != BlockKind::Ramp && there.level < here.level
                 });
             let shade = match (falls, inside(i, j)) {
@@ -94,10 +115,61 @@ fn picture(size: u32, area: Playable, blocks: &Blocks) -> egui::ColorImage {
                 (false, false) => 0.4,
             };
             color = color.map(|c| c * shade);
-            Color32::from_rgb(srgb(color[0]), srgb(color[1]), srgb(color[2]))
-        })
-        .collect();
-    egui::ColorImage::new([n, n], pixels)
+            image.pixels[j * n + i] =
+                Color32::from_rgb(srgb(color[0]), srgb(color[1]), srgb(color[2]));
+        }
+    }
+}
+
+/// The pixels whose picture `blocks` changes from `before`'s (`None`: none), for a map of
+/// `size` cells drawn `n` pixels across: those over the columns that differ and their
+/// neighbours (a cut takes its fill from them), and one more around (an edge looks at the
+/// next pixel).
+fn changed_pixels(
+    size: u32,
+    n: usize,
+    blocks: &Blocks,
+    before: &Blocks,
+) -> Option<(usize, usize, usize, usize)> {
+    let side = blocks.side as i32;
+    let b = BLOCK as usize;
+    let cells = (blocks.side as usize) * b;
+    let mut changed: Option<(i32, i32, i32, i32)> = None;
+    for z in 0..side {
+        for x in 0..side {
+            let i = (z * side + x) as usize;
+            let painted = match (&blocks.paint, &before.paint) {
+                (Some(new), Some(old)) => (0..b).any(|r| {
+                    let at = (z as usize * b + r) * cells + x as usize * b;
+                    new[at..at + b] != old[at..at + b]
+                }),
+                _ => false,
+            };
+            if blocks.columns[i] != before.columns[i] || painted {
+                changed = Some(match changed {
+                    Some((x0, z0, x1, z1)) => (x0.min(x), z0.min(z), x1.max(x), z1.max(z)),
+                    None => (x, z, x, z),
+                });
+            }
+        }
+    }
+    let (x0, z0, x1, z1) = changed?;
+    let (x0, z0, x1, z1) = (x0 - 1, z0 - 1, x1 + 1, z1 + 1);
+    let cells = size as f32 / n as f32;
+    let (halo, block) = (MAP_HALO as f32, BLOCK as f32);
+    // The column each pixel samples (clamped as `Blocks::sample` clamps).
+    let column = |i: usize| {
+        let c = (((i as f32 + 0.5) * cells + halo) / block).floor() as i32;
+        c.clamp(0, side - 1)
+    };
+    let span = |lo: i32, hi: i32| {
+        let mut hit = (0..n).filter(|&i| (lo..=hi).contains(&column(i)));
+        let first = hit.next()?;
+        let last = hit.next_back().unwrap_or(first);
+        Some((first.saturating_sub(1), (last + 1).min(n - 1)))
+    };
+    let ((i0, i1), (j0, j1)) = (span(x0, x1)?, span(z0, z1)?);
+    Some((i0, j0, i1, j1))
 }
 
 /// Where the corners of the view's `rect` meet the ground at `ground` height (corners that
@@ -167,11 +239,37 @@ pub(super) fn show(
         && let Some(Ok(blocks)) = Blocks::of(&map.authoring.terrain)
     {
         let _span = tracing::info_span!("minimap picture").entered();
-        let texture = ctx.load_texture(
-            format!("minimap {}", session.root),
-            picture(map.size, map.playable_area(), &blocks),
-            egui::TextureOptions::LINEAR,
-        );
+        let (size, area) = (map.size, map.playable_area());
+        let n = RESOLUTION.min(size).max(1) as usize;
+        // The same map shape: the picture as it was, drawn again where the blocks differ.
+        let kept = session.blocks.minimap.as_ref().filter(|c| {
+            let (_, _, was_size, was_area) = &*c.source;
+            *was_size == size
+                && *was_area == area
+                && c.blocks.side == blocks.side
+                && c.blocks.paint.is_some() == blocks.paint.is_some()
+                && c.image.size == [n, n]
+        });
+        let (image, texture) = match kept {
+            Some(cache) => {
+                let mut image = (*cache.image).clone();
+                if let Some(rect) = changed_pixels(size, n, &blocks, &cache.blocks) {
+                    paint(size, area, &blocks, &mut image, rect);
+                }
+                let mut texture = cache.texture.clone();
+                texture.set(image.clone(), egui::TextureOptions::LINEAR);
+                (image, texture)
+            }
+            None => {
+                let image = picture(size, area, &blocks);
+                let texture = ctx.load_texture(
+                    format!("minimap {}", session.root),
+                    image.clone(),
+                    egui::TextureOptions::LINEAR,
+                );
+                (image, texture)
+            }
+        };
         let terrain = &map.authoring.terrain;
         let source = std::sync::Arc::new((
             terrain.blocks.clone(),
@@ -182,6 +280,8 @@ pub(super) fn show(
         session.blocks.minimap = Some(Cache {
             key,
             source,
+            blocks: std::sync::Arc::new(blocks),
+            image: std::sync::Arc::new(image),
             texture,
         });
     }
@@ -328,5 +428,64 @@ mod tests {
         let (inside, edge, plain) = (pixel(60, 60), pixel(40, 60), pixel(20, 60));
         assert_ne!(inside, plain);
         assert!(edge.r() < inside.r() && edge.g() < inside.g());
+    }
+
+    /// Strokes of every kind, cut, ramp and painted cell: drawing again only the pixels
+    /// over what changed makes the same picture as drawing it whole.
+    #[test]
+    fn drawing_what_changed_matches_the_whole_picture() {
+        use canopy_content::map::blocks::{Block, Cut};
+        let mut seed = 0x6c07_8965_u32;
+        let mut next = |n: u32| {
+            seed ^= seed << 13;
+            seed ^= seed >> 17;
+            seed ^= seed << 5;
+            seed % n
+        };
+        let kinds = [
+            BlockKind::Ground,
+            BlockKind::Ramp,
+            BlockKind::Wall,
+            BlockKind::Rock,
+            BlockKind::Shallow,
+            BlockKind::Deep,
+            BlockKind::Ice,
+        ];
+        // A map drawn one pixel a cell, and one drawn at half that.
+        for size in [256, 1024] {
+            let area = Playable {
+                x: 8,
+                z: 8,
+                width: size - 16,
+                height: size - 16,
+            };
+            let mut blocks = Blocks::flat(size);
+            blocks.paint_cell(0, 0, None);
+            let mut image = picture(size, area, &blocks);
+            let n = image.size[0];
+            for _ in 0..40 {
+                let before = blocks.clone();
+                let (x, z) = (next(blocks.side) as i32, next(blocks.side) as i32);
+                for dz in 0..1 + next(3) as i32 {
+                    for dx in 0..1 + next(3) as i32 {
+                        let block = Block {
+                            level: next(8) as u8,
+                            kind: kinds[next(7) as usize],
+                            cut: Cut::from_u8(next(5) as u8),
+                            ramp: next(9) as u8,
+                            style: 0,
+                        };
+                        blocks.set(x + dx, z + dz, block);
+                    }
+                }
+                let cells = blocks.cells();
+                let (cx, cz) = (next(cells) as i32, next(cells) as i32);
+                blocks.paint_cell(cx, cz, Some(kinds[next(7) as usize]));
+                if let Some(rect) = changed_pixels(size, n, &blocks, &before) {
+                    paint(size, area, &blocks, &mut image, rect);
+                }
+                assert!(image == picture(size, area, &blocks));
+            }
+        }
     }
 }

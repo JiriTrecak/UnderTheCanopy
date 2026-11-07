@@ -358,11 +358,17 @@ pub struct State {
     pub twin: Option<Twin>,
     /// The minimap's picture, drawn again when the map changes.
     pub minimap: Option<minimap::Cache>,
+    /// The block view's mesh in strips, kept between builds of the scene.
+    pub mesh: mesh::MeshCache,
     /// The press under way began while a picker was open: it only closes the picker.
     pub dismissing: bool,
     /// While a drag is under way, the map shows what it will do: the terrain as it was
-    /// before the drag, to go back to, and what the preview last showed.
-    pub preview: Option<(Box<canopy_content::map::TerrainData>, String)>,
+    /// before the drag, to go back to, what the preview last showed and the blocks it
+    /// applied (the next preview applies only what differs from them).
+    pub preview: Option<Preview>,
+    /// The drag that just ended: the terrain its preview showed and the blocks it applied,
+    /// for its step to apply only what differs (taken by the step, or dropped that frame).
+    shown: Option<(Box<canopy_content::map::TerrainData>, Blocks)>,
     /// Write the map picker's picture on the next frame (the panel's button).
     pub write_picture: bool,
     /// The pictures of the strip's pickers, for the map's biome.
@@ -424,8 +430,10 @@ impl Default for State {
             symmetry: Symmetry::default(),
             twin: None,
             minimap: None,
+            mesh: mesh::MeshCache::default(),
             dismissing: false,
             preview: None,
+            shown: None,
             write_picture: false,
             palette: palette::Palette::default(),
             open_picker: false,
@@ -454,6 +462,7 @@ fn commit(
     change: impl FnOnce(&mut Blocks),
 ) -> Option<crate::tabs::Edit> {
     let _span = tracing::info_span!("block_commit").entered();
+    let shown = session.blocks.shown.take();
     let root = session.root.clone();
     let map = session.map.as_mut()?;
     let terrain = &mut map.authoring.terrain;
@@ -464,7 +473,15 @@ fn commit(
         terrain.block_paint.clone(),
     );
     change(&mut blocks);
-    blocks.apply(terrain);
+    match shown {
+        // The drag's preview showed nearly this: only what differs is applied to it (the
+        // same grids as applying the whole map).
+        Some((mut shown, applied)) => {
+            blocks.apply_changed(&applied, &mut shown);
+            *terrain = *shown;
+        }
+        None => blocks.apply(terrain),
+    }
     if terrain.blocks == before.2 && terrain.block_paint == before.3 {
         return None;
     }
@@ -873,6 +890,14 @@ fn round(blocks: &mut Blocks, columns: &[(i32, i32)], reverse: bool) {
     }
 }
 
+/// A drag's preview: the terrain before it, its key and the blocks the map shows.
+#[derive(Debug, Clone)]
+pub struct Preview {
+    original: Box<canopy_content::map::TerrainData>,
+    key: String,
+    applied: Blocks,
+}
+
 /// Shows what `op` will do while its drag is under way: the map's grids as they would be,
 /// none of it in the documents (the drag's end makes the one undo step).
 fn live_preview(session: &mut Session, op: &BlockOp) {
@@ -888,33 +913,63 @@ fn live_preview(session: &mut Session, op: &BlockOp) {
         .blocks
         .preview
         .as_ref()
-        .is_some_and(|(_, k)| *k == key)
+        .is_some_and(|p| p.key == key)
     {
         return;
     }
     let _span = tracing::info_span!("block_preview").entered();
-    restore(session);
     let symmetry = session.blocks.symmetry;
+    let shown = session.blocks.preview.take();
     let Some(map) = session.map.as_mut() else {
         return;
     };
     let size = map.size;
     let terrain = &mut map.authoring.terrain;
-    let Some(Ok(mut blocks)) = Blocks::of(terrain) else {
+    // The blocks as they were before the drag, changed by the drag as it is now.
+    let (original, shown) = match shown {
+        Some(p) => (p.original, Some(p.applied)),
+        None => (Box::new(terrain.clone()), None),
+    };
+    let Some(Ok(mut blocks)) = Blocks::of(&original) else {
+        // As the terrain before the drag (a shown preview goes).
+        if shown.is_some() {
+            map.authoring.terrain = *original;
+            session.stale = true;
+        }
         return;
     };
-    let original = Box::new(terrain.clone());
     let start = blocks.at(op.from.0, op.from.1);
     let twin = (symmetry != Symmetry::None).then(|| symmetry.op(op, size, blocks.side as i32));
     change_mirrored(&mut blocks, op, start, twin.as_ref());
-    blocks.apply(terrain);
-    session.blocks.preview = Some((original, key));
+    // The map shows the last preview: only what differs from it is applied again (the same
+    // grids as applying the whole map to the terrain before the drag).
+    match &shown {
+        Some(shown) => blocks.apply_changed(shown, terrain),
+        None => blocks.apply(terrain),
+    }
+    session.blocks.preview = Some(Preview {
+        original,
+        key,
+        applied: blocks,
+    });
     session.stale = true;
+}
+
+/// Puts back the terrain a preview stood in for, keeping what the preview showed (the
+/// terrain and the blocks it applied) for the drag's step.
+fn restore_keeping(
+    session: &mut Session,
+) -> Option<(Box<canopy_content::map::TerrainData>, Blocks)> {
+    let preview = session.blocks.preview.take()?;
+    let map = session.map.as_mut()?;
+    let shown = std::mem::replace(&mut map.authoring.terrain, *preview.original);
+    session.stale = true;
+    Some((Box::new(shown), preview.applied))
 }
 
 /// Puts back the terrain a preview stood in for.
 fn restore(session: &mut Session) {
-    if let Some((original, _)) = session.blocks.preview.take()
+    if let Some(Preview { original, .. }) = session.blocks.preview.take()
         && let Some(map) = session.map.as_mut()
     {
         map.authoring.terrain = *original;
@@ -2510,7 +2565,7 @@ pub fn show(
         restore(session);
     }
     if let Some(drag) = finished {
-        restore(session);
+        session.blocks.shown = restore_keeping(session);
         op.from = drag.from;
         op.to = drag.to;
         op.path = drag.path;
@@ -2641,6 +2696,7 @@ pub fn show(
         } else {
             out.edits.extend(apply(session, &op));
         }
+        session.blocks.shown = None;
     }
     // A placement's twin, once the map has taken the first.
     if let Some(twin) = session.blocks.twin.clone()

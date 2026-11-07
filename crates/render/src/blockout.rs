@@ -27,6 +27,22 @@ pub struct BlockoutMesh {
     pub indices: Vec<u32>,
 }
 
+/// The mesh's vertex and index buffers (written again in place by
+/// [`BlockoutGpu::replace`]).
+fn buffers(device: &wgpu::Device, mesh: &BlockoutMesh) -> (wgpu::Buffer, wgpu::Buffer) {
+    let vertices = device.create_buffer_init(&wgpu::util::BufferInitDescriptor {
+        label: Some("blockout"),
+        contents: bytemuck::cast_slice(&mesh.vertices),
+        usage: wgpu::BufferUsages::VERTEX | wgpu::BufferUsages::COPY_DST,
+    });
+    let indices = device.create_buffer_init(&wgpu::util::BufferInitDescriptor {
+        label: Some("blockout"),
+        contents: bytemuck::cast_slice(&mesh.indices),
+        usage: wgpu::BufferUsages::INDEX | wgpu::BufferUsages::COPY_DST,
+    });
+    (vertices, indices)
+}
+
 pub struct BlockoutGpu {
     pipeline: wgpu::RenderPipeline,
     vertices: wgpu::Buffer,
@@ -45,16 +61,7 @@ impl BlockoutGpu {
             return None;
         }
         let _span = tracing::info_span!("blockout_upload").entered();
-        let vertices = device.create_buffer_init(&wgpu::util::BufferInitDescriptor {
-            label: Some("blockout"),
-            contents: bytemuck::cast_slice(&mesh.vertices),
-            usage: wgpu::BufferUsages::VERTEX,
-        });
-        let indices = device.create_buffer_init(&wgpu::util::BufferInitDescriptor {
-            label: Some("blockout"),
-            contents: bytemuck::cast_slice(&mesh.indices),
-            usage: wgpu::BufferUsages::INDEX,
-        });
+        let (vertices, indices) = buffers(device, mesh);
         let module = crate::shader::module(
             device,
             "blockout",
@@ -99,6 +106,34 @@ impl BlockoutGpu {
             indices,
             count: mesh.indices.len() as u32,
         })
+    }
+
+    /// Draws `mesh` instead, keeping the pipeline (and the buffers, when it fits them): a
+    /// block stroke in the editor uploads its mesh again every rebuild. `false` for an
+    /// empty mesh, which [`BlockoutGpu::new`] does not draw either.
+    pub fn replace(
+        &mut self,
+        device: &wgpu::Device,
+        queue: &wgpu::Queue,
+        mesh: &BlockoutMesh,
+    ) -> bool {
+        if mesh.indices.is_empty() {
+            return false;
+        }
+        let _span = tracing::info_span!("blockout_upload").entered();
+        let vertices: &[u8] = bytemuck::cast_slice(&mesh.vertices);
+        let indices: &[u8] = bytemuck::cast_slice(&mesh.indices);
+        if vertices.len() as u64 <= self.vertices.size()
+            && indices.len() as u64 <= self.indices.size()
+        {
+            queue.write_buffer(&self.vertices, 0, vertices);
+            queue.write_buffer(&self.indices, 0, indices);
+        } else {
+            (self.vertices, self.indices) = buffers(device, mesh);
+            self.bytes = self.vertices.size() + self.indices.size();
+        }
+        self.count = mesh.indices.len() as u32;
+        true
     }
 
     pub fn draw<'a>(&'a self, pass: &mut wgpu::RenderPass<'a>, frame: &'a wgpu::BindGroup) -> u32 {

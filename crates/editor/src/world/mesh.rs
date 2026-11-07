@@ -152,134 +152,256 @@ fn edge_height(
     (top(half), half)
 }
 
-/// The block view's mesh of `blocks`.
-pub fn mesh(blocks: &Blocks) -> BlockoutMesh {
+/// The block view's mesh of `blocks`, built whole: what [`mesh_cached`] must equal.
+#[cfg(test)]
+fn mesh(blocks: &Blocks) -> BlockoutMesh {
     let _span = tracing::info_span!("blockout_mesh").entered();
     let mut b = Builder {
         mesh: BlockoutMesh::default(),
     };
-    let s = BLOCK as f32;
-    let halo = MAP_HALO as f32;
-    let up = Vec3::Y;
     let planes = blocks.ramp_planes();
     for z in 0..blocks.side as i32 {
         for x in 0..blocks.side as i32 {
-            let block = blocks.at(x, z);
-            let (x0, z0) = (x as f32 * s - halo, z as f32 * s - halo);
-            let at = |u: f32, v: f32, y: f32| Vec3::new(x0 + u * s, y, z0 + v * s);
-            let corners = [(0.0, 0.0), (1.0, 0.0), (1.0, 1.0), (0.0, 1.0)];
-            // The top.
-            if block.kind == BlockKind::Ramp {
-                let h = corners.map(|(u, v)| edge_height(blocks, &planes, x, z, (0, 0), u, v).0);
-                let p: [Vec3; 4] = std::array::from_fn(|k| at(corners[k].0, corners[k].1, h[k]));
-                let n = (p[2] - p[0]).cross(p[1] - p[3]).normalize_or(up);
-                let n = if n.y < 0.0 { -n } else { n };
-                b.quad([p[0], p[3], p[2], p[1]], n, color(block));
-            } else if let Some((cx, cz)) = block.cut.corner() {
-                let fill = blocks.sample(x, z, 0.5 + cx as f32 * 0.45, 0.5 + cz as f32 * 0.45);
-                let own = Block {
-                    cut: Cut::None,
-                    ..block
-                };
-                // Triangles: the cut corner and its two neighbours belong to the fill.
-                let corner = corners
-                    .iter()
-                    .position(|&(u, v)| (u > 0.5) == (cx > 0) && (v > 0.5) == (cz > 0))
-                    .unwrap_or(0);
-                let (a, c) = ((corner + 1) % 4, (corner + 3) % 4);
-                let o = (corner + 2) % 4;
-                let diag = |u: f32, v: f32| {
-                    let p = if cx < 0 { 1.0 - u } else { u };
-                    let q = if cz < 0 { 1.0 - v } else { v };
-                    p + q - 1.0
-                };
-                for (half, idx) in [(own, [a, o, c]), (fill, [corner, a, c])] {
-                    let y = top(half);
-                    let ids = idx.map(|k| {
-                        let (u, v) = corners[k];
-                        b.vertex(at(u, v, y), up, color(half), [u, v, diag(u, v)])
-                    });
-                    b.triangle(ids[0], ids[2], ids[1]);
-                }
-                // The diagonal wall between the halves.
-                let (ya, yb) = (top(own), top(fill));
-                if (ya - yb).abs() > 0.01 {
-                    let (pa, pb) = (corners[a], corners[c]);
-                    let (hi, lo, hi_block) = if ya > yb {
-                        (ya, yb, own)
-                    } else {
-                        (yb, ya, fill)
-                    };
-                    let towards_fill = Vec3::new(cx as f32, 0.0, cz as f32).normalize();
-                    let n = if ya > yb { towards_fill } else { -towards_fill };
-                    b.wall(
-                        at(pa.0, pa.1, 0.0),
-                        at(pb.0, pb.1, 0.0),
-                        [lo, lo],
-                        [hi, hi],
-                        n,
-                        color(hi_block),
-                    );
-                }
-            } else {
-                let y = top(block);
-                let p = corners.map(|(u, v)| at(u, v, y));
-                b.quad([p[0], p[3], p[2], p[1]], up, color(block));
-            }
-            // Walls where this column stands above its neighbour.
-            for ((dx, dz), [ca, cb]) in SIDES {
-                let (ha, mine) = edge_height(blocks, &planes, x, z, (dx, dz), ca.0, ca.1);
-                let (hb, _) = edge_height(blocks, &planes, x, z, (dx, dz), cb.0, cb.1);
-                // The neighbour's matching corners on its far side.
-                let (na, nb) = (
-                    (ca.0 - dx as f32, ca.1 - dz as f32),
-                    (cb.0 - dx as f32, cb.1 - dz as f32),
-                );
-                let (la, _) = edge_height(blocks, &planes, x + dx, z + dz, (-dx, -dz), na.0, na.1);
-                let (lb, _) = edge_height(blocks, &planes, x + dx, z + dz, (-dx, -dz), nb.0, nb.1);
-                b.wall(
-                    at(ca.0, ca.1, 0.0),
-                    at(cb.0, cb.1, 0.0),
-                    [la.min(ha), lb.min(hb)],
-                    [ha, hb],
-                    Vec3::new(dx as f32, 0.0, dz as f32),
-                    color(mine),
-                );
-            }
+            column(&mut b, blocks, &planes, x, z);
         }
     }
     // Painted cells: a tile of their kind's colour over the top they lie on.
     if blocks.paint.is_some() {
         let n = blocks.cells() as i32;
-        let bi = BLOCK as i32;
         for cz in 0..n {
             for cx in 0..n {
-                let Some(kind) = blocks.painted(cx, cz) else {
-                    continue;
-                };
-                let (x, z) = (cx / bi, cz / bi);
-                let (u, v) = (
-                    ((cx % bi) as f32 + 0.5) / BLOCK as f32,
-                    ((cz % bi) as f32 + 0.5) / BLOCK as f32,
-                );
-                let cell = blocks.sample(x, z, u, v);
-                if cell.kind == BlockKind::Ramp {
-                    continue;
-                }
-                let block = Block { kind, ..cell };
-                let y = top(block) + 0.03;
-                let (x0, z0) = (cx as f32 - halo, cz as f32 - halo);
-                let p = [
-                    Vec3::new(x0, y, z0),
-                    Vec3::new(x0, y, z0 + 1.0),
-                    Vec3::new(x0 + 1.0, y, z0 + 1.0),
-                    Vec3::new(x0 + 1.0, y, z0),
-                ];
-                b.quad(p, up, color(block));
+                painted_cell(&mut b, blocks, cx, cz);
             }
         }
     }
     b.mesh
+}
+
+/// Rows of columns a cached strip of the mesh holds.
+const STRIP: i32 = 8;
+/// Rows around a strip its faces depend on (a wall looks at its neighbour, whose cut
+/// looks at its own neighbours).
+const REACH: i32 = 2;
+
+/// The block view's mesh in strips of rows, each kept until the blocks it depends on
+/// change: a stroke on a large map builds only the strips it touches
+/// ([`mesh_cached`]).
+#[derive(Default, Clone)]
+pub struct MeshCache {
+    strips: Vec<Strip>,
+}
+
+impl std::fmt::Debug for MeshCache {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        f.debug_struct("MeshCache")
+            .field("strips", &self.strips.len())
+            .finish()
+    }
+}
+
+/// One strip: what it was built from, its columns' faces and its painted tiles.
+#[derive(Clone)]
+struct Strip {
+    inputs: (Vec<Block>, Vec<Option<RampPlane>>, Option<Vec<u8>>),
+    columns: BlockoutMesh,
+    cells: BlockoutMesh,
+}
+
+/// The same mesh as [`mesh`] (the same vertices in the same order), building again only
+/// the strips whose blocks, ramp planes or painted cells changed since `cache` last saw
+/// them.
+pub fn mesh_cached(blocks: &Blocks, cache: &mut MeshCache) -> BlockoutMesh {
+    let _span = tracing::info_span!("blockout_mesh").entered();
+    let planes = blocks.ramp_planes();
+    let side = blocks.side as i32;
+    let strips = (side + STRIP - 1) / STRIP;
+    if cache.strips.len() != strips as usize {
+        cache.strips.clear();
+    }
+    let row = blocks.side as usize;
+    let cells = blocks.cells() as usize;
+    let b = BLOCK as usize;
+    for k in 0..strips {
+        let (z0, z1) = (k * STRIP, ((k + 1) * STRIP).min(side));
+        let (r0, r1) = (
+            (z0 - REACH).max(0) as usize,
+            (z1 + REACH).min(side) as usize,
+        );
+        let inputs = (
+            blocks.columns[r0 * row..r1 * row].to_vec(),
+            planes[r0 * row..r1 * row].to_vec(),
+            blocks
+                .paint
+                .as_ref()
+                .map(|p| p[r0 * b * cells..r1 * b * cells].to_vec()),
+        );
+        if cache
+            .strips
+            .get(k as usize)
+            .is_some_and(|strip| strip.inputs == inputs)
+        {
+            continue;
+        }
+        let mut columns = Builder {
+            mesh: BlockoutMesh::default(),
+        };
+        for z in z0..z1 {
+            for x in 0..side {
+                column(&mut columns, blocks, &planes, x, z);
+            }
+        }
+        let mut tiles = Builder {
+            mesh: BlockoutMesh::default(),
+        };
+        if blocks.paint.is_some() {
+            let n = blocks.cells() as i32;
+            for cz in z0 * BLOCK as i32..z1 * BLOCK as i32 {
+                for cx in 0..n {
+                    painted_cell(&mut tiles, blocks, cx, cz);
+                }
+            }
+        }
+        let strip = Strip {
+            inputs,
+            columns: columns.mesh,
+            cells: tiles.mesh,
+        };
+        match cache.strips.get_mut(k as usize) {
+            Some(slot) => *slot = strip,
+            None => cache.strips.push(strip),
+        }
+    }
+    // The columns' faces strip by strip, then the painted tiles: the order `mesh` makes.
+    let mut out = BlockoutMesh::default();
+    let parts = cache
+        .strips
+        .iter()
+        .map(|s| &s.columns)
+        .chain(cache.strips.iter().map(|s| &s.cells));
+    for part in parts {
+        let base = out.vertices.len() as u32;
+        out.vertices.extend_from_slice(&part.vertices);
+        out.indices.extend(part.indices.iter().map(|i| i + base));
+    }
+    out
+}
+
+/// Column (`x`, `z`)'s top and the walls where it stands above its neighbours.
+fn column(b: &mut Builder, blocks: &Blocks, planes: &[Option<RampPlane>], x: i32, z: i32) {
+    let s = BLOCK as f32;
+    let halo = MAP_HALO as f32;
+    let up = Vec3::Y;
+    let block = blocks.at(x, z);
+    let (x0, z0) = (x as f32 * s - halo, z as f32 * s - halo);
+    let at = |u: f32, v: f32, y: f32| Vec3::new(x0 + u * s, y, z0 + v * s);
+    let corners = [(0.0, 0.0), (1.0, 0.0), (1.0, 1.0), (0.0, 1.0)];
+    // The top.
+    if block.kind == BlockKind::Ramp {
+        let h = corners.map(|(u, v)| edge_height(blocks, planes, x, z, (0, 0), u, v).0);
+        let p: [Vec3; 4] = std::array::from_fn(|k| at(corners[k].0, corners[k].1, h[k]));
+        let n = (p[2] - p[0]).cross(p[1] - p[3]).normalize_or(up);
+        let n = if n.y < 0.0 { -n } else { n };
+        b.quad([p[0], p[3], p[2], p[1]], n, color(block));
+    } else if let Some((cx, cz)) = block.cut.corner() {
+        let fill = blocks.sample(x, z, 0.5 + cx as f32 * 0.45, 0.5 + cz as f32 * 0.45);
+        let own = Block {
+            cut: Cut::None,
+            ..block
+        };
+        // Triangles: the cut corner and its two neighbours belong to the fill.
+        let corner = corners
+            .iter()
+            .position(|&(u, v)| (u > 0.5) == (cx > 0) && (v > 0.5) == (cz > 0))
+            .unwrap_or(0);
+        let (a, c) = ((corner + 1) % 4, (corner + 3) % 4);
+        let o = (corner + 2) % 4;
+        let diag = |u: f32, v: f32| {
+            let p = if cx < 0 { 1.0 - u } else { u };
+            let q = if cz < 0 { 1.0 - v } else { v };
+            p + q - 1.0
+        };
+        for (half, idx) in [(own, [a, o, c]), (fill, [corner, a, c])] {
+            let y = top(half);
+            let ids = idx.map(|k| {
+                let (u, v) = corners[k];
+                b.vertex(at(u, v, y), up, color(half), [u, v, diag(u, v)])
+            });
+            b.triangle(ids[0], ids[2], ids[1]);
+        }
+        // The diagonal wall between the halves.
+        let (ya, yb) = (top(own), top(fill));
+        if (ya - yb).abs() > 0.01 {
+            let (pa, pb) = (corners[a], corners[c]);
+            let (hi, lo, hi_block) = if ya > yb {
+                (ya, yb, own)
+            } else {
+                (yb, ya, fill)
+            };
+            let towards_fill = Vec3::new(cx as f32, 0.0, cz as f32).normalize();
+            let n = if ya > yb { towards_fill } else { -towards_fill };
+            b.wall(
+                at(pa.0, pa.1, 0.0),
+                at(pb.0, pb.1, 0.0),
+                [lo, lo],
+                [hi, hi],
+                n,
+                color(hi_block),
+            );
+        }
+    } else {
+        let y = top(block);
+        let p = corners.map(|(u, v)| at(u, v, y));
+        b.quad([p[0], p[3], p[2], p[1]], up, color(block));
+    }
+    // Walls where this column stands above its neighbour.
+    for ((dx, dz), [ca, cb]) in SIDES {
+        let (ha, mine) = edge_height(blocks, planes, x, z, (dx, dz), ca.0, ca.1);
+        let (hb, _) = edge_height(blocks, planes, x, z, (dx, dz), cb.0, cb.1);
+        // The neighbour's matching corners on its far side.
+        let (na, nb) = (
+            (ca.0 - dx as f32, ca.1 - dz as f32),
+            (cb.0 - dx as f32, cb.1 - dz as f32),
+        );
+        let (la, _) = edge_height(blocks, planes, x + dx, z + dz, (-dx, -dz), na.0, na.1);
+        let (lb, _) = edge_height(blocks, planes, x + dx, z + dz, (-dx, -dz), nb.0, nb.1);
+        b.wall(
+            at(ca.0, ca.1, 0.0),
+            at(cb.0, cb.1, 0.0),
+            [la.min(ha), lb.min(hb)],
+            [ha, hb],
+            Vec3::new(dx as f32, 0.0, dz as f32),
+            color(mine),
+        );
+    }
+}
+
+/// Painted cell (`cx`, `cz`)'s tile, when it is painted.
+fn painted_cell(b: &mut Builder, blocks: &Blocks, cx: i32, cz: i32) {
+    let bi = BLOCK as i32;
+    let halo = MAP_HALO as f32;
+    let up = Vec3::Y;
+    let Some(kind) = blocks.painted(cx, cz) else {
+        return;
+    };
+    let (x, z) = (cx / bi, cz / bi);
+    let (u, v) = (
+        ((cx % bi) as f32 + 0.5) / BLOCK as f32,
+        ((cz % bi) as f32 + 0.5) / BLOCK as f32,
+    );
+    let cell = blocks.sample(x, z, u, v);
+    if cell.kind == BlockKind::Ramp {
+        return;
+    }
+    let block = Block { kind, ..cell };
+    let y = top(block) + 0.03;
+    let (x0, z0) = (cx as f32 - halo, cz as f32 - halo);
+    let p = [
+        Vec3::new(x0, y, z0),
+        Vec3::new(x0, y, z0 + 1.0),
+        Vec3::new(x0 + 1.0, y, z0 + 1.0),
+        Vec3::new(x0 + 1.0, y, z0),
+    ];
+    b.quad(p, up, color(block));
 }
 
 /// The pathing view's mesh: every cell of the playable map flat at its height, green where
@@ -378,4 +500,62 @@ pub fn pathing(terrain: &canopy_sim::terrain::Terrain) -> BlockoutMesh {
         }
     }
     b.mesh
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    /// Strokes of every kind, cut, ramp and painted cell: the strips kept between them make
+    /// the same mesh as building it whole.
+    #[test]
+    fn the_cached_mesh_is_the_whole_mesh() {
+        let mut seed = 0x2545_f491_u32;
+        let mut next = |n: u32| {
+            seed ^= seed << 13;
+            seed ^= seed >> 17;
+            seed ^= seed << 5;
+            seed % n
+        };
+        let kinds = [
+            BlockKind::Ground,
+            BlockKind::Ramp,
+            BlockKind::Wall,
+            BlockKind::Rock,
+            BlockKind::Shallow,
+            BlockKind::Deep,
+            BlockKind::Ice,
+        ];
+        let mut blocks = Blocks::flat(128);
+        let mut cache = MeshCache::default();
+        assert!(mesh_cached(&blocks, &mut cache) == mesh(&blocks));
+        for stroke in 0..60 {
+            let (x, z) = (next(blocks.side) as i32, next(blocks.side) as i32);
+            if stroke % 4 == 3 {
+                let n = blocks.cells();
+                let (cx, cz) = (next(n) as i32, next(n) as i32);
+                for d in 0..6 {
+                    let kind = (next(3) > 0).then(|| kinds[next(7) as usize]);
+                    blocks.paint_cell(cx + d, cz + d / 2, kind);
+                }
+            } else {
+                for dz in 0..1 + next(3) as i32 {
+                    for dx in 0..1 + next(3) as i32 {
+                        let block = Block {
+                            level: next(8) as u8,
+                            kind: kinds[next(7) as usize],
+                            cut: Cut::from_u8(next(5) as u8),
+                            ramp: next(9) as u8,
+                            style: next(3) as u8,
+                        };
+                        blocks.set(x + dx, z + dz, block);
+                    }
+                }
+            }
+            assert!(
+                mesh_cached(&blocks, &mut cache) == mesh(&blocks),
+                "after stroke {stroke}"
+            );
+        }
+    }
 }

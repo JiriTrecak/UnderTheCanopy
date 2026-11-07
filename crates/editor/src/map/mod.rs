@@ -65,6 +65,7 @@ pub fn build(
     look: &Look,
     view: crate::world::View,
     ghost: Option<(String, f64)>,
+    mesh: &mut crate::world::mesh::MeshCache,
 ) -> Result<Scene, String> {
     use crate::world::View;
     let _span = tracing::info_span!("map_build").entered();
@@ -73,7 +74,7 @@ pub fn build(
         View::Blocks | View::Split | View::Tech => {
             canopy_content::map::blocks::Blocks::of(&map.authoring.terrain)
                 .and_then(Result::ok)
-                .map(|b| crate::world::mesh::mesh(&b))
+                .map(|b| crate::world::mesh::mesh_cached(&b, mesh))
         }
         View::Generated => None,
         View::Pathing => {

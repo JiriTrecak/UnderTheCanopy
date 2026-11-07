@@ -533,79 +533,17 @@ impl Blocks {
         let mut heights = Vec::with_capacity((vertices * vertices * 4) as usize);
         let mut water = Vec::with_capacity((vertices * vertices * 4) as usize);
         let planes = self.ramp_planes();
-        let b = BLOCK as i32;
         for vz in 0..vertices as i32 {
             for vx in 0..vertices as i32 {
-                // The columns this vertex touches, and where it lies in each.
-                let mut h = f32::MIN;
-                let mut w: Option<f32> = None;
-                let xs: &[i32] = if vx % b == 0 {
-                    &[vx / b - 1, vx / b]
-                } else {
-                    &[vx / b]
-                };
-                let zs: &[i32] = if vz % b == 0 {
-                    &[vz / b - 1, vz / b]
-                } else {
-                    &[vz / b]
-                };
-                for &cz in zs {
-                    for &cx in xs {
-                        let u = (vx - cx * b) as f32 / b as f32;
-                        let v = (vz - cz * b) as f32 / b as f32;
-                        let (u, v) = (u.clamp(0.0, 1.0), v.clamp(0.0, 1.0));
-                        // Sample just inside the column so a cut's diagonal edge is exact.
-                        let (su, sv) = (u.clamp(0.02, 0.98), v.clamp(0.02, 0.98));
-                        h = h.max(self.surface(&planes, cx, cz, su, sv, u, v));
-                        if let Some(level) = self.water(cx, cz, su, sv) {
-                            w = Some(w.map_or(level, |o: f32| o.max(level)));
-                        }
-                    }
-                }
-                // A vertex shared with dry ground keeps the dry bank's height under water
-                // only where every column around it is water.
-                let all_water = zs.iter().all(|&cz| {
-                    xs.iter().all(|&cx| {
-                        let u = ((vx - cx * b) as f32 / b as f32).clamp(0.02, 0.98);
-                        let v = ((vz - cz * b) as f32 / b as f32).clamp(0.02, 0.98);
-                        self.sample(cx, cz, u, v).kind.water()
-                    })
-                });
-                if all_water {
-                    h = zs
-                        .iter()
-                        .flat_map(|&cz| {
-                            xs.iter().map(move |&cx| {
-                                let u = ((vx - cx * b) as f32 / b as f32).clamp(0.0, 1.0);
-                                let v = ((vz - cz * b) as f32 / b as f32).clamp(0.0, 1.0);
-                                (cx, cz, u, v)
-                            })
-                        })
-                        .map(|(cx, cz, u, v)| {
-                            self.surface(
-                                &planes,
-                                cx,
-                                cz,
-                                u.clamp(0.02, 0.98),
-                                v.clamp(0.02, 0.98),
-                                u,
-                                v,
-                            )
-                        })
-                        .fold(f32::MAX, f32::min);
-                }
+                let (h, surface) = self.vertex(&planes, vx, vz);
                 heights.extend_from_slice(&h.to_le_bytes());
-                let surface = w.unwrap_or(DRY_WATER_HEIGHT as f32);
                 water.extend_from_slice(&surface.to_le_bytes());
             }
         }
         let mut blocked = vec![0u8; (span * span) as usize];
         for cz in 0..span as i32 {
             for cx in 0..span as i32 {
-                let (x, z) = (cx / b, cz / b);
-                let u = ((cx % b) as f32 + 0.5) / b as f32;
-                let v = ((cz % b) as f32 + 0.5) / b as f32;
-                if self.sample(x, z, u, v).kind.closed() {
+                if self.closed(cx, cz) {
                     blocked[(cz as u32 * span + cx as u32) as usize] = 1;
                 }
             }
@@ -615,6 +553,157 @@ impl Blocks {
         terrain.blocked = Some(Grid(blocked));
         terrain.blocks = Some(self.encode());
         terrain.block_paint = self.paint.as_ref().map(|p| Grid(p.clone()));
+    }
+
+    /// Like [`Blocks::apply`] on `terrain` that holds what `before` applied, writing only
+    /// around the columns that differ (a brush stroke on a large map): the same bytes as
+    /// the whole apply. A `terrain` that does not match `before`'s shape is applied whole.
+    pub fn apply_changed(&self, before: &Blocks, terrain: &mut TerrainData) {
+        let vertices = terrain.vertices();
+        let span = terrain.span();
+        let samples = (vertices * vertices * 4) as usize;
+        let fits = before.side == self.side
+            && self.side * BLOCK == span
+            && before.columns.len() == self.columns.len()
+            && before.paint.is_some() == self.paint.is_some()
+            && terrain.heights.0.len() == samples
+            && terrain.water_heights.0.len() == samples
+            && terrain
+                .blocked
+                .as_ref()
+                .is_some_and(|g| g.0.len() == (span * span) as usize);
+        if !fits {
+            return self.apply(terrain);
+        }
+        let planes = self.ramp_planes();
+        let old = before.ramp_planes();
+        let side = self.side as i32;
+        let b = BLOCK as usize;
+        let cells = self.side as usize * b;
+        let painted_differs = |x: i32, z: i32| match (&self.paint, &before.paint) {
+            (Some(new), Some(old)) => (0..b).any(|r| {
+                let at = (z as usize * b + r) * cells + x as usize * b;
+                new[at..at + b] != old[at..at + b]
+            }),
+            _ => false,
+        };
+        // The columns that differ: their block, ramp plane or painted cells.
+        let mut changed: Option<(i32, i32, i32, i32)> = None;
+        for z in 0..side {
+            for x in 0..side {
+                let i = (z * side + x) as usize;
+                if self.columns[i] != before.columns[i]
+                    || planes[i] != old[i]
+                    || painted_differs(x, z)
+                {
+                    changed = Some(match changed {
+                        Some((x0, z0, x1, z1)) => (x0.min(x), z0.min(z), x1.max(x), z1.max(z)),
+                        None => (x, z, x, z),
+                    });
+                }
+            }
+        }
+        if let Some((x0, z0, x1, z1)) = changed {
+            // A cut column takes its fill from its neighbours: theirs follow too.
+            let (x0, z0) = ((x0 - 1).max(0), (z0 - 1).max(0));
+            let (x1, z1) = ((x1 + 1).min(side - 1), (z1 + 1).min(side - 1));
+            let b = BLOCK as i32;
+            // Every vertex touching those columns (a column's last row of vertices is its
+            // neighbour's first), and every cell in them.
+            let last = vertices as i32 - 1;
+            for vz in z0 * b..=((z1 + 1) * b).min(last) {
+                for vx in x0 * b..=((x1 + 1) * b).min(last) {
+                    let (h, surface) = self.vertex(&planes, vx, vz);
+                    let at = (vz as usize * vertices as usize + vx as usize) * 4;
+                    terrain.heights.0[at..at + 4].copy_from_slice(&h.to_le_bytes());
+                    terrain.water_heights.0[at..at + 4].copy_from_slice(&surface.to_le_bytes());
+                }
+            }
+            if let Some(blocked) = &mut terrain.blocked {
+                for cz in z0 * b..(z1 + 1) * b {
+                    for cx in x0 * b..(x1 + 1) * b {
+                        blocked.0[(cz as u32 * span + cx as u32) as usize] =
+                            u8::from(self.closed(cx, cz));
+                    }
+                }
+            }
+        }
+        terrain.blocks = Some(self.encode());
+        terrain.block_paint = self.paint.as_ref().map(|p| Grid(p.clone()));
+    }
+
+    /// The height and water surface of vertex (`vx`, `vz`): the highest surface of the
+    /// columns it touches, and the highest water over them.
+    fn vertex(&self, planes: &[Option<RampPlane>], vx: i32, vz: i32) -> (f32, f32) {
+        let b = BLOCK as i32;
+        // The columns this vertex touches, and where it lies in each.
+        let mut h = f32::MIN;
+        let mut w: Option<f32> = None;
+        let xs: &[i32] = if vx % b == 0 {
+            &[vx / b - 1, vx / b]
+        } else {
+            &[vx / b]
+        };
+        let zs: &[i32] = if vz % b == 0 {
+            &[vz / b - 1, vz / b]
+        } else {
+            &[vz / b]
+        };
+        for &cz in zs {
+            for &cx in xs {
+                let u = (vx - cx * b) as f32 / b as f32;
+                let v = (vz - cz * b) as f32 / b as f32;
+                let (u, v) = (u.clamp(0.0, 1.0), v.clamp(0.0, 1.0));
+                // Sample just inside the column so a cut's diagonal edge is exact.
+                let (su, sv) = (u.clamp(0.02, 0.98), v.clamp(0.02, 0.98));
+                h = h.max(self.surface(planes, cx, cz, su, sv, u, v));
+                if let Some(level) = self.water(cx, cz, su, sv) {
+                    w = Some(w.map_or(level, |o: f32| o.max(level)));
+                }
+            }
+        }
+        // A vertex shared with dry ground keeps the dry bank's height under water
+        // only where every column around it is water.
+        let all_water = zs.iter().all(|&cz| {
+            xs.iter().all(|&cx| {
+                let u = ((vx - cx * b) as f32 / b as f32).clamp(0.02, 0.98);
+                let v = ((vz - cz * b) as f32 / b as f32).clamp(0.02, 0.98);
+                self.sample(cx, cz, u, v).kind.water()
+            })
+        });
+        if all_water {
+            h = zs
+                .iter()
+                .flat_map(|&cz| {
+                    xs.iter().map(move |&cx| {
+                        let u = ((vx - cx * b) as f32 / b as f32).clamp(0.0, 1.0);
+                        let v = ((vz - cz * b) as f32 / b as f32).clamp(0.0, 1.0);
+                        (cx, cz, u, v)
+                    })
+                })
+                .map(|(cx, cz, u, v)| {
+                    self.surface(
+                        planes,
+                        cx,
+                        cz,
+                        u.clamp(0.02, 0.98),
+                        v.clamp(0.02, 0.98),
+                        u,
+                        v,
+                    )
+                })
+                .fold(f32::MAX, f32::min);
+        }
+        (h, w.unwrap_or(DRY_WATER_HEIGHT as f32))
+    }
+
+    /// Whether cell (`cx`, `cz`) is closed.
+    fn closed(&self, cx: i32, cz: i32) -> bool {
+        let b = BLOCK as i32;
+        let (x, z) = (cx / b, cz / b);
+        let u = ((cx % b) as f32 + 0.5) / b as f32;
+        let v = ((cz % b) as f32 + 0.5) / b as f32;
+        self.sample(x, z, u, v).kind.closed()
     }
 }
 
@@ -805,5 +894,76 @@ mod tests {
             },
         );
         assert_eq!(Blocks::decode(&blocks.encode(), 256).unwrap(), blocks);
+    }
+
+    /// Strokes of every kind, cut, ramp and painted cell, one after another: applying only
+    /// what changed gives the same bytes as applying the whole map.
+    #[test]
+    fn applying_what_changed_matches_the_whole_apply() {
+        let mut seed = 0x9e37_79b9_u32;
+        let mut next = |n: u32| {
+            seed ^= seed << 13;
+            seed ^= seed >> 17;
+            seed ^= seed << 5;
+            seed % n
+        };
+        let kinds = [
+            BlockKind::Ground,
+            BlockKind::Ramp,
+            BlockKind::Wall,
+            BlockKind::Rock,
+            BlockKind::Shallow,
+            BlockKind::Deep,
+            BlockKind::Ice,
+        ];
+        let mut blocks = Blocks::flat(128);
+        let mut whole = terrain(128);
+        blocks.apply(&mut whole);
+        let mut changed = whole.clone();
+        let side = blocks.side;
+        for stroke in 0..120 {
+            let before = blocks.clone();
+            let (x, z) = (next(side) as i32, next(side) as i32);
+            let (w, h) = (1 + next(4) as i32, 1 + next(4) as i32);
+            if stroke % 5 == 4 {
+                // Painted cells.
+                let n = blocks.cells();
+                let (cx, cz) = (next(n) as i32, next(n) as i32);
+                for dz in 0..h * 3 {
+                    for dx in 0..w * 3 {
+                        let kind = (next(3) > 0).then(|| kinds[next(7) as usize]);
+                        blocks.paint_cell(cx + dx, cz + dz, kind);
+                    }
+                }
+            } else {
+                for dz in 0..h {
+                    for dx in 0..w {
+                        let block = Block {
+                            level: next(8) as u8,
+                            kind: kinds[next(7) as usize],
+                            cut: Cut::from_u8(next(5) as u8),
+                            ramp: next(9) as u8,
+                            style: next(3) as u8,
+                        };
+                        blocks.set(x + dx, z + dz, block);
+                    }
+                }
+            }
+            blocks.apply_changed(&before, &mut changed);
+            blocks.apply(&mut whole);
+            assert!(
+                changed.heights == whole.heights,
+                "heights after stroke {stroke}"
+            );
+            assert!(
+                changed.water_heights == whole.water_heights,
+                "water after {stroke}"
+            );
+            assert!(
+                changed.blocked == whole.blocked,
+                "closed cells after {stroke}"
+            );
+            assert!(changed.blocks == whole.blocks && changed.block_paint == whole.block_paint);
+        }
     }
 }

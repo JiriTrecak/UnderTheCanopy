@@ -937,6 +937,7 @@ impl Shell {
                 &resources.looks[&biome],
                 session.blocks.view,
                 ghost.clone(),
+                &mut session.blocks.mesh,
             ) {
                 Ok(scene) => {
                     session.scene = Some(Arc::new(scene));
@@ -958,6 +959,7 @@ impl Shell {
                 &resources.looks[&biome],
                 crate::world::View::Generated,
                 ghost.clone(),
+                &mut session.blocks.mesh,
             ) {
                 Ok(scene) => {
                     session.scene_generated = Some(Arc::new(scene));

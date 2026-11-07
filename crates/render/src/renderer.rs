@@ -859,9 +859,16 @@ impl Renderer {
     /// tens of milliseconds a stroke on a large map).
     pub fn set_blockout(&mut self, gpu: &Gpu, mesh: Option<&crate::blockout::BlockoutMesh>) {
         let before = self.blockout.as_ref().map_or(0, |b| b.bytes);
-        self.blockout = mesh.and_then(|mesh| {
-            crate::blockout::BlockoutGpu::new(&gpu.device, mesh, &self.frame_layout)
-        });
+        // The pipeline stays; the buffers too when the mesh fits them.
+        let kept = match (&mut self.blockout, mesh) {
+            (Some(blockout), Some(mesh)) => blockout.replace(&gpu.device, &gpu.queue, mesh),
+            _ => false,
+        };
+        if !kept {
+            self.blockout = mesh.and_then(|mesh| {
+                crate::blockout::BlockoutGpu::new(&gpu.device, mesh, &self.frame_layout)
+            });
+        }
         let after = self.blockout.as_ref().map_or(0, |b| b.bytes);
         self.world_bytes = self.world_bytes - before.min(self.world_bytes) + after;
     }
