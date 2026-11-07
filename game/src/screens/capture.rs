@@ -1100,8 +1100,45 @@ fn effect_graph(rig: &mut Rig, paths: &Paths) -> Result<()> {
         }
         return Ok(());
     }
-    let document = std::env::var("CANOPY_CAPTURE_EFFECT")
-        .unwrap_or_else(|_| "effects/wc3lab/holy-light.json".to_string());
+    // The effect lab's hand-built reference when the data has it, else the package's
+    // first effect with graph layers.
+    let base = paths.data.join("base");
+    let (document, id) = match std::env::var("CANOPY_CAPTURE_EFFECT") {
+        Ok(document) => (document, None),
+        Err(_) if base.join("effects/wc3lab/holy-light.json").is_file() => (
+            "effects/wc3lab/holy-light.json".to_string(),
+            Some("effect.wc3lab.holy-light".to_string()),
+        ),
+        Err(_) => {
+            // The libraries are read with the first frames.
+            for _ in 0..4 {
+                editor.run_headless(rig.size, rig.scale, &rig.gpu);
+            }
+            let list = editor
+                .run_tool("list_elements", serde_json::json!({ "editor": "effects" }))
+                .unwrap_or_default();
+            let elements = list
+                .as_array()
+                .or_else(|| {
+                    list.as_object()
+                        .and_then(|o| o.values().find_map(|v| v.as_array()))
+                })
+                .cloned()
+                .unwrap_or_default();
+            let field = |e: &serde_json::Value, name: &str| {
+                e.get(name)
+                    .and_then(|v| v.as_str())
+                    .unwrap_or("")
+                    .to_string()
+            };
+            let graph = elements.iter().find(|e| {
+                std::fs::read_to_string(base.join(field(e, "document")))
+                    .is_ok_and(|text| text.contains("\"graph\""))
+            });
+            let graph = graph.context("no effect with graph layers")?;
+            (field(graph, "document"), Some(field(graph, "id")))
+        }
+    };
     editor.open_document(&document);
     editor.show_graph();
     // The previews loop: a few moments of them.
@@ -1109,7 +1146,9 @@ fn effect_graph(rig: &mut Rig, paths: &Paths) -> Result<()> {
         shoot(&mut editor, rig, &format!("effect-graph-{i}"), frames)?;
     }
     let id = std::env::var("CANOPY_CAPTURE_EFFECT_ID")
-        .unwrap_or_else(|_| "effect.wc3lab.holy-light".to_string());
+        .ok()
+        .or(id)
+        .context("CANOPY_CAPTURE_EFFECT_ID names the effect's id")?;
     editor.open_stage(&id);
     shoot(&mut editor, rig, "effect-stage-open", 30)?;
     editor.stage_cast();
