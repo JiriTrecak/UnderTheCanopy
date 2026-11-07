@@ -56,48 +56,51 @@ impl BlockoutGpu {
         device: &wgpu::Device,
         mesh: &BlockoutMesh,
         frame_layout: &wgpu::BindGroupLayout,
+        kept: &crate::kept::Kept,
     ) -> Option<Self> {
         if mesh.indices.is_empty() {
             return None;
         }
         let _span = tracing::info_span!("blockout_upload").entered();
         let (vertices, indices) = buffers(device, mesh);
-        let module = crate::shader::module(
-            device,
-            "blockout",
-            crate::shader::LIT,
-            include_str!("../shaders/blockout.wgsl"),
-        );
-        let layout = device.create_pipeline_layout(&wgpu::PipelineLayoutDescriptor {
-            label: Some("blockout"),
-            bind_group_layouts: &[Some(frame_layout)],
-            immediate_size: 0,
-        });
-        let attributes = wgpu::vertex_attr_array![0 => Float32x3, 1 => Float32x3, 2 => Float32x3, 3 => Float32x3];
-        let pipeline = device.create_render_pipeline(&wgpu::RenderPipelineDescriptor {
-            label: Some("blockout"),
-            layout: Some(&layout),
-            vertex: wgpu::VertexState {
-                module: &module,
-                entry_point: Some("vs_main"),
-                compilation_options: Default::default(),
-                buffers: &[Some(wgpu::VertexBufferLayout {
-                    array_stride: std::mem::size_of::<BlockVertex>() as u64,
-                    step_mode: wgpu::VertexStepMode::Vertex,
-                    attributes: &attributes,
-                })],
-            },
-            primitive: wgpu::PrimitiveState::default(),
-            depth_stencil: Some(targets::scene_depth(true)),
-            multisample: targets::scene_multisample(false),
-            fragment: Some(wgpu::FragmentState {
-                module: &module,
-                entry_point: Some("fs_main"),
-                compilation_options: Default::default(),
-                targets: &targets::forward_targets(None, true),
-            }),
-            multiview_mask: None,
-            cache: None,
+        let pipeline = kept.get("blockout", || {
+            let module = crate::shader::module(
+                device,
+                "blockout",
+                crate::shader::LIT,
+                include_str!("../shaders/blockout.wgsl"),
+            );
+            let layout = device.create_pipeline_layout(&wgpu::PipelineLayoutDescriptor {
+                label: Some("blockout"),
+                bind_group_layouts: &[Some(frame_layout)],
+                immediate_size: 0,
+            });
+            let attributes = wgpu::vertex_attr_array![0 => Float32x3, 1 => Float32x3, 2 => Float32x3, 3 => Float32x3];
+            device.create_render_pipeline(&wgpu::RenderPipelineDescriptor {
+                label: Some("blockout"),
+                layout: Some(&layout),
+                vertex: wgpu::VertexState {
+                    module: &module,
+                    entry_point: Some("vs_main"),
+                    compilation_options: Default::default(),
+                    buffers: &[Some(wgpu::VertexBufferLayout {
+                        array_stride: std::mem::size_of::<BlockVertex>() as u64,
+                        step_mode: wgpu::VertexStepMode::Vertex,
+                        attributes: &attributes,
+                    })],
+                },
+                primitive: wgpu::PrimitiveState::default(),
+                depth_stencil: Some(targets::scene_depth(true)),
+                multisample: targets::scene_multisample(false),
+                fragment: Some(wgpu::FragmentState {
+                    module: &module,
+                    entry_point: Some("fs_main"),
+                    compilation_options: Default::default(),
+                    targets: &targets::forward_targets(None, true),
+                }),
+                multiview_mask: None,
+                cache: None,
+            })
         });
         Some(Self {
             pipeline,

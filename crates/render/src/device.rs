@@ -46,6 +46,8 @@ pub struct Gpu {
     pub device: wgpu::Device,
     pub queue: wgpu::Queue,
     pub features: GpuFeatures,
+    /// Pipelines world loads build once for the device (see [`crate::kept`]).
+    pub kept: crate::kept::Kept,
 }
 
 impl Gpu {
@@ -120,6 +122,7 @@ impl Gpu {
             device,
             queue,
             features,
+            kept: crate::kept::Kept::default(),
         })
     }
 

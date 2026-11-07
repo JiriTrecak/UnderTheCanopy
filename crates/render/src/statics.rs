@@ -294,6 +294,7 @@ pub fn sphere_visible(planes: &[Vec4; 6], sphere: Vec4) -> bool {
 }
 
 impl StaticsGpu {
+    #[allow(clippy::too_many_arguments)]
     pub fn new(
         device: &wgpu::Device,
         queue: &wgpu::Queue,
@@ -302,6 +303,7 @@ impl StaticsGpu {
         instances: &[StaticInstance],
         glows: &BTreeMap<String, Glow>,
         frame_layout: &wgpu::BindGroupLayout,
+        kept: &crate::kept::Kept,
     ) -> Result<Self> {
         let _span = tracing::info_span!("statics_upload").entered();
         // Instances by model, each with its input index (for `set_hidden`).
@@ -773,231 +775,251 @@ impl StaticsGpu {
                 },
             ],
         });
-        let cull_module =
-            crate::shader::module(device, "cull", &[], include_str!("../shaders/cull.wgsl"));
-        let cull_pipeline_layout = device.create_pipeline_layout(&wgpu::PipelineLayoutDescriptor {
-            label: Some("cull"),
-            bind_group_layouts: &[Some(&cull_layout)],
-            immediate_size: 0,
+        let (cull_pipeline, finish_pipeline) = kept.get("statics cull", || {
+            let cull_module =
+                crate::shader::module(device, "cull", &[], include_str!("../shaders/cull.wgsl"));
+            let cull_pipeline_layout =
+                device.create_pipeline_layout(&wgpu::PipelineLayoutDescriptor {
+                    label: Some("cull"),
+                    bind_group_layouts: &[Some(&cull_layout)],
+                    immediate_size: 0,
+                });
+            let compute = |entry| {
+                device.create_compute_pipeline(&wgpu::ComputePipelineDescriptor {
+                    label: Some(entry),
+                    layout: Some(&cull_pipeline_layout),
+                    module: &cull_module,
+                    entry_point: Some(entry),
+                    compilation_options: Default::default(),
+                    cache: None,
+                })
+            };
+            (compute("cull"), compute("finish"))
         });
-        let compute = |entry| {
-            device.create_compute_pipeline(&wgpu::ComputePipelineDescriptor {
-                label: Some(entry),
-                layout: Some(&cull_pipeline_layout),
-                module: &cull_module,
-                entry_point: Some(entry),
-                compilation_options: Default::default(),
-                cache: None,
-            })
-        };
-        let cull_pipeline = compute("cull");
-        let finish_pipeline = compute("finish");
 
         // Drawing.
-        let module = crate::shader::module(
-            device,
-            "statics",
-            crate::shader::MODEL,
-            include_str!("../shaders/statics.wgsl"),
-        );
-        let layout = device.create_pipeline_layout(&wgpu::PipelineLayoutDescriptor {
-            label: Some("statics"),
-            bind_group_layouts: &[
-                Some(frame_layout),
-                Some(textures.layout()),
-                Some(&instance_layout),
-            ],
-            immediate_size: 0,
-        });
-        let main_attributes =
-            wgpu::vertex_attr_array![0 => Unorm16x4, 1 => Snorm16x2, 2 => Unorm16x2];
-        let color_attributes = wgpu::vertex_attr_array![3 => Unorm8x4];
-        let leaf_attributes = wgpu::vertex_attr_array![4 => Unorm16x4];
-        let main_buffers = [
-            Some(wgpu::VertexBufferLayout {
-                array_stride: 16,
-                step_mode: wgpu::VertexStepMode::Vertex,
-                attributes: &main_attributes,
-            }),
-            Some(wgpu::VertexBufferLayout {
-                array_stride: 4,
-                step_mode: wgpu::VertexStepMode::Vertex,
-                attributes: &color_attributes,
-            }),
-            Some(wgpu::VertexBufferLayout {
-                array_stride: 8,
-                step_mode: wgpu::VertexStepMode::Vertex,
-                attributes: &leaf_attributes,
-            }),
-        ];
-        let mut pipelines = HashMap::new();
-        for variant in [
-            Variant::Opaque {
-                double_sided: false,
-            },
-            Variant::Opaque { double_sided: true },
-            Variant::Mask {
-                double_sided: false,
-            },
-            Variant::Mask { double_sided: true },
-            Variant::Blend {
-                double_sided: false,
-            },
-            Variant::Blend { double_sided: true },
-        ] {
-            let (double_sided, a2c, blend) = match variant {
-                Variant::Opaque { double_sided } => (double_sided, false, None),
-                Variant::Mask { double_sided } => (double_sided, true, None),
-                Variant::Blend { double_sided } => {
-                    (double_sided, false, Some(wgpu::BlendState::ALPHA_BLENDING))
-                }
-            };
-            let opaque = matches!(variant, Variant::Opaque { .. });
-            let pipeline = device.create_render_pipeline(&wgpu::RenderPipelineDescriptor {
+        let (
+            pipelines,
+            prepass_pipelines,
+            cut_pipelines,
+            depth_pipeline,
+            plain_depth_pipeline,
+            masked_pipeline,
+        ) = kept.get("statics", || {
+            let module = crate::shader::module(
+                device,
+                "statics",
+                crate::shader::MODEL,
+                include_str!("../shaders/statics.wgsl"),
+            );
+            let layout = device.create_pipeline_layout(&wgpu::PipelineLayoutDescriptor {
                 label: Some("statics"),
+                bind_group_layouts: &[
+                    Some(frame_layout),
+                    Some(textures.layout()),
+                    Some(&instance_layout),
+                ],
+                immediate_size: 0,
+            });
+            let main_attributes =
+                wgpu::vertex_attr_array![0 => Unorm16x4, 1 => Snorm16x2, 2 => Unorm16x2];
+            let color_attributes = wgpu::vertex_attr_array![3 => Unorm8x4];
+            let leaf_attributes = wgpu::vertex_attr_array![4 => Unorm16x4];
+            let main_buffers = [
+                Some(wgpu::VertexBufferLayout {
+                    array_stride: 16,
+                    step_mode: wgpu::VertexStepMode::Vertex,
+                    attributes: &main_attributes,
+                }),
+                Some(wgpu::VertexBufferLayout {
+                    array_stride: 4,
+                    step_mode: wgpu::VertexStepMode::Vertex,
+                    attributes: &color_attributes,
+                }),
+                Some(wgpu::VertexBufferLayout {
+                    array_stride: 8,
+                    step_mode: wgpu::VertexStepMode::Vertex,
+                    attributes: &leaf_attributes,
+                }),
+            ];
+            let mut pipelines = HashMap::new();
+            for variant in [
+                Variant::Opaque {
+                    double_sided: false,
+                },
+                Variant::Opaque { double_sided: true },
+                Variant::Mask {
+                    double_sided: false,
+                },
+                Variant::Mask { double_sided: true },
+                Variant::Blend {
+                    double_sided: false,
+                },
+                Variant::Blend { double_sided: true },
+            ] {
+                let (double_sided, a2c, blend) = match variant {
+                    Variant::Opaque { double_sided } => (double_sided, false, None),
+                    Variant::Mask { double_sided } => (double_sided, true, None),
+                    Variant::Blend { double_sided } => {
+                        (double_sided, false, Some(wgpu::BlendState::ALPHA_BLENDING))
+                    }
+                };
+                let opaque = matches!(variant, Variant::Opaque { .. });
+                let pipeline = device.create_render_pipeline(&wgpu::RenderPipelineDescriptor {
+                    label: Some("statics"),
+                    layout: Some(&layout),
+                    vertex: wgpu::VertexState {
+                        module: &module,
+                        entry_point: Some("vs_main"),
+                        compilation_options: Default::default(),
+                        buffers: &main_buffers,
+                    },
+                    primitive: wgpu::PrimitiveState {
+                        cull_mode: (!double_sided).then_some(wgpu::Face::Back),
+                        ..Default::default()
+                    },
+                    depth_stencil: Some(targets::scene_depth(blend.is_none())),
+                    multisample: targets::scene_multisample(a2c),
+                    fragment: Some(wgpu::FragmentState {
+                        module: &module,
+                        entry_point: Some(if opaque { "fs_opaque" } else { "fs_main" }),
+                        compilation_options: Default::default(),
+                        targets: &targets::forward_targets(blend, blend.is_none()),
+                    }),
+                    multiview_mask: None,
+                    cache: None,
+                });
+                pipelines.insert(variant, pipeline);
+            }
+            let mut prepass_pipelines = HashMap::new();
+            let mut cut_pipelines = HashMap::new();
+            for double_sided in [false, true] {
+                let primitive = wgpu::PrimitiveState {
+                    cull_mode: (!double_sided).then_some(wgpu::Face::Back),
+                    ..Default::default()
+                };
+                let pipeline =
+                    |label, vertex, depth, fragment, targets: &[Option<wgpu::ColorTargetState>]| {
+                        device.create_render_pipeline(&wgpu::RenderPipelineDescriptor {
+                            label: Some(label),
+                            layout: Some(&layout),
+                            vertex: wgpu::VertexState {
+                                module: &module,
+                                entry_point: Some(vertex),
+                                compilation_options: Default::default(),
+                                buffers: &main_buffers,
+                            },
+                            primitive,
+                            depth_stencil: Some(depth),
+                            multisample: targets::scene_multisample(false),
+                            fragment: Some(wgpu::FragmentState {
+                                module: &module,
+                                entry_point: Some(fragment),
+                                compilation_options: Default::default(),
+                                targets,
+                            }),
+                            multiview_mask: None,
+                            cache: None,
+                        })
+                    };
+                prepass_pipelines.insert(
+                    double_sided,
+                    pipeline(
+                        "statics prepass",
+                        "vs_prepass",
+                        targets::scene_depth(true),
+                        "fs_prepass_cut",
+                        &targets::depth_only_targets(),
+                    ),
+                );
+                cut_pipelines.insert(
+                    double_sided,
+                    pipeline(
+                        "statics after prepass",
+                        "vs_lit",
+                        targets::scene_depth_equal(),
+                        "fs_lit",
+                        &targets::forward_targets(None, true),
+                    ),
+                );
+            }
+            let depth_attributes = wgpu::vertex_attr_array![0 => Unorm16x4];
+            let depth_pipeline = device.create_render_pipeline(&wgpu::RenderPipelineDescriptor {
+                label: Some("statics depth"),
                 layout: Some(&layout),
                 vertex: wgpu::VertexState {
                     module: &module,
-                    entry_point: Some("vs_main"),
+                    entry_point: Some("vs_depth"),
                     compilation_options: Default::default(),
-                    buffers: &main_buffers,
+                    buffers: &[Some(wgpu::VertexBufferLayout {
+                        array_stride: 8,
+                        step_mode: wgpu::VertexStepMode::Vertex,
+                        attributes: &depth_attributes,
+                    })],
                 },
-                primitive: wgpu::PrimitiveState {
-                    cull_mode: (!double_sided).then_some(wgpu::Face::Back),
-                    ..Default::default()
-                },
-                depth_stencil: Some(targets::scene_depth(blend.is_none())),
-                multisample: targets::scene_multisample(a2c),
+                primitive: wgpu::PrimitiveState::default(),
+                depth_stencil: Some(targets::shadow_depth()),
+                multisample: wgpu::MultisampleState::default(),
+                // Only to cut giants at the shadow ceiling (statics.wgsl `fs_depth`).
                 fragment: Some(wgpu::FragmentState {
                     module: &module,
-                    entry_point: Some(if opaque { "fs_opaque" } else { "fs_main" }),
+                    entry_point: Some("fs_depth"),
                     compilation_options: Default::default(),
-                    targets: &targets::forward_targets(blend, blend.is_none()),
+                    targets: &[],
                 }),
                 multiview_mask: None,
                 cache: None,
             });
-            pipelines.insert(variant, pipeline);
-        }
-        let mut prepass_pipelines = HashMap::new();
-        let mut cut_pipelines = HashMap::new();
-        for double_sided in [false, true] {
-            let primitive = wgpu::PrimitiveState {
-                cull_mode: (!double_sided).then_some(wgpu::Face::Back),
-                ..Default::default()
-            };
-            let pipeline =
-                |label, vertex, depth, fragment, targets: &[Option<wgpu::ColorTargetState>]| {
-                    device.create_render_pipeline(&wgpu::RenderPipelineDescriptor {
-                        label: Some(label),
-                        layout: Some(&layout),
-                        vertex: wgpu::VertexState {
-                            module: &module,
-                            entry_point: Some(vertex),
-                            compilation_options: Default::default(),
-                            buffers: &main_buffers,
-                        },
-                        primitive,
-                        depth_stencil: Some(depth),
-                        multisample: targets::scene_multisample(false),
-                        fragment: Some(wgpu::FragmentState {
-                            module: &module,
-                            entry_point: Some(fragment),
-                            compilation_options: Default::default(),
-                            targets,
-                        }),
-                        multiview_mask: None,
-                        cache: None,
-                    })
-                };
-            prepass_pipelines.insert(
-                double_sided,
-                pipeline(
-                    "statics prepass",
-                    "vs_prepass",
-                    targets::scene_depth(true),
-                    "fs_prepass_cut",
-                    &targets::depth_only_targets(),
-                ),
-            );
-            cut_pipelines.insert(
-                double_sided,
-                pipeline(
-                    "statics after prepass",
-                    "vs_lit",
-                    targets::scene_depth_equal(),
-                    "fs_lit",
-                    &targets::forward_targets(None, true),
-                ),
-            );
-        }
-        let depth_attributes = wgpu::vertex_attr_array![0 => Unorm16x4];
-        let depth_pipeline = device.create_render_pipeline(&wgpu::RenderPipelineDescriptor {
-            label: Some("statics depth"),
-            layout: Some(&layout),
-            vertex: wgpu::VertexState {
-                module: &module,
-                entry_point: Some("vs_depth"),
-                compilation_options: Default::default(),
-                buffers: &[Some(wgpu::VertexBufferLayout {
-                    array_stride: 8,
-                    step_mode: wgpu::VertexStepMode::Vertex,
-                    attributes: &depth_attributes,
-                })],
-            },
-            primitive: wgpu::PrimitiveState::default(),
-            depth_stencil: Some(targets::shadow_depth()),
-            multisample: wgpu::MultisampleState::default(),
-            // Only to cut giants at the shadow ceiling (statics.wgsl `fs_depth`).
-            fragment: Some(wgpu::FragmentState {
-                module: &module,
-                entry_point: Some("fs_depth"),
-                compilation_options: Default::default(),
-                targets: &[],
-            }),
-            multiview_mask: None,
-            cache: None,
-        });
-        let plain_depth_pipeline = device.create_render_pipeline(&wgpu::RenderPipelineDescriptor {
-            label: Some("statics plain depth"),
-            layout: Some(&layout),
-            vertex: wgpu::VertexState {
-                module: &module,
-                entry_point: Some("vs_depth"),
-                compilation_options: Default::default(),
-                buffers: &[Some(wgpu::VertexBufferLayout {
-                    array_stride: 8,
-                    step_mode: wgpu::VertexStepMode::Vertex,
-                    attributes: &depth_attributes,
-                })],
-            },
-            primitive: wgpu::PrimitiveState::default(),
-            depth_stencil: Some(targets::shadow_depth()),
-            multisample: wgpu::MultisampleState::default(),
-            fragment: None,
-            multiview_mask: None,
-            cache: None,
-        });
-        let masked_pipeline = device.create_render_pipeline(&wgpu::RenderPipelineDescriptor {
-            label: Some("statics masked depth"),
-            layout: Some(&layout),
-            vertex: wgpu::VertexState {
-                module: &module,
-                entry_point: Some("vs_masked"),
-                compilation_options: Default::default(),
-                buffers: &main_buffers,
-            },
-            primitive: wgpu::PrimitiveState::default(),
-            depth_stencil: Some(targets::shadow_depth()),
-            multisample: wgpu::MultisampleState::default(),
-            fragment: Some(wgpu::FragmentState {
-                module: &module,
-                entry_point: Some("fs_masked"),
-                compilation_options: Default::default(),
-                targets: &[],
-            }),
-            multiview_mask: None,
-            cache: None,
+            let plain_depth_pipeline =
+                device.create_render_pipeline(&wgpu::RenderPipelineDescriptor {
+                    label: Some("statics plain depth"),
+                    layout: Some(&layout),
+                    vertex: wgpu::VertexState {
+                        module: &module,
+                        entry_point: Some("vs_depth"),
+                        compilation_options: Default::default(),
+                        buffers: &[Some(wgpu::VertexBufferLayout {
+                            array_stride: 8,
+                            step_mode: wgpu::VertexStepMode::Vertex,
+                            attributes: &depth_attributes,
+                        })],
+                    },
+                    primitive: wgpu::PrimitiveState::default(),
+                    depth_stencil: Some(targets::shadow_depth()),
+                    multisample: wgpu::MultisampleState::default(),
+                    fragment: None,
+                    multiview_mask: None,
+                    cache: None,
+                });
+            let masked_pipeline = device.create_render_pipeline(&wgpu::RenderPipelineDescriptor {
+                label: Some("statics masked depth"),
+                layout: Some(&layout),
+                vertex: wgpu::VertexState {
+                    module: &module,
+                    entry_point: Some("vs_masked"),
+                    compilation_options: Default::default(),
+                    buffers: &main_buffers,
+                },
+                primitive: wgpu::PrimitiveState::default(),
+                depth_stencil: Some(targets::shadow_depth()),
+                multisample: wgpu::MultisampleState::default(),
+                fragment: Some(wgpu::FragmentState {
+                    module: &module,
+                    entry_point: Some("fs_masked"),
+                    compilation_options: Default::default(),
+                    targets: &[],
+                }),
+                multiview_mask: None,
+                cache: None,
+            });
+            (
+                pipelines,
+                prepass_pipelines,
+                cut_pipelines,
+                depth_pipeline,
+                plain_depth_pipeline,
+                masked_pipeline,
+            )
         });
 
         let stats = StaticsStats {

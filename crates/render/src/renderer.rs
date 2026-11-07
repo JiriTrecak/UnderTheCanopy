@@ -220,6 +220,7 @@ pub struct WorldUploader {
     queue: wgpu::Queue,
     features: crate::device::GpuFeatures,
     frame_layout: wgpu::BindGroupLayout,
+    kept: crate::kept::Kept,
 }
 
 impl WorldUploader {
@@ -310,9 +311,17 @@ impl WorldUploader {
                     &world.statics,
                     &world.glows,
                     layout,
+                    &self.kept,
                 )
             });
-            let mut actors = ActorsGpu::new(device, queue, features, layout, world.glows.clone());
+            let mut actors = ActorsGpu::new(
+                device,
+                queue,
+                features,
+                layout,
+                world.glows.clone(),
+                &self.kept,
+            );
             actors.sync_models(device, queue, pack, &world.actor_models);
             let join = |name| move |_| anyhow::anyhow!("uploading the {name} panicked");
             (
@@ -328,7 +337,7 @@ impl WorldUploader {
         let blockout = world
             .blockout
             .as_ref()
-            .and_then(|mesh| crate::blockout::BlockoutGpu::new(device, mesh, layout));
+            .and_then(|mesh| crate::blockout::BlockoutGpu::new(device, mesh, layout, &self.kept));
         let bytes = terrain.as_ref().map_or(0, |t| t.bytes)
             + water.as_ref().map_or(0, |w| w.bytes)
             + forest.as_ref().map_or(0, |f| f.bytes)
@@ -905,6 +914,7 @@ impl Renderer {
             queue: gpu.queue.clone(),
             features: gpu.features,
             frame_layout: self.frame_layout.clone(),
+            kept: gpu.kept.clone(),
         }
     }
 
@@ -954,7 +964,7 @@ impl Renderer {
         };
         if !kept {
             self.blockout = mesh.and_then(|mesh| {
-                crate::blockout::BlockoutGpu::new(&gpu.device, mesh, &self.frame_layout)
+                crate::blockout::BlockoutGpu::new(&gpu.device, mesh, &self.frame_layout, &gpu.kept)
             });
         }
         let after = self.blockout.as_ref().map_or(0, |b| b.bytes);

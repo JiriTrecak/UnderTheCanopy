@@ -414,113 +414,97 @@ impl ActorsGpu {
         features: GpuFeatures,
         frame_layout: &wgpu::BindGroupLayout,
         glows: BTreeMap<String, Glow>,
+        kept: &crate::kept::Kept,
     ) -> Self {
         let textures = Textures::new(device, queue, features);
-        let vf = wgpu::ShaderStages::VERTEX | wgpu::ShaderStages::FRAGMENT;
-        let storage = |binding, visibility, read_only| wgpu::BindGroupLayoutEntry {
-            binding,
-            visibility,
-            ty: wgpu::BindingType::Buffer {
-                ty: wgpu::BufferBindingType::Storage { read_only },
-                has_dynamic_offset: false,
-                min_binding_size: None,
-            },
-            count: None,
-        };
-        let actor_layout = device.create_bind_group_layout(&wgpu::BindGroupLayoutDescriptor {
-            label: Some("actors"),
-            entries: &[
-                storage(0, vf, true),
-                storage(1, wgpu::ShaderStages::VERTEX, true),
-                wgpu::BindGroupLayoutEntry {
-                    binding: 2,
-                    visibility: vf,
-                    ty: wgpu::BindingType::Buffer {
-                        ty: wgpu::BufferBindingType::Uniform,
-                        has_dynamic_offset: true,
-                        min_binding_size: wgpu::BufferSize::new(
-                            std::mem::size_of::<ModelUniform>() as u64,
-                        ),
-                    },
-                    count: None,
+        let (
+            pipelines,
+            solid_pipelines,
+            depth_pipeline,
+            masked_pipeline,
+            skin_pipeline,
+            actor_layout,
+            skin_layout,
+        ) = kept.get("actors", || {
+            let vf = wgpu::ShaderStages::VERTEX | wgpu::ShaderStages::FRAGMENT;
+            let storage = |binding, visibility, read_only| wgpu::BindGroupLayoutEntry {
+                binding,
+                visibility,
+                ty: wgpu::BindingType::Buffer {
+                    ty: wgpu::BufferBindingType::Storage { read_only },
+                    has_dynamic_offset: false,
+                    min_binding_size: None,
                 },
-            ],
-        });
-        let comp = wgpu::ShaderStages::COMPUTE;
-        let skin_layout = device.create_bind_group_layout(&wgpu::BindGroupLayoutDescriptor {
-            label: Some("skin"),
-            entries: &[
-                storage(0, comp, true),
-                storage(1, comp, true),
-                storage(2, comp, false),
-                storage(3, comp, true),
-            ],
-        });
-        let module = crate::shader::module(
-            device,
-            "actors",
-            crate::shader::MODEL,
-            include_str!("../shaders/actors.wgsl"),
-        );
-        let layout = device.create_pipeline_layout(&wgpu::PipelineLayoutDescriptor {
-            label: Some("actors"),
-            bind_group_layouts: &[
-                Some(frame_layout),
-                Some(textures.layout()),
-                Some(&actor_layout),
-            ],
-            immediate_size: 0,
-        });
-        let main_attributes =
-            wgpu::vertex_attr_array![0 => Unorm16x4, 1 => Snorm16x2, 2 => Unorm16x2];
-        let color_attributes = wgpu::vertex_attr_array![3 => Unorm8x4];
-        let leaf_attributes = wgpu::vertex_attr_array![4 => Unorm16x4];
-        let skin_attributes = wgpu::vertex_attr_array![5 => Uint8x4, 6 => Unorm8x4];
-        let vertex = |stride, attributes| {
-            Some(wgpu::VertexBufferLayout {
-                array_stride: stride,
-                step_mode: wgpu::VertexStepMode::Vertex,
-                attributes,
-            })
-        };
-        let main_buffers = [
-            vertex(16, &main_attributes[..]),
-            vertex(4, &color_attributes[..]),
-            vertex(8, &leaf_attributes[..]),
-            vertex(8, &skin_attributes[..]),
-        ];
-        let mut pipelines = HashMap::new();
-        let mut solid_pipelines = HashMap::new();
-        for variant in Variant::ALL {
-            let (cull_mode, a2c, blend) = variant.states();
-            let pipeline = device.create_render_pipeline(&wgpu::RenderPipelineDescriptor {
+                count: None,
+            };
+            let actor_layout = device.create_bind_group_layout(&wgpu::BindGroupLayoutDescriptor {
                 label: Some("actors"),
-                layout: Some(&layout),
-                vertex: wgpu::VertexState {
-                    module: &module,
-                    entry_point: Some("vs_main"),
-                    compilation_options: Default::default(),
-                    buffers: &main_buffers,
-                },
-                primitive: wgpu::PrimitiveState {
-                    cull_mode,
-                    ..Default::default()
-                },
-                depth_stencil: Some(targets::scene_depth(blend.is_none())),
-                multisample: targets::scene_multisample(a2c),
-                fragment: Some(wgpu::FragmentState {
-                    module: &module,
-                    entry_point: Some("fs_main"),
-                    compilation_options: Default::default(),
-                    targets: &targets::forward_targets(blend, blend.is_none()),
-                }),
-                multiview_mask: None,
-                cache: None,
+                entries: &[
+                    storage(0, vf, true),
+                    storage(1, wgpu::ShaderStages::VERTEX, true),
+                    wgpu::BindGroupLayoutEntry {
+                        binding: 2,
+                        visibility: vf,
+                        ty: wgpu::BindingType::Buffer {
+                            ty: wgpu::BufferBindingType::Uniform,
+                            has_dynamic_offset: true,
+                            min_binding_size: wgpu::BufferSize::new(
+                                std::mem::size_of::<ModelUniform>() as u64,
+                            ),
+                        },
+                        count: None,
+                    },
+                ],
             });
-            pipelines.insert(variant, pipeline);
-            if let Variant::Opaque { double_sided } = variant {
-                let solid = device.create_render_pipeline(&wgpu::RenderPipelineDescriptor {
-                    label: Some("actors solid"),
+            let comp = wgpu::ShaderStages::COMPUTE;
+            let skin_layout = device.create_bind_group_layout(&wgpu::BindGroupLayoutDescriptor {
+                label: Some("skin"),
+                entries: &[
+                    storage(0, comp, true),
+                    storage(1, comp, true),
+                    storage(2, comp, false),
+                    storage(3, comp, true),
+                ],
+            });
+            let module = crate::shader::module(
+                device,
+                "actors",
+                crate::shader::MODEL,
+                include_str!("../shaders/actors.wgsl"),
+            );
+            let layout = device.create_pipeline_layout(&wgpu::PipelineLayoutDescriptor {
+                label: Some("actors"),
+                bind_group_layouts: &[
+                    Some(frame_layout),
+                    Some(textures.layout()),
+                    Some(&actor_layout),
+                ],
+                immediate_size: 0,
+            });
+            let main_attributes =
+                wgpu::vertex_attr_array![0 => Unorm16x4, 1 => Snorm16x2, 2 => Unorm16x2];
+            let color_attributes = wgpu::vertex_attr_array![3 => Unorm8x4];
+            let leaf_attributes = wgpu::vertex_attr_array![4 => Unorm16x4];
+            let skin_attributes = wgpu::vertex_attr_array![5 => Uint8x4, 6 => Unorm8x4];
+            let vertex = |stride, attributes| {
+                Some(wgpu::VertexBufferLayout {
+                    array_stride: stride,
+                    step_mode: wgpu::VertexStepMode::Vertex,
+                    attributes,
+                })
+            };
+            let main_buffers = [
+                vertex(16, &main_attributes[..]),
+                vertex(4, &color_attributes[..]),
+                vertex(8, &leaf_attributes[..]),
+                vertex(8, &skin_attributes[..]),
+            ];
+            let mut pipelines = HashMap::new();
+            let mut solid_pipelines = HashMap::new();
+            for variant in Variant::ALL {
+                let (cull_mode, a2c, blend) = variant.states();
+                let pipeline = device.create_render_pipeline(&wgpu::RenderPipelineDescriptor {
+                    label: Some("actors"),
                     layout: Some(&layout),
                     vertex: wgpu::VertexState {
                         module: &module,
@@ -532,73 +516,110 @@ impl ActorsGpu {
                         cull_mode,
                         ..Default::default()
                     },
-                    depth_stencil: Some(targets::scene_depth(true)),
+                    depth_stencil: Some(targets::scene_depth(blend.is_none())),
                     multisample: targets::scene_multisample(a2c),
                     fragment: Some(wgpu::FragmentState {
                         module: &module,
-                        entry_point: Some("fs_solid"),
+                        entry_point: Some("fs_main"),
                         compilation_options: Default::default(),
-                        targets: &targets::forward_targets(None, true),
+                        targets: &targets::forward_targets(blend, blend.is_none()),
                     }),
                     multiview_mask: None,
                     cache: None,
                 });
-                solid_pipelines.insert(double_sided, solid);
+                pipelines.insert(variant, pipeline);
+                if let Variant::Opaque { double_sided } = variant {
+                    let solid = device.create_render_pipeline(&wgpu::RenderPipelineDescriptor {
+                        label: Some("actors solid"),
+                        layout: Some(&layout),
+                        vertex: wgpu::VertexState {
+                            module: &module,
+                            entry_point: Some("vs_main"),
+                            compilation_options: Default::default(),
+                            buffers: &main_buffers,
+                        },
+                        primitive: wgpu::PrimitiveState {
+                            cull_mode,
+                            ..Default::default()
+                        },
+                        depth_stencil: Some(targets::scene_depth(true)),
+                        multisample: targets::scene_multisample(a2c),
+                        fragment: Some(wgpu::FragmentState {
+                            module: &module,
+                            entry_point: Some("fs_solid"),
+                            compilation_options: Default::default(),
+                            targets: &targets::forward_targets(None, true),
+                        }),
+                        multiview_mask: None,
+                        cache: None,
+                    });
+                    solid_pipelines.insert(double_sided, solid);
+                }
             }
-        }
-        let depth_position = wgpu::vertex_attr_array![0 => Unorm16x4];
-        let depth_skin = wgpu::vertex_attr_array![5 => Uint8x4, 6 => Unorm8x4];
-        let depth_pipeline = device.create_render_pipeline(&wgpu::RenderPipelineDescriptor {
-            label: Some("actors depth"),
-            layout: Some(&layout),
-            vertex: wgpu::VertexState {
-                module: &module,
-                entry_point: Some("vs_depth"),
+            let depth_position = wgpu::vertex_attr_array![0 => Unorm16x4];
+            let depth_skin = wgpu::vertex_attr_array![5 => Uint8x4, 6 => Unorm8x4];
+            let depth_pipeline = device.create_render_pipeline(&wgpu::RenderPipelineDescriptor {
+                label: Some("actors depth"),
+                layout: Some(&layout),
+                vertex: wgpu::VertexState {
+                    module: &module,
+                    entry_point: Some("vs_depth"),
+                    compilation_options: Default::default(),
+                    buffers: &[vertex(8, &depth_position[..]), vertex(8, &depth_skin[..])],
+                },
+                primitive: wgpu::PrimitiveState::default(),
+                depth_stencil: Some(targets::shadow_depth()),
+                multisample: wgpu::MultisampleState::default(),
+                fragment: None,
+                multiview_mask: None,
+                cache: None,
+            });
+            let masked_pipeline = device.create_render_pipeline(&wgpu::RenderPipelineDescriptor {
+                label: Some("actors masked depth"),
+                layout: Some(&layout),
+                vertex: wgpu::VertexState {
+                    module: &module,
+                    entry_point: Some("vs_masked"),
+                    compilation_options: Default::default(),
+                    buffers: &main_buffers,
+                },
+                primitive: wgpu::PrimitiveState::default(),
+                depth_stencil: Some(targets::shadow_depth()),
+                multisample: wgpu::MultisampleState::default(),
+                fragment: Some(wgpu::FragmentState {
+                    module: &module,
+                    entry_point: Some("fs_masked"),
+                    compilation_options: Default::default(),
+                    targets: &[],
+                }),
+                multiview_mask: None,
+                cache: None,
+            });
+            let skin_module =
+                crate::shader::module(device, "skin", &[], include_str!("../shaders/skin.wgsl"));
+            let skin_pipeline_layout =
+                device.create_pipeline_layout(&wgpu::PipelineLayoutDescriptor {
+                    label: Some("skin"),
+                    bind_group_layouts: &[Some(&skin_layout)],
+                    immediate_size: 0,
+                });
+            let skin_pipeline = device.create_compute_pipeline(&wgpu::ComputePipelineDescriptor {
+                label: Some("skin"),
+                layout: Some(&skin_pipeline_layout),
+                module: &skin_module,
+                entry_point: Some("skin"),
                 compilation_options: Default::default(),
-                buffers: &[vertex(8, &depth_position[..]), vertex(8, &depth_skin[..])],
-            },
-            primitive: wgpu::PrimitiveState::default(),
-            depth_stencil: Some(targets::shadow_depth()),
-            multisample: wgpu::MultisampleState::default(),
-            fragment: None,
-            multiview_mask: None,
-            cache: None,
-        });
-        let masked_pipeline = device.create_render_pipeline(&wgpu::RenderPipelineDescriptor {
-            label: Some("actors masked depth"),
-            layout: Some(&layout),
-            vertex: wgpu::VertexState {
-                module: &module,
-                entry_point: Some("vs_masked"),
-                compilation_options: Default::default(),
-                buffers: &main_buffers,
-            },
-            primitive: wgpu::PrimitiveState::default(),
-            depth_stencil: Some(targets::shadow_depth()),
-            multisample: wgpu::MultisampleState::default(),
-            fragment: Some(wgpu::FragmentState {
-                module: &module,
-                entry_point: Some("fs_masked"),
-                compilation_options: Default::default(),
-                targets: &[],
-            }),
-            multiview_mask: None,
-            cache: None,
-        });
-        let skin_module =
-            crate::shader::module(device, "skin", &[], include_str!("../shaders/skin.wgsl"));
-        let skin_pipeline_layout = device.create_pipeline_layout(&wgpu::PipelineLayoutDescriptor {
-            label: Some("skin"),
-            bind_group_layouts: &[Some(&skin_layout)],
-            immediate_size: 0,
-        });
-        let skin_pipeline = device.create_compute_pipeline(&wgpu::ComputePipelineDescriptor {
-            label: Some("skin"),
-            layout: Some(&skin_pipeline_layout),
-            module: &skin_module,
-            entry_point: Some("skin"),
-            compilation_options: Default::default(),
-            cache: None,
+                cache: None,
+            });
+            (
+                pipelines,
+                solid_pipelines,
+                depth_pipeline,
+                masked_pipeline,
+                skin_pipeline,
+                actor_layout,
+                skin_layout,
+            )
         });
         let storage_usage = wgpu::BufferUsages::STORAGE | wgpu::BufferUsages::COPY_DST;
         let clips = Grow::new(
