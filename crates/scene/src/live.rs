@@ -61,6 +61,7 @@ use canopy_sim::{
 };
 use glam::{EulerRot, Quat, Vec3};
 use std::{
+    borrow::Cow,
     collections::{BTreeMap, BTreeSet},
     sync::Arc,
 };
@@ -1146,13 +1147,18 @@ impl Presenter {
 
     /// The render asset an entity shows now: its form, its placement's appearance, its
     /// depletion stage, or its definition's.
-    fn look(&self, e: &EntityView, d: &Definition) -> (String, f64) {
-        let (placed, scale) = self.appearance.get(&e.id()).cloned().unwrap_or((None, 1.0));
-        let mut asset = placed.unwrap_or_else(|| d.model.to_string());
-        let mut scale = scale;
+    fn look<'a>(&self, e: &'a EntityView, d: &'a Definition) -> (Cow<'a, str>, f64) {
+        let (placed, mut scale) = self
+            .appearance
+            .get(&e.id())
+            .map_or((None, 1.0), |(placed, scale)| (placed.as_ref(), *scale));
+        let mut asset = match placed {
+            Some(placed) => Cow::Owned(placed.clone()),
+            None => Cow::Borrowed(d.model.as_str()),
+        };
         if let Some((form, form_scale)) = e.magic.as_ref().and_then(|m| m.form.as_ref()) {
             if let Some(form) = form {
-                asset = form.clone();
+                asset = Cow::Borrowed(form.as_str());
             }
             scale *= form_scale;
         }
@@ -1166,7 +1172,7 @@ impl Presenter {
                 1.0
             };
             if let Some(stage) = visuals.stages.iter().find(|s| fraction <= s.remaining) {
-                asset = stage.asset.to_string();
+                asset = Cow::Borrowed(stage.asset.as_str());
             }
         }
         (asset, scale)
@@ -1290,7 +1296,7 @@ impl Presenter {
         // Posed models by entity, in id order (the view's).
         let mut posed = std::mem::take(&mut self.scratch.posed);
         posed.clear();
-        let mut bodies: Vec<Body> = Vec::new();
+        let mut bodies: Vec<Body> = Vec::with_capacity(view.entities.len());
         // Health shown this tick, in id order.
         let mut health = std::mem::take(&mut self.scratch.health);
         health.clear();
@@ -1340,10 +1346,10 @@ impl Presenter {
                 // Owned trees are rare; they stay in the static scene like neutral ones.
                 continue;
             }
-            let Some(file) = asset.file.clone() else {
+            let Some(file) = asset.file.as_deref() else {
                 continue;
             };
-            let model = self.catalog.index(self.pack.as_deref(), &file);
+            let model = self.catalog.index(self.pack.as_deref(), file);
             let info = self.catalog.shared(model);
             let visual_scale = d.model_scale.unwrap_or(1.0);
             let scale = (asset.scale.unwrap_or(1.0) * appearance_scale * visual_scale) as f32;
@@ -1470,7 +1476,7 @@ impl Presenter {
                         sockets: None,
                     });
                     if tracked.asset != asset_id || tracked.model != model {
-                        tracked.asset = asset_id.clone();
+                        tracked.asset = asset_id.to_string();
                         tracked.effects = asset.effects.as_deref().map(Arc::from);
                         tracked.sockets = asset.sockets.as_deref().map(Arc::from);
                         tracked.model = model;
