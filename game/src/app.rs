@@ -545,6 +545,13 @@ impl ApplicationHandler for App {
             WindowEvent::RedrawRequested => {
                 self.redraw(event_loop);
                 telemetry::frame_mark();
+                if telemetry::quit_due() {
+                    if let Some(session) = &mut self.session {
+                        session.game.quit();
+                    }
+                    event_loop.exit();
+                    return;
+                }
                 let editing = self.session.as_ref().is_some_and(|s| s.editor.is_some());
                 // The editor's next frame comes when it is due (`about_to_wait`).
                 if let Some(window) = &self.window
