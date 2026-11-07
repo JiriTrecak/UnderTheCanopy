@@ -93,7 +93,17 @@ pub struct Applied {
 impl World {
     /// Starts a match on `map`.
     pub fn new(content: Arc<Content>, map: &UtcMap, setup: MatchSetup) -> Result<Self, SetupError> {
-        Self::start(content, map, setup, None)
+        Self::start(Arc::new(Catalog::new(content)), map, setup, None)
+    }
+
+    /// Starts a match on `map` with a catalog already built: many matches of one content
+    /// (the editor's takes of an encounter) build it once.
+    pub fn with_catalog(
+        catalog: Arc<Catalog>,
+        map: &UtcMap,
+        setup: MatchSetup,
+    ) -> Result<Self, SetupError> {
+        Self::start(catalog, map, setup, None)
     }
 
     /// Starts a mission of a campaign on `map`: the campaign's tech for its player, its
@@ -105,11 +115,11 @@ impl World {
         setup: MatchSetup,
         campaign: &crate::campaign::CampaignStart,
     ) -> Result<Self, SetupError> {
-        Self::start(content, map, setup, Some(campaign))
+        Self::start(Arc::new(Catalog::new(content)), map, setup, Some(campaign))
     }
 
     fn start(
-        content: Arc<Content>,
+        catalog: Arc<Catalog>,
         map: &UtcMap,
         setup: MatchSetup,
         start: Option<&crate::campaign::CampaignStart>,
@@ -117,7 +127,6 @@ impl World {
         // A mission's computer players are the ones its map lists.
         let setup = ai::campaign::mission_setup(map, setup);
         let campaign = ai::campaign::Campaign::new(map);
-        let catalog = Arc::new(Catalog::new(content));
         let terrain = Arc::new(compile(map, &catalog)?);
         let mut combat = combat::Runtime::new(&catalog, map, &setup).map_err(SetupError)?;
         let mut state = State::new(setup.seed);

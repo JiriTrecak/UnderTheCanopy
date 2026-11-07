@@ -301,6 +301,9 @@ pub struct Fixture {
     pub rank: u32,
     /// Ticks a take runs before it stops.
     pub duration: u32,
+    /// The catalog of `content`, built by the first take (later takes of the same
+    /// content share it).
+    catalog: std::sync::OnceLock<Arc<crate::catalog::Catalog>>,
 }
 
 /// A copy of `d` as `id` without what an encounter does not stage: no training,
@@ -622,14 +625,24 @@ impl Fixture {
             duration: duration(&ability, rank),
             ability,
             rank,
+            catalog: std::sync::OnceLock::new(),
         })
     }
 
     /// A fresh world of the encounter: units at their health, the caster's mana, and
     /// targets that start as corpses already fallen.
     pub fn world(&self) -> Result<World, String> {
+        let catalog = self
+            .catalog
+            .get_or_init(|| Arc::new(crate::catalog::Catalog::new(self.content.clone())));
+        // A copy whose content was replaced builds its own.
+        let catalog = if Arc::ptr_eq(&catalog.content, &self.content) {
+            catalog.clone()
+        } else {
+            Arc::new(crate::catalog::Catalog::new(self.content.clone()))
+        };
         let mut world =
-            World::new(self.content.clone(), &self.map, self.setup.clone()).map_err(|e| e.0)?;
+            World::with_catalog(catalog, &self.map, self.setup.clone()).map_err(|e| e.0)?;
         let share = |max: u32, percent: u32| (max * percent.clamp(1, 100)).div_ceil(100).max(1);
         let ids: Vec<(EntityId, bool)> = world
             .state()
