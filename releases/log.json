@@ -9,7 +9,9 @@
       "Faster start-up, and quicker matches against computer players.",
       "The editor rests when nothing changes; switching workbenches, opening units, painting large maps and saving no longer stall."
     ],
-    "fixed": [],
+    "fixed": [
+      "A brief hitch every two seconds in matches."
+    ],
     "knownIssues": []
   },
   "releases": [
