@@ -3,14 +3,14 @@
   "unreleased": {
     "added": [],
     "improved": [
-      "Matches and missions start faster, and the loading screen no longer freezes.",
-      "No stutter when a match begins or the first time an effect appears.",
-      "Large battles run smoother: falling bodies and busy battlefields cost a fraction of what they did.",
-      "Faster start-up, and quicker matches against computer players.",
-      "The editor rests when nothing changes; switching workbenches, opening units, painting large maps and saving no longer stall."
+      "A performance pass: smoother frames and about half the CPU work per frame, with the game looking and playing exactly as before",
+      "Matches and missions start faster, without the loading screen freezing or a stutter when play begins or an effect first appears",
+      "Large battles run smoother: falling bodies and busy battlefields cost a fraction of what they did",
+      "Faster start-up, and computer players take less time to think",
+      "Editor: rests when nothing changes; switching workbenches, opening units, painting large maps and saving no longer stall"
     ],
     "fixed": [
-      "A brief hitch every two seconds in matches."
+      "A brief hitch every two seconds in matches"
     ],
     "knownIssues": []
   },
