@@ -2,7 +2,11 @@
   "schemaVersion": 1,
   "unreleased": {
     "added": [],
-    "improved": [],
+    "improved": [
+      "Big battles run steadier: the simulation and falling bodies get priority, and settled bodies cost nothing",
+      "Matches load only the effects they can use, so start-up stays light as content grows",
+      "Editor: nearly idle while its window is in the background"
+    ],
     "fixed": [],
     "knownIssues": []
   },
