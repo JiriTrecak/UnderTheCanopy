@@ -44,6 +44,6 @@ pub use camera::{CameraView, RtsCamera};
 pub use device::{DeviceOptions, Gpu, GpuFeatures};
 pub use quality::{HazeQuality, Preset, Quality};
 pub use renderer::{
-    Environment, FrameReport, PortraitFraming, PortraitSubject, Renderer, Triangles, World,
-    WorldUpload, WorldUploader,
+    EffectsLoader, Environment, FrameReport, PortraitFraming, PortraitSubject, Renderer, Triangles,
+    World, WorldUpload, WorldUploader,
 };

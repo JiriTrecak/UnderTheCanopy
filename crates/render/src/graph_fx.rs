@@ -12,7 +12,7 @@
 use crate::targets;
 use bytemuck::{Pod, Zeroable};
 use std::collections::{BTreeMap, BTreeSet};
-use std::sync::{Arc, mpsc};
+use std::sync::{Arc, Mutex, mpsc};
 
 /// Vec4s of the game's particle pool (16 MiB).
 pub const POOL_VEC4S: u32 = 1 << 20;
@@ -233,6 +233,80 @@ struct Program {
 /// A program compiled in the background, by the hash of its WGSL.
 type Arrival = (u64, Program);
 
+/// Builds `todo` across `threads` threads.
+fn build_all(
+    device: &wgpu::Device,
+    layout: &wgpu::PipelineLayout,
+    todo: Vec<(u64, Arc<str>)>,
+    threads: usize,
+) -> Vec<(u64, Program)> {
+    if todo.is_empty() {
+        return Vec::new();
+    }
+    std::thread::scope(|scope| {
+        let workers: Vec<_> = todo
+            .chunks(todo.len().div_ceil(threads.max(1)))
+            .map(|chunk| {
+                scope.spawn(move || {
+                    chunk
+                        .iter()
+                        .map(|(key, source)| (*key, build(device, layout, source)))
+                        .collect::<Vec<_>>()
+                })
+            })
+            .collect();
+        workers
+            .into_iter()
+            .flat_map(|w| w.join().expect("a program builds"))
+            .collect()
+    })
+}
+
+/// Compiles effect graph programs on any thread; they reach the renderer's cache with
+/// its next use of programs (see [`GraphCompute::compiler`]).
+#[derive(Clone)]
+pub struct ProgramCompiler {
+    device: wgpu::Device,
+    layout: wgpu::PipelineLayout,
+    known: Arc<Mutex<BTreeSet<u64>>>,
+    arrivals: mpsc::Sender<Arrival>,
+}
+
+impl ProgramCompiler {
+    /// Compiles the `wgsl` programs not compiled (or compiling) yet across the CPU's
+    /// cores, on this thread. Returns how many it compiled.
+    pub fn compile(&self, wgsl: &[&str]) -> usize {
+        let todo: Vec<(u64, Arc<str>)> = {
+            let mut known = self.known.lock().unwrap_or_else(|e| e.into_inner());
+            wgsl.iter()
+                .filter_map(|w| {
+                    let key = hash(w);
+                    known.insert(key).then(|| (key, Arc::from(*w)))
+                })
+                .collect()
+        };
+        if todo.is_empty() {
+            return 0;
+        }
+        let _span = tracing::info_span!("graph_fx_compile_ahead", programs = todo.len()).entered();
+        let started = std::time::Instant::now();
+        let threads = std::thread::available_parallelism()
+            .map_or(4, |n| n.get())
+            .min(todo.len());
+        let count = todo.len();
+        for arrival in build_all(&self.device, &self.layout, todo, threads) {
+            let _ = self.arrivals.send(arrival);
+        }
+        tracing::info!(
+            programs = count,
+            threads,
+            ms = started.elapsed().as_millis() as u64,
+            "effect programs compiled while loading"
+        );
+        count
+    }
+}
+
 /// A layer's birth and update kernels from its WGSL.
 fn build(device: &wgpu::Device, layout: &wgpu::PipelineLayout, source: &str) -> Program {
     let module = device.create_shader_module(wgpu::ShaderModuleDescriptor {
@@ -278,9 +352,10 @@ pub struct GraphCompute {
     /// table of thousands of layers must not compile them all up front).
     sources: Vec<(u64, Arc<str>)>,
     programs: Vec<Option<Arc<Program>>>,
-    /// Programs compiling on background threads ([`GraphCompute::precompile`]) by hash,
-    /// and the channel they arrive on.
-    pending: BTreeSet<u64>,
+    /// Programs compiled here or by a [`ProgramCompiler`] (those not in `cache` yet are
+    /// still compiling, or on their way), by hash, and the channel compiled programs
+    /// arrive on.
+    known: Arc<Mutex<BTreeSet<u64>>>,
     arrivals: (mpsc::Sender<Arrival>, mpsc::Receiver<Arrival>),
     frame: GraphFrame,
 }
@@ -366,7 +441,7 @@ impl GraphCompute {
             cache: BTreeMap::new(),
             sources: Vec::new(),
             programs: Vec::new(),
-            pending: BTreeSet::new(),
+            known: Arc::default(),
             arrivals: mpsc::channel(),
             frame: GraphFrame::default(),
         }
@@ -389,91 +464,50 @@ impl GraphCompute {
             .collect();
     }
 
-    /// Compiles the `wgsl` programs not compiled yet on background threads (the effect
-    /// table's, at boot), so no effect's first run waits for the shader compiler; a step
-    /// that runs one still compiling waits for it instead of compiling it again.
-    pub fn precompile(&mut self, device: &wgpu::Device, wgsl: &[&str]) {
-        self.receive(None);
-        let mut todo: Vec<(u64, Arc<str>)> = Vec::new();
-        for w in wgsl {
-            let key = hash(w);
-            if !self.cache.contains_key(&key) && self.pending.insert(key) {
-                todo.push((key, Arc::from(*w)));
-            }
-        }
-        if todo.is_empty() {
-            return;
-        }
-        // Half the cores: the boot and the menus run beside it.
-        let threads = std::thread::available_parallelism()
-            .map_or(2, |n| (n.get() / 2).max(1))
-            .min(todo.len());
-        let chunk = todo.len().div_ceil(threads);
-        let (tx, layout, device) = (
-            self.arrivals.0.clone(),
-            self.pipeline_layout.clone(),
-            device.clone(),
-        );
-        let spawned = std::thread::Builder::new()
-            .name("effect-programs".into())
-            .spawn(move || {
-                let _span =
-                    tracing::info_span!("graph_fx_precompile", programs = todo.len()).entered();
-                let started = std::time::Instant::now();
-                std::thread::scope(|scope| {
-                    for part in todo.chunks(chunk) {
-                        let (tx, device, layout) = (tx.clone(), &device, &layout);
-                        scope.spawn(move || {
-                            for (key, source) in part {
-                                let _ = tx.send((*key, build(device, layout, source)));
-                            }
-                        });
-                    }
-                });
-                tracing::info!(
-                    programs = todo.len(),
-                    threads,
-                    ms = started.elapsed().as_millis() as u64,
-                    "effect programs compiled in the background"
-                );
-            });
-        if spawned.is_err() {
-            // No thread: they compile on first use.
-            self.pending.clear();
+    /// What compiles programs on other threads: a match's loader compiles the programs
+    /// its effects run while the loading screen shows.
+    pub fn compiler(&self, device: &wgpu::Device) -> ProgramCompiler {
+        ProgramCompiler {
+            device: device.clone(),
+            layout: self.pipeline_layout.clone(),
+            known: self.known.clone(),
+            arrivals: self.arrivals.0.clone(),
         }
     }
 
-    /// Takes the background programs that arrived; with `wait`, first blocks until that
-    /// program (when pending) has.
+    fn known(&self) -> std::sync::MutexGuard<'_, BTreeSet<u64>> {
+        self.known.lock().unwrap_or_else(|e| e.into_inner())
+    }
+
+    /// Takes the programs compilers sent; with `wait`, first blocks until that program
+    /// (when one is compiling it) has arrived.
     fn receive(&mut self, wait: Option<u64>) {
-        if self.pending.is_empty() {
-            return;
-        }
-        if let Some(key) = wait.filter(|k| self.pending.contains(k)) {
-            let _span = tracing::info_span!("graph_fx_wait").entered();
-            while self.pending.contains(&key) {
-                // The sender half kept here never closes the channel, so a compiling
-                // thread that died would block this forever: bounded waits instead.
-                match self
-                    .arrivals
-                    .1
-                    .recv_timeout(std::time::Duration::from_secs(10))
-                {
-                    Ok((k, program)) => self.arrive(k, program),
-                    Err(_) => {
-                        self.pending.clear();
-                        break;
-                    }
-                }
-            }
-        }
         while let Ok((k, program)) = self.arrivals.1.try_recv() {
             self.arrive(k, program);
+        }
+        let Some(key) = wait.filter(|k| !self.cache.contains_key(k) && self.known().contains(k))
+        else {
+            return;
+        };
+        let _span = tracing::info_span!("graph_fx_wait").entered();
+        while !self.cache.contains_key(&key) {
+            // The sender half kept here never closes the channel, so a compiling thread
+            // that died would block this forever: bounded waits instead.
+            match self
+                .arrivals
+                .1
+                .recv_timeout(std::time::Duration::from_secs(10))
+            {
+                Ok((k, program)) => self.arrive(k, program),
+                Err(_) => {
+                    self.known().remove(&key);
+                    break;
+                }
+            }
         }
     }
 
     fn arrive(&mut self, key: u64, program: Program) {
-        self.pending.remove(&key);
         self.cache.entry(key).or_insert_with(|| Arc::new(program));
     }
 
@@ -484,58 +518,53 @@ impl GraphCompute {
         }
         let (key, source) = self.sources[index].clone();
         self.receive(Some(key));
-        let _span = tracing::info_span!("graph_fx_compile").entered();
         let layout = &self.pipeline_layout;
-        let program = self
-            .cache
-            .entry(key)
-            .or_insert_with(|| Arc::new(build(device, layout, &source)))
-            .clone();
+        let program = match self.cache.get(&key) {
+            Some(program) => program.clone(),
+            None => {
+                let _span = tracing::info_span!("graph_fx_compile").entered();
+                self.known
+                    .lock()
+                    .unwrap_or_else(|e| e.into_inner())
+                    .insert(key);
+                let program = Arc::new(build(device, layout, &source));
+                self.cache.insert(key, program.clone());
+                program
+            }
+        };
         self.programs[index] = Some(program);
     }
 
     /// Compiles programs `indices` now, across the CPU's cores, so the effects that run
     /// them start without a stall (a match's spells, at load); the rest compile when a
-    /// step first runs them.
+    /// step first runs them. Programs a compiler is compiling are waited for.
     pub fn prewarm(&mut self, device: &wgpu::Device, indices: &[u32]) {
         let _span = tracing::info_span!("graph_fx_prewarm", programs = indices.len()).entered();
         let started = std::time::Instant::now();
         self.receive(None);
         let mut todo: Vec<(u64, Arc<str>)> = Vec::new();
         let mut waits = Vec::new();
-        for &i in indices {
-            let Some((key, source)) = self.sources.get(i as usize) else {
-                continue;
-            };
-            if self.pending.contains(key) {
-                waits.push(*key);
-            } else if !self.cache.contains_key(key) && !todo.iter().any(|(k, _)| k == key) {
-                todo.push((*key, source.clone()));
+        {
+            let mut known = self.known.lock().unwrap_or_else(|e| e.into_inner());
+            for &i in indices {
+                let Some((key, source)) = self.sources.get(i as usize) else {
+                    continue;
+                };
+                if self.cache.contains_key(key) {
+                    continue;
+                }
+                if known.insert(*key) {
+                    todo.push((*key, source.clone()));
+                } else if !todo.iter().any(|(k, _)| k == key) {
+                    waits.push(*key);
+                }
             }
         }
         let threads = std::thread::available_parallelism()
             .map_or(4, |n| n.get())
             .min(todo.len().max(1));
-        let layout = &self.pipeline_layout;
-        let built: Vec<(u64, Program)> = std::thread::scope(|scope| {
-            let workers: Vec<_> = todo
-                .chunks(todo.len().div_ceil(threads).max(1))
-                .map(|chunk| {
-                    scope.spawn(move || {
-                        chunk
-                            .iter()
-                            .map(|(key, source)| (*key, build(device, layout, source)))
-                            .collect::<Vec<_>>()
-                    })
-                })
-                .collect();
-            workers
-                .into_iter()
-                .flat_map(|w| w.join().expect("a program builds"))
-                .collect()
-        });
-        let compiled = built.len();
-        for (key, program) in built {
+        let compiled = todo.len();
+        for (key, program) in build_all(device, &self.pipeline_layout, todo, threads) {
             self.cache.insert(key, Arc::new(program));
         }
         for key in &waits {
@@ -762,9 +791,9 @@ impl GraphFx {
         self.compute.prewarm(device, indices);
     }
 
-    /// Compiles programs in the background (see [`GraphCompute::precompile`]).
-    pub fn precompile(&mut self, device: &wgpu::Device, wgsl: &[&str]) {
-        self.compute.precompile(device, wgsl);
+    /// What compiles programs on other threads (see [`GraphCompute::compiler`]).
+    pub fn compiler(&self, device: &wgpu::Device) -> ProgramCompiler {
+        self.compute.compiler(device)
     }
 
     /// Uploads the frame's step and draw uniforms (clipped to the budgets), compiling the

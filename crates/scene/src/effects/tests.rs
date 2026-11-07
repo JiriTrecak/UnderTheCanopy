@@ -691,3 +691,45 @@ fn trails_ride_a_weapon_flight_and_outlive_its_missile() {
     let gone = step(&mut d, 60, &[]);
     assert!(gone.cues.is_empty());
 }
+
+#[test]
+fn an_effect_outside_the_reach_loads_when_it_first_shows_and_draws_the_same() {
+    let textured = |id: &str, texture: &str| {
+        let mut l = layer(Motion::Burst, Primitive::Particle);
+        l.texture = Some(texture.into());
+        l.count = 9;
+        effect(id, false, vec![l])
+    };
+    let mut d = director(
+        vec![
+            textured("effect.test.a", "a.png"),
+            textured("effect.test.b", "b.png"),
+            textured("effect.test.c", "c.png"),
+        ],
+        json!([
+            {"id": "a", "effect": "effect.test.a", "event": "released", "anchor": "target"},
+            {"id": "b", "effect": "effect.test.b", "event": "released", "anchor": "target"},
+        ]),
+    );
+    let snapshot = step(&mut d, 0, &[event(1, 0, EventKind::Released, 1)]);
+    let table = d.effect_table().clone();
+    let a = table.find("effect.test.a").unwrap() as u16;
+    let mut all = EffectEvaluator::new(table.clone());
+    let mut reached = EffectEvaluator::reaching(table, Some(&BTreeSet::from([a])));
+    // Textures keep their places; only the reached effect's is wanted up front.
+    assert_eq!(reached.textures(), all.textures());
+    assert_eq!(reached.wanted_textures(), [true, false, false]);
+    assert!(!reached.take_grown());
+    let misses = frame::effects_outside_reach();
+    let (mut ours, mut theirs) = (EffectFrame::default(), EffectFrame::default());
+    let mut models = Vec::new();
+    reached.frame(None, &snapshot, 1.0, 10.0, None, &mut ours, &mut models);
+    all.frame(None, &snapshot, 1.0, 10.0, None, &mut theirs, &mut models);
+    // The cue of b loaded it (counted as a miss); c, which nothing played, stays out.
+    assert!(reached.take_grown());
+    assert_eq!(reached.wanted_textures(), [true, true, false]);
+    assert!(frame::effects_outside_reach() > misses);
+    assert_eq!(ours.draws, theirs.draws);
+    assert_eq!(ours.emitters, theirs.emitters);
+    assert_eq!(ours.parts, theirs.parts);
+}

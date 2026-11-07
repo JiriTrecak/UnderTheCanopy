@@ -75,11 +75,33 @@ impl LoadJob {
                 let result = result.and_then(|mut prepared| {
                     if let Some(uploader) = uploader {
                         let loaded = &mut prepared.loaded;
-                        loaded.upload = Some(uploader.build(
-                            &loaded.pack,
-                            &loaded.scene.world,
-                            &loaded.environment,
-                        )?);
+                        // The effects the match can reach load beside the world.
+                        let effects = loaded.effects.as_ref();
+                        let world = std::thread::scope(|scope| {
+                            let world = scope.spawn(|| {
+                                uploader.build(
+                                    &loaded.pack,
+                                    &loaded.scene.world,
+                                    &loaded.environment,
+                                )
+                            });
+                            if let Some(effects) = effects {
+                                let all = effects.graph_programs();
+                                let programs: Vec<&str> = effects
+                                    .graph_programs_of(&effects.loaded())
+                                    .iter()
+                                    .map(|&i| all[i as usize])
+                                    .collect();
+                                uploader.load_effects(
+                                    &loaded.pack,
+                                    effects.textures(),
+                                    effects.wanted_textures(),
+                                    &programs,
+                                );
+                            }
+                            world.join().expect("the world uploads")
+                        });
+                        loaded.upload = Some(world?);
                     }
                     Ok(prepared)
                 });

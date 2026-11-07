@@ -261,7 +261,8 @@ impl LiveScene {
         renderer.set_world_ui(&mut self.world_ui_frame);
     }
 
-    /// Shows the presenter's effects: loads the textures their draws refer to.
+    /// Shows the presenter's effects, every one of them loaded: the textures their draws
+    /// refer to and their curves (shots and captures).
     pub fn attach_effects(
         &mut self,
         renderer: &mut Renderer,
@@ -276,17 +277,29 @@ impl LiveScene {
         self.effects = Some(evaluator);
     }
 
-    /// Compiles the effect graph programs of `effects` (table indices) now, so a spell's
-    /// first cast does not stall the match.
-    pub fn prewarm_effects(
-        &self,
+    /// Shows a match's effects through `evaluator`, which loaded the effects the match
+    /// can reach ([`EffectEvaluator::reaching`]): their textures (taking those the loader
+    /// uploaded), curves and graph programs, compiled now unless the loader compiled
+    /// them. An effect outside the reach loads when it first shows.
+    pub fn attach_reached_effects(
+        &mut self,
         renderer: &mut Renderer,
         gpu: &Gpu,
-        effects: &std::collections::BTreeSet<u16>,
+        pack: &canopy_assets::Pack,
+        evaluator: EffectEvaluator,
     ) {
-        if let Some(evaluator) = &self.effects {
-            renderer.prewarm_effect_programs(gpu, &evaluator.graph_programs_of(effects));
-        }
+        renderer.load_effect_textures_of(pack, evaluator.textures(), evaluator.wanted_textures());
+        renderer.load_effect_curves(gpu, evaluator.curves());
+        renderer.load_effect_programs(&evaluator.graph_programs());
+        renderer.prewarm_effect_programs(gpu, &evaluator.graph_programs_of(&evaluator.loaded()));
+        tracing::info!(
+            effects = evaluator.loaded().len(),
+            of = evaluator.table().effects.len(),
+            textures = evaluator.wanted_textures().iter().filter(|w| **w).count(),
+            of_textures = evaluator.textures().len(),
+            "match effects loaded"
+        );
+        self.effects = Some(evaluator);
     }
 
     /// Feeds the frame's ground units to the water's ripples (every frame).
@@ -434,6 +447,16 @@ impl LiveScene {
                 &mut self.effect_frame,
                 &mut self.instances,
             );
+            // An effect outside what was loaded showed: its textures and curves now.
+            if evaluator.take_grown() {
+                let _span = tracing::info_span!("effect_late_load").entered();
+                renderer.load_effect_textures_of(
+                    pack,
+                    evaluator.textures(),
+                    evaluator.wanted_textures(),
+                );
+                renderer.load_effect_curves(gpu, evaluator.curves());
+            }
             renderer.set_effects(&mut self.effect_frame);
         }
         // One instance per presented actor, in order.

@@ -246,13 +246,13 @@ impl InMatch {
         let mut live = LiveScene::default();
         {
             let _span = tracing::info_span!("match_effects").entered();
-            live.attach_effects(
-                renderer,
-                gpu,
-                &loaded.pack,
-                game.presenter.effects.effect_table().clone(),
-            );
-            live.prewarm_effects(renderer, gpu, &game.presenter.effects.bound_effects());
+            // The effects the match can reach, loaded by the loader when it had the GPU.
+            let evaluator = loaded.effects.take().unwrap_or_else(|| {
+                canopy_scene::effects::frame::EffectEvaluator::new(
+                    game.presenter.effects.effect_table().clone(),
+                )
+            });
+            live.attach_reached_effects(renderer, gpu, &loaded.pack, evaluator);
         }
         {
             let _span = tracing::info_span!("match_world_ui").entered();

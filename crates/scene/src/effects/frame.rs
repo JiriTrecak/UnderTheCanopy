@@ -32,7 +32,11 @@ use canopy_render::{
     frame::PointLight,
 };
 use glam::{EulerRot, Mat4, Quat, Vec2, Vec3};
-use std::{collections::BTreeMap, f32::consts::TAU, sync::Arc};
+use std::{
+    collections::{BTreeMap, BTreeSet},
+    f32::consts::TAU,
+    sync::Arc,
+};
 
 /// Fire points drawn at once (the nearest to the eye), each a flame and a smoke emitter.
 pub const DRAWN_FIRES: usize = 28;
@@ -443,7 +447,23 @@ pub struct EffectEvaluator {
     graphs: super::graphs::GraphRuntime,
     /// Each graph renderer's texture by effect, graph and renderer.
     graph_textures: Vec<Vec<Vec<Option<u32>>>>,
+    /// Which textures the loaded effects sample.
+    wanted: Vec<bool>,
+    /// Effects whose curves are built and textures wanted, by table index.
+    loaded: Vec<bool>,
+    /// Loads only a match's reach up front (others are misses).
+    reach: bool,
+    /// Effects loaded since [`EffectEvaluator::take_grown`].
+    grown: bool,
 }
+
+/// Effects that showed outside the reach they were loaded for (each counted once per
+/// evaluator): a miss of the match's reach, which loads it then (and may hitch).
+pub fn effects_outside_reach() -> u32 {
+    OUTSIDE_REACH.load(std::sync::atomic::Ordering::Relaxed)
+}
+
+static OUTSIDE_REACH: std::sync::atomic::AtomicU32 = std::sync::atomic::AtomicU32::new(0);
 
 /// Blends a cue's positions between two snapshots.
 fn blend_cue(a: Option<&CueView>, b: &CueView, t: f32) -> CueView {
@@ -463,29 +483,36 @@ fn blend_cue(a: Option<&CueView>, b: &CueView, t: f32) -> CueView {
 }
 
 impl EffectEvaluator {
+    /// Evaluates every effect of `table`, all of them loaded.
     pub fn new(table: Arc<EffectTable>) -> Self {
+        Self::reaching(table, None)
+    }
+
+    /// Evaluates the effects of `table`; with `reach` (table indices), only those effects'
+    /// curves and textures are loaded, and any other effect loads the first time a cue of
+    /// it shows ([`EffectEvaluator::take_grown`]), counted by [`effects_outside_reach`].
+    /// Textures keep their places in the order of the whole table, so draws group and
+    /// order the same whatever is loaded.
+    pub fn reaching(table: Arc<EffectTable>, reach: Option<&BTreeSet<u16>>) -> Self {
         let mut textures: Vec<String> = Vec::new();
-        let layer_textures = table
+        let mut slot = |name: &String| match textures.iter().position(|t| t == name) {
+            Some(i) => i as u32,
+            None => {
+                textures.push(name.clone());
+                (textures.len() - 1) as u32
+            }
+        };
+        let layer_textures: Vec<Vec<Option<u32>>> = table
             .effects
             .iter()
             .map(|e| {
                 e.layers
                     .iter()
-                    .map(|l| {
-                        l.texture.as_ref().map(|name| {
-                            match textures.iter().position(|t| t == name) {
-                                Some(i) => i as u32,
-                                None => {
-                                    textures.push(name.clone());
-                                    (textures.len() - 1) as u32
-                                }
-                            }
-                        })
-                    })
+                    .map(|l| l.texture.as_ref().map(&mut slot))
                     .collect()
             })
             .collect();
-        let graph_textures = table
+        let graph_textures: Vec<Vec<Vec<Option<u32>>>> = table
             .effects
             .iter()
             .map(|e| {
@@ -494,41 +521,15 @@ impl EffectEvaluator {
                     .map(|g| {
                         g.renderers
                             .iter()
-                            .map(|r| {
-                                r.texture.as_ref().map(|name| {
-                                    match textures.iter().position(|t| t == name) {
-                                        Some(i) => i as u32,
-                                        None => {
-                                            textures.push(name.clone());
-                                            (textures.len() - 1) as u32
-                                        }
-                                    }
-                                })
-                            })
+                            .map(|r| r.texture.as_ref().map(&mut slot))
                             .collect()
                     })
                     .collect()
             })
             .collect();
-        let mut curves = Vec::new();
-        let layer_curves = table
-            .effects
-            .iter()
-            .map(|e| {
-                e.layers
-                    .iter()
-                    .map(|l| match curve_block(l) {
-                        Some((flags, rows)) => {
-                            let block = curves.len() as u32;
-                            curves.extend(rows);
-                            (block, flags)
-                        }
-                        None => (NO_CURVES, 0),
-                    })
-                    .collect()
-            })
-            .collect();
-        Self {
+        let count = table.effects.len();
+        let mut evaluator = Self {
+            wanted: vec![false; textures.len()],
             textures,
             layer_textures,
             buckets: BTreeMap::new(),
@@ -538,13 +539,67 @@ impl EffectEvaluator {
             dust: Vec::new(),
             fires: Vec::new(),
             blade: Vec::new(),
-            curves,
-            layer_curves,
+            curves: Vec::new(),
+            layer_curves: table
+                .effects
+                .iter()
+                .map(|e| vec![(NO_CURVES, 0); e.layers.len()])
+                .collect(),
             strips: BTreeMap::new(),
             graphs: super::graphs::GraphRuntime::new(&table),
             graph_textures,
+            loaded: vec![false; count],
+            reach: reach.is_some(),
+            grown: false,
             table,
+        };
+        for e in 0..count {
+            if reach.is_none_or(|r| r.contains(&(e as u16))) {
+                evaluator.load(e);
+            }
         }
+        evaluator.grown = false;
+        evaluator
+    }
+
+    /// Loads effect `e`: its layers' curve blocks, and marks its textures wanted.
+    fn load(&mut self, e: usize) {
+        if std::mem::replace(&mut self.loaded[e], true) {
+            return;
+        }
+        let effect = &self.table.effects[e];
+        for (layer, l) in effect.layers.iter().enumerate() {
+            if let Some((flags, rows)) = curve_block(l) {
+                self.layer_curves[e][layer] = (self.curves.len() as u32, flags);
+                self.curves.extend(rows);
+            }
+        }
+        let slots = self.layer_textures[e]
+            .iter()
+            .chain(self.graph_textures[e].iter().flatten())
+            .flatten();
+        for &t in slots {
+            self.wanted[t as usize] = true;
+        }
+        self.grown = true;
+    }
+
+    /// Whether effects loaded since the last call (their curves and textures are to be
+    /// uploaded: [`EffectEvaluator::curves`], [`EffectEvaluator::wanted_textures`]).
+    pub fn take_grown(&mut self) -> bool {
+        std::mem::take(&mut self.grown)
+    }
+
+    /// Which of [`EffectEvaluator::textures`] the loaded effects sample.
+    pub fn wanted_textures(&self) -> &[bool] {
+        &self.wanted
+    }
+
+    /// The loaded effects (table indices).
+    pub fn loaded(&self) -> BTreeSet<u16> {
+        (0..self.loaded.len() as u16)
+            .filter(|&e| self.loaded[usize::from(e)])
+            .collect()
     }
 
     /// The compiled effect graph layers in the order the frame's steps refer to them
@@ -922,7 +977,18 @@ impl EffectEvaluator {
         let Some(time) = cue_time(table, cue, tick) else {
             return;
         };
-        let effect = &table.effects[usize::from(cue.effect)];
+        let e = usize::from(cue.effect);
+        if !self.loaded[e] {
+            OUTSIDE_REACH.fetch_add(1, std::sync::atomic::Ordering::Relaxed);
+            if self.reach {
+                tracing::warn!(
+                    effect = %table.effects[e].id,
+                    "effect outside the match's reach: loaded on first use"
+                );
+            }
+            self.load(e);
+        }
+        let effect = &table.effects[e];
         let l = &effect.layers[usize::from(cue.layer)];
         if let Some(graph) = l.graph {
             self.graphs.cue(

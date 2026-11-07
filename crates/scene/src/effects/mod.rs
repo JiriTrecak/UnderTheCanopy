@@ -647,12 +647,6 @@ impl EffectDirector {
         &self.table
     }
 
-    /// The effects the match's abilities can play (their presentation bindings): what a
-    /// match compiles ahead so a spell's first cast does not stall.
-    pub fn bound_effects(&self) -> BTreeSet<u16> {
-        self.recipes.iter().map(|r| r.effect).collect()
-    }
-
     /// Recipes bound to abilities.
     pub fn recipe_count(&self) -> usize {
         self.recipes.len()

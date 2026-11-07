@@ -7,7 +7,7 @@ use canopy_assets::Pack;
 use canopy_content::{Content, map};
 use canopy_net::Session;
 use canopy_render::{Environment, environment::DaytimeLut};
-use canopy_scene::{Look, MapScene, live::Presenter};
+use canopy_scene::{Look, MapScene, effects::frame::EffectEvaluator, live::Presenter};
 use std::sync::Arc;
 
 /// What a view of a match needs.
@@ -66,6 +66,42 @@ pub struct Loaded {
     /// The world's GPU resources, when the loader built them (see
     /// [`canopy_render::WorldUploader`]); the window thread uploads it otherwise.
     pub upload: Option<canopy_render::WorldUpload>,
+    /// The match's effects with those it can reach loaded ([`reached_effects`]); the
+    /// loader uploads their textures and compiles their programs when it has the GPU.
+    pub effects: Option<EffectEvaluator>,
+}
+
+/// The effects of the presenter's table that the match of `world` on `map` can reach
+/// ([`canopy_content::reach::of_match`]), loaded in an evaluator: the rest load when
+/// they first show (logged as a miss).
+pub fn reached_effects(
+    world: &canopy_sim::World,
+    presenter: &Presenter,
+    map: &map::UtcMap,
+) -> EffectEvaluator {
+    let content = &world.catalog().content;
+    let table = presenter.effects.effect_table().clone();
+    let races: Vec<&str> = world
+        .setup()
+        .slots
+        .iter()
+        .map(|s| s.race.as_deref().unwrap_or(&content.rules.default_race))
+        .collect();
+    let reach =
+        canopy_content::reach::of_match(content, map, &races, &(world.state(), world.setup()));
+    let indices: std::collections::BTreeSet<u16> = reach
+        .effects
+        .iter()
+        .filter_map(|id| table.find(id).map(|i| i as u16))
+        .collect();
+    tracing::info!(
+        effects = indices.len(),
+        of = table.effects.len(),
+        elements = reach.elements.len(),
+        "effect reach"
+    );
+    let _span = tracing::info_span!("effect_evaluator").entered();
+    EffectEvaluator::reaching(table, Some(&indices))
 }
 
 /// The hour `seconds` of match time after `start` when a day lasts `day_seconds` (old
@@ -282,6 +318,7 @@ fn assemble(
         let _span = tracing::info_span!("match_presenter").entered();
         scene.presenter(&world, map, pack.clone())
     };
+    let effects = reached_effects(&world, &presenter, map);
     // The clock runs unless the map holds its hour (`landscape.environment.playing`).
     let dynamic = map.landscape.as_ref().is_none_or(|l| l.environment.playing);
     let day_minutes = map
@@ -329,6 +366,7 @@ fn assemble(
             // Set by the caller.
             data: std::path::PathBuf::new(),
             upload: None,
+            effects: Some(effects),
             day,
             sandbox: map.sandbox,
             music: map

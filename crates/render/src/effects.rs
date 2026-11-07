@@ -302,18 +302,17 @@ struct ViewUniform {
 }
 
 pub struct EffectsGpu {
-    features: GpuFeatures,
     /// Quads and the pillar; every part blends premultiplied with its own additivity.
     pipelines: [wgpu::RenderPipeline; 2],
     ribbon_pipeline: wgpu::RenderPipeline,
-    texture_layout: wgpu::BindGroupLayout,
     data_layout: wgpu::BindGroupLayout,
     depth_layout: wgpu::BindGroupLayout,
-    sampler: wgpu::Sampler,
-    /// One bind group per loaded texture, then the white fallback.
+    /// One bind group per texture slot (white where none is loaded), copied from
+    /// `loader`'s slots.
     textures: Vec<wgpu::BindGroup>,
-    /// The pack (its inputs digest) and names `textures` were loaded from.
-    loaded: Option<([u8; 32], Vec<String>)>,
+    /// The slots' revision `textures` copies.
+    revision: Option<u64>,
+    loader: EffectTextureLoader,
     white: wgpu::BindGroup,
     emitters: wgpu::Buffer,
     parts: wgpu::Buffer,
@@ -531,15 +530,21 @@ impl EffectsGpu {
             &view,
         );
         Self {
-            features,
             pipelines,
             ribbon_pipeline,
-            texture_layout,
             data_layout,
             depth_layout,
-            sampler,
+            loader: EffectTextureLoader {
+                device: device.clone(),
+                queue: queue.clone(),
+                features,
+                layout: texture_layout,
+                sampler,
+                white: white.clone(),
+                slots: Default::default(),
+            },
             textures: Vec::new(),
-            loaded: None,
+            revision: None,
             white,
             emitters,
             parts,
@@ -612,38 +617,41 @@ impl EffectsGpu {
 
     /// Loads the effect textures by pack entry name; draws refer to them by position.
     /// A texture the pack lacks draws white (warned).
-    pub fn load_textures(
+    pub fn load_textures(&mut self, pack: &canopy_assets::Pack, names: &[String]) {
+        self.loader.load(pack, names, None);
+        self.sync_textures();
+    }
+
+    /// Loads the textures of `names` that `wanted` marks and are not loaded yet; the
+    /// others draw white until they are.
+    pub fn load_textures_of(
         &mut self,
-        device: &wgpu::Device,
-        queue: &wgpu::Queue,
         pack: &canopy_assets::Pack,
         names: &[String],
+        wanted: &[bool],
     ) {
-        // The same textures of an identical pack (every match's): kept as they are.
-        let pack_id = pack.header().inputs_digest;
-        if self.loaded.as_ref() == Some(&(pack_id, names.to_vec())) {
+        self.loader.load(pack, names, Some(wanted));
+        self.sync_textures();
+    }
+
+    /// What loads effect textures on other threads (a match's loader).
+    pub fn texture_loader(&self) -> EffectTextureLoader {
+        self.loader.clone()
+    }
+
+    /// Takes the textures loaders loaded since the last call.
+    pub fn sync_textures(&mut self) {
+        let slots = self.loader.slots.lock().unwrap_or_else(|e| e.into_inner());
+        if self.revision == Some(slots.revision) {
             return;
         }
-        let _span = tracing::info_span!("effect_textures", count = names.len()).entered();
-        self.textures.clear();
-        self.bytes = 0;
-        let list: Vec<&str> = names.iter().map(String::as_str).collect();
-        let uploads = texture::upload_all(device, queue, self.features, pack, &list);
-        for (name, loaded) in names.iter().zip(uploads) {
-            let group = match loaded.with_context(|| name.clone()) {
-                Ok((texture, bytes)) => {
-                    self.bytes += bytes;
-                    let view = texture.create_view(&Default::default());
-                    texture_group(device, &self.texture_layout, &view, &self.sampler)
-                }
-                Err(error) => {
-                    tracing::warn!("effect texture not shown: {error:#}");
-                    self.white.clone()
-                }
-            };
-            self.textures.push(group);
-        }
-        self.loaded = Some((pack_id, names.to_vec()));
+        self.revision = Some(slots.revision);
+        self.textures = slots
+            .groups
+            .iter()
+            .map(|g| g.clone().unwrap_or_else(|| self.white.clone()))
+            .collect();
+        self.bytes = slots.bytes;
     }
 
     /// Uploads a frame's emitters, parts, ribbons and paths (clipped to the budgets).
@@ -773,6 +781,79 @@ impl EffectsGpu {
         }
         draws += self.graphs.draw(pass, false, textures);
         draws
+    }
+}
+
+/// The effect textures by slot ([`EffectTextureLoader`]).
+#[derive(Default)]
+struct TextureSlots {
+    /// The pack (its inputs digest) and names the slots hold.
+    key: Option<([u8; 32], Vec<String>)>,
+    /// Each slot's bind group once loaded (white when the pack lacks it).
+    groups: Vec<Option<wgpu::BindGroup>>,
+    bytes: u64,
+    /// Bumped by every change.
+    revision: u64,
+}
+
+/// Loads effect textures into the slots draws refer to, on any thread: a match's loader
+/// uploads the textures its effects sample while the loading screen shows, and the
+/// renderer takes them ([`EffectsGpu::sync_textures`]).
+#[derive(Clone)]
+pub struct EffectTextureLoader {
+    device: wgpu::Device,
+    queue: wgpu::Queue,
+    features: GpuFeatures,
+    layout: wgpu::BindGroupLayout,
+    sampler: wgpu::Sampler,
+    white: wgpu::BindGroup,
+    slots: std::sync::Arc<std::sync::Mutex<TextureSlots>>,
+}
+
+impl EffectTextureLoader {
+    /// Loads the textures of `names` (in slot order) that `wanted` marks (every one when
+    /// `None`) and are not loaded yet. Other names than the slots hold (another pack or
+    /// table) start the slots afresh. Returns how many it uploaded.
+    pub fn load(
+        &self,
+        pack: &canopy_assets::Pack,
+        names: &[String],
+        wanted: Option<&[bool]>,
+    ) -> usize {
+        let mut slots = self.slots.lock().unwrap_or_else(|e| e.into_inner());
+        let key = (pack.header().inputs_digest, names.to_vec());
+        if slots.key.as_ref() != Some(&key) {
+            slots.key = Some(key);
+            slots.groups = vec![None; names.len()];
+            slots.bytes = 0;
+            slots.revision += 1;
+        }
+        let todo: Vec<usize> = (0..names.len())
+            .filter(|&i| slots.groups[i].is_none())
+            .filter(|&i| wanted.is_none_or(|w| w.get(i).copied().unwrap_or(false)))
+            .collect();
+        if todo.is_empty() {
+            return 0;
+        }
+        let _span = tracing::info_span!("effect_textures", count = todo.len()).entered();
+        let list: Vec<&str> = todo.iter().map(|&i| names[i].as_str()).collect();
+        let uploads = texture::upload_all(&self.device, &self.queue, self.features, pack, &list);
+        for (&i, loaded) in todo.iter().zip(uploads) {
+            let group = match loaded.with_context(|| names[i].clone()) {
+                Ok((texture, bytes)) => {
+                    slots.bytes += bytes;
+                    let view = texture.create_view(&Default::default());
+                    texture_group(&self.device, &self.layout, &view, &self.sampler)
+                }
+                Err(error) => {
+                    tracing::warn!("effect texture not shown: {error:#}");
+                    self.white.clone()
+                }
+            };
+            slots.groups[i] = Some(group);
+        }
+        slots.revision += 1;
+        todo.len()
     }
 }
 

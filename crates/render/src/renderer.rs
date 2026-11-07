@@ -221,9 +221,47 @@ pub struct WorldUploader {
     features: crate::device::GpuFeatures,
     frame_layout: wgpu::BindGroupLayout,
     kept: crate::kept::Kept,
+    effects: EffectsLoader,
+}
+
+/// Loads effects' textures and compiles their graph programs on any thread (see
+/// [`Renderer::effects_loader`]); the renderer takes them when it next loads effects.
+#[derive(Clone)]
+pub struct EffectsLoader {
+    textures: crate::effects::EffectTextureLoader,
+    programs: crate::graph_fx::ProgramCompiler,
+}
+
+impl EffectsLoader {
+    /// Uploads the textures of `names` (by position) that `wanted` marks and compiles the
+    /// graph programs `programs` (their WGSL), so a match starts with its effects ready.
+    pub fn load(
+        &self,
+        pack: &canopy_assets::Pack,
+        names: &[String],
+        wanted: &[bool],
+        programs: &[&str],
+    ) {
+        let _span = tracing::info_span!("effects_load").entered();
+        std::thread::scope(|scope| {
+            scope.spawn(|| self.programs.compile(programs));
+            self.textures.load(pack, names, Some(wanted));
+        });
+    }
 }
 
 impl WorldUploader {
+    /// Loads a match's effects with the world (see [`EffectsLoader::load`]).
+    pub fn load_effects(
+        &self,
+        pack: &canopy_assets::Pack,
+        names: &[String],
+        wanted: &[bool],
+        programs: &[&str],
+    ) {
+        self.effects.load(pack, names, wanted, programs);
+    }
+
     /// Uploads `world` (seen in `environment`): the terrain with its water, forest and
     /// motes, the dressing, the scenery and the live models, each on a thread of its own.
     pub fn build(
@@ -929,6 +967,7 @@ impl Renderer {
             features: gpu.features,
             frame_layout: self.frame_layout.clone(),
             kept: gpu.kept.clone(),
+            effects: self.effects_loader(gpu),
         }
     }
 
@@ -992,9 +1031,23 @@ impl Renderer {
         pack: &canopy_assets::Pack,
         names: &[String],
     ) {
+        let _ = gpu;
         let before = self.effects.bytes;
-        self.effects
-            .load_textures(&gpu.device, &gpu.queue, pack, names);
+        self.effects.load_textures(pack, names);
+        self.world_bytes = self.world_bytes + self.effects.bytes - before.min(self.effects.bytes);
+    }
+
+    /// Loads the effect textures of `names` (by position) that `wanted` marks and are not
+    /// loaded yet, taking those an [`EffectsLoader`] loaded; the others draw white until
+    /// they are loaded.
+    pub fn load_effect_textures_of(
+        &mut self,
+        pack: &canopy_assets::Pack,
+        names: &[String],
+        wanted: &[bool],
+    ) {
+        let before = self.effects.bytes;
+        self.effects.load_textures_of(pack, names, wanted);
         self.world_bytes = self.world_bytes + self.effects.bytes - before.min(self.effects.bytes);
     }
 
@@ -1010,10 +1063,13 @@ impl Renderer {
         self.effects.graphs.prewarm(&gpu.device, programs);
     }
 
-    /// Compiles effect graph programs (their WGSL) on background threads, so no effect's
-    /// first run waits for the shader compiler (the effect table's, at boot).
-    pub fn precompile_effect_programs(&mut self, gpu: &Gpu, wgsl: &[&str]) {
-        self.effects.graphs.precompile(&gpu.device, wgsl);
+    /// What loads effects' textures and compiles their programs on another thread (a
+    /// match's loader, [`WorldUploader::load_effects`]).
+    pub fn effects_loader(&self, gpu: &Gpu) -> EffectsLoader {
+        EffectsLoader {
+            textures: self.effects.texture_loader(),
+            programs: self.effects.graphs.compiler(&gpu.device),
+        }
     }
 
     /// Loads the effects' curve blocks (see [`EffectsGpu::load_curves`]).

@@ -152,7 +152,7 @@ impl Rig {
     ) -> Result<Self> {
         let gpu = Gpu::headless(DeviceOptions::default())?.context("no GPU adapter")?;
         let me = (!observe).then_some(0u8);
-        let (loaded, mut game) = world::load(
+        let (mut loaded, mut game) = world::load(
             paths,
             &MatchSpec {
                 map,
@@ -194,12 +194,19 @@ impl Rig {
         renderer.set_quality(&gpu, options.quality);
         renderer.load_world(&gpu, &loaded.pack, &loaded.scene.world)?;
         let mut live = LiveScene::default();
-        live.attach_effects(
-            &mut renderer,
-            &gpu,
-            &loaded.pack,
-            game.presenter.effects.effect_table().clone(),
-        );
+        // The match's effects as the game loads them: what it can reach, the rest on
+        // first use.
+        match loaded.effects.take() {
+            Some(effects) => {
+                live.attach_reached_effects(&mut renderer, &gpu, &loaded.pack, effects)
+            }
+            None => live.attach_effects(
+                &mut renderer,
+                &gpu,
+                &loaded.pack,
+                game.presenter.effects.effect_table().clone(),
+            ),
+        }
         live.attach_world_ui(
             &paths.data,
             &loaded.pack,
