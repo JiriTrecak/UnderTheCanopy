@@ -83,6 +83,9 @@ pub struct App {
     editor_whole: bool,
     editor_viewports: bool,
     editor_continuous: bool,
+    /// Whether the window has the focus. Without it the editor's viewports and animations
+    /// wait for it to come back; the game never pauses.
+    focused: bool,
     /// The editor's frames between two `CANOPY_EDITOR_STATS=1` log lines.
     editor_stats: EditorStats,
 }
@@ -118,6 +121,7 @@ impl App {
             editor_whole: true,
             editor_viewports: false,
             editor_continuous: std::env::var("CANOPY_EDITOR_CONTINUOUS").is_ok_and(|v| v == "1"),
+            focused: true,
             editor_stats: EditorStats {
                 on: std::env::var("CANOPY_EDITOR_STATS").is_ok_and(|v| v == "1"),
                 ..EditorStats::default()
@@ -260,6 +264,10 @@ impl App {
             let output = editor.run(window, &session.display.gpu);
             self.editor_due = match output.repaint {
                 _ if self.editor_continuous => Some(started),
+                // Unfocused, what moves on its own (a stage or the node previews playing,
+                // an animation) waits for the focus; work in flight still draws
+                // (`wants_frame`), and so do timers (a notice going).
+                Some(delay) if delay.is_zero() && !self.focused => None,
                 Some(delay) => Some(started + delay),
                 None => None,
             };
@@ -537,6 +545,13 @@ impl ApplicationHandler for App {
                 event_loop.exit();
                 return;
             }
+            WindowEvent::Focused(focused) => {
+                // macOS can report the focus wrongly (winit#4371): the window knows.
+                self.focused = match &self.window {
+                    Some(window) if cfg!(target_os = "macos") => window.has_focus(),
+                    _ => *focused,
+                };
+            }
             WindowEvent::Resized(size) => {
                 if let Some(session) = &mut self.session {
                     session.display.resize(*size);
@@ -603,7 +618,7 @@ impl ApplicationHandler for App {
             self.editor_due = None;
             self.editor_whole = true;
             window.request_redraw();
-        } else if self.editor_viewports {
+        } else if self.editor_viewports && self.focused {
             window.request_redraw();
         }
         let poll = now + EDITOR_POLL;
